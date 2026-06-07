@@ -1,0 +1,200 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/admissions/reporting/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📋 Reporting</h1>
+</div>
+
+<!-- admission summary card -->
+<div class="status-card">
+  <div>
+    <strong>🎉 {{student.user.half_name}}</strong><br />
+    <span style="font-size: 0.8rem"
+      >Reg No: {{student.registration_number | upper}} | Programme:
+      {{student.class_entered.programme}}</span
+    >
+  </div>
+  <div>Reporting Deadline: <strong>15th January 2026</strong></div>
+</div>
+
+<div class="reporting-grid">
+  <!-- LEFT COLUMN: Document checklist & reporting form -->
+  <div>
+    <div class="card">
+      <div class="card-header">📝 Reporting Confirmation Form</div>
+      {% if not already_reported %}
+      <form class="card-body" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label>Expected Reporting Date </label>
+          <input
+            type="date"
+            id="reportDate"
+            value="{{session.start_date.isoformat}}"
+            disabled
+          />
+        </div>
+        <!-- <div class="form-group">
+          <label>Mode of Reporting</label>
+          <select id="reportMode">
+            <option>In-Person (Main Campus)</option>
+            <option>Online (Virtual Reporting)</option>
+          </select>
+        </div> -->
+        <div class="form-group">
+          <label>Accommodation Needed?</label>
+          <select id="accommodation">
+            <option>Yes (Hostel booking will be processed)</option>
+            <option>No (Private arrangement)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Additional Remarks</label>
+          <textarea
+            rows="2"
+            placeholder="Any special needs or comments..."
+          ></textarea>
+        </div>
+        <button class="btn-primary" id="submitReportingBtn" type="submit">
+          ✅ Confirm Reporting
+        </button>
+        <div class="info-box">
+          ℹ️ After confirmation, you will receive a reporting slip and
+          orientation schedule via email.
+        </div>
+      </form>
+      {% else %} Already reported for this session {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Instructions & contact -->
+  <div>
+    <div class="card">
+      <div class="card-header">📌 Reporting Guidelines</div>
+      <div class="card-body">
+        <ul
+          style="
+            margin-left: 1.2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+          "
+        >
+          <li>Report between 8:00 AM – 4:00 PM on weekdays</li>
+          <li>Carry original documents for verification</li>
+          <li>Reporting venue: Academic Registry, Main Hall</li>
+          <li>Orientation: 18th – 20th January 2026</li>
+          <li>Late reporting fee: KES 5,000 after deadline</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">📞 Admission Helpdesk</div>
+      <div class="card-body">
+        <p><strong>Email:</strong> admissions@university.edu</p>
+        <p><strong>Phone:</strong> +254 700 123 456</p>
+        <p><strong>WhatsApp:</strong> +254 712 345 678</p>
+        <hr style="margin: 0.8rem 0" />
+        <p style="font-size: 0.7rem">Office Hours: Mon-Fri, 9am – 4pm</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles (for all groups)
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // Ensure admission submenu open by default (active)
+  const admissionSub = document.getElementById("admission-sub");
+  if (
+    admissionSub &&
+    !admissionSub.classList.contains("sidebar__submenu--open")
+  ) {
+    admissionSub.classList.add("sidebar__submenu--open");
+    const parentGroup = document.querySelector(".sidebar__item--group.active");
+    if (parentGroup) parentGroup.classList.add("sidebar__item--open");
+  }
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Reporting confirmation button
+  document
+    .getElementById("submitReportingBtn")
+    ?.addEventListener("click", () => {
+      const date = document.getElementById("reportDate").value;
+      const mode = document.getElementById("reportMode").value;
+      const accommodation = document.getElementById("accommodation").value;
+      alert(
+        `✅ Reporting confirmed for ${date}.\nMode: ${mode}\nAccommodation: ${accommodation}\nYou will receive a confirmation email shortly.`,
+      );
+    });
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert(
+        "🔔 2 notifications: Reporting deadline approaching & Document reminder.",
+      ),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+</script>
+{%endblock%}

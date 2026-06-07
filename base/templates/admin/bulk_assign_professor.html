@@ -1,0 +1,30 @@
+<!-- templates/admin/bulk_assign_professor.html -->
+{% extends "admin/base_site.html" %} {% block content %}
+
+<h2>Assign Professor to All Classes</h2>
+
+<p>
+  This will assign the selected professor to <strong>all classes</strong> taking
+  the following courses in the current session:
+</p>
+
+<ul>
+  {% for course in courses %}
+  <li>{{ course.course__course_name }} ({{ course.course__course_code }})</li>
+  {% endfor %}
+</ul>
+
+<form method="post">
+  {% csrf_token %} {{ form.as_p }}
+
+  <input type="hidden" name="action" value="bulk_assign_professor" />
+  {% for obj in queryset %}
+  <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+  {% endfor %}
+
+  <input type="hidden" name="apply" value="1" />
+  <button type="submit">✅ Confirm Assignment</button>
+  <a href="../">Cancel</a>
+</form>
+
+{% endblock %}

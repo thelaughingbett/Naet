@@ -1,0 +1,366 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/academics/results/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📊 Results & Transcript</h1>
+  <div class="action-buttons">
+    <button class="btn-secondary" id="printBtn">🖨️ Print / Download</button>
+    <button class="btn-secondary" id="refreshBtn">⟳ Refresh</button>
+  </div>
+</div>
+
+<!-- Student info -->
+<div class="student-info-card">
+  <div class="info-item">
+    <span class="info-label">Student Name</span
+    ><span class="info-value">{{student.user.half_name}}</span>
+  </div>
+  <div class="info-item">
+    <span class="info-label">Reg No.</span
+    ><span class="info-value">{{student.registration_number | upper}}</span>
+  </div>
+  <div class="info-item">
+    <span class="info-label">Programme</span
+    ><span class="info-value">{{student.class_entered.programme}}</span>
+  </div>
+  <div class="info-item">
+    <span class="info-label">Academic Year</span
+    ><span class="info-value">{{session.academic_year}}</span>
+  </div>
+</div>
+
+<!-- Semester selector -->
+<div class="semester-selector">
+  <label>📅 Select Semester:</label>
+  <select id="semesterSelect">
+    <option value="all">--- select semester ---</option>
+    {% for ses in sessions %}
+    <option value="{{ses}}">{{ses}}</option>
+    {%endfor%}
+  </select>
+</div>
+
+<!-- Results Table & GPA -->
+<div class="results-card" id="resultsCard">
+  <div class="card-header">📋 Semester Results</div>
+  <table class="grade-table" id="gradeTable">
+    <thead>
+      <tr>
+        <th>Unit Code</th>
+        <th>Unit Name</th>
+        <th>Credits</th>
+        <th>Grade</th>
+        <th>Exam</th>
+        <!-- <th>Remark</th> -->
+      </tr>
+    </thead>
+    <tbody id="resultsBody" data-activesession="{{session}}">
+      {% for result in results %}
+      <tr
+        data-session="{{result.curricula.session}}"
+        data-courseCode="{{result.curricula.course.course_code}}"
+        data-credits="{{result.curricula.course.credits}}"
+        data-score="{{result.score}}"
+      >
+        <td>{{result.curricula.course.course_code}}</td>
+        <td>{{result.curricula.course.course_name}}</td>
+        <td>{{result.curricula.course.credits}}</td>
+        <td>{{result.score}}</td>
+        <td class="grade-point">{{result.title}}</td>
+        <!-- <td>Pass</td> -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="gpa-summary" id="gpaSummary">
+    <!-- dynamic GPA -->
+  </div>
+</div>
+
+<!-- Cumulative Transcript Summary -->
+<!-- <div class="transcript-card">
+  <div class="card-header">🎓 Cumulative Transcript Summary</div>
+  <div class="transcript-grid">
+    <div class="stat-block">
+      <div class="stat-number" id="totalCredits">0</div>
+      <div class="info-label">Total Credits Attempted</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-number" id="totalPoints">0.00</div>
+      <div class="info-label">Total Grade Points</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-number" id="cgpa">0.00</div>
+      <div class="info-label">Cumulative GPA (CGPA)</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-number" id="classification">—</div>
+      <div class="info-label">Classification</div>
+    </div>
+  </div>
+</div> -->
+<script>
+  // Mock results data per semester
+  let semesterData = {
+    Year1Sem1: {
+      courses: [
+        {
+          code: "CSC 101",
+          name: "Introduction to Programming",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+        {
+          code: "MATH 110",
+          name: "Discrete Mathematics",
+          credits: 3,
+          grade: "B+",
+          points: 3.33,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 102",
+          name: "Computer Organization",
+          credits: 3,
+          grade: "B",
+          points: 3.0,
+          remark: "Pass",
+        },
+        {
+          code: "COMM 101",
+          name: "Communication Skills",
+          credits: 2,
+          grade: "A",
+          points: 4.0,
+          remark: "Pass",
+        },
+      ],
+      semesterGPA: 3.48,
+    },
+    Year2Sem1: {
+      courses: [
+        {
+          code: "CSC 210",
+          name: "Data Structures & Algorithms",
+          credits: 3,
+          grade: "A",
+          points: 4.0,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 220",
+          name: "Database Systems",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 230",
+          name: "Operating Systems",
+          credits: 3,
+          grade: "B+",
+          points: 3.33,
+          remark: "Pass",
+        },
+        {
+          code: "STAT 220",
+          name: "Probability & Statistics",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+      ],
+      semesterGPA: 3.67,
+    },
+    Year2Sem2: {
+      courses: [
+        {
+          code: "CSC 240",
+          name: "Object-Oriented Programming",
+          credits: 3,
+          grade: "B+",
+          points: 3.33,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 250",
+          name: "Software Engineering",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 260",
+          name: "Computer Networks",
+          credits: 3,
+          grade: "B",
+          points: 3.0,
+          remark: "Pass",
+        },
+        {
+          code: "MATH 230",
+          name: "Linear Algebra",
+          credits: 3,
+          grade: "A",
+          points: 4.0,
+          remark: "Pass",
+        },
+      ],
+      semesterGPA: 3.5,
+    },
+    Year3Sem1: {
+      courses: [
+        {
+          code: "CSC 411",
+          name: "Advanced Web Development",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 423",
+          name: "Machine Learning Fundamentals",
+          credits: 3,
+          grade: "B+",
+          points: 3.33,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 432",
+          name: "Cyber Security & Ethics",
+          credits: 3,
+          grade: "A",
+          points: 4.0,
+          remark: "Pass",
+        },
+        {
+          code: "CSC 445",
+          name: "Cloud Computing",
+          credits: 3,
+          grade: "B+",
+          points: 3.33,
+          remark: "Pass",
+        },
+        {
+          code: "ICS 401",
+          name: "Research Methodology",
+          credits: 3,
+          grade: "A-",
+          points: 3.67,
+          remark: "Pass",
+        },
+      ],
+      semesterGPA: 3.6,
+    },
+  };
+
+  // Cumulative calculation across all semesters
+  function calculateCumulative() {
+    let seen = {}; // keep track of courses soas not to double count credits and add total
+    let totalCredits = 0;
+    let totalPoints = 0;
+    for (let sem in semesterData) {
+      semesterData[sem].courses.forEach((course) => {
+        let unit = seen[course.dataset.coursecode];
+
+        if (unit === undefined) {
+          seen[course.dataset.coursecode] = {
+            passed: true,
+          };
+          totalCredits += parseInt(course.dataset.credits);
+        }
+        totalPoints +=
+          parseInt(course.dataset.score) * parseInt(course.dataset.credits);
+      });
+    }
+    const cgpa =
+      totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+    let classification = "";
+    const cgpaNum = parseFloat(cgpa);
+    if (cgpaNum >= 3.6) classification = "First Class Honours";
+    else if (cgpaNum >= 3.0) classification = "Second Class Honours (Upper)";
+    else if (cgpaNum >= 2.5) classification = "Second Class Honours (Lower)";
+    else if (cgpaNum >= 2.0) classification = "Pass";
+    else classification = "Probation";
+
+    document.getElementById("totalCredits").innerText = totalCredits;
+    document.getElementById("totalPoints").innerText = totalPoints.toFixed(2);
+    document.getElementById("cgpa").innerText = cgpa;
+    document.getElementById("classification").innerText = classification;
+    return { totalCredits, totalPoints, cgpa, classification };
+  }
+
+  // Render selected semester
+  function renderSemester(semKey) {
+    const data = semesterData[semKey];
+    if (!data) return;
+    const tbody = document.getElementById("resultsBody");
+    data.courses.forEach((unit) => {
+      tbody.append(unit);
+    });
+
+    // const gpaDiv = document.getElementById("gpaSummary");
+    // gpaDiv.innerHTML = `
+    // <div class="gpa-item"><div class="gpa-label">Semester GPA</div><div class="gpa-value">${data.semesterGPA.toFixed(2)}</div></div>
+    //<div class="gpa-item"><div class="gpa-label">Credits Earned</div><div class="gpa-value">${data.courses.reduce((sum, c) => sum + c.credits, 0)}</div></div>
+    //`;
+  }
+
+  // Handle semester change
+  const semesterSelect = document.getElementById("semesterSelect");
+  semesterSelect.addEventListener("change", (e) => {
+    renderSemester(e.target.value);
+  });
+
+  // Print function (simulate)
+  document.getElementById("printBtn").addEventListener("click", () => {
+    alert(
+      "📄 Transcript download simulation: A PDF would be generated with full academic record.",
+    );
+  });
+  document.getElementById("refreshBtn").addEventListener("click", () => {
+    const current = semesterSelect.value;
+    renderSemester(current);
+    calculateCumulative();
+    alert("Data refreshed.");
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("resultsBody");
+
+    const data = [...container.querySelectorAll("tr")];
+
+    let dataDict = {};
+    data.forEach((data, index) => {
+      let ses = dataDict[data.dataset.session];
+      if (ses === undefined) {
+        dataDict[data.dataset.session] = {
+          courses: [data],
+        };
+        return;
+      }
+
+      dataDict[data.dataset.session] = {
+        courses: [...ses["courses"], data],
+      };
+    });
+
+    semesterData = dataDict;
+    renderSemester(container.dataset.activesession);
+    //calculateCumulative();
+  });
+</script>
+{%endblock%}

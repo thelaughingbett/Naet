@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'base/styles/resets.css' %}" />
+    <link rel="stylesheet" href="{% static 'base/styles/portal.css' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    {% block head %} {% endblock %}
+  </head>
+  <body>
+    {% if request.user.is_authenticated %}
+    <div class="layout" id="layoutRoot">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar__logo">
+          <div class="sidebar__logo-icon">🎓</div>
+          <div class="sidebar__logo-text">UNI PORTAL</div>
+        </div>
+        <nav class="sidebar__nav">
+          <ul class="sidebar__menu">
+            <li class="sidebar__item">
+              <a href="{% url 'base-index' %}" class="sidebar__link"
+                ><svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <span>Dashboard</span></a
+              >
+            </li>
+            <li class="sidebar__item">
+              <button class="sidebar__link--toggle" data-target="socials-sub">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path
+                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  />
+                </svg>
+                <span>Socials</span>
+                <svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul class="sidebar__submenu" id="socials-sub">
+                <li>
+                  <a href="{% url 'base-news' %}" class="sidebar__sublink"
+                    >News</a
+                  >
+                </li>
+                <li>
+                  <a href="{% url 'base-events' %}" class="sidebar__sublink"
+                    >Events</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <!-- Academic group with Unit Registration sub-item -->
+            <li class="sidebar__item sidebar__item--group">
+              <button class="sidebar__link--toggle" data-target="academic-sub">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+                <span>Academic</span>
+                <svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul
+                class="sidebar__submenu sidebar__submenu--open"
+                id="academic-sub"
+              >
+                <li>
+                  <a href="{% url 'base-curriculum' %}" class="sidebar__sublink"
+                    >Curriculum</a
+                  >
+                </li>
+                <li>
+                  <a href="{% url 'base-results' %}" class="sidebar__sublink"
+                    >Results</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="{% url 'base-unit-registration' %}"
+                    class="sidebar__sublink"
+                    style="background: rgba(255, 255, 255, 0.1)"
+                    >Unit Registration</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li class="sidebar__item sidebar__item--group">
+              <button class="sidebar__link--toggle" data-target="admission-sub">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span>Admission</span
+                ><svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul class="sidebar__submenu" id="admission-sub">
+                <li>
+                  <a href="{% url 'base-reporting' %}" class="sidebar__sublink"
+                    >Reporting</a
+                  >
+                </li>
+                <li>
+                  <a href="{% url 'base-defer' %}" class="sidebar__sublink"
+                    >Deferment</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="{% url 'base-hostel-booking' %}"
+                    class="sidebar__sublink"
+                    >Hostel Booking</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li class="sidebar__item sidebar__item--group">
+              <button
+                class="sidebar__link--toggle"
+                data-target="financials-sub"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                <span>Financials</span
+                ><svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul class="sidebar__submenu" id="financials-sub">
+                <li>
+                  <a
+                    href="{% url 'base-fee-statement' %}"
+                    class="sidebar__sublink"
+                    >Fees Statement</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li class="sidebar__item">
+              <button class="sidebar__link--toggle" data-target="timetable-sub">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>Timetable</span
+                ><svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul class="sidebar__submenu" id="timetable-sub">
+                <li>
+                  <a
+                    href="{% url 'base-exam-timetable' %}"
+                    class="sidebar__sublink"
+                    >Exam Timetable</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="{% url 'base-weekly-schedule' %}"
+                    class="sidebar__sublink"
+                    >weekly Timetable</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li class="sidebar__item sidebar__item--group">
+              <button
+                class="sidebar__link--toggle"
+                data-target="evaluations-sub"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>Evaluations</span
+                ><svg
+                  class="sidebar__chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <ul class="sidebar__submenu" id="evaluations-sub">
+                <li>
+                  <a
+                    href="{% url 'base-course-evaluation' %}"
+                    class="sidebar__sublink"
+                    >Course</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="{% url 'base-lecturer-evaluation' %}"
+                    class="sidebar__sublink"
+                    >Lecturer</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="{% url 'base-hostel-evaluation' %}"
+                    class="sidebar__sublink"
+                    >Hostel</a
+                  >
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar__user-section" id="userSection">
+          <div class="user-section-header">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <div
+                class="sidebar__user-avatar"
+                style="width: 36px; height: 36px; font-size: 1rem"
+              >
+                {{ request.user.initials|upper }}
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 600; opacity: 0.8">
+                {{ request.user.half_name }}
+              </span>
+            </div>
+            <button class="user-toggle-btn" id="userCollapseToggle">
+              <svg
+                class="user-toggle-icon"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <div class="user-details-wrapper">
+            <!-- name and email — shown when expanded, hidden when collapsed -->
+            <div class="sidebar__user-name-block">
+              <!-- <p class="sidebar__user-name">{{ request.user.half_name }}</p> -->
+              <p class="sidebar__user-email">{{ request.user.email }}</p>
+            </div>
+          </div>
+
+          <div class="sidebar__user-actions">
+            <button class="user-action-btn" id="notificationBtn">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <span>Notifications</span>
+              <span class="badge-notify">2</span>
+            </button>
+            <button class="user-action-btn" id="settingsBtn">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.07.08A10 10 0 0 0 12 17.66a10 10 0 0 0 6.18-2.22l.07-.08z"
+                />
+              </svg>
+              <span>Settings</span>
+            </button>
+            <button class="user-action-btn" id="logoutBtn">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Logout</span>
+            </button>
+          </div>
+
+          <div class="sidebar__footer">
+            <span>© {{ year }} Legion Software</span>
+          </div>
+        </div>
+      </aside>
+      <main class="page-content">{% block body %}{% endblock %}</main>
+    </div>
+
+    {% else %} <br />
+    {% block else %}{% endblock %} {% endif %}
+
+    <script>
+      // Sidebar toggle
+      const layout = document.getElementById("layoutRoot");
+      const toggleFloat = document.getElementById("floatToggleBtn");
+      function toggleSidebar() {
+        layout.classList.toggle("layout--collapsed");
+        toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+          ? "▶"
+          : "◀";
+      }
+      if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+      // Submenu toggles
+      const toggles = document.querySelectorAll(".sidebar__link--toggle");
+      toggles.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.getAttribute("data-target");
+          const subMenu = document.getElementById(targetId);
+          if (!subMenu) return;
+          const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+          document
+            .querySelectorAll(".sidebar__submenu--open")
+            .forEach((openSub) => {
+              if (openSub !== subMenu)
+                openSub.classList.remove("sidebar__submenu--open");
+            });
+          if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+          else subMenu.classList.remove("sidebar__submenu--open");
+        });
+      });
+
+      // User section collapsible
+      const userSection = document.getElementById("userSection");
+      const userToggle = document.getElementById("userCollapseToggle");
+      if (userSection && userToggle) {
+        const isCollapsed =
+          localStorage.getItem("userSectionCollapsed") === "true";
+        if (isCollapsed)
+          userSection.classList.add("sidebar__user-section--collapsed");
+        userToggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          userSection.classList.toggle("sidebar__user-section--collapsed");
+          localStorage.setItem(
+            "userSectionCollapsed",
+            userSection.classList.contains("sidebar__user-section--collapsed"),
+          );
+        });
+      }
+
+      // Mock actions
+      document
+        .getElementById("notificationBtn")
+        ?.addEventListener("click", () =>
+          alert(
+            "🔔 2 new notifications: Unit registration deadline approaching.",
+          ),
+        );
+      document
+        .getElementById("settingsBtn")
+        ?.addEventListener("click", () =>
+          alert("⚙️ Settings panel coming soon."),
+        );
+      document
+        .getElementById("logoutBtn")
+        ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+      const footerSpan = document.querySelector(".sidebar__footer span");
+      if (footerSpan)
+        footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+    </script>
+  </body>
+</html>

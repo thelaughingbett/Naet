@@ -1,0 +1,338 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/academics/unit-registration/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📚 Unit Registration</h1>
+  <div class="subtitle">
+    Select courses for the upcoming semester (Academic Year 2025/2026 – Semester
+    II)
+  </div>
+</div>
+
+<div class="info-cards">
+  <div class="info-card">
+    <div class="label">Student Name</div>
+    <div class="value">{{student.user.half_name}}</div>
+  </div>
+  <div class="info-card">
+    <div class="label">Registration No.</div>
+    <div class="value">{{student.registration_number | upper}}</div>
+  </div>
+  <div class="info-card">
+    <div class="label">Programme</div>
+    <div class="value">
+      {{student.class_entered.programme}} (Year {{student.year_of_study}})
+    </div>
+  </div>
+  <div class="info-card">
+    <div class="label">Registration Period</div>
+    <div class="value">June 1 – June 30, 2026</div>
+  </div>
+</div>
+
+<div class="layout-grid">
+  <div class="registration-card">
+    <div class="card-header">📖 Available Courses for Registration</div>
+    <table class="unit-table" id="unitsTable">
+      <thead>
+        <tr>
+          <th class="checkbox-col">Select</th>
+          <th>Unit Code</th>
+          <th>Unit Name</th>
+          <th>Credits</th>
+          <th>Prerequisites</th>
+        </tr>
+      </thead>
+      <tbody id="unitsBody">
+        {% for unit in available %}
+        <tr
+          data-credits="{{unit.course.credits}}"
+          data-id="{{unit.record_id}}"
+          data-courseCode="{{unit.course.course_code | upper}}"
+        >
+          <td class="checkbox-col">
+            <input type="checkbox" data-id="{{unit.record_id}}" />
+          </td>
+          <td class="unit-code">{{unit.course.course_code | upper}}</td>
+          <td>{{unit.course.course_name}}</td>
+          <td>
+            <span class="credits-badge">{{unit.course.credits}} credits</span>
+          </td>
+          <td style="font-size: 0.75rem">CS104</td>
+        </tr>
+        {% endfor%}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="registration-summary" id="summaryPanel">
+    <div class="summary-title">📋 Selected Units</div>
+    <ul id="selectedList" class="selected-list">
+      <li style="color: var(--text-muted)">No units selected</li>
+    </ul>
+    <div class="total-credits" id="totalCredits">Total Credits: 0</div>
+    <button class="btn-primary" id="registerBtn">
+      ✅ Register Selected Units
+    </button>
+    <div
+      style="font-size: 0.7rem; margin-top: 0.8rem; color: var(--text-muted)"
+    >
+      Minimum: 15 credits | Maximum: 21 credits
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mock available units for registration
+  let availableUnits = [];
+
+  let empty = [
+    {
+      id: 1,
+      code: "CSC 451",
+      name: "Mobile App Development",
+      credits: 3,
+      prerequisites: "CSC 240",
+      instructor: "Dr. Brian Kiprop",
+    },
+    {
+      id: 2,
+      code: "CSC 462",
+      name: "Data Science & Visualization",
+      credits: 3,
+      prerequisites: "CSC 423",
+      instructor: "Dr. Emily Waithera",
+    },
+    {
+      id: 3,
+      code: "CSC 470",
+      name: "Software Project Management",
+      credits: 3,
+      prerequisites: "CSC 250",
+      instructor: "Prof. Jane Mwangi",
+    },
+    {
+      id: 4,
+      code: "CSC 481",
+      name: "Artificial Intelligence",
+      credits: 3,
+      prerequisites: "CSC 423",
+      instructor: "Dr. Samuel Otieno",
+    },
+    {
+      id: 5,
+      code: "CSC 492",
+      name: "Computer Graphics",
+      credits: 3,
+      prerequisites: "CSC 210",
+      instructor: "Dr. Faith Kariuki",
+    },
+    {
+      id: 6,
+      code: "ICS 410",
+      name: "Entrepreneurship for IT",
+      credits: 2,
+      prerequisites: "None",
+      instructor: "Prof. Leah Achieng",
+    },
+    {
+      id: 7,
+      code: "CSC 488",
+      name: "Cloud Computing II",
+      credits: 3,
+      prerequisites: "CSC 445",
+      instructor: "Dr. James Otieno",
+    },
+    {
+      id: 8,
+      code: "CSC 495",
+      name: "Research Project (Part 1)",
+      credits: 4,
+      prerequisites: "ICS 401",
+      instructor: "Prof. Elijah Maina",
+    },
+  ];
+
+  let selectedUnits = JSON.parse(localStorage.getItem("registeredUnits")) || [];
+
+  function renderUnits() {
+    const tbody = document.getElementById("unitsBody");
+    // tbody.innerHTML = "";
+    availableUnits.forEach((unit) => {
+      const isSelected = selectedUnits.some((u) => u.id === unit.id);
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td class="checkbox-col"><input type="checkbox" data-id="${unit.id}" ${isSelected ? "checked" : ""}></td>
+        <td class="unit-code">${unit.code}</td>
+        <td>${unit.name}</td>
+        <td><span class="credits-badge">${unit.credits} credits</span></td>
+        <td style="font-size:0.75rem;">${unit.prerequisites}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    attachCheckboxEvents();
+    updateSummary();
+  }
+
+  function attachCheckboxEvents() {
+    document
+      .querySelectorAll('#unitsBody input[type="checkbox"]')
+      .forEach((cb) => {
+        cb.addEventListener("change", (e) => {
+          const unitId = cb.getAttribute("data-id");
+          const unit = availableUnits.find((u) => u.dataset.id === unitId);
+
+          if (cb.checked) {
+            if (!selectedUnits.some((u) => u.dataset.id === unitId)) {
+              selectedUnits.push(unit);
+            }
+          } else {
+            selectedUnits = selectedUnits.filter(
+              (u) => u.dataset.id !== unitId,
+            );
+          }
+          updateSummary();
+        });
+      });
+  }
+
+  function updateSummary() {
+    const listContainer = document.getElementById("selectedList");
+    const totalCreditsSpan = document.getElementById("totalCredits");
+    const totalCredits = selectedUnits.reduce(
+      (sum, u) => sum + parseInt(u.dataset.credits),
+      0,
+    );
+    totalCreditsSpan.innerText = `Total Credits: ${totalCredits}`;
+
+    if (selectedUnits.length === 0) {
+      listContainer.innerHTML =
+        '<li style="color: var(--text-muted);">No units selected</li>';
+    } else {
+      listContainer.innerHTML = selectedUnits
+        .map(
+          (u) =>
+            `<li><span>${u.dataset.coursecode}</span><span>${u.dataset.credits} cr</span></li>`,
+        )
+        .join("");
+    }
+
+    const registerBtn = document.getElementById("registerBtn");
+    const minCredits = 7;
+    const maxCredits = 21;
+    if (totalCredits < minCredits) {
+      registerBtn.disabled = true;
+      registerBtn.title = `Minimum ${minCredits} credits required. You have ${totalCredits}.`;
+    } else if (totalCredits > maxCredits) {
+      registerBtn.disabled = true;
+      registerBtn.title = `Maximum ${maxCredits} credits allowed. You have ${totalCredits}.`;
+    } else {
+      registerBtn.disabled = false;
+      registerBtn.title = "";
+    }
+  }
+
+  document.getElementById("registerBtn").addEventListener("click", () => {
+    const totalCredits = selectedUnits.reduce(
+      (sum, u) => sum + parseInt(u.dataset.credits),
+      0,
+    );
+    if (totalCredits < 15) {
+      alert(
+        `Please select at least 15 credits. Currently: ${totalCredits} credits.`,
+      );
+      return;
+    }
+    if (totalCredits > 21) {
+      alert(
+        `You have exceeded the maximum of 21 credits. Currently: ${totalCredits} credits.`,
+      );
+      return;
+    }
+    // Save to localStorage
+    //localStorage.setItem("registeredUnits", JSON.stringify(selectedUnits));
+    alert(
+      `✅ Registration successful!\n\nYou have registered for ${selectedUnits.length} units (${totalCredits} credits).\nA confirmation email has been sent to your university email.`,
+    );
+  });
+
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 new notifications: Unit registration deadline approaching."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+
+  // Initial render
+  document.addEventListener("DOMContentLoaded", () => {
+    const cont = document.getElementById("unitsBody");
+    availableUnits = [...cont.querySelectorAll("tr")];
+  });
+  renderUnits();
+</script>
+{% endblock %}

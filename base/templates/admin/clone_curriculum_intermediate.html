@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %} <br />
+{% load i18n admin_urls static %} {% block content %}
+<p>
+  you have selected <strong>{{items.count}}</strong> curriculum layout
+  frameworks to clone please configure your parameters below:
+</p>
+
+<form action="{{request.path}}" method="post">
+  {% csrf_token %}
+  <div>{{form.as_p}}</div>
+
+  {% for obj in items %}
+  <input type="hidden" name="_selected_action" value="{{obj.pk}}" />
+  {% endfor %}
+
+  <input type="hidden" name="action" value="bulk_clone_wizard" />
+  <input type="hidden" name="apply" value="True" />
+
+  <div style="margin-top: 20px">
+    <input
+      type="submit"
+      value="Execute Copy"
+      class="default"
+      style="
+        background: #417690;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        cursor: pointer;
+      "
+    />
+    <a
+      href="#"
+      onclick="
+        window.history.back();
+        return false;
+      "
+      style="margin-left: 20px; color: #ba2121"
+      >Cancel</a
+    >
+  </div>
+</form>
+{% endblock %}

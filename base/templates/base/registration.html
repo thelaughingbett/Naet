@@ -1,0 +1,68 @@
+{% block head %}{% load static %}
+<title>Register</title>
+<link rel="stylesheet" href="{% static 'base/styles/reg/reg.css' %}" />
+<script src="{% static 'base/scripts/reg.js' %}" defer></script>
+{% endblock %} {% block body %}
+
+<form
+  action="{% url 'base-register' %}"
+  method="post"
+  enctype="multipart/form-data"
+  id="reg-form"
+>
+  <h2>Registration Form</h2>
+  <div id="progress-container">
+    <div id="progress"></div>
+    <ul></ul>
+  </div>
+
+  {% csrf_token %}
+  <main>
+    <fieldset>
+      <legend>General Info</legend>
+      <!-- {{ userdetailsForm.as_p}} -->
+      <div class="form-group">
+        <span>
+          {{userdetailsForm.first_name.label_tag}}
+          {{userdetailsForm.first_name}} </span
+        ><span>
+          {{userdetailsForm.last_name.label_tag}} {{userdetailsForm.last_name}}
+        </span>
+        <span>
+          {{userdetailsForm.surname.label_tag}} {{userdetailsForm.surname}}
+        </span>
+      </div>
+      <p>{{userdetailsForm.gender.label_tag}}{{userdetailsForm.gender}}</p>
+      <p>
+        {{userdetailsForm.profile_picture.label_tag}}{{userdetailsForm.profile_picture}}
+      </p>
+      <p>{{userdetailsForm.email.label_tag}}{{userdetailsForm.email}}</p>
+    </fieldset>
+    <fieldset>
+      <legend>Personal Info</legend>
+      {{ form.as_p }}
+    </fieldset>
+    <fieldset>
+      <legend>Contact Info</legend>
+      {{detailsForm.as_p}}
+    </fieldset>
+    <fieldset>
+      <legend>Emergency Contact Info</legend>
+      {{EmergencyContactInfoForm.as_p}}
+    </fieldset>
+    <fieldset>
+      <legend>Educational Info</legend>
+      {{EducationalInfoForm.as_p}}
+    </fieldset>
+  </main>
+  <div class="controls">
+    <button class="prev-btn">Prev</button>
+    <button class="next-btn">Next</button>
+    <button type="submit" class="submit-btn">Submit</button>
+  </div>
+</form>
+
+{{ schools_json|json_script:"schools-data" }}
+<br />
+{{ departments_json|json_script:"departments-data" }}
+{{programmes_json|json_script:"programmes-data"}} {% endblock %}

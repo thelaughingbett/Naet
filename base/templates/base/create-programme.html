@@ -1,0 +1,9 @@
+{% extends 'base/main.html' %} {% block head %}{% load static %}
+
+<title>Create Programme</title>
+{% endblock %} {% block body%}
+<form action="{% url 'base-create-programme' %}" method="post">
+  {% csrf_token %} {{form.as_p }}
+  <input type="submit" value="submit" />
+</form>
+{% endblock %}

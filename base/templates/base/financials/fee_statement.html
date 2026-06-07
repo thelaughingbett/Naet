@@ -1,0 +1,293 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/financials/fee-statement/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📄 Fees Statement</h1>
+  <button class="statement-badge" id="downloadBtn">⬇️ Download PDF</button>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+  <div class="summary-card">
+    <div class="summary-card__label">Total Charges (Current Semester)</div>
+    <div class="summary-card__amount">
+      KES {{structure.total_amount | intcomma}}
+    </div>
+    <div class="summary-card__sub">Tuition + Hostel + Activity fees</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-card__label">Total Payments Made</div>
+    <div class="summary-card__amount">
+      KES {{account.amount_paid | intcomma}}
+    </div>
+    <div class="summary-card__sub">Last payment: 15 Oct 2025</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-card__label">Outstanding Balance</div>
+    <div class="summary-card__amount" style="color: var(--maroon)">
+      KES {{account.balance | intcomma}}
+    </div>
+    <div class="summary-card__sub">Due by: 30 November 2025</div>
+  </div>
+</div>
+
+<!-- Detailed Statement Card: Charges -->
+<div class="card">
+  <div class="card__header">
+    <span>📌 Fee Breakdown (Academic Year 2025/2026 - Semester I)</span>
+    <span style="font-size: 0.7rem">Reference: INV-2025-001</span>
+  </div>
+  <table class="fee-table">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Due Date</th>
+        <th>Amount (KES)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tuition (18 Credit Hours)</td>
+        <td>30 Sep 2025</td>
+        <td>72,000.00</td>
+      </tr>
+      <tr>
+        <td>Hostel Accommodation (Kirinyaga Halls, Bed B-203)</td>
+        <td>30 Sep 2025</td>
+        <td>28,500.00</td>
+      </tr>
+      <tr>
+        <td>Library & ICT Fee</td>
+        <td>30 Sep 2025</td>
+        <td>5,000.00</td>
+      </tr>
+      <tr>
+        <td>Student Activity / Medical Cover</td>
+        <td>30 Sep 2025</td>
+        <td>4,500.00</td>
+      </tr>
+      <tr>
+        <td>Examination & Registration Fee</td>
+        <td>30 Sep 2025</td>
+        <td>3,500.00</td>
+      </tr>
+      <tr>
+        <td>Caution Money (Refundable)</td>
+        <td>30 Sep 2025</td>
+        <td>5,000.00</td>
+      </tr>
+      <tr>
+        <td>Sports & Recreation Levy</td>
+        <td>30 Sep 2025</td>
+        <td>2,000.00</td>
+      </tr>
+      <tr>
+        <td>Internet & e-Learning Portal</td>
+        <td>30 Sep 2025</td>
+        <td>4,000.00</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="2"><strong>Total Charges</strong></td>
+        <td><strong>124,500.00</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Payment History -->
+<div class="card">
+  <div class="card__header">
+    <span>💰 Payment History</span>
+    <button class="btn-outline" id="mockPaymentBtn">+ Make Payment</button>
+  </div>
+  <table class="fee-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Receipt No.</th>
+        <th>Description</th>
+        <th>Amount (KES)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2025-08-20</td>
+        <td>RCT-89234</td>
+        <td>Tuition Deposit</td>
+        <td class="amount-positive">15,000.00</td>
+      </tr>
+      <tr>
+        <td>2025-09-05</td>
+        <td>RCT-90341</td>
+        <td>Hostel Partial Payment</td>
+        <td class="amount-positive">10,000.00</td>
+      </tr>
+      <tr>
+        <td>2025-10-15</td>
+        <td>RCT-92107</td>
+        <td>Fee Installment</td>
+        <td class="amount-positive">15,250.00</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="3"><strong>Total Payments Received</strong></td>
+        <td><strong>40,250.00</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Balance Summary & Notes -->
+<div class="card">
+  <div class="card__header">
+    <span>📋 Statement Summary</span>
+  </div>
+  <div style="padding: 1.2rem 1.5rem">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      "
+    >
+      <span><strong>Total Charges:</strong> KES 124,500.00</span>
+      <span><strong>Total Payments:</strong> KES 40,250.00</span>
+      <span
+        ><strong>Current Balance:</strong>
+        <span style="color: var(--maroon); font-weight: 800"
+          >KES 84,250.00</span
+        ></span
+      >
+    </div>
+    <div
+      style="
+        background: #fef2e8;
+        border-radius: 16px;
+        padding: 0.8rem;
+        font-size: 0.75rem;
+        color: #a1531b;
+      "
+    >
+      ⚠️ Please clear your outstanding balance by 30th November 2025 to avoid
+      late penalties. Late payment fee of 2% per month applies after due date.
+    </div>
+    <div
+      style="
+        margin-top: 1rem;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-align: right;
+      "
+    >
+      Generated on: 27 May 2026 | For inquiries, contact finance@university.edu
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    // Sidebar global collapse
+    const layout = document.getElementById("layoutRoot");
+    const toggleFloat = document.getElementById("floatToggleBtn");
+    function toggleSidebar() {
+      layout.classList.toggle("layout--collapsed");
+      const isCollapsed = layout.classList.contains("layout--collapsed");
+      toggleFloat.innerHTML = isCollapsed ? "▶" : "◀";
+    }
+    if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+    // Submenu toggles
+    const toggles = document.querySelectorAll(".sidebar__link--toggle");
+    toggles.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const targetId = btn.getAttribute("data-target");
+        const subMenu = document.getElementById(targetId);
+        if (!subMenu) return;
+        const parentItem = btn.closest(".sidebar__item--group");
+        const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+        document
+          .querySelectorAll(".sidebar__submenu--open")
+          .forEach((openSub) => {
+            if (openSub !== subMenu)
+              openSub.classList.remove("sidebar__submenu--open");
+          });
+        if (!isOpen) {
+          subMenu.classList.add("sidebar__submenu--open");
+          if (parentItem) parentItem.classList.add("sidebar__item--open");
+        } else {
+          subMenu.classList.remove("sidebar__submenu--open");
+          if (parentItem) parentItem.classList.remove("sidebar__item--open");
+        }
+      });
+    });
+    // Open financials submenu by default for this page
+    const finSub = document.getElementById("financials-sub");
+    if (finSub && !finSub.classList.contains("sidebar__submenu--open")) {
+      finSub.classList.add("sidebar__submenu--open");
+      const parentGroup = document.querySelector(
+        ".sidebar__item--group.active",
+      );
+      if (parentGroup) parentGroup.classList.add("sidebar__item--open");
+    }
+
+    // User section collapsible
+    const userSection = document.getElementById("userSection");
+    const userToggle = document.getElementById("userCollapseToggle");
+    if (userSection && userToggle) {
+      const isCollapsed =
+        localStorage.getItem("userSectionCollapsed") === "true";
+      if (isCollapsed)
+        userSection.classList.add("sidebar__user-section--collapsed");
+      userToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userSection.classList.toggle("sidebar__user-section--collapsed");
+        localStorage.setItem(
+          "userSectionCollapsed",
+          userSection.classList.contains("sidebar__user-section--collapsed"),
+        );
+      });
+    }
+
+    // Mock actions
+    document
+      .getElementById("notificationBtn")
+      ?.addEventListener("click", () => alert("🔔 No new notifications."));
+    document
+      .getElementById("settingsBtn")
+      ?.addEventListener("click", () =>
+        alert("⚙️ Settings panel coming soon."),
+      );
+    document
+      .getElementById("logoutBtn")
+      ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+    document
+      .getElementById("downloadBtn")
+      ?.addEventListener("click", () =>
+        alert(
+          "📄 PDF statement download simulation (real implementation would generate PDF).",
+        ),
+      );
+    document
+      .getElementById("mockPaymentBtn")
+      ?.addEventListener("click", () =>
+        alert("💳 Redirect to payment gateway."),
+      );
+
+    // footer year
+    const footerSpan = document.querySelector(".sidebar__footer span");
+    if (footerSpan)
+      footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+  })();
+</script>
+{%endblock%}

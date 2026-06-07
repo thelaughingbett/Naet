@@ -1,0 +1,11 @@
+{% extends 'base/main.html' %} {% block head %}{% load static %}
+
+<script src="{% static 'base/scripts/school.js' %}" defer></script>
+<title>Create School</title>
+{% endblock %} {% block body%} {{ schools|json_script:"schools-data" }}
+<form action="{% url 'base-create-school' %}" method="post">
+  {% csrf_token %} {{form.as_p}}
+  <input type="submit" value="submit" />
+</form>
+
+{% endblock %}

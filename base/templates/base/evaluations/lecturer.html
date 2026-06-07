@@ -1,0 +1,310 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/evaluations/lecturer/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">👩‍🏫 Lecturer Evaluations</h1>
+  <div class="subtitle">
+    Rate your instructors and provide feedback on teaching effectiveness,
+    communication, and support
+  </div>
+</div>
+
+<div id="lecturersContainer">
+  <!-- Lecturer evaluation cards will be injected here -->
+</div>
+
+<div class="info-box">
+  💡 Your feedback is anonymous and helps improve teaching quality. Please rate
+  each lecturer based on your experience this semester.
+</div>
+<script>
+  // Mock lecturer data (associated with current courses)
+  const lecturers = [
+    {
+      id: 1,
+      name: "Dr. Grace Muthoni",
+      courseCode: "CSC 411",
+      courseName: "Advanced Web Development",
+      submitted: false,
+      rating: null,
+      feedback: "",
+    },
+    {
+      id: 2,
+      name: "Prof. Elijah Maina",
+      courseCode: "CSC 423",
+      courseName: "Machine Learning Fundamentals",
+      submitted: false,
+      rating: null,
+      feedback: "",
+    },
+    {
+      id: 3,
+      name: "Dr. Faith Wangari",
+      courseCode: "CSC 432",
+      courseName: "Cyber Security & Ethics",
+      submitted: false,
+      rating: null,
+      feedback: "",
+    },
+    {
+      id: 4,
+      name: "Dr. James Otieno",
+      courseCode: "CSC 445",
+      courseName: "Cloud Computing",
+      submitted: false,
+      rating: null,
+      feedback: "",
+    },
+    {
+      id: 5,
+      name: "Prof. Leah Achieng",
+      courseCode: "ICS 401",
+      courseName: "Research Methodology",
+      submitted: false,
+      rating: null,
+      feedback: "",
+    },
+  ];
+
+  // Load saved evaluations from localStorage
+  let lecturerEvals =
+    JSON.parse(localStorage.getItem("lecturerEvaluations")) || {};
+
+  function loadEvaluations() {
+    lecturers.forEach((lecturer) => {
+      if (lecturerEvals[lecturer.id]) {
+        lecturer.submitted = lecturerEvals[lecturer.id].submitted || false;
+        lecturer.rating = lecturerEvals[lecturer.id].rating;
+        lecturer.feedback = lecturerEvals[lecturer.id].feedback || "";
+      } else {
+        lecturer.submitted = false;
+        lecturer.rating = null;
+        lecturer.feedback = "";
+      }
+    });
+  }
+
+  function saveEvaluation(lecturerId, rating, feedback) {
+    lecturerEvals[lecturerId] = {
+      submitted: true,
+      rating: rating,
+      feedback: feedback,
+      submittedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("lecturerEvaluations", JSON.stringify(lecturerEvals));
+    // Update lecturer object
+    const lecturer = lecturers.find((l) => l.id === lecturerId);
+    if (lecturer) {
+      lecturer.submitted = true;
+      lecturer.rating = rating;
+      lecturer.feedback = feedback;
+    }
+  }
+
+  // Helper: render star rating component
+  function renderStars(selectedRating, onStarClick) {
+    const container = document.createElement("div");
+    container.className = "rating-stars";
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement("span");
+      star.className = `star ${selectedRating >= i ? "selected" : ""}`;
+      star.textContent = "★";
+      star.setAttribute("data-value", i);
+      star.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onStarClick(i);
+      });
+      container.appendChild(star);
+    }
+    return container;
+  }
+
+  // Render all lecturer evaluation cards
+  function renderLecturers() {
+    const container = document.getElementById("lecturersContainer");
+    container.innerHTML = "";
+
+    lecturers.forEach((lecturer) => {
+      const card = document.createElement("div");
+      card.className = "eval-card";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "eval-header";
+      header.innerHTML = `
+        <div>
+          <div class="lecturer-name">${lecturer.name}</div>
+          <div class="course-info">${lecturer.courseCode} – ${lecturer.courseName}</div>
+        </div>
+        ${lecturer.submitted ? '<span class="submitted-badge">✓ Submitted</span>' : ""}
+      `;
+
+      // Body
+      const body = document.createElement("div");
+      body.className = "eval-body";
+
+      // Rating label
+      const ratingLabel = document.createElement("div");
+      ratingLabel.className = "feedback-label";
+      ratingLabel.textContent = "Rate this lecturer (1 = Poor, 5 = Excellent)";
+      body.appendChild(ratingLabel);
+
+      const starsWrapper = document.createElement("div");
+      const currentRating = lecturer.rating || 0;
+      const starsContainer = renderStars(currentRating, (newRating) => {
+        if (!lecturer.submitted) {
+          lecturer.rating = newRating;
+          renderLecturers(); // re-render to update display
+        } else {
+          alert(
+            "You have already submitted this evaluation. Edits are not allowed.",
+          );
+        }
+      });
+      starsWrapper.appendChild(starsContainer);
+      body.appendChild(starsWrapper);
+
+      // Feedback textarea
+      const feedbackLabel = document.createElement("div");
+      feedbackLabel.className = "feedback-label";
+      feedbackLabel.style.marginTop = "0.8rem";
+      feedbackLabel.textContent = "Additional Comments (optional)";
+      body.appendChild(feedbackLabel);
+
+      const textarea = document.createElement("textarea");
+      textarea.rows = 2;
+      textarea.placeholder =
+        "Share your thoughts about teaching style, communication, availability, etc.";
+      textarea.value = lecturer.feedback || "";
+      if (lecturer.submitted) {
+        textarea.disabled = true;
+        textarea.style.background = "#f8fafc";
+      } else {
+        textarea.addEventListener("input", (e) => {
+          lecturer.feedback = e.target.value;
+        });
+      }
+      body.appendChild(textarea);
+
+      // Submit button (if not submitted)
+      if (!lecturer.submitted) {
+        const submitBtn = document.createElement("button");
+        submitBtn.className = "submit-btn";
+        submitBtn.textContent = "Submit Evaluation";
+        submitBtn.addEventListener("click", () => {
+          if (!lecturer.rating || lecturer.rating === 0) {
+            alert("Please provide a rating (1–5 stars) before submitting.");
+            return;
+          }
+          saveEvaluation(lecturer.id, lecturer.rating, lecturer.feedback || "");
+          renderLecturers(); // re-render to show submitted badge
+          alert(
+            `✅ Thank you! Your evaluation for ${lecturer.name} has been submitted.`,
+          );
+        });
+        body.appendChild(submitBtn);
+      } else {
+        // Show submitted info
+        const info = document.createElement("div");
+        info.style.fontSize = "0.7rem";
+        info.style.color = "var(--text-muted)";
+        info.style.marginTop = "0.5rem";
+        const submittedDate = lecturerEvals[lecturer.id]?.submittedAt
+          ? new Date(
+              lecturerEvals[lecturer.id].submittedAt,
+            ).toLocaleDateString()
+          : "earlier";
+        info.innerHTML = `⭐ Rating: ${lecturer.rating}/5 • Feedback submitted on ${submittedDate}`;
+        body.appendChild(info);
+      }
+
+      card.appendChild(header);
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  // Load saved evaluations and render
+  loadEvaluations();
+  renderLecturers();
+
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles for other groups (but keep evaluations open)
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // Ensure evaluations submenu is open
+  const evalSub = document.getElementById("evaluations-sub");
+  if (evalSub && !evalSub.classList.contains("sidebar__submenu--open")) {
+    evalSub.classList.add("sidebar__submenu--open");
+  }
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 new notifications: Lecturer evaluation forms available."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+</script>
+{%endblock%}

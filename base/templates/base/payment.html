@@ -1,0 +1,27 @@
+{% extends 'base/main.html' %} {% block body %}
+
+<table>
+  <caption>
+    Fee Structure
+  </caption>
+  <thead>
+    <tr>
+      <th>Expenditure</th>
+      <th>Cost</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for breakdown,cost in structure.breakdown.items %}
+    <tr>
+      <td>{{ breakdown }}</td>
+      <td>{{ cost }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<br />
+<form action="{% url 'base-payment' %}" method="post">
+  Balance : {{account.balance}} {% csrf_token %} {{ form.as_p }}
+  <input type="submit" value="pay" />
+</form>
+{% endblock %}

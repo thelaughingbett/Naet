@@ -1,0 +1,262 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/socials/news/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📰 News & Announcements</h1>
+  <div class="subtitle">
+    Official university notices, updates, and information
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>📂 Category</label>
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+      <option value="Academic">Academic</option>
+      <option value="Scholarship">Scholarship</option>
+      <option value="Facility">Facility</option>
+      <option value="Achievement">Achievement</option>
+      <option value="Wellness">Wellness</option>
+      <option value="IT">IT / Systems</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>🔍 Search</label>
+    <input
+      type="text"
+      id="searchNews"
+      placeholder="Search by title or content..."
+    />
+  </div>
+  <button class="btn-outline" id="resetFiltersBtn">Reset Filters</button>
+</div>
+
+<!-- News Grid -->
+<div id="newsGrid" class="news-grid"></div>
+<script>
+  // ==================== NEWS DATA (Expanded for dedicated page) ====================
+  const allNews = [
+    {
+      id: 1,
+      title: "University Ranked Top 5 in East Africa",
+      date: "May 28, 2026",
+      category: "Achievement",
+      summary:
+        "We are proud to announce that our university has been ranked among the top 5 universities in East Africa for research output and innovation. This recognition reflects our commitment to academic excellence.",
+      fullContent: "Full article: ...",
+      badge: "🏆 Milestone",
+    },
+    {
+      id: 2,
+      title: "New Scholarship Scheme for STEM Students",
+      date: "May 25, 2026",
+      category: "Scholarship",
+      summary:
+        "Applications open for the 2026/2027 STEM Excellence Scholarship. Deadline: July 30, 2026. Eligible students should apply via the portal.",
+      fullContent: "",
+      badge: "💰 Funding",
+    },
+    {
+      id: 3,
+      title: "Library Extended Hours During Exam Period",
+      date: "May 22, 2026",
+      category: "Facility",
+      summary:
+        "The main library will remain open until 10 PM on weekdays from June 1st to July 15th to support exam preparation.",
+      fullContent: "",
+      badge: "📚",
+    },
+    {
+      id: 4,
+      title: "Call for Papers: Student Research Conference",
+      date: "May 20, 2026",
+      category: "Academic",
+      summary:
+        "Submit your abstracts for the 3rd Annual Student Research Conference. Submission deadline: June 30. Best papers win prizes.",
+      fullContent: "",
+      badge: "📄",
+    },
+    {
+      id: 5,
+      title: "Mental Health Awareness Week (June 8-12)",
+      date: "May 18, 2026",
+      category: "Wellness",
+      summary:
+        "Join workshops, counseling sessions, and wellness activities across campus. Free counseling available.",
+      fullContent: "",
+      badge: "🧠",
+    },
+    {
+      id: 6,
+      title: "ICT Service Disruption Notice",
+      date: "May 17, 2026",
+      category: "IT",
+      summary:
+        "Scheduled maintenance on June 5th, 8pm–12am. E-learning portal may be inaccessible during this period.",
+      fullContent: "",
+      badge: "⚠️",
+    },
+    {
+      id: 7,
+      title: "Graduation Ceremony 2026 Dates Announced",
+      date: "May 15, 2026",
+      category: "Academic",
+      summary:
+        "The 45th graduation ceremony will be held on December 12-13, 2026. All eligible students should clear fees by October 30.",
+      fullContent: "",
+      badge: "🎓",
+    },
+    {
+      id: 8,
+      title: "New Student Portal Feature: Mobile App Beta",
+      date: "May 12, 2026",
+      category: "IT",
+      summary:
+        "Download the new mobile app for easy access to timetables, results, and announcements. Available on Play Store.",
+      fullContent: "",
+      badge: "📱",
+    },
+    {
+      id: 9,
+      title: "Sports Tryouts – Join University Teams",
+      date: "May 10, 2026",
+      category: "Wellness",
+      summary:
+        "Basketball, football, and volleyball tryouts on June 1-3 at the Sports Complex. Register at the sports office.",
+      fullContent: "",
+      badge: "⚽",
+    },
+  ];
+
+  // Render news with filters
+  function renderNews() {
+    const category = document.getElementById("categoryFilter").value;
+    const searchTerm = document
+      .getElementById("searchNews")
+      .value.toLowerCase();
+
+    let filtered = allNews;
+    if (category !== "all") {
+      filtered = filtered.filter((news) => news.category === category);
+    }
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (news) =>
+          news.title.toLowerCase().includes(searchTerm) ||
+          news.summary.toLowerCase().includes(searchTerm),
+      );
+    }
+
+    const container = document.getElementById("newsGrid");
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="no-results">📭 No news articles match your filters. Try adjusting your search.</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered
+      .map(
+        (news) => `
+      <div class="news-card">
+        <div class="news-badge">${news.badge} ${news.category}</div>
+        <div class="news-title">${news.title}</div>
+        <div class="news-meta">
+          <span>📅 ${news.date}</span>
+          <span>🏷️ ${news.category}</span>
+        </div>
+        <div class="news-summary">${news.summary}</div>
+        <a class="read-more" onclick="alert('📖 Full article: ${news.title}\\n\\n${news.fullContent || news.summary}\\n\\nVisit the university notice board for more details.');">Read more →</a>
+      </div>
+    `,
+      )
+      .join("");
+  }
+
+  // Set up event listeners for filters
+  document
+    .getElementById("categoryFilter")
+    .addEventListener("change", renderNews);
+  document.getElementById("searchNews").addEventListener("input", renderNews);
+  document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+    document.getElementById("categoryFilter").value = "all";
+    document.getElementById("searchNews").value = "";
+    renderNews();
+  });
+
+  // Initial render
+  renderNews();
+
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles (for other menu groups)
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 new notifications: New announcements & Fee reminder."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+</script>
+{%endblock%}

@@ -1,0 +1,252 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/admissions/defer/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">⏸️ Deferment of Studies</h1>
+  <div class="status-chip">Current Status: Active Enrollment</div>
+</div>
+
+<div class="deferment-grid">
+  <!-- LEFT COLUMN: Deferment Request Form -->
+  <div>
+    <div class="card">
+      <div class="card-header">📄 Request for Deferment</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input
+            type="text"
+            value="{{student.user.half_name}}"
+            readonly
+            style="background: #f5f7fb"
+          />
+        </div>
+        <div class="form-group">
+          <label>Registration Number *</label>
+          <input
+            type="text"
+            value="{{student.registration_number | upper}}"
+            readonly
+            style="background: #f5f7fb"
+          />
+        </div>
+        <div class="form-group">
+          <label>Programme *</label>
+          <input
+            type="text"
+            value="{{student.class_entered.programme}} (Year {{student.year_of_study}})"
+            readonly
+            style="background: #f5f7fb"
+          />
+        </div>
+        <div class="form-group">
+          <label>Semester to Defer *</label>
+          <select id="deferSemester">
+            <option>Year 3 – Semester I (2025/2026)</option>
+            <option>Year 3 – Semester II (2025/2026)</option>
+            <option>Full Academic Year 2025/2026</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reason for Deferment *</label>
+          <select id="deferReason">
+            <option>Medical reasons (attach supporting document)</option>
+            <option>Financial difficulties</option>
+            <option>Employment / Work commitment</option>
+            <option>Family / Personal reasons</option>
+            <option>Other (specify in remarks)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Supporting Document (Optional but recommended)</label>
+          <input type="file" id="deferDoc" accept=".pdf,.jpg,.png" />
+          <small style="color: var(--text-muted)"
+            >Upload medical report, letter, or any evidence (max 5MB)</small
+          >
+        </div>
+        <div class="form-group">
+          <label>Additional Remarks</label>
+          <textarea
+            id="deferRemarks"
+            rows="3"
+            placeholder="Provide any extra information..."
+          ></textarea>
+        </div>
+        <button class="btn-primary" id="submitDefermentBtn">
+          📨 Submit Deferment Request
+        </button>
+        <div class="info-box">
+          ⚠️ <strong>Important:</strong> Deferment requests are reviewed within
+          7-10 working days. Approved deferment will allow you to resume studies
+          in the next academic year without reapplying. Tuition fee credit
+          policy applies.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Deferment Guidelines & History -->
+  <div>
+    <div class="card">
+      <div class="card-header">📌 Deferment Policy</div>
+      <div class="card-body">
+        <ul
+          style="
+            margin-left: 1.2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+          "
+        >
+          <li>
+            Deferment allowed for a maximum of
+            <strong>two consecutive semesters</strong>.
+          </li>
+          <li>
+            Application deadline:
+            <strong>2 weeks before semester exams</strong>.
+          </li>
+          <li>Approved deferment means you retain your admission status.</li>
+          <li>No tuition refunds after week 6 of the semester.</li>
+          <li>Hostel allocation will be cancelled and must be rebooked.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">📋 My Deferment History</div>
+      <div class="card-body">
+        <div class="deferment-history">
+          <div class="history-item">
+            <strong>Request ID: DEF-2024-001</strong><br />
+            Semester: Year 2 Sem II (2024)<br />
+            Status: <span style="color: #1e6f3f">✅ Approved</span><br />
+            <span style="font-size: 0.7rem">Resumed: Jan 2025</span>
+          </div>
+          <div class="history-item">
+            <strong>No pending deferment requests</strong><br />
+            <span style="font-size: 0.7rem">You are currently active.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">📞 Need Help?</div>
+      <div class="card-body">
+        <p>
+          <strong>Academic Registrar</strong><br />Email:
+          registrar@university.edu<br />Phone: +254 700 987 654
+        </p>
+        <hr style="margin: 0.8rem 0" />
+        <p><strong>Student Support</strong><br />WhatsApp: +254 712 345 789</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // Ensure admission submenu open
+  const admissionSub = document.getElementById("admission-sub");
+  if (
+    admissionSub &&
+    !admissionSub.classList.contains("sidebar__submenu--open")
+  ) {
+    admissionSub.classList.add("sidebar__submenu--open");
+    const parentGroup = document.querySelector(".sidebar__item--group.active");
+    if (parentGroup) parentGroup.classList.add("sidebar__item--open");
+  }
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Submit deferment
+  document
+    .getElementById("submitDefermentBtn")
+    ?.addEventListener("click", () => {
+      const semester = document.getElementById("deferSemester").value;
+      const reason = document.getElementById("deferReason").value;
+      const remarks = document.getElementById("deferRemarks").value;
+      const fileInput = document.getElementById("deferDoc");
+      const file = fileInput.files[0];
+      let fileMsg = file ? `Document: ${file.name}` : "No document attached";
+
+      alert(
+        `📋 Deferment Request Submitted\n\nSemester: ${semester}\nReason: ${reason}\nRemarks: ${remarks || "—"}\n${fileMsg}\n\nYour request has been received. You will receive a confirmation email within 24 hours.\nReference: DEF-${Date.now().toString().slice(-8)}`,
+      );
+
+      // Clear remarks and file for demo
+      document.getElementById("deferRemarks").value = "";
+      fileInput.value = "";
+    });
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 notifications: Deferment policy update & Fee reminder."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+</script>
+
+{%endblock%}

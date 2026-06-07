@@ -1,0 +1,314 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/timetable/exam-schedule/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">📖 Exam Timetable</h1>
+  <div class="exam-badge">End of Semester Exams (Dec 2025)</div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>📅 Exam Period:</label>
+    <select id="examPeriodSelect">
+      <option value="main">End of Semester Exams (Dec 2025)</option>
+      <option value="mid">Mid-Semester Exams (Oct 2025)</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>🔍 Search:</label>
+    <input
+      type="text"
+      id="searchExam"
+      placeholder="Course code or name"
+      style="
+        padding: 0.5rem 1rem;
+        border-radius: 40px;
+        border: 1px solid var(--border);
+      "
+    />
+  </div>
+</div>
+
+<!-- Countdown to first exam -->
+<div class="countdown-card" id="countdownCard">
+  <div>
+    <div class="countdown-title">⏰ Countdown to first exam</div>
+    <div class="countdown-timer" id="countdownTimer">
+      -- days -- hours -- minutes
+    </div>
+  </div>
+  <div>📌 CSC 411 • 2nd Dec 2025 • 9:00 AM</div>
+</div>
+
+<!-- Exam schedule table -->
+<div class="exam-table-container">
+  <table class="exam-table" id="examTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Day</th>
+        <th>Time</th>
+        <th>Course Code</th>
+        <th>Course Name</th>
+        <th>Venue</th>
+        <th>Seat No.</th>
+      </tr>
+    </thead>
+    <tbody id="examTableBody">
+      <!-- dynamic from JS -->
+    </tbody>
+  </table>
+</div>
+<div class="info-note">
+  📌 * Students must arrive 30 minutes before the exam. Bring your student ID
+  and examination card. Mobile phones are strictly prohibited.
+</div>
+
+<script>
+  // Exam data for main period (Dec 2025)
+  const mainExams = [
+    {
+      date: "2025-12-02",
+      day: "Monday",
+      time: "09:00 – 12:00",
+      code: "CSC 411",
+      name: "Advanced Web Development",
+      venue: "Hall A",
+      seat: "A-124",
+    },
+    {
+      date: "2025-12-04",
+      day: "Wednesday",
+      time: "14:00 – 17:00",
+      code: "CSC 423",
+      name: "Machine Learning Fundamentals",
+      venue: "Lab 3",
+      seat: "B-089",
+    },
+    {
+      date: "2025-12-06",
+      day: "Friday",
+      time: "09:00 – 12:00",
+      code: "CSC 432",
+      name: "Cyber Security & Ethics",
+      venue: "LT 2",
+      seat: "C-202",
+    },
+    {
+      date: "2025-12-09",
+      day: "Monday",
+      time: "14:00 – 17:00",
+      code: "CSC 445",
+      name: "Cloud Computing",
+      venue: "Online (Proctored)",
+      seat: "Virtual-45",
+    },
+    {
+      date: "2025-12-11",
+      day: "Wednesday",
+      time: "09:00 – 12:00",
+      code: "ICS 401",
+      name: "Research Methodology",
+      venue: "Hall B",
+      seat: "D-017",
+    },
+  ];
+
+  // Mid-semester exams (October 2025)
+  const midExams = [
+    {
+      date: "2025-10-15",
+      day: "Wednesday",
+      time: "10:00 – 12:00",
+      code: "CSC 411",
+      name: "Advanced Web Development",
+      venue: "Lab 2",
+      seat: "A-045",
+    },
+    {
+      date: "2025-10-17",
+      day: "Friday",
+      time: "10:00 – 12:00",
+      code: "CSC 423",
+      name: "Machine Learning Fundamentals",
+      venue: "Hall A",
+      seat: "B-112",
+    },
+    {
+      date: "2025-10-20",
+      day: "Monday",
+      time: "10:00 – 12:00",
+      code: "CSC 432",
+      name: "Cyber Security & Ethics",
+      venue: "LT 1",
+      seat: "C-078",
+    },
+  ];
+
+  let currentExams = mainExams;
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function renderExamTable(exams, searchTerm = "") {
+    const tbody = document.getElementById("examTableBody");
+    const filtered = exams.filter(
+      (exam) =>
+        exam.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exam.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem;">No exams match your search.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filtered
+      .map(
+        (exam) => `
+      <tr>
+        <td>${formatDate(exam.date)}</td>
+        <td>${exam.day}</td>
+        <td>${exam.time}</td>
+        <td><strong>${exam.code}</strong></td>
+        <td>${exam.name}</td>
+        <td><span class="venue-badge">${exam.venue}</span></td>
+        <td class="seat-number">${exam.seat}</td>
+      </tr>
+    `,
+      )
+      .join("");
+  }
+
+  function updateCountdown() {
+    // Find first exam date from currentExams
+    if (!currentExams.length) {
+      document.getElementById("countdownTimer").innerText = "No upcoming exams";
+      return;
+    }
+    const firstExam = [...currentExams].sort(
+      (a, b) => new Date(a.date) - new Date(b.date),
+    )[0];
+    const examDate = new Date(firstExam.date + "T09:00:00");
+    const now = new Date();
+    const diff = examDate - now;
+    if (diff <= 0) {
+      document.getElementById("countdownTimer").innerText =
+        "Exam in progress / started";
+      return;
+    }
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    document.getElementById("countdownTimer").innerHTML =
+      `${days}d ${hours}h ${minutes}m`;
+    document.getElementById("countdownCard").innerHTML = `
+      <div>
+        <div class="countdown-title">⏰ Countdown to first exam</div>
+        <div class="countdown-timer">${days}d ${hours}h ${minutes}m</div>
+      </div>
+      <div>📌 ${firstExam.code} • ${formatDate(firstExam.date)} • ${firstExam.time.split(" – ")[0]}</div>
+    `;
+  }
+
+  // Period change handler
+  const periodSelect = document.getElementById("examPeriodSelect");
+  const searchInput = document.getElementById("searchExam");
+
+  function refreshView() {
+    const period = periodSelect.value;
+    currentExams = period === "main" ? mainExams : midExams;
+    const searchTerm = searchInput.value;
+    renderExamTable(currentExams, searchTerm);
+    updateCountdown();
+  }
+
+  periodSelect.addEventListener("change", refreshView);
+  searchInput.addEventListener("input", () => {
+    renderExamTable(currentExams, searchInput.value);
+  });
+
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 notifications: Exam schedule released & Fee reminder."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+
+  // Initial render
+  renderExamTable(mainExams, "");
+  updateCountdown();
+  // Refresh countdown every minute
+  setInterval(updateCountdown, 60000);
+</script>
+{%endblock%}

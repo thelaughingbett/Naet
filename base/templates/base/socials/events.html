@@ -1,0 +1,375 @@
+{% extends 'base/main.html' %}{% load static %} <br />
+{% load humanize %} {% block head %}
+
+<link
+  rel="stylesheet"
+  href="{% static  'base/styles/socials/events/index.css' %}"
+/>
+<title>Dashboard</title>
+
+{% endblock %} {% block body %}
+<div class="page-header">
+  <h1 class="page-title">🎉 Upcoming Events</h1>
+  <div class="subtitle">
+    Discover and participate in university-wide events, workshops, and
+    activities
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>📂 Category</label>
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+      <option value="Academic">Academic</option>
+      <option value="Cultural">Cultural</option>
+      <option value="Sports">Sports</option>
+      <option value="Workshop">Workshop</option>
+      <option value="Career">Career</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>📅 From Date</label>
+    <input type="date" id="dateFrom" />
+  </div>
+  <div class="filter-group">
+    <label>🔍 Search</label>
+    <input
+      type="text"
+      id="searchEvent"
+      placeholder="Event title or location..."
+    />
+  </div>
+  <button class="btn-outline" id="resetFiltersBtn">Reset Filters</button>
+</div>
+
+<!-- Events Grid -->
+<div id="eventsGrid" class="events-grid"></div>
+
+<div id="registrationModal" class="modal-overlay">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>📝 Event Registration</h3>
+      <button class="close-modal" id="closeModalBtn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalEventInfo" class="event-info-preview">
+        <!-- Event details will be inserted here -->
+      </div>
+      <form id="registrationForm">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="regName" value="James Mwangi" required />
+        </div>
+        <div class="form-group">
+          <label>Student ID / Registration No. *</label>
+          <input
+            type="text"
+            id="regStudentId"
+            value="CSC/00123/2023"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input
+            type="email"
+            id="regEmail"
+            value="james.mwangi@university.edu"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="regPhone" placeholder="+254 700 123 456" />
+        </div>
+        <button type="submit" class="btn-primary">
+          ✅ Confirm Registration
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  // ==================== EVENTS DATA ====================
+  const allEvents = [
+    {
+      id: 1,
+      title: "Tech Symposium 2026",
+      category: "Academic",
+      date: "2026-06-15",
+      time: "9:00 AM – 4:00 PM",
+      location: "Main Hall",
+      description:
+        "Annual tech expo featuring AI, cybersecurity, and industry panels. Open to all students.",
+      badge: "⭐ Featured",
+    },
+    {
+      id: 2,
+      title: "University Cultural Fest",
+      category: "Cultural",
+      date: "2026-06-20",
+      time: "2:00 PM – 8:00 PM",
+      location: "Amphitheatre",
+      description:
+        "Celebrate diversity with music, dance, and food from different cultures.",
+      badge: "🎉 Annual",
+    },
+    {
+      id: 3,
+      title: "Inter-Faculty Football Tournament",
+      category: "Sports",
+      date: "2026-06-25",
+      time: "10:00 AM – 5:00 PM",
+      location: "Sports Complex",
+      description: "Cheer for your faculty! Registration open until June 20.",
+      badge: "⚽",
+    },
+    {
+      id: 4,
+      title: "Research Writing Workshop",
+      category: "Workshop",
+      date: "2026-07-05",
+      time: "10:00 AM – 1:00 PM",
+      location: "Online (Zoom)",
+      description:
+        "Learn how to write high-impact research papers and thesis proposals.",
+      badge: "📝 Certificate",
+    },
+    {
+      id: 5,
+      title: "Dean's Lecture Series: Future of Computing",
+      category: "Academic",
+      date: "2026-07-12",
+      time: "2:00 PM – 3:30 PM",
+      location: "LT 1",
+      description: "Prof. Kamau discusses quantum computing and AI trends.",
+      badge: "🎤 Guest Speaker",
+    },
+    {
+      id: 6,
+      title: "Career Fair 2026",
+      category: "Career",
+      date: "2026-07-20",
+      time: "9:00 AM – 4:00 PM",
+      location: "Exhibition Hall",
+      description:
+        "Meet top employers, internships, and graduate opportunities.",
+      badge: "💼 Hiring",
+    },
+  ];
+
+  // Helper: format date to readable
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  // Render events with filters
+  function renderEvents() {
+    const category = document.getElementById("categoryFilter").value;
+    const dateFrom = document.getElementById("dateFrom").value;
+    const searchTerm = document
+      .getElementById("searchEvent")
+      .value.toLowerCase();
+
+    let filtered = [...allEvents];
+    if (category !== "all")
+      filtered = filtered.filter((event) => event.category === category);
+    if (dateFrom) filtered = filtered.filter((event) => event.date >= dateFrom);
+    if (searchTerm)
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm) ||
+          event.description.toLowerCase().includes(searchTerm) ||
+          event.location.toLowerCase().includes(searchTerm),
+      );
+    filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const container = document.getElementById("eventsGrid");
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="no-results">📭 No events match your filters. Try adjusting your search.</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered
+      .map(
+        (event) => `
+      <div class="event-card" data-event-id="${event.id}">
+        <div class="event-date-header">
+          <span>📅 ${formatDate(event.date)}</span>
+          <span class="event-category">${event.category}</span>
+        </div>
+        <div class="event-title">${event.title}</div>
+        <div class="event-meta">
+          <span>⏰ ${event.time}</span>
+          <span>📍 ${event.location}</span>
+        </div>
+        <div class="event-description">${event.description}</div>
+        <div class="event-footer">
+          <span class="event-badge" style="background:#f0f4f9; padding:0.2rem 0.6rem; border-radius:20px;">${event.badge}</span>
+          <span class="register-link" data-id="${event.id}" data-title="${event.title.replace(/'/g, "\\'")}" data-date="${formatDate(event.date)}" data-location="${event.location}">Register →</span>
+        </div>
+      </div>
+    `,
+      )
+      .join("");
+
+    // Attach click handlers to register links
+    document.querySelectorAll(".register-link").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = parseInt(link.getAttribute("data-id"));
+        const title = link.getAttribute("data-title");
+        const date = link.getAttribute("data-date");
+        const location = link.getAttribute("data-location");
+        openRegistrationModal(id, title, date, location);
+      });
+    });
+  }
+
+  // ==================== MODAL LOGIC ====================
+  let currentEventId = null;
+  let currentEventTitle = "";
+
+  function openRegistrationModal(eventId, title, date, location) {
+    currentEventId = eventId;
+    currentEventTitle = title;
+    const modal = document.getElementById("registrationModal");
+    const eventInfoDiv = document.getElementById("modalEventInfo");
+    eventInfoDiv.innerHTML = `
+      <strong>${title}</strong><br/>
+      📅 ${date}<br/>
+      📍 ${location}
+    `;
+    modal.classList.add("active");
+  }
+
+  function closeModal() {
+    document.getElementById("registrationModal").classList.remove("active");
+    document.getElementById("registrationForm").reset();
+    // Pre-fill default student data for demo
+    document.getElementById("regName").value = "James Mwangi";
+    document.getElementById("regStudentId").value = "CSC/00123/2023";
+    document.getElementById("regEmail").value = "james.mwangi@university.edu";
+  }
+
+  document
+    .getElementById("closeModalBtn")
+    .addEventListener("click", closeModal);
+  document
+    .getElementById("registrationModal")
+    .addEventListener("click", (e) => {
+      if (e.target === document.getElementById("registrationModal"))
+        closeModal();
+    });
+
+  document
+    .getElementById("registrationForm")
+    .addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value;
+      const studentId = document.getElementById("regStudentId").value;
+      const email = document.getElementById("regEmail").value;
+      const phone = document.getElementById("regPhone").value;
+
+      if (!name || !studentId || !email) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      alert(
+        `✅ Registration Confirmed!\n\nEvent: ${currentEventTitle}\nName: ${name}\nStudent ID: ${studentId}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\n\nA confirmation email has been sent to ${email}.`,
+      );
+      closeModal();
+    });
+
+  // Set up event listeners for filters
+  document
+    .getElementById("categoryFilter")
+    .addEventListener("change", renderEvents);
+  document.getElementById("dateFrom").addEventListener("change", renderEvents);
+  document
+    .getElementById("searchEvent")
+    .addEventListener("input", renderEvents);
+  document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+    document.getElementById("categoryFilter").value = "all";
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("searchEvent").value = "";
+    renderEvents();
+  });
+
+  // Sidebar toggle
+  const layout = document.getElementById("layoutRoot");
+  const toggleFloat = document.getElementById("floatToggleBtn");
+  function toggleSidebar() {
+    layout.classList.toggle("layout--collapsed");
+    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
+      ? "▶"
+      : "◀";
+  }
+  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+
+  // Submenu toggles
+  const toggles = document.querySelectorAll(".sidebar__link--toggle");
+  toggles.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-target");
+      const subMenu = document.getElementById(targetId);
+      if (!subMenu) return;
+      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
+      document
+        .querySelectorAll(".sidebar__submenu--open")
+        .forEach((openSub) => {
+          if (openSub !== subMenu)
+            openSub.classList.remove("sidebar__submenu--open");
+        });
+      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
+      else subMenu.classList.remove("sidebar__submenu--open");
+    });
+  });
+
+  // User section collapsible
+  const userSection = document.getElementById("userSection");
+  const userToggle = document.getElementById("userCollapseToggle");
+  if (userSection && userToggle) {
+    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
+    if (isCollapsed)
+      userSection.classList.add("sidebar__user-section--collapsed");
+    userToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userSection.classList.toggle("sidebar__user-section--collapsed");
+      localStorage.setItem(
+        "userSectionCollapsed",
+        userSection.classList.contains("sidebar__user-section--collapsed"),
+      );
+    });
+  }
+
+  // Mock actions
+  document
+    .getElementById("notificationBtn")
+    ?.addEventListener("click", () =>
+      alert("🔔 2 new notifications: Upcoming events & Fee reminder."),
+    );
+  document
+    .getElementById("settingsBtn")
+    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
+
+  const footerSpan = document.querySelector(".sidebar__footer span");
+  if (footerSpan)
+    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+
+  // Initial render
+  renderEvents();
+</script>
+{% endblock %}

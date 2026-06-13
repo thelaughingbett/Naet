@@ -12,23 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from django.forms import modelformset_factory
 import json
 from django.contrib import admin
 from django import forms
-from .models import (
-    EmergencyContact,
-    Student,
-    School,
-    Department,
-    Programme,
-    Tclass,
+from base.models import (
+
     User,
     Session,
-    Reporting,
+
     FeeStructure,
-    StudentFeeAccount,
-    Payment,
-    Curriculum
+
 )
 from django.contrib.auth.forms import (
     ReadOnlyPasswordHashField,
@@ -40,155 +34,6 @@ from django.contrib.auth import password_validation
 from django.utils.safestring import mark_safe
 
 
-# register
-class UserDetailsForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = (
-            'first_name',
-            'last_name',
-            'surname',
-            'gender',
-            'profile_picture',
-            'email'
-        )
-
-
-class RegisterForm(forms.ModelForm):
-
-    class Meta:
-        model = Student
-        fields = [
-            'national_id',
-            'religion',
-            'nationality',
-            'marital_status',
-            'ethnicity',
-            'date_of_birth',
-            'place_of_birth',
-        ]
-
-        widgets = {
-            'date_of_birth': forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
-        }
-
-
-class ContactInfoForm(forms.ModelForm):
-    class Meta:
-        model = Student
-        fields = [
-            'telephone_no',
-            'domicile',
-            'county',
-            'sub_county',
-            'location',
-            'division',
-            'constituency',
-            'home_adress',
-        ]
-        labels = {
-            'domicile': 'domicile/country of residence'
-        }
-
-
-class EmergencyContactInfoForm(forms.ModelForm):
-    class Meta:
-        model = EmergencyContact
-        fields = [
-            'name',
-            'phone',
-            'email',
-            'relationship',
-            'address'
-        ]
-
-        # TODO :  make this a formset
-
-
-class EducationalInfoForm(forms.ModelForm):
-    school = forms.ModelChoiceField(School.objects.all())
-    department = forms.ModelChoiceField(Department.objects.all())
-    programme = forms.ModelChoiceField(Programme.objects.all())
-
-    class Meta:
-        model = Student
-        fields = (
-            'registration_number',
-            'school',
-            'department',
-            'programme',
-            'stay',
-            # 'hostel',  # TODO : conditional on stay being resident
-        )
-        labels = {
-            'registration_number': 'University Admission Number'
-        }
-
-
-# login
-class LoginForm(forms.ModelForm):
-    emaile = forms.EmailField(max_length=255, min_length=14)
-
-    class Meta:
-        model = User
-        fields = (
-            'emaile',  # change this to student email
-            'password'
-        )
-
-# Session
-
-
-class CreateSessionForm(forms.ModelForm):
-    class Meta:
-        model = Session
-        fields = (
-            'academic_year',
-            'semester',
-            'start_date',
-            'end_date',
-            'is_active'
-        )
-        widgets = {
-            'start_date': forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            'end_date': forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-
-        }
-
-
-# Reporting
-class ReportingForm(forms.ModelForm):
-    class Meta:
-        model = Reporting
-        fields = (
-            'session',
-        )
-
-
-# Fee Structure
-class CreateFeeStructureForm(forms.ModelForm):
-    class Meta:
-        model = FeeStructure
-        fields = (
-            'Tclass',
-            'session',
-            'breakdown'
-        )
-
-
-# Payment
-class PaymentForm(forms.ModelForm):
-    class Meta:
-        model = Payment
-        fields = (
-
-            'amount',
-            'method',
-            'transaction_ref',
-        )
-
-
-# admin site
 class UserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField(
         label=("Password"),
@@ -296,6 +141,28 @@ class CloneCurriculumAdminForm(forms.Form):
 
 class BreakdownWidget(forms.Widget):
     template_name = "UNUSED"  # must be a non-None string
+
+    def value_from_datadict(self, data, files, name):
+        """
+        Extracts the separate arrays from POST data and turns them into a dict.
+        """
+        # Look for the submitted array data (e.g., breakdown_key[] and breakdown_value[])
+        keys = data.getlist(f"{name}_key[]")
+        values = data.getlist(f"{name}_value[]")
+
+        # Stitch them back together into a flat dictionary
+        result = {}
+        for k, v in zip(keys, values):
+            # Clean and strip whitespaces from keys
+            cleaned_key = k.strip()
+            if cleaned_key:  # Ignore empty rows
+                try:
+                    # Attempt to save numeric values properly as integers/floats
+                    result[cleaned_key] = float(v) if '.' in v else int(v)
+                except (ValueError, TypeError):
+                    result[cleaned_key] = v if v else 0
+
+        return result
 
     def render(self, name, value, attrs=None, renderer=None):
         if isinstance(value, str):

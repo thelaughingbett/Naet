@@ -1,0 +1,77 @@
+# Copyright 2026 Emmanuel Kipng'eno
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#        http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from django.contrib import messages
+
+from http import HTTPStatus
+
+from decouple import config
+
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import (
+    get_object_or_404,
+    render,
+    redirect
+)
+from django.urls import reverse
+from django.views import View
+
+from django.http import HttpResponse
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin
+)
+
+from django.db import (
+    DatabaseError,
+    IntegrityError,
+    transaction
+)
+from django.utils.http import url_has_allowed_host_and_scheme
+
+from base.models import (
+    Curriculum,
+    StudentFeeAccount,
+
+)
+from .base import (
+    StudentProfileRequiredMixin,
+    StudentContextMixin
+)
+
+
+class EventsView(
+    LoginRequiredMixin,
+    StudentProfileRequiredMixin,
+    View
+):
+    login_url = config("LOGIN_URL") + '?next=socials/events/'
+    redirect_field_name = config("REDIRECT_FIELD_NAME")
+
+    def get(self, request):
+        context = {}
+        return render(request, 'base/socials/events.html', context)
+
+
+class NewsView(
+    LoginRequiredMixin,
+    StudentProfileRequiredMixin,
+    View
+):
+    login_url = config("LOGIN_URL") + '?next=socials/news/'
+    redirect_field_name = config("REDIRECT_FIELD_NAME")
+
+    def get(self, request):
+        context = {}
+        return render(request, 'base/socials/news.html', context)

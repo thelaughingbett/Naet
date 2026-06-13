@@ -1,7 +1,46 @@
+from django.test import TestCase, Client
 from django.test import TestCase
 from django.urls import reverse
 
 from ..models import School, Department, Programme, Tclass, User
+
+# Copyright 2026 Emmanuel Kipng'eno
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+
+from django.test import Client, TestCase
+from django.urls import reverse
+
+from .factories import UserFactory
+
+
+class AuthViewTest(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = UserFactory()
+
+    def test_unauthenticated_redirects_to_login(self):
+        response = self.client.get(reverse('some-protected-view'))
+        self.assertRedirects(
+            response, f"/login/?next={reverse('some-protected-view')}")
+
+    def test_authenticated_gets_200(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('some-protected-view'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_creates_object(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('some-create-view'),
+            data={'field': 'value'},
+        )
+        self.assertEqual(response.status_code, 302)  # redirect on success
 
 
 class ViewsTestCase(TestCase):
@@ -108,3 +147,27 @@ class ViewsTestCase(TestCase):
             response.status_code,
             200
         )
+
+
+class StudentViewTest(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_superuser(
+            email='admin@test.com',
+            password='admin123',
+        )
+
+    def test_unauthenticated_redirect(self):
+        response = self.client.get(reverse('student-list'))
+        self.assertEqual(response.status_code, 302)  # redirects to login
+
+    def test_authenticated_access(self):
+        self.client.login(email='admin@test.com', password='admin123')
+        response = self.client.get(reverse('student-list'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_student_cannot_access_admin_view(self):
+        self.client.login(email='student@test.com', password='testpass123')
+        response = self.client.get(reverse('admin-dashboard'))
+        self.assertEqual(response.status_code, 403)

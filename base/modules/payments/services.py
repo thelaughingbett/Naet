@@ -23,11 +23,11 @@ class PaymentService:
 
         if result.success:
             payment.provider_ref = result.provider_ref
-            payment.status = 'pending'
+            payment.status = result.status
             payment.save(update_fields=['provider_ref', 'status'])
 
         else:
-            payment.status = 'failed'
+            payment.status = result.status
             payment.save(update_fields=['status'])
 
         return result

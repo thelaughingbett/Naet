@@ -28,8 +28,8 @@ class PaymentBackendRegistry:
         return backend
 
     @classmethod
-    def all(cls) -> Dict[str, AbstractPaymentBackend]:
-        return dict(cls._backends)
+    def all(cls) -> list[AbstractPaymentBackend]:
+        return list(cls._backends.values())
 
     @classmethod
     def available_methods(cls):

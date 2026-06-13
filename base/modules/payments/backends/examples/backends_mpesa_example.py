@@ -7,7 +7,13 @@ import hmac
 import hashlib
 from datetime import datetime
 from django.conf import settings
-from .backends import AbstractPaymentBackend, PaymentInitiationResult, WebhookVerificationResult
+from base.modules.payments.backends import (
+    AbstractPaymentBackend,
+    PaymentInitiationResult,
+    WebhookVerificationResult,
+    PaymentFormConfig,
+    FormField
+)
 
 
 class MpesaBackend(AbstractPaymentBackend):
@@ -45,6 +51,7 @@ class MpesaBackend(AbstractPaymentBackend):
 
         if response.get('ResponseCode') == '0':
             return PaymentInitiationResult(
+                status='completed',
                 success=True,
                 provider_ref=response.get('CheckoutRequestID'),
                 message='Check your phone to complete payment',
@@ -52,6 +59,7 @@ class MpesaBackend(AbstractPaymentBackend):
             )
         return PaymentInitiationResult(
             success=False,
+            status='failed',
             message=response.get('errorMessage', 'STK push failed'),
             raw_response=response
         )
@@ -95,3 +103,21 @@ class MpesaBackend(AbstractPaymentBackend):
             return r.json().get('access_token')
         except Exception:
             return None
+
+    def get_form_config(self) -> PaymentFormConfig:
+        return PaymentFormConfig(
+            method="mpesa",
+            label="Pay via M-Pesa",
+            icon="📱",
+            flow="stk_push",
+            instructions="Enter your Safaricom number. You will receive a prompt on your phone.",
+            fields=[
+                FormField(
+                    name="phone_number",
+                    label="M-Pesa Phone Number",
+                    type="tel",
+                    placeholder="07XXXXXXXX",
+                    help_text="Must be a registered Safaricom number"
+                ),
+            ]
+        )

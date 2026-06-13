@@ -1,6 +1,16 @@
 from django.core.cache import cache
 from base.models import Student, StudentFeeAccount, Session
 
+""" 
+    Timeout guide for your models
+
+    active_session   → 600s (10 min) — changes rarely, only on rollover
+    student profile  → 300s (5 min)  — changes occasionally
+    fee account      → 120s (2 min)  — balance changes on payment
+    enrollments      → 300s (5 min)  — changes at start of semester
+    timetable        → 600s (10 min) — rarely changes mid-session
+"""
+
 
 def get_student(user, timeout=300):
     """Cache the student profile for this user"""

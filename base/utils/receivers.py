@@ -56,7 +56,7 @@ def auto_enroll_core_courses(
             core_subjects = Curriculum.objects.filter(
                 Tclass=instance.class_entered,
                 session=current_session,
-                course__type__in=['C', 'CC']
+                course__course_type__in=['C', 'CC']
             )
 
             Enrollment.objects.bulk_create([
@@ -153,7 +153,17 @@ def create_roles_and_permissions(
         ]
     )
 
-    student_group.permissions.set(student_perms)
+    # student_group.permissions.set(student_perms)
+    student_group.permissions.through.objects.bulk_create(
+        [
+            student_group.permissions.through(  # create a row in auth_group_permissions
+                group=student_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            for perm in student_perms           # one row per permission
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- Institution Admin group ---
     institution_admin_group, _ = Group.objects.get_or_create(
@@ -177,7 +187,18 @@ def create_roles_and_permissions(
         ]
     )
 
-    institution_admin_group.permissions.set(institution_admin_perms)
+    # institution_admin_group.permissions.set(institution_admin_perms)
+    institution_admin_group.permissions.through.objects.bulk_create(
+        [
+            institution_admin_group.permissions.through(  # create a row in auth_group_permissions
+                group=institution_admin_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in institution_admin_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- School Admin group ---
     school_admin_group, _ = Group.objects.get_or_create(
@@ -207,7 +228,18 @@ def create_roles_and_permissions(
             'view_timetable', 'add_timetable', 'change_timetable', 'delete_timetable'
         ]
     )
-    school_admin_group.permissions.set(school_admin_perms)
+    # school_admin_group.permissions.set(school_admin_perms)
+    school_admin_group.permissions.through.objects.bulk_create(
+        [
+            school_admin_group.permissions.through(  # create a row in auth_group_permissions
+                group=school_admin_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in school_admin_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- Dept Admin group ---
     dept_admin_group, _ = Group.objects.get_or_create(
@@ -235,7 +267,18 @@ def create_roles_and_permissions(
         ]
     )
 
-    dept_admin_group.permissions.set(dept_admin_perms)
+    # dept_admin_group.permissions.set(dept_admin_perms)
+    dept_admin_group.permissions.through.objects.bulk_create(
+        [
+            dept_admin_group.permissions.through(  # create a row in auth_group_permissions
+                group=dept_admin_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in dept_admin_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- Lecturer group ---
     lecturer_group, _ = Group.objects.get_or_create(name='Lecturer')
@@ -251,7 +294,18 @@ def create_roles_and_permissions(
         ]
     )
 
-    lecturer_group.permissions.set(lecturer_perms)
+    # lecturer_group.permissions.set(lecturer_perms)
+    lecturer_group.permissions.through.objects.bulk_create(
+        [
+            lecturer_group.permissions.through(  # create a row in auth_group_permissions
+                group=lecturer_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in lecturer_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- Hostel Warden group ---
     hostel_warden_group, _ = Group.objects.get_or_create(
@@ -269,7 +323,19 @@ def create_roles_and_permissions(
         ]
     )
 
-    hostel_warden_group.permissions.set(hostel_warden_perms)
+    # hostel_warden_group.permissions.set(hostel_warden_perms)
+    hostel_warden_group.permissions.through.objects.bulk_create(
+        [
+            hostel_warden_group.permissions.through(  # create a row in auth_group_permissions
+                group=hostel_warden_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in hostel_warden_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
+
     # --- IT Staff group ---
     it_staff_group, _ = Group.objects.get_or_create(
         name='ITSTAFF'
@@ -289,7 +355,18 @@ def create_roles_and_permissions(
         ]
     )
 
-    it_staff_group.permissions.set(it_staff_perms)
+    # it_staff_group.permissions.set(it_staff_perms)
+    it_staff_group.permissions.through.objects.bulk_create(
+        [
+            it_staff_group.permissions.through(  # create a row in auth_group_permissions
+                group=it_staff_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in it_staff_perms
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
     # --- finance staff group ---
     finance_staff_group, _ = Group.objects.get_or_create(
@@ -306,7 +383,18 @@ def create_roles_and_permissions(
         ]
     )
 
-    finance_staff_group.permissions.set(finance_staff_perm)
+    # finance_staff_group.permissions.set(finance_staff_perm)
+    finance_staff_group.permissions.through.objects.bulk_create(
+        [
+            finance_staff_group.permissions.through(  # create a row in auth_group_permissions
+                group=finance_staff_group,            # set group_id
+                permission=perm                 # set permission_id
+            )
+            # one row per permission
+            for perm in finance_staff_perm
+        ],
+        ignore_conflicts=True  # if row already exists, skip it — no error, no duplicate
+    )
 
 
 @receiver(post_save, sender="base.User")

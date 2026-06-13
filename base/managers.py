@@ -36,5 +36,5 @@ class GraduatedStudentManager(models.Manager):
 class CommonUnitCurriculumManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-            course__type='CC'
+            course__course_type='CC'
         )

@@ -5,8 +5,24 @@ import requests
 from django.conf import settings
 from typing import Callable, Optional
 
+""" 
+    Writing a custom strategy (for integrators)
+    Any function that takes registration_number and domain and returns a string:
+
+    def my_custom_strategy(registration_number: str, domain: str) -> str:
+            Institution-specific format.
+            e.g. 'BSC/001/2024' → 'student.001.2024@uoeld.ac.ke'
+
+            parts = registration_number.split('/')
+            return f"student.{'.'.join(parts[1:])}@{domain}".lower()
+    
+    
+    Point to it in settings:
+    SCHOOL_EMAIL_STRATEGY = 'myapp.utils.my_custom_strategy'
+"""
 
 # ── Built-in local strategies (fallback / no-API) ────────────────────────────
+
 
 def default_email_strategy(registration_number: str, domain: str) -> str:
     parts = registration_number.split('/')

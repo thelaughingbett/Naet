@@ -4,7 +4,12 @@
 > designed for Kenyan higher education institutions. 🇰🇪
 >
 > Handles everything from student enrollment and academic session management
-> to fee collection, timetabling, vand role-based access control.
+> to fee collection, timetabling, and role-based access control.
+> A student's portal that doesn't make you want to drop out.
+>
+> Built out of genuine frustration with Kenyan university portals —
+> the kind that require a specific browser, a stable connection, and apparently
+> a blood offering to load your fee balance.
 
 ---
 
@@ -46,11 +51,29 @@
 
 ---
 
+## 🙄 Oh great, another school management system
+
+I know, I know.
+
+But hear me out — my university portal was so bad it became a personality trait.
+Slow on a good day, broken on a bad one, and somehow requiring a specific browser,
+a stable connection, and the right phase of the moon just to check your fee balance.
+
+I'm a CS student. I got bored. Here we are.
+
+> _Built with curiosity, mild institutional frustration, and the audacity
+> to think a student could just... build a better one._
+>
+> — Bett 🇰🇪, 2026
+
+## <sub>wanna read me rumble more? → [why.md](./WHY.md) 🎤</sub>
+
 ## 🛠️ Tech Stack
 
 | Layer         | Technology                                              |
 | ------------- | ------------------------------------------------------- |
 | 🐍 Backend    | Python, Django                                          |
+| 🧑‍💻 Frontend   | HTML,CSS,JS                                             |
 | 🗄️ Database   | PostgreSQL                                              |
 | 🔐 Auth       | Django AbstractBaseUser + custom UserManager            |
 | 🖥️ Admin      | Django Admin with custom scoping, proxy models, inlines |
@@ -63,19 +86,18 @@
 ```
 StudentsPortal/
 ├── base/
-│   ├── models.py         # All models
-│   ├── admin.py          # Custom ModelAdmin classes
+│   ├── models.py/        # All models
+│   ├── admin.py/         # Custom ModelAdmin classes
 │   ├── signals.py        # Signal receivers
 │   ├── managers.py       # Custom UserManager
-│   ├── forms.py          # UserCreationForm, UserChangeForm
+│   ├── forms.py/         # UserCreationForm, UserChangeForm
 │   ├── apps.py           # AppConfig with signals loader
-│   ├── fixtures/         # Seed data
+│   ├── fixtures/         # Seed data - depracted
 │   ├── templates/        # html templates for the site
 │   ├── static/           # static files
+│   ├── management/
 │   └── tests/
-│       ├── test_models.py
-│       ├── test_signals.py
-│       └── test_admin.py
+│
 ├── docs/                 # Full documentation
 ├── user-upload/          # media folder for user uploaded files
 ├── manage.py
@@ -122,8 +144,8 @@ Timetable               Class schedule with venue and lecturer conflict preventi
 ### 📦 Installation
 
 ```bash
-git clone https://github.com/thelaughingbett/StudentsPortal.git
-cd StudentsPortal
+git clone https://github.com/thelaughingbett/Naet.git
+cd Naet
 
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
@@ -158,6 +180,20 @@ python manage.py loaddata base/fixtures/data.json  # optional seed data
 ```bash
 python manage.py runserver
 ```
+
+---
+
+## 🚀 Live Demo
+
+[**View Demo →**](https://studentsportal.railway.app)
+
+| Role              | Email                   | Password |
+| ----------------- | ----------------------- | -------- |
+| Student           | demo@portal.ac.ke       | demo1234 |
+| Dept Admin        | admin@portal.ac.ke      | demo1234 |
+| Institution Admin | superadmin@portal.ac.ke | demo1234 |
+
+> Demo data is non-persistent
 
 ---
 
@@ -253,7 +289,7 @@ Any institution deploying this system must:
 
 Full details in [DATA_PROTECTION.md](DATA_PROTECTION.md) 🔐
 
-## 📜 Legal Obligations
+## 📜 Other Legal Obligations
 
 Beyond data protection, institutions deploying this system have obligations under:
 
@@ -267,40 +303,9 @@ Beyond data protection, institutions deploying this system have obligations unde
 
 Full details in [LEGAL.md](LEGAL.md) ⚖️
 
-## ⏸️ Deferment & Graduation Tracking
-
-Deferment is tracked as a full audit model — not a simple boolean.
-Each deferment event is a `Deferment` record with reason, return session,
-status, and approver. Expected graduation is computed dynamically from
-programme duration plus deferred semesters.
-
-```
-Student defers
-└── Deferment record created (status=active)
-    ├── session_deferred  → which semester they left
-    ├── session_returning → when they plan to come back
-    ├── reason            → financial / medical / personal / academic
-    └── approved_by       → audit trail
-
-Admin reinstates
-└── Deferment.status = reinstated
-└── student.deffered = False
-
-Expected graduation
-└── Programme.total_semesters + deferment_count
-└── Computed from enrollment session forward
-└── student.is_overdue → True if past expected date and not graduated
-```
-
-Full details → [docs/modules/admissions/index.md](docs/modules/admissions/index.md)
-
----
-
 ## 🔄 ERP Integration
 
 Generic, event-driven synchronisation of any model to any external ERP system.
-Not scoped to payments — payments, enrollments, deferments, results, reporting
-can all fire ERP events.
 
 ### Architecture
 
@@ -326,6 +331,8 @@ Retry schedule (exponential backoff, per handler)
 ### Event naming convention
 
 ```
+model.action
+
 payment.confirmed       enrollment.approved
 payment.failed          deferment.created
 reporting.submitted     result.published
@@ -362,3 +369,7 @@ dispatch_erp_event(deferment,  'deferment.created')
 Full details → [docs/modules/erp/index.md](docs/modules/erp/index.md)
 
 > 🔗 [Performance & Technical Decisions](docs/PerformanceTechnicalDecisions.md)
+
+🇰🇪 **Built for the Kenyan institutional context** — by someone who suffered through the alternative
+
+_Is it finished? No. Is it better than what you're currently using? Almost certainly yes._

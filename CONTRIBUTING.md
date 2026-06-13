@@ -15,6 +15,8 @@
 - [Adding an ERP task](#-adding-an-erp-task)
 - [Adding a notification backend](#-adding-a-notification-backend)
 - [Adding an email strategy](#-adding-an-email-strategy)
+- [Adding an events backend](#-adding-an-events-backend)
+- [Adding a news backend](#-adding-a-news-backend)
 - [Writing tests](#-writing-tests)
 - [Writing docs](#-writing-docs)
 - [Submitting a pull request](#-submitting-a-pull-request)
@@ -421,6 +423,266 @@ SCHOOL_EMAIL_STRATEGY = 'contrib.email.my_strategy.my_strategy'
 
 ---
 
+## 📅 Adding an Events Backend
+
+The events module gives the portal a calendar — exam schedules, deadlines,
+campus events, holidays — pulled from whatever source an institution
+already uses. It follows the same open, pluggable architecture as payments
+and ERP: a core contract, a registry, and contributor-supplied backends.
+
+### Folder structure
+
+```
+events/
+├── backends/
+│   ├── contrib/          ← community backends go here
+│   │   └── backends/
+│   ├── __init__.py
+│   └── base.py           ← AbstractEventsBackend + dataclasses
+├── registry.py           ← events_registry
+├── tasks.py              ← Celery beat — periodic fetch
+├── urls.py                ← webhook routes
+└── views.py               ← generic webhook receiver
+```
+
+### Where to write your backend
+
+```
+Local integrator / corporate setup
+└── events/backends/your_backend.py        ← alongside base.py
+
+Open source contributor
+└── events/contrib/backends/your_backend.py ← keeps core clean
+```
+
+### 1. Implement `AbstractEventsBackend`
+
+```python
+# events/contrib/backends/google_calendar.py
+
+from events.backends.base import (
+    AbstractEventsBackend,
+    EventFetchResult,
+    EventWebhookResult,
+)
+
+
+class GoogleCalendarEventsBackend(AbstractEventsBackend):
+    """
+    Pulls events from a Google Calendar.
+
+    Configuration:
+        GOOGLE_CALENDAR_ID  = 'your-calendar-id@group.calendar.google.com'
+        GOOGLE_CALENDAR_KEY = 'path/to/service-account.json'
+    """
+
+    source = 'google_calendar'
+
+    def fetch(self) -> EventFetchResult:
+        """
+        Pull events from the external source.
+
+        DO NOT write to the database here — return an EventFetchResult
+        and let the core handle deduplication, storage, and logging.
+        """
+        ...
+
+    def verify_webhook(self, request) -> EventWebhookResult:
+        """
+        Verify and parse an incoming push notification
+        (e.g. Google Calendar push notifications on change).
+
+        DO NOT write to the database here.
+        """
+        ...
+```
+
+### 2. Register it
+
+**Static registration** (core, integrator, or contrib modules):
+
+```python
+# events/backends/__init__.py or apps.py
+
+from events.registry import events_registry
+from events.backends.google_calendar import GoogleCalendarEventsBackend
+from events.contrib.backends.ical import ICalEventsBackend
+
+events_registry.register(GoogleCalendarEventsBackend())
+events_registry.register(ICalEventsBackend())
+```
+
+**Dynamic registration** (third-party isolated Django app):
+
+```python
+# outside_app/apps.py
+
+from django.apps import AppConfig
+
+class OutsideAppConfig(AppConfig):
+    name = 'outside_app'
+
+    def ready(self):
+        from events.registry import events_registry
+        from .backends import CustomCalendarBackend
+
+        events_registry.register(CustomCalendarBackend())
+```
+
+### Execution flow contract
+
+```
+✅ fetch() and verify_webhook() return data structures only
+✅ Never modify database records inside fetch() or verify_webhook()
+✅ Always return EventFetchResult or EventWebhookResult
+❌ Status calculation, RSVP cutoff tracking, ledger safety
+   — handled by core, not your backend
+```
+
+### Checklist before submitting
+
+```
+✅ Implements AbstractEventsBackend
+✅ source attribute set and unique
+✅ fetch() never touches the database directly
+✅ verify_webhook() never touches the database directly
+✅ Settings documented in class docstring
+✅ Example added to examples/events/
+✅ Registered via one of the two patterns above
+```
+
+---
+
+## 📰 Adding a News Backend
+
+The news module pulls institutional announcements from external sources —
+a WordPress blog, an RSS feed, a CMS — into the portal's news feed.
+Same architecture, same contract.
+
+### Folder structure
+
+```
+news/
+├── backends/
+│   ├── contrib/
+│   │   └── backends/      ← community backends go here
+│   ├── __init__.py
+│   └── base.py            ← AbstractNewsBackend + dataclasses
+├── registry.py            ← news_registry
+├── tasks.py                ← Celery beat — periodic fetch
+├── urls.py                 ← webhook routes
+└── views.py                ← generic webhook receiver
+```
+
+### Where to write your backend
+
+```
+Local integrator / corporate setup
+└── news/backends/your_backend.py         ← alongside base.py
+
+Open source contributor
+└── news/contrib/backends/your_backend.py  ← keeps core clean
+```
+
+### 1. Implement `AbstractNewsBackend`
+
+```python
+# news/contrib/backends/rss.py
+
+from news.backends.base import (
+    NewsArticle,
+    NewsFetchResult,
+    WebhookVerificationResult,
+    AbstractNewsBackend,
+)
+
+
+class RSSNewsBackend(AbstractNewsBackend):
+    """
+    Pulls articles from an RSS feed.
+
+    Configuration:
+        RSS_FEED_URL = 'https://institution.ac.ke/news/feed/'
+    """
+
+    source = 'rss'
+
+    def fetch(self) -> NewsFetchResult:
+        """
+        Pull articles from the feed.
+        Return a NewsFetchResult containing NewsArticle items.
+
+        DO NOT write to the database here — deduplication and
+        storage are handled by core.
+        """
+        ...
+
+    def verify_webhook(self, request) -> WebhookVerificationResult:
+        """
+        Verify and parse an incoming push (e.g. WordPress webhook
+        on new post publish).
+
+        DO NOT write to the database here.
+        """
+        ...
+```
+
+### 2. Register it
+
+**Static registration:**
+
+```python
+# news/backends/__init__.py or apps.py
+
+from news.registry import news_registry
+from news.backends.wordpress import WordPressNewsBackend
+from news.contrib.backends.rss import RSSNewsBackend
+
+news_registry.register(WordPressNewsBackend())
+news_registry.register(RSSNewsBackend())
+```
+
+**Dynamic registration** (third-party isolated Django app):
+
+```python
+# outside_app/apps.py
+
+from django.apps import AppConfig
+
+class OutsideAppConfig(AppConfig):
+    name = 'outside_app'
+
+    def ready(self):
+        from news.registry import news_registry
+        from .backends import CustomCMSBackend
+
+        news_registry.register(CustomCMSBackend())
+```
+
+### Execution flow contract
+
+```
+✅ fetch() and verify_webhook() return data structures only
+✅ Never modify database records inside fetch() or verify_webhook()
+✅ Always return NewsFetchResult or WebhookVerificationResult
+❌ Article deduplication, storage updates, sync logging
+   — handled by core, not your backend
+```
+
+### Checklist before submitting
+
+```
+✅ Implements AbstractNewsBackend
+✅ source attribute set and unique
+✅ fetch() never touches the database directly
+✅ verify_webhook() never touches the database directly
+✅ Settings documented in class docstring
+✅ Example added to examples/news/
+✅ Registered via one of the two patterns above
+```
+
+---
+
 ## 🧪 Writing Tests
 
 Tests are always welcome — especially for the financial logic which is
@@ -543,7 +805,7 @@ Tell us:
 
 ```
 Python version   3.10+
-Formatter        prettier (recommended, not enforced yet)
+Formatter        black (recommended, not enforced yet)
 Imports          isort
 Line length      88 (black default)
 ```
@@ -573,7 +835,8 @@ Open an issue with:
 - Django version, Python version, database
 
 For security vulnerabilities — **do not open a public issue**.
-Email [security@yourdomain.com](mailto:security@yourdomain.com) directly.
+
+<!-- Email [security@yourdomain.com](mailto:security@yourdomain.com) directly. -->
 
 ---
 

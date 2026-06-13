@@ -18,13 +18,21 @@ This means navigating `student.class_entered.programme.department` never trigger
 
 ### 🗄️ Caching Strategy
 
-The system uses **Django's file-based cache** for frequently accessed, rarely changing data. This avoids hitting PostgreSQL on every request without needing Redis or Memcached.
+The system uses **Redis** for frequently accessed, rarely changing data. This avoids hitting PostgreSQL on every request without needing Redis or Memcached.
 
 ```python
+
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': BASE_DIR / 'cache',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # Connects to the port exposed by Docker onto your local machine
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+        "KEY_PREFIX": "local_django_dev",
+        "TIMEOUT": 300,  # Expires keys automatically after 5 minutes
+
     }
 }
 ```
@@ -50,13 +58,13 @@ enrollment changed  → invalidate enrollments
 
 ---
 
-### 🤔 Why Not Redis?
+<!-- ### 🤔 Why not Redis?
 
 Redis is the industry standard for caching but adds infrastructure complexity — a separate service to run, monitor, and maintain. For a single-institution deployment serving hundreds of concurrent users (not millions), file-based caching is sufficient and removes a deployment dependency entirely.
 
 The caching layer is abstracted behind a `utils/cache.py` module, so switching to Redis later requires changing one line in `settings.py` and nothing else.
 
----
+--- -->
 
 ### 💸 Why PostgreSQL as the Primary Database
 

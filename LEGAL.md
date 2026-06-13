@@ -121,7 +121,7 @@ to verify and report student enrollment status to HELB.
 
 **What applies:**
 
-- Your `Reporting` model (semester check-in) is exactly what HELB needs
+- The `Reporting` model (semester check-in) is exactly what HELB needs
   to confirm a student is actively enrolled
 - Consider adding HELB fields to the `Student` model:
 
@@ -194,9 +194,7 @@ guardian_consent_date     = models.DateTimeField(null=True, blank=True)
 ### GDPR (EU General Data Protection Regulation)
 
 Only relevant if the institution enrolls EU citizens or hosts data
-on servers within the EU. Not applicable to the standard University
-of Eldoret deployment — but relevant if the system is ever licensed
-to institutions with international students.
+on servers within the EU.
 
 Key difference from DPA: GDPR requires a **Data Processing Agreement (DPA)**
 with every third-party processor (hosting provider, payment gateway, etc.).
@@ -297,32 +295,33 @@ Student complaint
 
 ## 📞 Key Regulatory Contacts
 
-| Body | Mandate | Contact |
-|---|---|---|
-| 🏛️ ODPC | Data protection registration + complaints | [odpc.go.ke](https://odpc.go.ke) · complaints@odpc.go.ke |
-| 💻 KE-CIRT | Cybersecurity incident reporting | [ke-cirt.go.ke](https://ke-cirt.go.ke) |
-| 🎓 CUE | Academic records + university regulation | [cue.or.ke](https://cue.or.ke) |
-| 💰 HELB | Student loan verification | [helb.co.ke](https://helb.co.ke) |
-| 🧾 KRA | Tax obligations + ETR | [kra.go.ke](https://kra.go.ke) |
-| ♿ NCPWD | Disability rights + accessibility | [ncpwd.go.ke](https://ncpwd.go.ke) |
+| Body       | Mandate                                   | Contact                                                  |
+| ---------- | ----------------------------------------- | -------------------------------------------------------- |
+| 🏛️ ODPC    | Data protection registration + complaints | [odpc.go.ke](https://odpc.go.ke) · complaints@odpc.go.ke |
+| 💻 KE-CIRT | Cybersecurity incident reporting          | [ke-cirt.go.ke](https://ke-cirt.go.ke)                   |
+| 🎓 CUE     | Academic records + university regulation  | [cue.or.ke](https://cue.or.ke)                           |
+| 💰 HELB    | Student loan verification                 | [helb.co.ke](https://helb.co.ke)                         |
+| 🧾 KRA     | Tax obligations + ETR                     | [kra.go.ke](https://kra.go.ke)                           |
+| ♿ NCPWD   | Disability rights + accessibility         | [ncpwd.go.ke](https://ncpwd.go.ke)                       |
 
 ---
 
 ## 🔗 Related Documents
 
-| Document | Description |
-|---|---|
-| [DATA_PROTECTION.md](DATA_PROTECTION.md) | DPA compliance, student rights, consent, breach response |
-| [docs/modules/auth/index.md](docs/modules/auth/index.md) | Role-based access control |
-| [docs/actors.md](docs/actors.md) | Who can access what |
-| [README.md](README.md) | Project overview |
+| Document                                                 | Description                                              |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+| [DATA_PROTECTION.md](DATA_PROTECTION.md)                 | DPA compliance, student rights, consent, breach response |
+| [docs/modules/auth/index.md](docs/modules/auth/index.md) | Role-based access control                                |
+| [docs/actors.md](docs/actors.md)                         | Who can access what                                      |
+| [README.md](README.md)                                   | Project overview                                         |
 
 ---
 
-*This document should be reviewed whenever:*
-- *New modules are added that collect additional personal data*
-- *The system is deployed at a new institution*
-- *Relevant legislation is amended*
-- *A compliance incident occurs*
+_This document should be reviewed whenever:_
 
-*Last reviewed: June 2026*
+- _New modules are added that collect additional personal data_
+- _The system is deployed at a new institution_
+- _Relevant legislation is amended_
+- _A compliance incident occurs_
+
+_Last reviewed: June 2026_

@@ -66,6 +66,7 @@
 | Property    | Returns                                |
 | ----------- | -------------------------------------- |
 | `full_name` | `"{first_name} {surname} {last_name}"` |
+| `half_name` | `"{first_name}  {last_name}"`          |
 
 ---
 

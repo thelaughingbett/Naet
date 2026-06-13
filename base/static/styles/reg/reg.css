@@ -12,6 +12,19 @@
   --progress-width: calc((var(--steps) - 1) / var(--steps) * 100%);
 }
 
+body #reg-form main fieldset p select, body #reg-form main fieldset p input, body #reg-form main fieldset .form-field.email-field .input-icon-wrap input[type=email], body #reg-form main fieldset .form-field.gender-field select, body #reg-form main fieldset .form-group.names-row span input {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #ededed;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+body #reg-form main fieldset p select:focus, body #reg-form main fieldset p input:focus, body #reg-form main fieldset .form-field.email-field .input-icon-wrap input[type=email]:focus, body #reg-form main fieldset .form-field.gender-field select:focus, body #reg-form main fieldset .form-group.names-row span input:focus {
+  box-shadow: 0 0 0 2px var(--main-color);
+}
+
 body {
   height: 100vh;
   display: grid;
@@ -103,17 +116,20 @@ body #reg-form #progress-container ul li.current::before {
 body #reg-form main {
   display: flex;
   overflow: hidden;
-  padding-block: 0.6rem;
+  padding-block-end: 1.4rem;
+  width: 80dvw;
 }
 body #reg-form main fieldset {
   flex: 1 0 100%;
-  padding: 24px 0.2rem;
+  padding: 14px 0.2rem;
   opacity: 0;
   transition: opacity 0.3s;
   height: -moz-fit-content;
   height: fit-content;
   border: none;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 body #reg-form main fieldset legend {
   display: none;
@@ -121,28 +137,97 @@ body #reg-form main fieldset legend {
 body #reg-form main fieldset.current {
   opacity: 1;
 }
+body #reg-form main fieldset label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.3rem;
+}
 body #reg-form main fieldset .form-group {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   width: 100%;
 }
+body #reg-form main fieldset .form-group.names-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+body #reg-form main fieldset .form-group.names-row span {
+  display: flex;
+  flex-direction: column;
+}
 body #reg-form main fieldset .form-group span {
   display: flex;
 }
-body #reg-form main fieldset .form-group input {
-  padding: 0.3rem 0.5rem;
-  outline-color: var(--main-color);
-  border: 1px solid gray;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  width: 100%;
-  font-size: 1rem;
-  border: none;
-  outline: none;
+body #reg-form main fieldset .form-field {
+  display: flex;
+  flex-direction: column;
 }
-body #reg-form main fieldset .form-group input[type=text], body #reg-form main fieldset .form-group input[type=email], body #reg-form main fieldset .form-group input[type=password] {
-  background-color: #ededed;
+body #reg-form main fieldset .form-field.gender-field select {
+  width: -moz-fit-content;
+  width: fit-content;
+  min-width: 160px;
+  max-width: 260px;
+  cursor: pointer;
+  -webkit-appearance: auto;
+     -moz-appearance: auto;
+          appearance: auto;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ededed;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  max-width: 380px;
+  cursor: pointer;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper input[type=file] {
+  font-size: 0.85rem;
+  flex: 1;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper input[type=file]::file-selector-button {
+  padding: 0.3rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--main-color, #5b5ef4);
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-right: 0.75rem;
+  transition: opacity 0.2s;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper input[type=file]::file-selector-button:hover {
+  opacity: 0.85;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper .file-hint {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+}
+body #reg-form main fieldset .form-field.file-field .file-wrapper .upload-icon {
+  font-style: normal;
+  font-size: 1rem;
+  color: #888;
+}
+body #reg-form main fieldset .form-field.email-field .input-icon-wrap {
+  position: relative;
+}
+body #reg-form main fieldset .form-field.email-field .input-icon-wrap .input-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: #888;
+  pointer-events: none;
+}
+body #reg-form main fieldset .form-field.email-field .input-icon-wrap input[type=email] {
+  padding-left: 2.5rem;
 }
 body #reg-form main fieldset p {
   display: grid;
@@ -161,12 +246,23 @@ body #reg-form main fieldset p input {
 body #reg-form main fieldset p input[type=text], body #reg-form main fieldset p input[type=email], body #reg-form main fieldset p input[type=password] {
   background-color: #ededed;
 }
+body #reg-form main fieldset p select {
+  width: -moz-fit-content;
+  width: fit-content;
+  min-width: 160px;
+  max-width: 260px;
+  cursor: pointer;
+  -webkit-appearance: auto;
+     -moz-appearance: auto;
+          appearance: auto;
+}
 body #reg-form .controls {
   display: flex;
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
   padding-inline: 0.5rem;
+  padding-block-start: 1.2rem;
 }
 body #reg-form .controls button {
   flex: 1;
@@ -192,4 +288,60 @@ body #reg-form .controls button[type=submit] {
 }
 body #reg-form .controls button[type=submit]:hover, body #reg-form .controls button[type=submit]:active {
   background-color: #444;
+}
+
+.formset-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.formset-header p {
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .form-grid .field-address {
+    grid-column: span 2;
+  }
+}
+
+.form-group-emergency {
+  display: flex;
+  flex-direction: column;
+}
+.form-group-emergency label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+.form-group-emergency input,
+.form-group-emergency select,
+.form-group-emergency textarea {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: #f7fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group-emergency input:focus,
+.form-group-emergency select:focus,
+.form-group-emergency textarea:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+.form-group-emergency textarea {
+  resize: vertical;
+  min-height: 80px;
 }/*# sourceMappingURL=reg.css.map */

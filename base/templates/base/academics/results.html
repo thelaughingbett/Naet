@@ -50,6 +50,8 @@
 <!-- Results Table & GPA -->
 <div class="results-card" id="resultsCard">
   <div class="card-header">📋 Semester Results</div>
+
+  {% if results %}
   <table class="grade-table" id="gradeTable">
     <thead>
       <tr>
@@ -58,23 +60,21 @@
         <th>Credits</th>
         <th>Grade</th>
         <th>Exam</th>
-        <!-- <th>Remark</th> -->
       </tr>
     </thead>
-    <tbody id="resultsBody" data-activesession="{{session}}">
+    <tbody id="resultsBody" data-activesession="{{ session }}">
       {% for result in results %}
       <tr
-        data-session="{{result.curricula.session}}"
-        data-courseCode="{{result.curricula.course.course_code}}"
-        data-credits="{{result.curricula.course.credits}}"
-        data-score="{{result.score}}"
+        data-session="{{ result.curricula.session }}"
+        data-courseCode="{{ result.curricula.course.course_code }}"
+        data-credits="{{ result.curricula.course.credits }}"
+        data-score="{{ result.score }}"
       >
-        <td>{{result.curricula.course.course_code}}</td>
-        <td>{{result.curricula.course.course_name}}</td>
-        <td>{{result.curricula.course.credits}}</td>
-        <td>{{result.score}}</td>
-        <td class="grade-point">{{result.title}}</td>
-        <!-- <td>Pass</td> -->
+        <td>{{ result.curricula.course.course_code }}</td>
+        <td>{{ result.curricula.course.course_name }}</td>
+        <td>{{ result.curricula.course.credits }}</td>
+        <td>{{ result.score }}</td>
+        <td class="grade-point">{{ result.title }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -82,6 +82,16 @@
   <div class="gpa-summary" id="gpaSummary">
     <!-- dynamic GPA -->
   </div>
+
+  {% else %}
+  <div style="text-align: center; padding: 40px 20px; opacity: 0.5">
+    <div style="font-size: 2rem; margin-bottom: 8px">📭</div>
+    <div style="font-weight: 500; margin-bottom: 4px">No results yet</div>
+    <div style="font-size: 0.8rem">
+      Results for {{ session }} will appear here once published
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Cumulative Transcript Summary -->
@@ -108,165 +118,6 @@
 </div> -->
 <script>
   // Mock results data per semester
-  let semesterData = {
-    Year1Sem1: {
-      courses: [
-        {
-          code: "CSC 101",
-          name: "Introduction to Programming",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-        {
-          code: "MATH 110",
-          name: "Discrete Mathematics",
-          credits: 3,
-          grade: "B+",
-          points: 3.33,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 102",
-          name: "Computer Organization",
-          credits: 3,
-          grade: "B",
-          points: 3.0,
-          remark: "Pass",
-        },
-        {
-          code: "COMM 101",
-          name: "Communication Skills",
-          credits: 2,
-          grade: "A",
-          points: 4.0,
-          remark: "Pass",
-        },
-      ],
-      semesterGPA: 3.48,
-    },
-    Year2Sem1: {
-      courses: [
-        {
-          code: "CSC 210",
-          name: "Data Structures & Algorithms",
-          credits: 3,
-          grade: "A",
-          points: 4.0,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 220",
-          name: "Database Systems",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 230",
-          name: "Operating Systems",
-          credits: 3,
-          grade: "B+",
-          points: 3.33,
-          remark: "Pass",
-        },
-        {
-          code: "STAT 220",
-          name: "Probability & Statistics",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-      ],
-      semesterGPA: 3.67,
-    },
-    Year2Sem2: {
-      courses: [
-        {
-          code: "CSC 240",
-          name: "Object-Oriented Programming",
-          credits: 3,
-          grade: "B+",
-          points: 3.33,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 250",
-          name: "Software Engineering",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 260",
-          name: "Computer Networks",
-          credits: 3,
-          grade: "B",
-          points: 3.0,
-          remark: "Pass",
-        },
-        {
-          code: "MATH 230",
-          name: "Linear Algebra",
-          credits: 3,
-          grade: "A",
-          points: 4.0,
-          remark: "Pass",
-        },
-      ],
-      semesterGPA: 3.5,
-    },
-    Year3Sem1: {
-      courses: [
-        {
-          code: "CSC 411",
-          name: "Advanced Web Development",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 423",
-          name: "Machine Learning Fundamentals",
-          credits: 3,
-          grade: "B+",
-          points: 3.33,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 432",
-          name: "Cyber Security & Ethics",
-          credits: 3,
-          grade: "A",
-          points: 4.0,
-          remark: "Pass",
-        },
-        {
-          code: "CSC 445",
-          name: "Cloud Computing",
-          credits: 3,
-          grade: "B+",
-          points: 3.33,
-          remark: "Pass",
-        },
-        {
-          code: "ICS 401",
-          name: "Research Methodology",
-          credits: 3,
-          grade: "A-",
-          points: 3.67,
-          remark: "Pass",
-        },
-      ],
-      semesterGPA: 3.6,
-    },
-  };
-
   // Cumulative calculation across all semesters
   function calculateCumulative() {
     let seen = {}; // keep track of courses soas not to double count credits and add total

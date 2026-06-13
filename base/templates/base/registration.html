@@ -20,23 +20,48 @@
   <main>
     <fieldset>
       <legend>General Info</legend>
-      <!-- {{ userdetailsForm.as_p}} -->
-      <div class="form-group">
+
+      <!-- Names row -->
+      <div class="form-group names-row">
         <span>
-          {{userdetailsForm.first_name.label_tag}}
-          {{userdetailsForm.first_name}} </span
-        ><span>
-          {{userdetailsForm.last_name.label_tag}} {{userdetailsForm.last_name}}
+          {{ userdetailsForm.first_name.label_tag }}
+          <template></template>
+          {{ userdetailsForm.first_name }}
+        </span>
+
+        <span>
+          {{ userdetailsForm.last_name.label_tag }}
+          <template></template>
+          {{ userdetailsForm.last_name }}
         </span>
         <span>
-          {{userdetailsForm.surname.label_tag}} {{userdetailsForm.surname}}
+          {{ userdetailsForm.surname.label_tag }} {{ userdetailsForm.surname }}
         </span>
       </div>
-      <p>{{userdetailsForm.gender.label_tag}}{{userdetailsForm.gender}}</p>
-      <p>
-        {{userdetailsForm.profile_picture.label_tag}}{{userdetailsForm.profile_picture}}
-      </p>
-      <p>{{userdetailsForm.email.label_tag}}{{userdetailsForm.email}}</p>
+
+      <!-- Gender — inline/compact -->
+      <div class="form-field gender-field">
+        {{ userdetailsForm.gender.label_tag }} {{ userdetailsForm.gender }}
+      </div>
+
+      <!-- Profile picture -->
+      <div class="form-field file-field">
+        {{ userdetailsForm.profile_picture.label_tag }}
+        <div class="file-wrapper">
+          <!-- <i class="upload-icon">↑</i> -->
+          {{ userdetailsForm.profile_picture }}
+          <!-- <span class="file-hint">JPG, PNG or GIF · Max 2MB</span> -->
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-field email-field">
+        {{ userdetailsForm.email.label_tag }}
+        <div class="input-icon-wrap">
+          <span class="input-icon">✉</span>
+          {{ userdetailsForm.email }}
+        </div>
+      </div>
     </fieldset>
     <fieldset>
       <legend>Personal Info</legend>
@@ -48,7 +73,67 @@
     </fieldset>
     <fieldset>
       <legend>Emergency Contact Info</legend>
-      {{EmergencyContactInfoForm.as_p}}
+      <div class="formset-header">
+        <p>
+          Please provide exactly two trusted individuals the school can reach
+          out to if needed.
+        </p>
+      </div>
+      {{ EmergencyContactInfoFormset.management_form }}
+      <template></template>
+      {% for form in EmergencyContactInfoFormset %}
+      <h3>Emergency Contact #{{ forloop.counter }}</h3>
+      <div class="formset-row">
+        <div class="form-grid">
+          <!-- Hidden fields required for model formsets to function -->
+          {{ form.id }}
+
+          <div class="form-group-emergency field-name">
+            <label for="{{ form.name.id_for_label }}">Full Name</label>
+            {{ form.name }}
+          </div>
+
+          <div class="form-group-emergency field-relationship">
+            <label for="{{ form.relationship.id_for_label }}"
+              >Relationship</label
+            >
+            {{ form.relationship }}
+          </div>
+
+          <div class="form-group-emergency field-phone">
+            <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+            {{ form.phone }}
+          </div>
+
+          <div class="form-group-emergency field-email">
+            <label for="{{ form.email.id_for_label }}">Email Address</label>
+            {{ form.email }}
+          </div>
+
+          <div class="form-group-emergency field-address">
+            <label for="{{ form.address.id_for_label }}">Home Address</label>
+            {{ form.address }}
+          </div>
+        </div>
+        <div class="primary-contact-selection">
+          <label>
+            <input
+              type="radio"
+              name="primary_contact_index"
+              value="{{ forloop.counter0 }}"
+              {%
+              if
+              forloop.first
+              %}checked{%
+              endif
+              %}
+            />
+            Set as Primary Contact
+          </label>
+        </div>
+      </div>
+
+      {% endfor %}
     </fieldset>
     <fieldset>
       <legend>Educational Info</legend>

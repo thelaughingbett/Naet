@@ -23,23 +23,14 @@
     <label>Semester</label>
     <select id="semesterFilter">
       <option value="all">All Semesters</option>
-      <option value="Year 1 Sem I">Year 1 – Semester I</option>
-      <option value="2026/2027 - Sem 1">2026/2027 - Sem 1</option>
-      <option value="Year 2 Sem II">Year 2 – Semester II</option>
-      <option value="Year 3 Sem I">Year 3 – Semester I (Current)</option>
-      <option value="Year 3 Sem II">Year 3 – Semester II (Upcoming)</option>
+      {% for sesh in sessions %}
+      <option value="{{sesh}}">
+        {{sesh}} {%if sesh == session %} (current) {%endif%}
+      </option>
+      {%endfor%}
     </select>
   </div>
-  <div class="filter-group">
-    <label>Status</label>
-    <select id="statusFilter">
-      <option value="all">All Statuses</option>
-      <option value="Completed">Completed</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Registered">Registered</option>
-      <option value="Planned">Planned</option>
-    </select>
-  </div>
+
   <div class="filter-group">
     <label>Search</label>
     <input type="text" id="searchInput" placeholder="Unit name or code..." />
@@ -74,13 +65,18 @@
     <div class="unit-title">{{unit.course.course_name}}</div>
     <div class="unit-details">
       <div><strong>Semester:</strong> {{unit.session}}</div>
-      <div><strong>Instructor:</strong> dr anoymous</div>
-      <div class="unit-meta">
-        <span class="status">completed</span>
-        <span style="font-size: 0.7rem"></span>` : unit.progress ? `<span
-          style="font-size: 0.7rem"
-          >Progress: underway</span
-        >` : ""
+      <div>
+        <!-- Prefetch professors count to determine label format -->
+        {% with prof_count=curriculum.professor.all|length %}
+        <strong>Instructor{{ prof_count|pluralize:"s" }}:</strong>
+        {% endwith %}
+
+        <!-- Loop through and display the professors -->
+        {% for prof in curriculum.professor.all %} {{ prof.name }}
+        <template></template>
+        {% if not forloop.last %}, {% endif %} {% empty %}
+        <em>No instructor assigned</em>
+        {% endfor %}
       </div>
     </div>
   </div>
@@ -113,14 +109,12 @@
 
   function filterUnits() {
     const semester = document.getElementById("semesterFilter").value;
-    const status = document.getElementById("statusFilter").value;
     const search = document.getElementById("searchInput").value.toLowerCase();
-    console.log(unitsData);
 
     const filtered = unitsData.filter((unit) => {
       if (semester !== "all" && unit.dataset.semester !== semester)
         return false;
-      if (status !== "all" && unit.status !== status) return false;
+
       if (
         search &&
         !unit.dataset.name.toLowerCase().includes(search) &&
@@ -136,13 +130,11 @@
   document
     .getElementById("semesterFilter")
     .addEventListener("change", filterUnits);
-  document
-    .getElementById("statusFilter")
-    .addEventListener("change", filterUnits);
+
   document.getElementById("searchInput").addEventListener("input", filterUnits);
   document.getElementById("resetFiltersBtn").addEventListener("click", () => {
     document.getElementById("semesterFilter").value = "all";
-    document.getElementById("statusFilter").value = "all";
+
     document.getElementById("searchInput").value = "";
     filterUnits();
   });

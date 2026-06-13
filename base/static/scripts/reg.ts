@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     progress.style.transform = `scaleX(${width})`;
 
     mainContainer.style.height = fieldsets[currentStep].offsetHeight + "px";
+    console.log(mainContainer.style.height);
 
     stepIndicators.forEach((indicator, index) => {
       indicator.classList.toggle("current", index === currentStep);
@@ -119,8 +120,9 @@ document.addEventListener("DOMContentLoaded", () => {
     stepIndicators = ul.querySelectorAll("li") as NodeListOf<HTMLLIElement>;
 
     updatebuttons();
+    updateProgress();
+    selectEvents();
   })();
-  selectEvents();
 });
 
 function selectEvents() {

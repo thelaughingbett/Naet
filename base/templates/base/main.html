@@ -105,10 +105,7 @@
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
-              <ul
-                class="sidebar__submenu sidebar__submenu--open"
-                id="academic-sub"
-              >
+              <ul class="sidebar__submenu" id="academic-sub">
                 <li>
                   <a href="{% url 'base-curriculum' %}" class="sidebar__sublink"
                     >Curriculum</a
@@ -286,21 +283,21 @@
                   <a
                     href="{% url 'base-course-evaluation' %}"
                     class="sidebar__sublink"
-                    >Course</a
+                    >Course Evaluations</a
                   >
                 </li>
                 <li>
                   <a
                     href="{% url 'base-lecturer-evaluation' %}"
                     class="sidebar__sublink"
-                    >Lecturer</a
+                    >Lecturer Evaluations</a
                   >
                 </li>
                 <li>
                   <a
                     href="{% url 'base-hostel-evaluation' %}"
                     class="sidebar__sublink"
-                    >Hostel</a
+                    >Hostel Evaluations</a
                   >
                 </li>
               </ul>
@@ -450,6 +447,20 @@
         });
       }
 
+      // check for online status
+      function isOnline() {
+        return navigator.onLine;
+        // navigator.onLine is true/false
+        // it's not perfect — can be true even on a bad connection
+        // but it's the right starting point
+      }
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/static/base/scripts/sw.js")
+          .then((reg) => console.log("SW registered", reg.scope))
+          .catch((err) => console.error("SW failed", err));
+      }
       // Mock actions
       document
         .getElementById("notificationBtn")

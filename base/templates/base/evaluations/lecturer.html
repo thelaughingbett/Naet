@@ -8,21 +8,141 @@
 <title>Dashboard</title>
 
 {% endblock %} {% block body %}
-<div class="page-header">
-  <h1 class="page-title">👩‍🏫 Lecturer Evaluations</h1>
-  <div class="subtitle">
-    Rate your instructors and provide feedback on teaching effectiveness,
-    communication, and support
+  <div class="page-header">
+    <h1 class="page-title">👩‍🏫 Lecturer Evaluations</h1>
+    <div class="subtitle">
+      Rate your instructors and provide feedback on teaching effectiveness,
+      communication, and support
+    </div>
   </div>
-</div>
 
-<div id="lecturersContainer">
-  <!-- Lecturer evaluation cards will be injected here -->
-</div>
+  {% if lecturer_curricula %} {% for item in lecturer_curricula %}
+  <div class="eval-card">
+    <div class="eval-header">
+      <div>
+        <div class="lecturer-name">{{ item.lecturer.user.full_name }}</div>
+        <div class="course-info">
+          {{ item.curriculum.course.course_code }} – {{
+          item.curriculum.course.course_name }}
+        </div>
+      </div>
+      {% if item.evaluation %}
+      <span class="submitted-badge">✓ Submitted</span>
+      {% endif %}
+    </div>
 
-<div class="info-box">
-  💡 Your feedback is anonymous and helps improve teaching quality. Please rate
-  each lecturer based on your experience this semester.
+    <div class="eval-body">
+      {% if item.evaluation %}
+      <!-- read only -->
+      <div class="feedback-label">Rating</div>
+      <div class="rating-stars">
+        {% for i in "12345" %}
+        <span
+          class="star {% if item.evaluation.rating >= forloop.counter %}selected{% endif %}"
+          >★</span
+        >
+        {% endfor %}
+      </div>
+      <div
+        style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)"
+      >
+        {{ item.evaluation.comments|default:"No additional comments." }}
+      </div>
+      <div
+        style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
+      >
+        ⭐ Rating: {{ item.evaluation.rating }}/5 • Submitted on {{
+        item.evaluation.created_at|date:"d M Y" }}
+      </div>
+
+      {% else %}
+      <!-- form -->
+      <form method="post" action="{% url 'base-lecturer-evaluation' %}">
+        {% csrf_token %}
+        <input
+          type="hidden"
+          name="curriculum_id"
+          value="{{ item.curriculum.record_id }}"
+        />
+        <input
+          type="hidden"
+          name="lecturer_id"
+          value="{{ item.lecturer.record_id }}"
+        />
+
+        <div class="feedback-label">
+          Rate this lecturer (1 = Poor, 5 = Excellent)
+        </div>
+        <div
+          class="rating-stars"
+          id="stars-{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}"
+        >
+          {% for i in "12345" %}
+          <span
+            class="star"
+            data-value="{{ forloop.counter }}"
+            onclick="setRating('{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}', {{ forloop.counter }})"
+            >★</span
+          >
+          {% endfor %}
+        </div>
+        <input
+          type="hidden"
+          name="rating"
+          id="rating-{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}"
+          required
+        />
+
+        <div class="feedback-label" style="margin-top: 0.8rem">
+          Additional Comments (optional)
+        </div>
+        <textarea
+          name="comments"
+          rows="2"
+          placeholder="Teaching style, communication, availability, etc."
+        ></textarea>
+
+        <button type="submit" class="submit-btn">Submit Evaluation</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="info-box">
+    💡 Your feedback is anonymous and helps improve teaching quality. Please
+    rate each lecturer based on your experience this semester.
+  </div>
+
+  {% else %}
+
+  <div style="text-align: center; padding: 60px 20px; opacity: 0.5">
+    <div style="font-size: 2.5rem; margin-bottom: 12px">👩‍🏫</div>
+    <div style="font-weight: 600; margin-bottom: 6px">
+      No lecturers to evaluate
+    </div>
+    <div style="font-size: 0.8rem">
+      {% if session %} You have no enrolled courses with assigned lecturers for
+      {{ session }}. {% else %} There is no active session at the moment.
+      <!-- prettier-ignore -->
+       {% endif %}
+      <br />Evaluations open once lecturers are assigned to your courses.
+    </div>
+  </div>
+
+  {% endif %}
+
+  <script>
+    function setRating(key, value) {
+      document.getElementById(`rating-${key}`).value = value;
+      document.querySelectorAll(`#stars-${key} .star`).forEach((star) => {
+        star.classList.toggle(
+          "selected",
+          parseInt(star.dataset.value) <= value,
+        );
+      });
+    }
+  </script>
 </div>
 <script>
   // Mock lecturer data (associated with current courses)
@@ -236,75 +356,7 @@
   loadEvaluations();
   renderLecturers();
 
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles for other groups (but keep evaluations open)
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Ensure evaluations submenu is open
-  const evalSub = document.getElementById("evaluations-sub");
-  if (evalSub && !evalSub.classList.contains("sidebar__submenu--open")) {
-    evalSub.classList.add("sidebar__submenu--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert("🔔 2 new notifications: Lecturer evaluation forms available."),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
+  
+ 
 </script>
 {%endblock%}

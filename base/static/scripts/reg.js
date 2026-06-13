@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let width = currentStep / (fieldsets.length - 1);
         progress.style.transform = `scaleX(${width})`;
         mainContainer.style.height = fieldsets[currentStep].offsetHeight + "px";
+        console.log(mainContainer.style.height);
         stepIndicators.forEach((indicator, index) => {
             indicator.classList.toggle("current", index === currentStep);
             indicator.classList.toggle("done", currentStep > index);
@@ -90,8 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         stepIndicators = ul.querySelectorAll("li");
         updatebuttons();
+        updateProgress();
+        selectEvents();
     })();
-    selectEvents();
 });
 function selectEvents() {
     schoolSelect = document.getElementById("id_school");

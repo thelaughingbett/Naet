@@ -1,12 +1,14 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/evaluations/hostel/index.css' %}"
+  href="{% static 'base/styles/evaluations/hostel/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Hostel Evaluations</title>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">🏠 Hostel Evaluations</h1>
@@ -16,348 +18,177 @@
   </div>
 </div>
 
-<div id="hostelContainer">
-  <!-- Hostel evaluation cards will be injected here -->
+{% if allocation %}
+
+<div class="eval-card">
+  <div class="eval-header">
+    <div>
+      <div class="hostel-name">{{ allocation.room.hostel.name }}</div>
+      <div class="room-info">
+        Room: {{ allocation.room.room_number }} ({{
+        allocation.room.get_room_type_display }}) • Floor {{
+        allocation.room.floor }}
+      </div>
+    </div>
+    {% if evaluation %}
+    <span class="submitted-badge">✓ Submitted</span>
+    {% endif %}
+  </div>
+
+  <div class="eval-body">
+    {% if evaluation %}
+    <!-- read only -->
+    <div class="feedback-label">Category Ratings</div>
+    {% for category, label in categories %}
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      "
+    >
+      <span style="font-size: 0.8rem">{{ label }}</span>
+      <div class="rating-stars">
+        <!-- prettier-ignore -->
+        {% with score=evaluation.rating|default:0 %}
+                {% for i in "12345" %}
+        <span class="star {% if score >= forloop.counter %}selected{% endif %}"
+          >★</span
+        >
+        {% endfor %} {% endwith %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="feedback-label" style="margin-top: 0.8rem">Overall Rating</div>
+    <div class="rating-stars">
+      {% for i in "12345" %}
+      <span
+        class="star {% if evaluation.rating >= forloop.counter %}selected{% endif %}"
+        >★</span
+      >
+      {% endfor %}
+    </div>
+
+    <div
+      style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)"
+    >
+      {{ evaluation.comments|default:"No additional comments." }}
+    </div>
+    <div
+      style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
+    >
+      ⭐ Overall: {{ evaluation.rating }}/5 • Submitted on {{
+      evaluation.created_at|date:"d M Y" }}
+    </div>
+
+    {% else %}
+    <!-- form -->
+    <form
+      method="post"
+      action="{% url 'base-hostel-evaluation' %}"
+      id="hostelEvalForm"
+    >
+      {% csrf_token %}
+      <input
+        type="hidden"
+        name="allocation_id"
+        value="{{ allocation.record_id }}"
+      />
+
+      <div class="feedback-label" style="margin-bottom: 0.5rem">
+        Rate specific aspects:
+      </div>
+      {% for category, label in categories %}
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        "
+      >
+        <span style="font-size: 0.8rem">{{ label }}</span>
+        <div class="rating-stars" id="stars-{{ category }}">
+          {% for i in "12345" %}
+          <span
+            class="star"
+            data-value="{{ forloop.counter }}"
+            onclick="setRating('{{ category }}', {{ forloop.counter }})"
+            >★</span
+          >
+          {% endfor %}
+        </div>
+        <input
+          type="hidden"
+          name="{{ category }}_rating"
+          id="rating-{{ category }}"
+        />
+      </div>
+      {% endfor %}
+
+      <div class="feedback-label" style="margin-top: 0.8rem">
+        Overall Rating (1 = Poor, 5 = Excellent)
+      </div>
+      <div class="rating-stars" id="stars-overall">
+        {% for i in "12345" %}
+        <span
+          class="star"
+          data-value="{{ forloop.counter }}"
+          onclick="setRating('overall', {{ forloop.counter }})"
+          >★</span
+        >
+        {% endfor %}
+      </div>
+      <input type="hidden" name="overall_rating" id="rating-overall" required />
+
+      <div class="feedback-label" style="margin-top: 0.8rem">
+        Additional Comments / Suggestions
+      </div>
+      <textarea
+        name="comments"
+        rows="2"
+        placeholder="Share your experience, suggestions for improvement, or any issues..."
+      ></textarea>
+
+      <button type="submit" class="submit-btn">Submit Evaluation</button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 
 <div class="info-box">
   💡 Your feedback helps improve hostel conditions, cleanliness, security, and
   overall comfort. All responses are anonymous.
 </div>
+
+{% else %}
+
+<div style="text-align: center; padding: 60px 20px; opacity: 0.5">
+  <div style="font-size: 2.5rem; margin-bottom: 12px">🏠</div>
+  <div style="font-weight: 600; margin-bottom: 6px">
+    No hostel allocation found
+  </div>
+  <div style="font-size: 0.8rem">
+    {% if session %} You have not been allocated a hostel room for {{ session
+    }}. {% else %} There is no active session at the moment. {% endif %}
+    <br />If you are a resident student, contact the hostel office.
+  </div>
+</div>
+
+{% endif %}
+
 <script>
-  // Mock hostel data (based on student's current booking)
-  // In a real system, this would come from the student's assigned hostel and room.
-  const hostels = [
-    {
-      id: 1,
-      name: "Kirinyaga Halls",
-      roomNumber: "B-203",
-      bedSpace: "2A",
-      type: "Double (Shared)",
-      submitted: false,
-      rating: null,
-      feedback: "",
-      categories: {
-        cleanliness: null,
-        facilities: null,
-        security: null,
-        staff: null,
-      },
-    },
-  ];
-
-  // Optional: If multiple hostels (e.g., previous years), we could list them, but here we focus on current.
-  // For demo, we also add previous hostel if desired, but keeping it simple.
-  // Load saved evaluations from localStorage
-  let hostelEvals = JSON.parse(localStorage.getItem("hostelEvaluations")) || {};
-
-  function loadEvaluations() {
-    hostels.forEach((hostel) => {
-      if (hostelEvals[hostel.id]) {
-        hostel.submitted = hostelEvals[hostel.id].submitted || false;
-        hostel.rating = hostelEvals[hostel.id].rating;
-        hostel.feedback = hostelEvals[hostel.id].feedback || "";
-        hostel.categories = hostelEvals[hostel.id].categories || {
-          cleanliness: null,
-          facilities: null,
-          security: null,
-          staff: null,
-        };
-      } else {
-        hostel.submitted = false;
-        hostel.rating = null;
-        hostel.feedback = "";
-        hostel.categories = {
-          cleanliness: null,
-          facilities: null,
-          security: null,
-          staff: null,
-        };
-      }
+  function setRating(category, value) {
+    document.getElementById(`rating-${category}`).value = value;
+    document.querySelectorAll(`#stars-${category} .star`).forEach((star) => {
+      star.classList.toggle("selected", parseInt(star.dataset.value) <= value);
     });
   }
-
-  function saveEvaluation(hostelId, rating, feedback, categories) {
-    hostelEvals[hostelId] = {
-      submitted: true,
-      rating: rating,
-      feedback: feedback,
-      categories: categories,
-      submittedAt: new Date().toISOString(),
-    };
-    localStorage.setItem("hostelEvaluations", JSON.stringify(hostelEvals));
-    const hostel = hostels.find((h) => h.id === hostelId);
-    if (hostel) {
-      hostel.submitted = true;
-      hostel.rating = rating;
-      hostel.feedback = feedback;
-      hostel.categories = categories;
-    }
-  }
-
-  // Helper: render star rating component for overall or category
-  function renderStars(selectedRating, onStarClick) {
-    const container = document.createElement("div");
-    container.className = "rating-stars";
-    for (let i = 1; i <= 5; i++) {
-      const star = document.createElement("span");
-      star.className = `star ${selectedRating >= i ? "selected" : ""}`;
-      star.textContent = "★";
-      star.setAttribute("data-value", i);
-      star.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onStarClick(i);
-      });
-      container.appendChild(star);
-    }
-    return container;
-  }
-
-  // Render all hostel evaluation cards
-  function renderHostels() {
-    const container = document.getElementById("hostelContainer");
-    container.innerHTML = "";
-
-    hostels.forEach((hostel) => {
-      const card = document.createElement("div");
-      card.className = "eval-card";
-
-      // Header
-      const header = document.createElement("div");
-      header.className = "eval-header";
-      header.innerHTML = `
-        <div>
-          <div class="hostel-name">${hostel.name}</div>
-          <div class="room-info">Room: ${hostel.roomNumber} (${hostel.type}) • Bed: ${hostel.bedSpace}</div>
-        </div>
-        ${hostel.submitted ? '<span class="submitted-badge">✓ Submitted</span>' : ""}
-      `;
-
-      // Body
-      const body = document.createElement("div");
-      body.className = "eval-body";
-
-      // Category ratings section
-      const categoryLabel = document.createElement("div");
-      categoryLabel.className = "feedback-label";
-      categoryLabel.style.marginBottom = "0.5rem";
-      categoryLabel.textContent = "Rate specific aspects:";
-      body.appendChild(categoryLabel);
-
-      const categories = [
-        { key: "cleanliness", label: "Cleanliness & Hygiene" },
-        {
-          key: "facilities",
-          label: "Facilities (Water, Electricity, Furniture)",
-        },
-        { key: "security", label: "Safety & Security" },
-        { key: "staff", label: "Hostel Staff & Support" },
-      ];
-
-      categories.forEach((cat) => {
-        const catRow = document.createElement("div");
-        catRow.style.display = "flex";
-        catRow.style.justifyContent = "space-between";
-        catRow.style.alignItems = "center";
-        catRow.style.marginBottom = "0.5rem";
-        catRow.style.flexWrap = "wrap";
-        catRow.style.gap = "0.5rem";
-
-        const catLabelSpan = document.createElement("span");
-        catLabelSpan.style.fontSize = "0.8rem";
-        catLabelSpan.textContent = cat.label;
-        catRow.appendChild(catLabelSpan);
-
-        const starsWrapper = document.createElement("div");
-        const currentCatRating =
-          (hostel.categories && hostel.categories[cat.key]) || 0;
-        const catStars = renderStars(currentCatRating, (newRating) => {
-          if (!hostel.submitted) {
-            hostel.categories = hostel.categories || {};
-            hostel.categories[cat.key] = newRating;
-            renderHostels(); // re-render
-          } else {
-            alert(
-              "You have already submitted this evaluation. Edits are not allowed.",
-            );
-          }
-        });
-        starsWrapper.appendChild(catStars);
-        catRow.appendChild(starsWrapper);
-        body.appendChild(catRow);
-      });
-
-      // Overall rating
-      const overallLabel = document.createElement("div");
-      overallLabel.className = "feedback-label";
-      overallLabel.style.marginTop = "0.8rem";
-      overallLabel.textContent = "Overall Rating (1 = Poor, 5 = Excellent)";
-      body.appendChild(overallLabel);
-
-      const overallStarsWrapper = document.createElement("div");
-      const currentOverall = hostel.rating || 0;
-      const overallStars = renderStars(currentOverall, (newRating) => {
-        if (!hostel.submitted) {
-          hostel.rating = newRating;
-          renderHostels();
-        } else {
-          alert(
-            "You have already submitted this evaluation. Edits are not allowed.",
-          );
-        }
-      });
-      overallStarsWrapper.appendChild(overallStars);
-      body.appendChild(overallStarsWrapper);
-
-      // Feedback textarea
-      const feedbackLabel = document.createElement("div");
-      feedbackLabel.className = "feedback-label";
-      feedbackLabel.style.marginTop = "0.8rem";
-      feedbackLabel.textContent = "Additional Comments / Suggestions";
-      body.appendChild(feedbackLabel);
-
-      const textarea = document.createElement("textarea");
-      textarea.rows = 2;
-      textarea.placeholder =
-        "Share your experience, suggestions for improvement, or any issues...";
-      textarea.value = hostel.feedback || "";
-      if (hostel.submitted) {
-        textarea.disabled = true;
-        textarea.style.background = "#f8fafc";
-      } else {
-        textarea.addEventListener("input", (e) => {
-          hostel.feedback = e.target.value;
-        });
-      }
-      body.appendChild(textarea);
-
-      // Submit button (if not submitted)
-      if (!hostel.submitted) {
-        const submitBtn = document.createElement("button");
-        submitBtn.className = "submit-btn";
-        submitBtn.textContent = "Submit Evaluation";
-        submitBtn.addEventListener("click", () => {
-          // Check if overall rating is provided
-          if (!hostel.rating || hostel.rating === 0) {
-            alert("Please provide an overall rating before submitting.");
-            return;
-          }
-          // Check if at least some category ratings exist (optional, but encourage)
-          const anyCategoryRated = Object.values(hostel.categories || {}).some(
-            (r) => r > 0,
-          );
-          if (!anyCategoryRated) {
-            if (
-              !confirm(
-                "You haven't rated any specific categories. Continue anyway?",
-              )
-            )
-              return;
-          }
-          saveEvaluation(
-            hostel.id,
-            hostel.rating,
-            hostel.feedback || "",
-            hostel.categories || {},
-          );
-          renderHostels();
-          alert(
-            `✅ Thank you! Your evaluation for ${hostel.name} has been submitted.`,
-          );
-        });
-        body.appendChild(submitBtn);
-      } else {
-        // Show submitted info
-        const info = document.createElement("div");
-        info.style.fontSize = "0.7rem";
-        info.style.color = "var(--text-muted)";
-        info.style.marginTop = "0.5rem";
-        const submittedDate = hostelEvals[hostel.id]?.submittedAt
-          ? new Date(hostelEvals[hostel.id].submittedAt).toLocaleDateString()
-          : "earlier";
-        info.innerHTML = `⭐ Overall Rating: ${hostel.rating}/5 • Submitted on ${submittedDate}`;
-        body.appendChild(info);
-      }
-
-      card.appendChild(header);
-      card.appendChild(body);
-      container.appendChild(card);
-    });
-  }
-
-  // Load saved evaluations and render
-  loadEvaluations();
-  renderHostels();
-
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles for other groups
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Ensure evaluations submenu is open
-  const evalSub = document.getElementById("evaluations-sub");
-  if (evalSub && !evalSub.classList.contains("sidebar__submenu--open")) {
-    evalSub.classList.add("sidebar__submenu--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert("🔔 2 new notifications: Hostel evaluation reminder."),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
 </script>
-{%endblock%}
+{% endblock %}

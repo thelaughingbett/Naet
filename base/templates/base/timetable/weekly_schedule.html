@@ -1,21 +1,27 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/timetable/weekly-schedule/index.css' %}"
+  href="{% static 'base/styles/timetable/weekly-schedule/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Weekly Timetable</title>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📅 Weekly Timetable</h1>
-  <div class="week-selector">📍 Week 8 • 26 May – 1 Jun 2026</div>
+  {% if session %}
+  <div class="week-selector">📍 {{ session }}</div>
+  {% endif %}
 </div>
 
+{% if timetable %}
+
 <div class="info-bar">
-  <div class="info-chip">📘 Current Semester: Year 3 – Semester I</div>
-  <div class="info-chip">🏫 Academic Calendar: Teaching Week 8</div>
+  <div class="info-chip">📘 {{ session }}</div>
+  <div class="info-chip">🏫 {{ student.class_entered.programme }}</div>
   <div class="info-chip">⏰ All times are EAT (UTC+3)</div>
 </div>
 
@@ -31,8 +37,30 @@
         <th>Friday</th>
       </tr>
     </thead>
-    <tbody id="timetableBody">
-      <!-- dynamic rows from JS -->
+    <tbody>
+      {% for slot in time_slots %}
+      <tr>
+        <td class="time-col">{{ slot }}</td>
+        {% for day in days %}
+        <td>
+          {% with entry=timetable %} {% if entry %}
+          <div class="class-slot">
+            <div class="class-title">{{ entry.course.course_name }}</div>
+            <div class="class-detail">
+              {{ entry.course.course_code }} | {{ entry.venue }}
+            </div>
+            <div class="class-detail">
+              👨‍🏫 {{ entry.lecturer.user.full_name }}
+            </div>
+            <span class="lecture-badge">Lecture</span>
+          </div>
+          {% else %}
+          <div class="empty-slot">— Free —</div>
+          {% endif %} {% endwith %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
     </tbody>
   </table>
 </div>
@@ -47,270 +75,20 @@
 >
   * Schedule is subject to change. Please check for updates regularly.
 </div>
-<script>
-  // Timetable data: each slot is an array of 5 days (Mon-Fri) for each time period
-  const timeSlots = [
-    "08:00 – 10:00",
-    "10:00 – 12:00",
-    "12:00 – 13:00",
-    "13:00 – 15:00",
-    "15:00 – 17:00",
-    "17:00 – 19:00",
-  ];
 
-  // Schedule data: [Monday, Tuesday, Wednesday, Thursday, Friday]
-  const schedule = {
-    "08:00 – 10:00": [
-      {
-        name: "Advanced Web Development",
-        code: "CSC 411",
-        venue: "Lab 3",
-        lecturer: "Dr. Grace Muthoni",
-      },
-      {
-        name: "Machine Learning Fundamentals",
-        code: "CSC 423",
-        venue: "Hall B",
-        lecturer: "Prof. Elijah Maina",
-      },
-      null,
-      {
-        name: "Cloud Computing",
-        code: "CSC 445",
-        venue: "Online (Zoom)",
-        lecturer: "Dr. James Otieno",
-      },
-      null,
-    ],
-    "10:00 – 12:00": [
-      null,
-      {
-        name: "Advanced Web Development",
-        code: "CSC 411",
-        venue: "Lab 2",
-        lecturer: "Dr. Grace Muthoni",
-      },
-      {
-        name: "Research Methodology",
-        code: "ICS 401",
-        venue: "LT 5",
-        lecturer: "Prof. Leah Achieng",
-      },
-      null,
-      {
-        name: "Machine Learning Fundamentals",
-        code: "CSC 423",
-        venue: "Hall B",
-        lecturer: "Prof. Elijah Maina",
-      },
-    ],
-    "12:00 – 13:00": [
-      {
-        name: "Lunch Break",
-        code: "",
-        venue: "Cafeteria",
-        lecturer: "",
-        isBreak: true,
-      },
-      {
-        name: "Lunch Break",
-        code: "",
-        venue: "Cafeteria",
-        lecturer: "",
-        isBreak: true,
-      },
-      {
-        name: "Lunch Break",
-        code: "",
-        venue: "Cafeteria",
-        lecturer: "",
-        isBreak: true,
-      },
-      {
-        name: "Lunch Break",
-        code: "",
-        venue: "Cafeteria",
-        lecturer: "",
-        isBreak: true,
-      },
-      {
-        name: "Lunch Break",
-        code: "",
-        venue: "Cafeteria",
-        lecturer: "",
-        isBreak: true,
-      },
-    ],
-    "13:00 – 15:00": [
-      null,
-      null,
-      {
-        name: "Cyber Security & Ethics",
-        code: "CSC 432",
-        venue: "LT 2",
-        lecturer: "Dr. Faith Wangari",
-      },
-      {
-        name: "Advanced Web Development (Tutorial)",
-        code: "CSC 411",
-        venue: "Lab 1",
-        lecturer: "TA Jane",
-      },
-      null,
-    ],
-    "15:00 – 17:00": [
-      {
-        name: "Machine Learning (Lab)",
-        code: "CSC 423",
-        venue: "AI Lab",
-        lecturer: "Prof. Elijah Maina",
-      },
-      {
-        name: "Research Methodology (Group)",
-        code: "ICS 401",
-        venue: "Seminar Rm",
-        lecturer: "Prof. Leah Achieng",
-      },
-      null,
-      {
-        name: "Cyber Security & Ethics",
-        code: "CSC 432",
-        venue: "LT 2",
-        lecturer: "Dr. Faith Wangari",
-      },
-      {
-        name: "Cloud Computing (Practicum)",
-        code: "CSC 445",
-        venue: "Cloud Lab",
-        lecturer: "Dr. James Otieno",
-      },
-    ],
-    "17:00 – 19:00": [
-      null,
-      null,
-      {
-        name: "Data Science Club Meeting",
-        code: "EXTRA",
-        venue: "Online",
-        lecturer: "Student Union",
-      },
-      null,
-      null,
-    ],
-  };
+{% else %}
 
-  function renderTimetable() {
-    const tbody = document.getElementById("timetableBody");
-    tbody.innerHTML = "";
+<div
+  class="timetable-container"
+  style="text-align: center; padding: 60px 20px; opacity: 0.5"
+>
+  <div style="font-size: 2.5rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600; margin-bottom: 6px">No timetable available</div>
+  <div style="font-size: 0.8rem">
+    {% if session %} A timetable has not been published for {{ session }} yet.
+    {% else %} There is no active session at the moment. {% endif %}
+    <br />Check back once the semester begins or contact your department.
+  </div>
+</div>
 
-    timeSlots.forEach((time) => {
-      const row = document.createElement("tr");
-      const timeCell = document.createElement("td");
-      timeCell.className = "time-col";
-      timeCell.innerText = time;
-      row.appendChild(timeCell);
-
-      const daySlots = schedule[time] || [null, null, null, null, null];
-
-      for (let i = 0; i < 5; i++) {
-        const cell = document.createElement("td");
-        const slot = daySlots[i];
-        if (!slot) {
-          cell.innerHTML = '<div class="empty-slot">— Free —</div>';
-        } else if (slot.isBreak) {
-          cell.innerHTML = `<div style="background:#f0f2f5; border-radius:12px; padding:0.4rem;"><span style="font-weight:500;">🍴 ${slot.name}</span><div class="class-detail">${slot.venue}</div></div>`;
-        } else {
-          cell.innerHTML = `
-            <div class="class-slot">
-              <div class="class-title">${slot.name}</div>
-              <div class="class-detail">${slot.code} | ${slot.venue}</div>
-              <div class="class-detail">👨‍🏫 ${slot.lecturer}</div>
-              <span class="lecture-badge">Lecture</span>
-            </div>
-          `;
-        }
-        row.appendChild(cell);
-      }
-      tbody.appendChild(row);
-    });
-  }
-
-  renderTimetable();
-
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Open timetable submenu by default
-  const timetableSub = document.getElementById("timetable-sub");
-  if (
-    timetableSub &&
-    !timetableSub.classList.contains("sidebar__submenu--open")
-  ) {
-    timetableSub.classList.add("sidebar__submenu--open");
-    const parentGroup = document.querySelector(".sidebar__item--group.active");
-    if (parentGroup) parentGroup.classList.add("sidebar__item--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert("🔔 2 new notifications: Timetable update & Assignment reminder."),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
-</script>
-{%endblock%}
+{% endif %} {% endblock %}

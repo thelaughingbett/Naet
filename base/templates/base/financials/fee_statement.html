@@ -1,293 +1,441 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
-<link
-  rel="stylesheet"
-  href="{% static  'base/styles/financials/fee-statement/index.css' %}"
-/>
-<title>Dashboard</title>
+{% block head %}
+<link rel="stylesheet" href="{% static 'base/styles/financials/fee-statement/index.css' %}" />
+<title>Fee Statement</title>
+{% endblock %}
 
-{% endblock %} {% block body %}
+{% block body %}
 <div class="page-header">
   <h1 class="page-title">📄 Fees Statement</h1>
-  <button class="statement-badge" id="downloadBtn">⬇️ Download PDF</button>
+  {% if account %}
+    <button class="statement-badge" id="downloadBtn">⬇️ Download PDF</button>
+  {% endif %}
 </div>
 
-<!-- Summary Cards -->
-<div class="summary-cards">
-  <div class="summary-card">
-    <div class="summary-card__label">Total Charges (Current Semester)</div>
-    <div class="summary-card__amount">
-      KES {{structure.total_amount | intcomma}}
-    </div>
-    <div class="summary-card__sub">Tuition + Hostel + Activity fees</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-card__label">Total Payments Made</div>
-    <div class="summary-card__amount">
-      KES {{account.amount_paid | intcomma}}
-    </div>
-    <div class="summary-card__sub">Last payment: 15 Oct 2025</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-card__label">Outstanding Balance</div>
-    <div class="summary-card__amount" style="color: var(--maroon)">
-      KES {{account.balance | intcomma}}
-    </div>
-    <div class="summary-card__sub">Due by: 30 November 2025</div>
-  </div>
+<!-- Session filter -->
+<div style="padding: 0.8rem 0; margin-bottom: 1rem">
+  <form method="get" style="display:flex; align-items:center; gap:10px">
+    <label style="font-size:0.8rem; font-weight:500; white-space:nowrap">📅 Session:</label>
+    <!-- prettier-ignore -->
+    <select name="session" onchange="this.form.submit()" style="font-size:0.8rem; padding:4px 10px; border-radius:20px; border:1px solid var(--border); cursor:pointer">
+      <option value="">Current Session</option>
+      {% for s in all_sessions %}
+        <option value="{{ s.record_id }}" {% if s.record_id|stringformat:"s" == selected_session_id %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    {% if request.GET.session %}
+      <a href="?" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none">✕ Clear</a>
+    {% endif %}
+  </form>
 </div>
 
-<!-- Detailed Statement Card: Charges -->
-<div class="card">
-  <div class="card__header">
-    <span>📌 Fee Breakdown (Academic Year 2025/2026 - Semester I)</span>
-    <span style="font-size: 0.7rem">Reference: INV-2025-001</span>
+<!-- Fee Breakdown — always visible if structure exists -->
+{% if fee_structure %}
+  <div class="card">
+    <div class="card__header">
+      <span>📌 Fee Breakdown — {{ fee_structure.session }}</span>
+      <span style="font-size:0.7rem">{{ fee_structure.Tclass|upper }}</span>
+    </div>
+    <table class="fee-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Amount (KES)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item, amount in fee_structure.breakdown.items %}
+          <tr>
+            <td>{{ item|title }}</td>
+            <td>{{ amount|intcomma }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td><strong>Total Charges</strong></td>
+          <td><strong>KES {{ fee_structure.total_amount|intcomma }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
-  <table class="fee-table">
-    <thead>
-      <tr>
-        <th>Description</th>
-        <th>Due Date</th>
-        <th>Amount (KES)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Tuition (18 Credit Hours)</td>
-        <td>30 Sep 2025</td>
-        <td>72,000.00</td>
-      </tr>
-      <tr>
-        <td>Hostel Accommodation (Kirinyaga Halls, Bed B-203)</td>
-        <td>30 Sep 2025</td>
-        <td>28,500.00</td>
-      </tr>
-      <tr>
-        <td>Library & ICT Fee</td>
-        <td>30 Sep 2025</td>
-        <td>5,000.00</td>
-      </tr>
-      <tr>
-        <td>Student Activity / Medical Cover</td>
-        <td>30 Sep 2025</td>
-        <td>4,500.00</td>
-      </tr>
-      <tr>
-        <td>Examination & Registration Fee</td>
-        <td>30 Sep 2025</td>
-        <td>3,500.00</td>
-      </tr>
-      <tr>
-        <td>Caution Money (Refundable)</td>
-        <td>30 Sep 2025</td>
-        <td>5,000.00</td>
-      </tr>
-      <tr>
-        <td>Sports & Recreation Levy</td>
-        <td>30 Sep 2025</td>
-        <td>2,000.00</td>
-      </tr>
-      <tr>
-        <td>Internet & e-Learning Portal</td>
-        <td>30 Sep 2025</td>
-        <td>4,000.00</td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td colspan="2"><strong>Total Charges</strong></td>
-        <td><strong>124,500.00</strong></td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
+{% else %}
+  <div class="card">
+    <div class="card__header">📌 Fee Breakdown</div>
+    <div style="text-align:center; padding:32px; opacity:0.5">
+      <div style="font-size:1.8rem; margin-bottom:8px">📋</div>
+      <div style="font-weight:500">No fee structure set</div>
+      <div style="font-size:0.8rem; margin-top:4px">
+        A fee structure has not been published for your class this session.
+        <br>Contact the finance office for details.
+      </div>
+    </div>
+  </div>
+{% endif %}
 
-<!-- Payment History -->
-<div class="card">
-  <div class="card__header">
-    <span>💰 Payment History</span>
-    <button class="btn-outline" id="mockPaymentBtn">+ Make Payment</button>
-  </div>
-  <table class="fee-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Receipt No.</th>
-        <th>Description</th>
-        <th>Amount (KES)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>2025-08-20</td>
-        <td>RCT-89234</td>
-        <td>Tuition Deposit</td>
-        <td class="amount-positive">15,000.00</td>
-      </tr>
-      <tr>
-        <td>2025-09-05</td>
-        <td>RCT-90341</td>
-        <td>Hostel Partial Payment</td>
-        <td class="amount-positive">10,000.00</td>
-      </tr>
-      <tr>
-        <td>2025-10-15</td>
-        <td>RCT-92107</td>
-        <td>Fee Installment</td>
-        <td class="amount-positive">15,250.00</td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td colspan="3"><strong>Total Payments Received</strong></td>
-        <td><strong>40,250.00</strong></td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
+<!-- Account-dependent section -->
+{% if account %}
 
-<!-- Balance Summary & Notes -->
-<div class="card">
-  <div class="card__header">
-    <span>📋 Statement Summary</span>
-  </div>
-  <div style="padding: 1.2rem 1.5rem">
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-      "
-    >
-      <span><strong>Total Charges:</strong> KES 124,500.00</span>
-      <span><strong>Total Payments:</strong> KES 40,250.00</span>
-      <span
-        ><strong>Current Balance:</strong>
-        <span style="color: var(--maroon); font-weight: 800"
-          >KES 84,250.00</span
-        ></span
-      >
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-card__label">Total Charges ({{ account.fee_structure.session }})</div>
+      <div class="summary-card__amount">KES {{ account.amount_billed|intcomma }}</div>
+      <div class="summary-card__sub">{{ account.fee_structure.Tclass|upper }}</div>
     </div>
-    <div
-      style="
-        background: #fef2e8;
-        border-radius: 16px;
-        padding: 0.8rem;
-        font-size: 0.75rem;
-        color: #a1531b;
-      "
-    >
-      ⚠️ Please clear your outstanding balance by 30th November 2025 to avoid
-      late penalties. Late payment fee of 2% per month applies after due date.
+    <div class="summary-card">
+      <div class="summary-card__label">Total Payments Made</div>
+      <div class="summary-card__amount">KES {{ account.amount_paid|intcomma }}</div>
+      <div class="summary-card__sub">
+        <!-- prettier-ignore -->
+        {% with last=account.payments.last %}{% if last %}Last payment: {{ last.paid_at|date:"d M Y" }}{% endif %}{% endwith %}
+      </div>
     </div>
-    <div
-      style="
-        margin-top: 1rem;
-        font-size: 0.7rem;
-        color: var(--text-muted);
-        text-align: right;
-      "
-    >
-      Generated on: 27 May 2026 | For inquiries, contact finance@university.edu
+    <div class="summary-card">
+      <div class="summary-card__label">Outstanding Balance</div>
+      <div class="summary-card__amount" style="color:var(--maroon)">
+        KES {{ account.balance|intcomma }}
+      </div>
+      <div class="summary-card__sub">Due by: {{ account.days_remaining|date:"d M Y" }}</div>
     </div>
   </div>
-</div>
+
+  <!-- Payment History -->
+  <div class="card">
+    <div class="card__header">
+      <span>💰 Payment History</span>
+      {% if not account.is_cleared %}
+        <button class="btn-outline" id="makePaymentBtn">+ Make Payment</button>
+      {% else %}
+        <span style="font-size:0.8rem; color:green">✅ Account Cleared</span>
+      {% endif %}
+    </div>
+
+    <!-- prettier-ignore -->
+    {% with payments=account.payments.all %}
+      {% if payments %}
+        <table class="fee-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt No.</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Amount (KES)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+              <tr>
+                <td>{{ payment.paid_at|date:"Y-m-d" }}</td>
+                <td>{{ payment.transaction_ref|default:"Pending" }}</td>
+                <td>{{ payment.get_method_display }}</td>
+                <td>
+                  <span style="font-size:0.7rem; padding:2px 8px; border-radius:20px; background:{% if payment.status == 'completed' %}#e6f4ea{% elif payment.status == 'pending' %}#fef9e7{% else %}#fdecea{% endif %}; color:{% if payment.status == 'completed' %}green{% elif payment.status == 'pending' %}#b7860a{% else %}var(--maroon){% endif %}">
+                    {{ payment.get_status_display }}
+                  </span>
+                </td>
+                <td class="amount-positive">{{ payment.amount|intcomma }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4"><strong>Total Payments Received</strong></td>
+              <td><strong>KES {{ account.amount_paid|intcomma }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      {% else %}
+        <div style="text-align:center; padding:32px; opacity:0.5">
+          <div style="font-size:1.8rem; margin-bottom:8px">💳</div>
+          <div style="font-weight:500">No payments recorded yet</div>
+          <div style="font-size:0.8rem; margin-top:4px">
+            Your payments will appear here once processed
+          </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Statement Summary -->
+  <div class="card">
+    <div class="card__header"><span>📋 Statement Summary</span></div>
+    <div style="padding:1.2rem 1.5rem">
+      <div style="display:flex; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem">
+        <span><strong>Total Charges:</strong> KES {{ account.amount_billed|intcomma }}</span>
+        <span><strong>Total Payments:</strong> KES {{ account.amount_paid|intcomma }}</span>
+        <span>
+          <strong>Current Balance:</strong>
+          <span style="color:var(--maroon); font-weight:800">KES {{ account.balance|intcomma }}</span>
+        </span>
+      </div>
+      {% if not account.is_cleared %}
+        <div style="background:#fef2e8; border-radius:16px; padding:0.8rem; font-size:0.75rem; color:#a1531b">
+          ⚠️ Please clear your outstanding balance by {{ account.days_remaining|date:"d M Y" }}
+          to avoid late penalties.
+        </div>
+      {% else %}
+        <div style="background:#e6f4ea; border-radius:16px; padding:0.8rem; font-size:0.75rem; color:green">
+          ✅ Your account is fully cleared for {{ account.fee_structure.session }}.
+        </div>
+      {% endif %}
+      <div style="margin-top:1rem; font-size:0.7rem; color:var(--text-muted); text-align:right">
+        Generated on: {% now "d M Y" %} | For inquiries, contact finance@university.edu
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  {% if fee_structure %}
+    <div class="card">
+      <div class="card__header">💰 Your Fee Account</div>
+      <div style="text-align:center; padding:40px 20px; opacity:0.5">
+        <div style="font-size:2rem; margin-bottom:10px">🧾</div>
+        <div style="font-weight:600; margin-bottom:6px">No fee account assigned yet</div>
+        <div style="font-size:0.8rem">
+          A fee structure exists for {{ fee_structure.session }} but you have
+          not been assigned a personal account yet.
+          <br>Contact the finance office to have your account created.
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+
+<!-- ============================================================
+     PAYMENT MODAL — outside everything, at the bottom of body
+     ============================================================ -->
+{% if account and not account.is_cleared %}
+<dialog id="payment-modal" class="payment-modal">
+  <div class="payment-modal__inner">
+
+    <div class="payment-modal__header">
+      <div>
+        <p class="payment-modal__header-title">Make a Payment</p>
+        <p class="payment-modal__header-sub">
+          Balance due: <strong>KES {{ account.balance|intcomma }}</strong>
+        </p>
+      </div>
+      <button class="payment-modal__header-close" onclick="this.closest('dialog').close()" aria-label="Close">✕</button>
+    </div>
+
+    <!-- step 1: pick method -->
+    <div id="step-method" class="payment-modal__step payment-modal__step--active">
+      <p class="payment-modal__step-label">Select payment method</p>
+      <div class="payment-modal__methods" id="method-buttons"></div>
+    </div>
+
+    <!-- step 2: fill form -->
+    <div id="step-form" class="payment-modal__step">
+      <button class="payment-modal__back" id="back-btn" type="button">← Back</button>
+      <div class="payment-modal__method-row">
+        <div class="payment-modal__method-btn-icon" id="method-icon"></div>
+        <div>
+          <p class="payment-modal__method-row-title" id="form-title"></p>
+          <p class="payment-modal__method-row-instructions" id="form-instructions"></p>
+        </div>
+      </div>
+      <form id="payment-form">
+        {% csrf_token %}
+        <input type="hidden" name="account" value="{{ account.record_id }}">
+        <input type="hidden" name="amount"  value="{{ account.balance }}">
+        <input type="hidden" name="method"  id="selected-method">
+        <div class="payment-modal__fields" id="dynamic-fields"></div>
+        <button type="submit" class="payment-modal__action-btn" id="pay-btn">
+          Pay KES {{ account.balance|intcomma }}
+        </button>
+      </form>
+    </div>
+
+    <!-- step 3a: waiting -->
+    <div id="step-waiting" class="payment-modal__step payment-modal__step--centered">
+      <div class="payment-modal__spinner"></div>
+      <p class="payment-modal__status-title" id="waiting-title">Waiting for confirmation</p>
+      <p class="payment-modal__status-message" id="waiting-message">
+        Check your phone and enter your M-Pesa PIN
+      </p>
+      <button class="payment-modal__back" id="cancel-waiting">Cancel</button>
+    </div>
+
+    <!-- step 3b: success -->
+    <div id="step-success" class="payment-modal__step payment-modal__step--centered">
+      <div class="payment-modal__status-icon payment-modal__status-icon--success">✓</div>
+      <p class="payment-modal__status-title">Payment Confirmed</p>
+      <p class="payment-modal__status-message" id="success-message"></p>
+      <button class="payment-modal__action-btn" onclick="location.reload()">Done</button>
+    </div>
+
+    <!-- step 3c: error -->
+    <div id="step-error" class="payment-modal__step payment-modal__step--centered">
+      <div class="payment-modal__status-icon payment-modal__status-icon--error">✕</div>
+      <p class="payment-modal__status-title">Payment Failed</p>
+      <p class="payment-modal__status-message" id="error-message"></p>
+      <button class="payment-modal__action-btn" id="retry-btn">Try Again</button>
+    </div>
+
+  </div>
+</dialog>
+{% endif %}
+
+
 <script>
-  (function () {
-    // Sidebar global collapse
-    const layout = document.getElementById("layoutRoot");
-    const toggleFloat = document.getElementById("floatToggleBtn");
-    function toggleSidebar() {
-      layout.classList.toggle("layout--collapsed");
-      const isCollapsed = layout.classList.contains("layout--collapsed");
-      toggleFloat.innerHTML = isCollapsed ? "▶" : "◀";
+  document.getElementById("downloadBtn")?.addEventListener("click", () =>
+    alert("📄 PDF download coming soon.")
+  );
+
+  const modal  = document.getElementById('payment-modal');
+  const openBtn = document.getElementById('makePaymentBtn');
+  let methods = [];
+  let pollInterval = null;
+
+  openBtn?.addEventListener('click', () => {
+    resetModal();
+    modal.showModal();
+  });
+
+  function closeModal() {
+    document.getElementById('payment-modal').close();
+  }
+
+  async function loadConfig() {
+    const res  = await fetch("{% url 'payment-config' %}");
+    const data = await res.json();
+    methods = data.methods;
+    renderMethodButtons();
+  }
+
+  function renderMethodButtons() {
+    const icons = {
+      mpesa: { cls: 'payment-modal__method-btn-icon--mpesa', label: 'STK push to your phone' },
+      bank:  { cls: 'payment-modal__method-btn-icon--bank',  label: 'Redirect to bank portal' },
+      cash:  { cls: 'payment-modal__method-btn-icon--cash',  label: 'Finance office receipt' },
+    };
+    document.getElementById('method-buttons').innerHTML = methods.map(m => `
+      <button type="button" class="payment-modal__method-btn" onclick="selectMethod('${m.method}')">
+        <div class="payment-modal__method-btn-icon ${icons[m.method]?.cls || ''}">${m.icon}</div>
+        <div>
+          <p class="payment-modal__method-btn-label">${m.label}</p>
+          <p class="payment-modal__method-btn-sub">${icons[m.method]?.label || ''}</p>
+        </div>
+        <span class="payment-modal__method-btn-chevron">›</span>
+      </button>
+    `).join('');
+  }
+
+  function show(id) {
+    document.getElementById(id)?.classList.add('payment-modal__step--active');
+  }
+  function hide(id) {
+    document.getElementById(id)?.classList.remove('payment-modal__step--active');
+  }
+
+  function selectMethod(methodKey) {
+    const method = methods.find(m => m.method === methodKey);
+    document.getElementById('selected-method').value = methodKey;
+    document.getElementById('form-title').textContent = method.label;
+    document.getElementById('form-instructions').textContent = method.instructions;
+    document.getElementById('dynamic-fields').innerHTML = method.fields.map(renderField).join('');
+    show('step-form');
+    hide('step-method');
+  }
+
+  function renderField(f) {
+    if (f.type === 'select') {
+      const opts = f.options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+      return `<div><label>${f.label}</label><select name="${f.name}" ${f.required ? 'required' : ''}><option value="">Select...</option>${opts}</select></div>`;
     }
-    if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
+    return `<div>
+      <label>${f.label}</label>
+      <input type="${f.type}" name="${f.name}" placeholder="${f.placeholder || ''}" ${f.required ? 'required' : ''}>
+      ${f.help_text ? `<small>${f.help_text}</small>` : ''}
+    </div>`;
+  }
 
-    // Submenu toggles
-    const toggles = document.querySelectorAll(".sidebar__link--toggle");
-    toggles.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const targetId = btn.getAttribute("data-target");
-        const subMenu = document.getElementById(targetId);
-        if (!subMenu) return;
-        const parentItem = btn.closest(".sidebar__item--group");
-        const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-        document
-          .querySelectorAll(".sidebar__submenu--open")
-          .forEach((openSub) => {
-            if (openSub !== subMenu)
-              openSub.classList.remove("sidebar__submenu--open");
-          });
-        if (!isOpen) {
-          subMenu.classList.add("sidebar__submenu--open");
-          if (parentItem) parentItem.classList.add("sidebar__item--open");
-        } else {
-          subMenu.classList.remove("sidebar__submenu--open");
-          if (parentItem) parentItem.classList.remove("sidebar__item--open");
-        }
-      });
-    });
-    // Open financials submenu by default for this page
-    const finSub = document.getElementById("financials-sub");
-    if (finSub && !finSub.classList.contains("sidebar__submenu--open")) {
-      finSub.classList.add("sidebar__submenu--open");
-      const parentGroup = document.querySelector(
-        ".sidebar__item--group.active",
-      );
-      if (parentGroup) parentGroup.classList.add("sidebar__item--open");
+  document.getElementById('payment-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form   = new FormData(e.target);
+    const method = methods.find(m => m.method === form.get('method'));
+
+    show('step-waiting');
+    hide('step-form');
+    document.getElementById('waiting-message').textContent = 'Processing...';
+
+    const res  = await fetch("{% url 'base-payment' %}", { method: 'POST', body: form });
+    const text = await res.text();
+
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      showError('Unexpected server response. Please try again.');
+      return;
     }
 
-    // User section collapsible
-    const userSection = document.getElementById("userSection");
-    const userToggle = document.getElementById("userCollapseToggle");
-    if (userSection && userToggle) {
-      const isCollapsed =
-        localStorage.getItem("userSectionCollapsed") === "true";
-      if (isCollapsed)
-        userSection.classList.add("sidebar__user-section--collapsed");
-      userToggle.addEventListener("click", (e) => {
-        e.stopPropagation();
-        userSection.classList.toggle("sidebar__user-section--collapsed");
-        localStorage.setItem(
-          "userSectionCollapsed",
-          userSection.classList.contains("sidebar__user-section--collapsed"),
-        );
-      });
+    if (!result.success) {
+      showError(result.message);
+      return;
     }
 
-    // Mock actions
-    document
-      .getElementById("notificationBtn")
-      ?.addEventListener("click", () => alert("🔔 No new notifications."));
-    document
-      .getElementById("settingsBtn")
-      ?.addEventListener("click", () =>
-        alert("⚙️ Settings panel coming soon."),
-      );
-    document
-      .getElementById("logoutBtn")
-      ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-    document
-      .getElementById("downloadBtn")
-      ?.addEventListener("click", () =>
-        alert(
-          "📄 PDF statement download simulation (real implementation would generate PDF).",
-        ),
-      );
-    document
-      .getElementById("mockPaymentBtn")
-      ?.addEventListener("click", () =>
-        alert("💳 Redirect to payment gateway."),
-      );
+    if (result.flow === 'stk_push') {
+      document.getElementById('waiting-message').textContent =
+        'Check your phone and enter your M-Pesa PIN.';
+      startPolling(result.payment_id);
+    } else if (result.flow === 'redirect') {
+      window.location.href = result.redirect_url;
+    } else {
+      showSuccess(result.message);
+    }
+  });
 
-    // footer year
-    const footerSpan = document.querySelector(".sidebar__footer span");
-    if (footerSpan)
-      footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
-  })();
+  function startPolling(paymentId) {
+    pollInterval = setInterval(async () => {
+      const res    = await fetch(`/financials/fees/pay/status/${paymentId}/`);
+      const result = await res.json();
+      if (result.status === 'completed') {
+        clearInterval(pollInterval);
+        showSuccess(`Payment of KES ${result.amount} confirmed. Ref: ${result.transaction_ref}`);
+      } else if (result.status === 'failed' || result.status === 'cancelled') {
+        clearInterval(pollInterval);
+        showError(result.message);
+      }
+    }, 3000);
+  }
+
+  function showSuccess(msg) {
+    document.getElementById('success-message').textContent = msg;
+    ['step-waiting', 'step-form', 'step-error'].forEach(hide);
+    show('step-success');
+  }
+
+  function showError(msg) {
+    document.getElementById('error-message').textContent = msg;
+    ['step-waiting', 'step-form'].forEach(hide);
+    show('step-error');
+  }
+
+  function resetModal() {
+    ['step-form', 'step-waiting', 'step-success', 'step-error'].forEach(hide);
+    show('step-method');
+    clearInterval(pollInterval);
+  }
+
+  document.getElementById('back-btn')?.addEventListener('click', () => {
+    hide('step-form'); show('step-method');
+  });
+  document.getElementById('cancel-waiting')?.addEventListener('click', () => {
+    clearInterval(pollInterval);
+    hide('step-waiting'); show('step-method');
+  });
+  document.getElementById('retry-btn')?.addEventListener('click', () => {
+    hide('step-error'); show('step-method');
+  });
+
+  loadConfig();
 </script>
-{%endblock%}
+{% endblock %}

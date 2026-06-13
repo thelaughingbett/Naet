@@ -12,6 +12,21 @@
   --progress-width: calc((var(--steps) - 1) / var(--steps) * 100%);
 }
 
+%input-base {
+  // width: 100%;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #ededed;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  transition: box-shadow 0.2s;
+
+  &:focus {
+    box-shadow: 0 0 0 2px var(--main-color);
+  }
+}
+
 body {
   height: 100vh;
   display: grid;
@@ -113,17 +128,19 @@ body {
     main {
       display: flex;
       overflow: hidden;
-      padding-block: 0.6rem;
+      padding-block-end: 1.4rem;
+      width: 80dvw;
 
       fieldset {
         flex: 1 0 100%;
-        padding: 24px 0.2rem;
+        padding: 14px 0.2rem;
         opacity: 0;
         transition: opacity 0.3s;
         height: fit-content;
         border: none;
-
-        gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
 
         legend {
           display: none;
@@ -133,37 +150,128 @@ body {
           opacity: 1;
         }
 
+        label {
+          display: block;
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: #555;
+          margin-bottom: 0.3rem;
+        }
+
         .form-group {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 1rem;
           width: 100%;
 
+          &.names-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+
+            span {
+              display: flex;
+              flex-direction: column;
+
+              input {
+                @extend %input-base;
+              }
+            }
+          }
+
           span {
             display: flex;
           }
-          input {
-            padding: 0.3rem 0.5rem;
-            outline-color: var(--main-color);
-            border: 1px solid gray;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            width: 100%;
-            font-size: 1rem;
+        }
 
-            border: none;
-            outline: none;
-            &[type="text"],
-            &[type="email"],
-            &[type="password"] {
-              background-color: #ededed;
+        .form-field {
+          display: flex;
+          flex-direction: column;
+
+          &.gender-field {
+            select {
+              @extend %input-base;
+              width: fit-content;
+              min-width: 160px;
+              max-width: 260px;
+              cursor: pointer;
+              appearance: auto; // keeps native arrow
+            }
+          }
+
+          &.file-field {
+            .file-wrapper {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              background: #ededed;
+              border-radius: 8px;
+              padding: 0.6rem 1rem;
+              max-width: 380px;
+              cursor: pointer;
+
+              input[type="file"] {
+                font-size: 0.85rem;
+                flex: 1;
+                &::file-selector-button {
+                  padding: 0.3rem 0.8rem;
+                  border: none;
+                  border-radius: 4px;
+                  background: var(--main-color, #5b5ef4);
+                  color: #fff;
+                  font-size: 0.8rem;
+                  cursor: pointer;
+                  margin-right: 0.75rem;
+                  transition: opacity 0.2s;
+
+                  &:hover {
+                    opacity: 0.85;
+                  }
+                }
+              }
+
+              .file-hint {
+                font-size: 0.75rem;
+                color: #888;
+                white-space: nowrap;
+              }
+
+              .upload-icon {
+                font-style: normal;
+                font-size: 1rem;
+                color: #888;
+              }
+            }
+          }
+
+          &.email-field {
+            .input-icon-wrap {
+              position: relative;
+              // max-width: 380px;
+
+              .input-icon {
+                position: absolute;
+                left: 0.85rem;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 0.95rem;
+                color: #888;
+                pointer-events: none;
+              }
+
+              input[type="email"] {
+                @extend %input-base;
+                padding-left: 2.5rem;
+              }
             }
           }
         }
+
         p {
           display: grid;
 
           input {
+            @extend %input-base;
             padding: 0.3rem 0.5rem;
             outline-color: var(--main-color);
             border: 1px solid gray;
@@ -179,6 +287,15 @@ body {
             &[type="password"] {
               background-color: #ededed;
             }
+          }
+
+          select {
+            @extend %input-base;
+            width: fit-content;
+            min-width: 160px;
+            max-width: 260px;
+            cursor: pointer;
+            appearance: auto; // keeps native arrow
           }
         }
       }
@@ -190,6 +307,7 @@ body {
       align-items: center;
       justify-content: space-between;
       padding-inline: 0.5rem;
+      padding-block-start: 1.2rem;
 
       button {
         flex: 1;
@@ -223,5 +341,76 @@ body {
         }
       }
     }
+  }
+}
+
+$primary-color: #2b6cb0; // Professional blue
+$background-light: #f7fafc;
+$border-color: #e2e8f0;
+$text-dark: #2d3748;
+$text-muted: #718096;
+$radius: 8px;
+
+.formset-header {
+  margin-bottom: 2rem;
+  text-align: center;
+
+  p {
+    color: $text-muted;
+    font-size: 0.95rem;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+
+    // Make the address field span the full row width
+    .field-address {
+      grid-column: span 2;
+    }
+  }
+}
+
+// Form Field Wrapper
+.form-group-emergency {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: $text-dark;
+  }
+
+  // Target Django rendered fields
+  input,
+  select,
+  textarea {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    border: 1px solid $border-color;
+    border-radius: calc($radius / 2);
+    background-color: $background-light;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.15);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
   }
 }

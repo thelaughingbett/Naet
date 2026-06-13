@@ -55,6 +55,7 @@
     </div>
   </div>
   <div class="dash-col">
+    {% if fee_account %}
     <div class="stat-card stat-card--blue">
       <div class="flex-between">
         <span style="font-weight: 500">💰 Fee Balance</span>
@@ -69,13 +70,22 @@
           <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
       </div>
+
+      {% if fee_account.is_cleared %}
+      <div class="stat-card__amount">✅ Cleared</div>
+      <div style="font-size: 0.75rem; opacity: 0.85">
+        No outstanding balance
+      </div>
+
+      {% else %}
       <div class="stat-card__amount">
-        KES {{fee_account.balance | intcomma}}
+        KES {{ fee_account.balance | intcomma }}
       </div>
       <div style="font-size: 0.75rem; opacity: 0.85">
-        Due:
-        <span> {{fee_account.days_remaining |date:"d M Y" }} </span>
+        Due: <span>{{ fee_account.days_remaining | date:"d M Y" }}</span>
       </div>
+      {% endif %}
+
       <button
         style="
           margin-top: 12px;
@@ -90,6 +100,30 @@
         View Statement →
       </button>
     </div>
+
+    {% else %}
+    <div class="stat-card stat-card--blue">
+      <div class="flex-between">
+        <span style="font-weight: 500">💰 Fee Balance</span>
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          stroke-width="1.5"
+        >
+          <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+      </div>
+      <div class="stat-card__amount" style="font-size: 1rem; opacity: 0.85">
+        No fee account
+      </div>
+      <div style="font-size: 0.75rem; opacity: 0.75">
+        Not assigned for this session
+      </div>
+    </div>
+    {% endif %}
     <div class="stat-card stat-card--purple">
       <div class="flex-between">
         <span>📈 Session Progress</span><span> {{session}}</span>
@@ -171,104 +205,27 @@
     <div class="card">
       <div class="card__header">📅 Upcoming Deadlines</div>
       <div class="card__body" style="font-size: 0.8rem">
-        <div class="flex-between" style="margin-bottom: 10px">
-          <span>Assignment: Web Dev Project</span
-          ><span style="color: var(--maroon)">2 days left</span>
-        </div>
+        {% if deadlines %} {% for deadline in deadlines %}
         <div class="flex-between">
-          <span>Fee payment deadline</span><span>Nov 30, 2025</span>
+          <span>{{ deadline.label }}</span>
+          <!-- prettier-ignore -->
+          <span
+          
+            style="color: {% if deadline.is_urgent %}var(--maroon){% else %}inherit
+            {% endif %}"
+          >
+            {{ deadline.display }}
+          </span>
         </div>
+        {% endfor %} {% else %}
+        <div style="text-align: center; padding: 16px 0; opacity: 0.5">
+          <div style="font-size: 1.5rem">🎉</div>
+          <div>No upcoming deadlines</div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<script>
-  (function () {
-    // Sidebar collapse (global)
-    const layout = document.getElementById("layoutRoot");
-    const toggleFloat = document.getElementById("floatToggleBtn");
-    function toggleSidebar() {
-      layout.classList.toggle("layout--collapsed");
-      const isCollapsed = layout.classList.contains("layout--collapsed");
-      toggleFloat.innerHTML = isCollapsed ? "▶" : "◀";
-    }
-    if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-    // Submenu toggles
-    const toggles = document.querySelectorAll(".sidebar__link--toggle");
-    toggles.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const targetId = btn.getAttribute("data-target");
-        const subMenu = document.getElementById(targetId);
-        if (!subMenu) return;
-        const parentItem = btn.closest(".sidebar__item--group");
-        const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-        document
-          .querySelectorAll(".sidebar__submenu--open")
-          .forEach((openSub) => {
-            if (openSub !== subMenu) {
-              openSub.classList.remove("sidebar__submenu--open");
-              const parent = openSub.closest(".sidebar__item--group");
-              if (parent) parent.classList.remove("sidebar__item--open");
-            }
-          });
-        if (!isOpen) {
-          subMenu.classList.add("sidebar__submenu--open");
-          if (parentItem) parentItem.classList.add("sidebar__item--open");
-        } else {
-          subMenu.classList.remove("sidebar__submenu--open");
-          if (parentItem) parentItem.classList.remove("sidebar__item--open");
-        }
-      });
-    });
-
-    // USER SECTION COLLAPSIBLE (INDEPENDENT)
-    const userSection = document.getElementById("userSection");
-    const userToggle = document.getElementById("userCollapseToggle");
-    if (userSection && userToggle) {
-      // Check localStorage for persistence (optional)
-      const isCollapsed =
-        localStorage.getItem("userSectionCollapsed") === "true";
-      if (isCollapsed) {
-        userSection.classList.add("sidebar__user-section--collapsed");
-      }
-      userToggle.addEventListener("click", (e) => {
-        e.stopPropagation();
-        userSection.classList.toggle("sidebar__user-section--collapsed");
-        const nowCollapsed = userSection.classList.contains(
-          "sidebar__user-section--collapsed",
-        );
-        localStorage.setItem("userSectionCollapsed", nowCollapsed);
-      });
-    }
-
-    // Mock action buttons
-    document
-      .getElementById("notificationBtn")
-      ?.addEventListener("click", () =>
-        alert(
-          "🔔 You have 2 new notifications: Fee reminder & Academic calendar update.",
-        ),
-      );
-    document
-      .getElementById("settingsBtn")
-      ?.addEventListener("click", () =>
-        alert(
-          "⚙️ Settings panel: profile, privacy, notifications preferences.",
-        ),
-      );
-    document
-      .getElementById("logoutBtn")
-      ?.addEventListener("click", () =>
-        alert("🚪 Logout simulation. Redirect to login page."),
-      );
-
-    // update footer year
-    const footerSpan = document.querySelector(".sidebar__footer span");
-    if (footerSpan)
-      footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
-  })();
-</script>
 {% endblock %}

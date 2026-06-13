@@ -1,12 +1,14 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/evaluations/course/index.css' %}"
+  href="{% static 'base/styles/evaluations/course/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Course Evaluations</title>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📋 Course Evaluations</h1>
@@ -16,299 +18,133 @@
   </div>
 </div>
 
-<div id="coursesContainer"></div>
+{% if curricula %} {% for curriculum in curricula %}
+<!-- prettier-ignore -->
+{% with evaluation=curriculum.evaluation %}
+<div class="eval-card">
+  <div class="eval-header">
+    <div>
+      <span class="course-code">{{ curriculum.course.course_code }}</span>
+      <span style="margin-left: 0.8rem; font-weight: 600"
+        >{{ curriculum.course.course_name }}</span
+      >
+      <div
+        style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem"
+      >
+        <!-- prettier-ignore -->
+        Instructor: {% for lecturer in curriculum.professor.all %} 
+        {{ lecturer.user.full_name }}
+        {% if not forloop.last %},
+         {% endif %} 
+        {%  empty %} 
+        Not assigned 
+        {% endfor %}
+      </div>
+    </div>
+    {% if evaluation %}
+    <span class="submitted-badge">✓ Submitted</span>
+    {% endif %}
+  </div>
+
+  <div class="eval-body">
+    {% if evaluation %}
+    <!-- already submitted — read only -->
+    <div class="rating-stars">
+      {% for i in "12345" %}
+      <span
+        class="star {% if evaluation.rating >= forloop.counter %}selected{% endif %}"
+        >★</span
+      >
+      {% endfor %}
+    </div>
+    <div
+      style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)"
+    >
+      {{ evaluation.comments | default:"No additional comments." }}
+    </div>
+    <div
+      style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
+    >
+      ⭐ Rating: {{ evaluation.rating }}/5 • Submitted on {{
+      evaluation.created_at | date:"d M Y" }}
+    </div>
+
+    {% else %}
+    <!-- not yet submitted — show form -->
+    <form method="post" action="{% url 'base-course-evaluation' %}">
+      {% csrf_token %}
+      <input
+        type="hidden"
+        name="curriculum_id"
+        value="{{ curriculum.record_id }}"
+      />
+
+      <div class="feedback-label">
+        Rate this course (1 = Poor, 5 = Excellent)
+      </div>
+      <div class="rating-stars" id="stars-{{ curriculum.record_id }}">
+        {% for i in "12345" %}
+        <span
+          class="star"
+          data-value="{{ forloop.counter }}"
+          onclick="setRating('{{ curriculum.record_id }}', {{ forloop.counter }})"
+          >★</span
+        >
+        {% endfor %}
+      </div>
+      <input
+        type="hidden"
+        name="rating"
+        id="rating-{{ curriculum.record_id }}"
+        required
+      />
+
+      <div class="feedback-label" style="margin-top: 0.8rem">
+        Additional Comments (optional)
+      </div>
+      <textarea
+        name="comments"
+        rows="2"
+        placeholder="Share your thoughts about course content, assignments, or suggestions..."
+      ></textarea>
+
+      <button type="submit" class="submit-btn">Submit Evaluation</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endwith %} {% endfor %}
 
 <div class="info-box">
   💡 Your feedback is anonymous to instructors and helps enhance course
   delivery. Please rate honestly.
 </div>
+
+{% else %}
+
+<div style="text-align: center; padding: 60px 20px; opacity: 0.5">
+  <div style="font-size: 2.5rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600; margin-bottom: 6px">No courses to evaluate</div>
+  <div style="font-size: 0.8rem">
+    {% if session %} You have no enrolled courses for {{ session }}. {% else %}
+    There is no active session at the moment. {% endif %}
+    <br />Evaluations open once you are enrolled in courses for the semester.
+  </div>
+</div>
+
+{% endif %}
+
 <script>
-  // Mock course data
-  const courses = [
-    {
-      id: 1,
-      code: "CSC 411",
-      name: "Advanced Web Development",
-      instructor: "Dr. Grace Muthoni",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 2,
-      code: "CSC 423",
-      name: "Machine Learning Fundamentals",
-      instructor: "Prof. Elijah Maina",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 3,
-      code: "CSC 432",
-      name: "Cyber Security & Ethics",
-      instructor: "Dr. Faith Wangari",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 4,
-      code: "CSC 445",
-      name: "Cloud Computing",
-      instructor: "Dr. James Otieno",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 5,
-      code: "ICS 401",
-      name: "Research Methodology",
-      instructor: "Prof. Leah Achieng",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-  ];
+  function setRating(curriculumId, value) {
+    // update hidden input
+    document.getElementById(`rating-${curriculumId}`).value = value;
 
-  // Store evaluation data (in localStorage for demo persistence)
-  let evaluations = JSON.parse(localStorage.getItem("courseEvaluations")) || {};
-
-  // Helper to sync evaluations with courses array
-  function loadEvaluations() {
-    courses.forEach((course) => {
-      if (evaluations[course.id]) {
-        course.submitted = evaluations[course.id].submitted || false;
-        course.rating = evaluations[course.id].rating;
-        course.feedback = evaluations[course.id].feedback || "";
-      } else {
-        course.submitted = false;
-        course.rating = null;
-        course.feedback = "";
-      }
+    // update star highlights
+    const stars = document.querySelectorAll(`#stars-${curriculumId} .star`);
+    stars.forEach((star) => {
+      const starVal = parseInt(star.dataset.value);
+      star.classList.toggle("selected", starVal <= value);
     });
   }
-
-  function saveEvaluation(courseId, rating, feedback) {
-    evaluations[courseId] = {
-      submitted: true,
-      rating: rating,
-      feedback: feedback,
-      submittedAt: new Date().toISOString(),
-    };
-    localStorage.setItem("courseEvaluations", JSON.stringify(evaluations));
-    // Update course object
-    const course = courses.find((c) => c.id === courseId);
-    if (course) {
-      course.submitted = true;
-      course.rating = rating;
-      course.feedback = feedback;
-    }
-  }
-
-  // Render stars for a given rating value (1-5)
-  function renderStars(selectedRating, onStarClick) {
-    let starsHtml = "";
-    for (let i = 1; i <= 5; i++) {
-      starsHtml += `<span class="star ${selectedRating >= i ? "selected" : ""}" data-value="${i}">★</span>`;
-    }
-    const container = document.createElement("div");
-    container.className = "rating-stars";
-    container.innerHTML = starsHtml;
-    container.querySelectorAll(".star").forEach((star) => {
-      star.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const value = parseInt(star.getAttribute("data-value"));
-        onStarClick(value);
-      });
-    });
-    return container;
-  }
-
-  // Render all course evaluation cards
-  function renderCourses() {
-    const container = document.getElementById("coursesContainer");
-    container.innerHTML = "";
-
-    courses.forEach((course) => {
-      const card = document.createElement("div");
-      card.className = "eval-card";
-
-      // Header section
-      const header = document.createElement("div");
-      header.className = "eval-header";
-      header.innerHTML = `
-        <div>
-          <span class="course-code">${course.code}</span>
-          <span style="margin-left: 0.8rem; font-weight: 600;">${course.name}</span>
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">Instructor: ${course.instructor}</div>
-        </div>
-        ${course.submitted ? '<span class="submitted-badge">✓ Submitted</span>' : ""}
-      `;
-
-      // Body section
-      const body = document.createElement("div");
-      body.className = "eval-body";
-
-      // Rating row
-      const ratingLabel = document.createElement("div");
-      ratingLabel.className = "feedback-label";
-      ratingLabel.textContent = "Rate this course (1 = Poor, 5 = Excellent)";
-      body.appendChild(ratingLabel);
-
-      const starsWrapper = document.createElement("div");
-      const currentRating = course.rating || 0;
-      const starsContainer = renderStars(currentRating, (newRating) => {
-        if (!course.submitted) {
-          // Update rating display
-          const newStars = renderStars(newRating, (val) => {
-            if (!course.submitted) {
-              course.rating = val;
-              renderCourses(); // re-render to update
-            }
-          });
-          starsWrapper.innerHTML = "";
-          starsWrapper.appendChild(newStars);
-          course.rating = newRating;
-          // Also update textarea value would remain, but we need to save feedback separately
-        } else {
-          alert(
-            "You have already submitted this evaluation. Edits are not allowed.",
-          );
-        }
-      });
-      starsWrapper.appendChild(starsContainer);
-      body.appendChild(starsWrapper);
-
-      // Feedback textarea
-      const feedbackLabel = document.createElement("div");
-      feedbackLabel.className = "feedback-label";
-      feedbackLabel.style.marginTop = "0.8rem";
-      feedbackLabel.textContent = "Additional Comments (optional)";
-      body.appendChild(feedbackLabel);
-
-      const textarea = document.createElement("textarea");
-      textarea.rows = 2;
-      textarea.placeholder =
-        "Share your thoughts about course content, assignments, or suggestions...";
-      textarea.value = course.feedback || "";
-      if (course.submitted) {
-        textarea.disabled = true;
-        textarea.style.background = "#f8fafc";
-      } else {
-        textarea.addEventListener("input", (e) => {
-          course.feedback = e.target.value;
-        });
-      }
-      body.appendChild(textarea);
-
-      // Submit button (if not submitted)
-      if (!course.submitted) {
-        const submitBtn = document.createElement("button");
-        submitBtn.className = "submit-btn";
-        submitBtn.textContent = "Submit Evaluation";
-        submitBtn.addEventListener("click", () => {
-          if (!course.rating || course.rating === 0) {
-            alert("Please provide a rating (1–5 stars) before submitting.");
-            return;
-          }
-          saveEvaluation(course.id, course.rating, course.feedback || "");
-          renderCourses(); // re-render to show submitted badge
-          alert(
-            `✅ Thank you! Your evaluation for ${course.code} has been submitted.`,
-          );
-        });
-        body.appendChild(submitBtn);
-      } else {
-        // Show submitted info
-        const info = document.createElement("div");
-        info.style.fontSize = "0.7rem";
-        info.style.color = "var(--text-muted)";
-        info.style.marginTop = "0.5rem";
-        info.innerHTML = `⭐ Rating: ${course.rating}/5 • Feedback submitted on ${new Date(evaluations[course.id]?.submittedAt).toLocaleDateString()}`;
-        body.appendChild(info);
-      }
-
-      card.appendChild(header);
-      card.appendChild(body);
-      container.appendChild(card);
-    });
-  }
-
-  // Load saved evaluations and render
-  loadEvaluations();
-  renderCourses();
-
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Ensure evaluations submenu is open by default
-  const evalSub = document.getElementById("evaluations-sub");
-  if (evalSub && !evalSub.classList.contains("sidebar__submenu--open")) {
-    evalSub.classList.add("sidebar__submenu--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert("🔔 2 new notifications: New evaluation forms available."),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
 </script>
-{%endblock%}
+{% endblock %}

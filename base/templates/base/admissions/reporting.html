@@ -29,25 +29,19 @@
   <div>
     <div class="card">
       <div class="card-header">📝 Reporting Confirmation Form</div>
+
       {% if not already_reported %}
       <form class="card-body" method="post">
         {% csrf_token %}
         <div class="form-group">
-          <label>Expected Reporting Date </label>
+          <label>Expected Reporting Date</label>
           <input
             type="date"
             id="reportDate"
-            value="{{session.start_date.isoformat}}"
+            value="{{ session.start_date.isoformat }}"
             disabled
           />
         </div>
-        <!-- <div class="form-group">
-          <label>Mode of Reporting</label>
-          <select id="reportMode">
-            <option>In-Person (Main Campus)</option>
-            <option>Online (Virtual Reporting)</option>
-          </select>
-        </div> -->
         <div class="form-group">
           <label>Accommodation Needed?</label>
           <select id="accommodation">
@@ -70,7 +64,23 @@
           orientation schedule via email.
         </div>
       </form>
-      {% else %} Already reported for this session {% endif %}
+
+      {% else %}
+      <div class="card-body" style="text-align: center; padding: 32px 20px">
+        <div style="font-size: 2.5rem; margin-bottom: 12px">✅</div>
+        <div style="font-weight: 600; font-size: 1rem; margin-bottom: 6px">
+          You have reported for {{ session }}
+        </div>
+        <div style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px">
+          Reported on {{ already_reported.reported_at | date:"d M Y, g:i A" }}
+          via {{ already_reported.get_reported_via_display }}
+        </div>
+        <div class="info-box" style="text-align: left">
+          ℹ️ Your reporting slip and orientation schedule have been sent to your
+          university email.
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -107,65 +117,6 @@
   </div>
 </div>
 <script>
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles (for all groups)
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Ensure admission submenu open by default (active)
-  const admissionSub = document.getElementById("admission-sub");
-  if (
-    admissionSub &&
-    !admissionSub.classList.contains("sidebar__submenu--open")
-  ) {
-    admissionSub.classList.add("sidebar__submenu--open");
-    const parentGroup = document.querySelector(".sidebar__item--group.active");
-    if (parentGroup) parentGroup.classList.add("sidebar__item--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
   // Reporting confirmation button
   document
     .getElementById("submitReportingBtn")
@@ -177,24 +128,5 @@
         `✅ Reporting confirmed for ${date}.\nMode: ${mode}\nAccommodation: ${accommodation}\nYou will receive a confirmation email shortly.`,
       );
     });
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert(
-        "🔔 2 notifications: Reporting deadline approaching & Document reminder.",
-      ),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
 </script>
 {%endblock%}

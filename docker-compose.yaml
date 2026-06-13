@@ -1,0 +1,49 @@
+
+services:
+  redis:
+    image: redis
+    container_name: local_redis_broker
+   
+    ports:
+      - "6379:6379" 
+    volumes:
+      - redis_data:/data
+    restart: always
+  
+  # # uncomment below lines if necessary
+
+  # app:
+  #   build: .
+  #   container_name: "Naet"
+  #   command: python manage.py runserver 0.0.0.0:8000
+  #   volumes:
+  #     - .:/app
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - redis
+  #     - db
+    
+  # db:
+  #   image: postgres:# your postgres version
+  #   container_name: "Naet_db"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U django_user -d django_db"]
+  #     interval: 1m30s
+  #     timeout: 30s
+  #     retries: 5
+  #     start_period: 30s
+  #   environment:
+  #      POSTGRES_DB: django_db
+  #      POSTGRES_USER : django_user
+  #      POSTGRES_PASSWORD: django_password
+
+      
+
+volumes:
+  redis_data:
+  # postgres_data:

@@ -20,3 +20,9 @@ django-simple-history
 # django-light
 # django-schema-graph
 celery
+django-celery-beat
+redis
+django-redis
+pulp
+python-constraint
+factory-boy # for test's

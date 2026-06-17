@@ -33,7 +33,7 @@
       >
         <!-- prettier-ignore -->
         Instructor: {% for lecturer in curriculum.professor.all %} 
-        {{ lecturer.user.full_name }}
+        {{ lecturer.name }}
         {% if not forloop.last %},
          {% endif %} 
         {%  empty %} 

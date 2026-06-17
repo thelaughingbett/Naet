@@ -15,11 +15,10 @@ services:
   # app:
   #   build: .
   #   container_name: "Naet"
-  #   command: python manage.py runserver 0.0.0.0:8000
   #   volumes:
   #     - .:/app
   #   ports:
-  #     - "8000:8000"
+  #     - "8000:8000" # although exposed in Dockerfile [TODO : fix this maybe ]
   #   depends_on:
   #     - redis
   #     - db
@@ -32,15 +31,46 @@ services:
   #   ports:
   #     - "5432:5432"
   #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U django_user -d django_db"]
+  #     test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d Naet_persist"]
   #     interval: 1m30s
   #     timeout: 30s
   #     retries: 5
   #     start_period: 30s
   #   environment:
-  #      POSTGRES_DB: django_db
-  #      POSTGRES_USER : django_user
-  #      POSTGRES_PASSWORD: django_password
+  #      POSTGRES_DB: Naet_persist
+  #      POSTGRES_USER : ${PG_USER}
+  #      POSTGRES_PASSWORD: ${PG_SECRET}
+ 
+  # messagepit:
+  #   image: ghcr.io/coreydaley/messagepit:latest
+  #   restart: always
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   ports:
+  #     - "1025:1025"   # SMTP
+  #     - "8025:8025"   # Web UI
+  #     - "8100:8100"   # SendGrid v3 Mail Send stub
+  #     - "8200:8200"   # SMS ingest (Twilio-compatible)
+  #     - "8300:8300"   # Webhook capture
+  #   environment:
+  #     # SendGrid v3 stub — must match SENDGRID_API_KEY in your app
+  #     MP_SENDGRID_API_KEY: your-sendgrid-api-key
+  #     # Expose SendGrid on all interfaces inside the container
+  #     MP_SENDGRID_BIND_ADDR: "0.0.0.0:8100"
+
+  #     # Twilio SMS — must match TWILIO_AUTH_TOKEN in your app
+  #     MP_TWILIO_AUTH_TOKEN: your-twilio-auth-token
+  #     # Fallback SMS callback URL (per-request StatusCallback takes priority)
+  #     MP_TWILIO_WEBHOOK_URL: http://host.docker.internal:3000/webhooks/v1/sms
+  #     # Email delivery webhook URL
+  #     MP_EMAIL_WEBHOOK_URL: http://host.docker.internal:3000/webhooks/v1/email
+  #     # ECDSA private key for signing email webhooks (generate with openssl, see above)
+  #     MP_EMAIL_WEBHOOK_SIGNING_KEY: "<base64-encoded SEC1 DER private key>"
+  #   healthcheck:
+  #     test: ["CMD", "/messagepit", "readyz"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
       
 

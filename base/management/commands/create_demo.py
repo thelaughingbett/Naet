@@ -4,14 +4,20 @@ from django.core.management.base import BaseCommand
 from faker import Faker
 
 from base.models import (
-    Course, Curriculum, Department, FeeStructure, Payment, Programme,
-    School, Session, Student, StudentFeeAccount, Tclass, User
+    FeeStructure,
+    Session,
+    Student,
+    StudentFeeAccount,
+    User
 )
 
 from ..factories.demo_factory import (
-    DepartmentFactory, DeptAdminFactory, LecturerFactory, ProgrammeFactory,
-    SchoolAdminFactory, SchoolFactory, SessionFactory, StudentFactory,
-    TclassFactory, UserFactory
+    DepartmentFactory,
+    LecturerFactory,
+    ProgrammeFactory,
+    SchoolFactory,
+    StudentFactory,
+    TclassFactory,
 )
 
 # to run py manage.py create_demo --noinput

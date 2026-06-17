@@ -25,9 +25,11 @@
     <div>
       <div class="hostel-name">{{ allocation.room.hostel.name }}</div>
       <div class="room-info">
-        Room: {{ allocation.room.room_number }} ({{
-        allocation.room.get_room_type_display }}) • Floor {{
-        allocation.room.floor }}
+        <!-- prettier-ignore -->
+        Room: {{ allocation.room.room_number }} 
+        ({{ allocation.room.get_room_type_display }}) • Floor
+        <!-- prettier-ignore -->
+        {% if  allocation.room.floor == 0 %} ground {% else%} {{ allocation.room.floor }} {% endif %}
       </div>
     </div>
     {% if evaluation %}
@@ -81,8 +83,9 @@
     <div
       style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
     >
-      ⭐ Overall: {{ evaluation.rating }}/5 • Submitted on {{
-      evaluation.created_at|date:"d M Y" }}
+      <!-- prettier-ignore -->
+      ⭐ Overall: {{ evaluation.rating }}/5 • Submitted on 
+      {{  evaluation.created_at|date:"d M Y" }}
     </div>
 
     {% else %}

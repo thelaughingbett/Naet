@@ -7,7 +7,7 @@
 #        http://www.apache.org/licenses/LICENSE-2.0
 
 from base.models import FeeStructure
-from .factories import TclassFactory, SessionFactory
+from base.tests.factories import TclassFactory, SessionFactory
 from django.db.models.signals import post_save
 from datetime import date
 from datetime import datetime

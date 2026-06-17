@@ -1,0 +1,15 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+We've received your payment. Here are the details:
+
+Amount Paid: KES {{ amount }}
+Reference: {{ ref }}
+New Balance: KES {{ balance }}
+
+View your statement: {{ portal_url }}
+
+Thank you for your payment.
+{% endblock %}

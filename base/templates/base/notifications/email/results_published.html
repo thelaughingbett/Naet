@@ -1,0 +1,12 @@
+{% extends "base/notifications/email/base.html" %} {% block content %}
+<p>Hi {{ student_name }},</p>
+<p>
+  Your results for the <strong>{{ session }}</strong> session are now available.
+</p>
+
+<div class="cta">
+  <a href="{{ portal_url }}">View Results</a>
+</div>
+
+<p>Log in to the student portal to view your full transcript.</p>
+{% endblock %}

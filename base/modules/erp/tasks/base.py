@@ -1,8 +1,7 @@
-# erp/tasks/base.py
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, Any
+from django.conf import settings
 
 
 @dataclass
@@ -50,6 +49,26 @@ class AbstractERPTask(ABC):
     max_retries:     int = 5
     retry_backoff:   int = 60
     retry_max_delay: int = 3600
+    # each task sets its production endpoint
+    endpoint: str = ""
+
+    def get_endpoint(self) -> str:
+        """
+        In DEBUG mode, redirects all ERP HTTP calls to MessagePit's
+        webhook capture server (port 8300) instead of the real ERP.
+        The path is preserved so you can tell requests apart in the UI.
+        """
+        if getattr(settings, 'DEBUG', False):
+            base = getattr(
+                settings,
+                'MESSAGEPIT_WEBHOOK_URL',
+                'http://localhost:8300'
+            )
+            # extract just the path from the real endpoint
+            from urllib.parse import urlparse
+            path = urlparse(self.endpoint).path
+            return f"{base.rstrip('/')}{path}"
+        return self.endpoint
 
     @abstractmethod
     def sync(self, instance: Any) -> ERPSyncResult:

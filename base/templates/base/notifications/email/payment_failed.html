@@ -1,0 +1,19 @@
+{% extends "base/notifications/email/base.html" %} {% block content %}
+<p>Hi {{ student_name }},</p>
+<p>Unfortunately, your recent payment attempt did not go through.</p>
+
+<div class="highlight">
+  <div class="label">Amount</div>
+  <div class="value">KES {{ amount }}</div>
+</div>
+
+<p>
+  This can happen due to insufficient funds, an expired card, or a network
+  issue. Please try again, or contact the finance office if the problem
+  continues.
+</p>
+
+<div class="cta">
+  <a href="{{ portal_url }}">Retry Payment</a>
+</div>
+{% endblock %}

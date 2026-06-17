@@ -2,6 +2,7 @@
 {% extends 'base/main.html' %}
 {% load static %}
 {% load humanize %}
+{% load custom_tags %}
 
 {% block head %}
 <link
@@ -9,6 +10,113 @@
   href="{% static 'base/styles/timetable/weekly-schedule/index.css' %}"
 />
 <title>Weekly Timetable</title>
+<style>
+  /* ========== RESPONSIVE & SCROLLABLE TIMETABLE (embedded) ========== */
+  /* Force horizontal scroll on the timetable container */
+  .timetable-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timetable {
+    min-width: 700px; /* Ensures scroll appears when screen < 700px */
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  @media (max-width: 1024px) {
+    .page-content {
+      padding: 1.5rem;
+    }
+    .timetable th,
+    .timetable td {
+      padding: 0.8rem 0.6rem;
+      font-size: 0.8rem;
+    }
+    .class-title {
+      font-size: 0.8rem;
+    }
+    .class-detail {
+      font-size: 0.65rem;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .page-content {
+      padding: 1.2rem;
+    }
+    .collapse-toggle {
+      display: none;
+    }
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    .page-title {
+      font-size: 1.3rem;
+    }
+    .week-selector {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.8rem;
+    }
+    .info-bar {
+      gap: 0.6rem;
+    }
+    .info-chip {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.8rem;
+    }
+    .timetable th,
+    .timetable td {
+      padding: 0.6rem 0.4rem;
+      font-size: 0.75rem;
+    }
+    .class-slot {
+      padding: 0.3rem;
+    }
+    .class-title {
+      font-size: 0.7rem;
+    }
+    .class-detail {
+      font-size: 0.6rem;
+    }
+    .lecture-badge {
+      font-size: 0.55rem;
+      padding: 2px 5px;
+    }
+    .empty-slot {
+      font-size: 0.65rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-title {
+      font-size: 1.2rem;
+    }
+    .info-chip {
+      font-size: 0.65rem;
+      padding: 0.25rem 0.7rem;
+    }
+    .timetable th,
+    .timetable td {
+      padding: 0.4rem 0.3rem;
+      font-size: 0.7rem;
+    }
+    .time-col {
+      width: 70px;
+    }
+    .class-slot {
+      padding: 0.25rem;
+    }
+    .class-title {
+      font-size: 0.65rem;
+    }
+    .class-detail {
+      font-size: 0.55rem;
+      margin-top: 2px;
+    }
+  }
+</style>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📅 Weekly Timetable</h1>
@@ -17,7 +125,7 @@
   {% endif %}
 </div>
 
-{% if timetable %}
+{% if has_slots %}
 
 <div class="info-bar">
   <div class="info-chip">📘 {{ session }}</div>
@@ -30,34 +138,18 @@
     <thead>
       <tr>
         <th>Time</th>
-        <th>Monday</th>
-        <th>Tuesday</th>
-        <th>Wednesday</th>
-        <th>Thursday</th>
-        <th>Friday</th>
+        {% for day in days %}
+        <th>{{ day }}</th>
+        {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% for slot in time_slots %}
+      {% for slot in timetable %}
       <tr>
-        <td class="time-col">{{ slot }}</td>
+        <td class="time-col">{{ slot.label }}</td>
         {% for day in days %}
-        <td>
-          {% with entry=timetable %} {% if entry %}
-          <div class="class-slot">
-            <div class="class-title">{{ entry.course.course_name }}</div>
-            <div class="class-detail">
-              {{ entry.course.course_code }} | {{ entry.venue }}
-            </div>
-            <div class="class-detail">
-              👨‍🏫 {{ entry.lecturer.user.full_name }}
-            </div>
-            <span class="lecture-badge">Lecture</span>
-          </div>
-          {% else %}
-          <div class="empty-slot">— Free —</div>
-          {% endif %} {% endwith %}
-        </td>
+        <!-- prettier-ignore -->
+        <td>{% with entry=slot.days|dict_key:day %}{% if entry %}<div class="class-slot"><div class="class-title">{{ entry.curriculum.course.course_name }}</div><div class="class-detail">{{ entry.curriculum.course.course_code }} | {{ entry.venue }}</div><div class="class-detail">👨‍🏫 {% for lecturer in entry.curriculum.professor.all %}{{ lecturer.user.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div><span class="lecture-badge">Lecture</span></div>{% else %}<div class="empty-slot">— Free —</div>{% endif %}{% endwith %}</td>
         {% endfor %}
       </tr>
       {% endfor %}

@@ -104,7 +104,10 @@ class Tclass(BaseModelMixin):
 
     year_of_study = models.IntegerField(default=1, null=True, blank=True)
 
-    graduated = models.DateField(null=True)
+    graduated = models.DateField(
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.class_name

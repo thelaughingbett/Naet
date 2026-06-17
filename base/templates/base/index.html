@@ -23,6 +23,43 @@
       </div>
       <div style="font-size: 2.5rem">📘</div>
     </div>
+    <!-- Weekly Schedule — add after the registered units card, still inside .dash-col -->
+    <div class="card">
+      <div class="card__header">
+        <span>🗓️ Today's Schedule</span>
+        <a href="{% url 'base-weekly-schedule' %}" class="card__header-link"
+          >Full timetable →</a
+        >
+      </div>
+      <div class="card__body schedule-list">
+        {% if today_slots %} {% for slot in today_slots %}
+        <div class="schedule-slot">
+          <div class="schedule-slot__time">{{ slot.label }}</div>
+
+          {% if slot.entry %}
+          <!-- prettier-ignore -->
+          <div class="schedule-slot__block schedule-slot__block--{{ slot.entry.curriculum.course.course_type|lower }}">
+            <div class="schedule-slot__name">{{ slot.entry.curriculum.course.course_name }}</div>
+            <div class="schedule-slot__meta">
+              {{ slot.entry.curriculum.course.course_code }}
+              · {{ slot.entry.venue }}
+              · {% for lecturer in slot.entry.curriculum.professor.all %}{{ lecturer.user.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="schedule-slot__block schedule-slot__block--free">
+            <div class="schedule-slot__free">— Free period —</div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %} {% else %}
+        <div style="text-align: center; padding: 24px; opacity: 0.5">
+          <div style="font-size: 1.5rem; margin-bottom: 6px">📭</div>
+          <div style="font-size: 0.8rem">No classes scheduled today</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
     <div class="card">
       <div class="card__header">
         <span>📚 Registered Units (Current Semester)</span>
@@ -38,16 +75,21 @@
             </tr>
           </thead>
           <tbody>
-            {% if user.student_profile.enrollments %}
-            <br />
-            {% for enrollment in user.student_profile.enrollments.all %}
+            {% if enrollments %} {% for curriculum in enrollments %}
             <tr>
-              <td>{{enrollment.course.course_name}}</td>
-              <td>{{enrollment.course.course_code | upper}}</td>
-              <td><span class="badge-approved">Approved</span></td>
+              <td>{{ curriculum.course.course_name }}</td>
+              <td>{{ curriculum.course.course_code|upper }}</td>
+              <td><span class="badge-approved">Enrolled</span></td>
             </tr>
-            {%endfor%}{% else %}
-            <span> no enrollments yet </span>
+            {% endfor %} {% else %}
+            <tr>
+              <td
+                colspan="3"
+                style="text-align: center; opacity: 0.5; padding: 1rem"
+              >
+                No units registered yet
+              </td>
+            </tr>
             {% endif %}
           </tbody>
         </table>
@@ -86,19 +128,21 @@
       </div>
       {% endif %}
 
-      <button
-        style="
-          margin-top: 12px;
-          background: rgba(255, 255, 255, 0.2);
-          border: none;
-          padding: 6px 12px;
-          border-radius: 40px;
-          color: white;
-          cursor: pointer;
-        "
-      >
-        View Statement →
-      </button>
+      <a href="{% url 'base-fee-statement' %}">
+        <button
+          style="
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+          "
+        >
+          View Statement →
+        </button>
+      </a>
     </div>
 
     {% else %}
@@ -166,26 +210,31 @@
         </svg>
         <h4 style="margin: 0">🏠 Hostel Info</h4>
       </div>
-      <p><strong>Residence:</strong> hostel {{user.student_profile.hostel}}</p>
-      <p><strong>Room:</strong> B-203 (Double)</p>
-      <p><strong>Bed Space:</strong> 2A · Meal Plan: Full</p>
-      <div
-        style="
-          margin-top: 12px;
-          background: #eff6ff;
-          border-radius: 40px;
-          padding: 8px;
-          font-size: 0.75rem;
-        "
-      >
-        ✅ Check-in active | Paid 70%
-      </div>
+      <!-- prettier-ignore -->
+      {% with allocation=student.hostel_allocations.filter.first %}
+      {% if  allocation %}
+      <p><strong>Hostel:</strong> {{ allocation.room.hostel.name }}</p>
+      <p>
+        <strong>Room:</strong> {{ allocation.room.room_number }}
+        <!-- prettier-ignore -->
+        ({{ allocation.room.room_type }})
+      </p>
+      <p>
+        <strong>Floor:</strong>
+        <!-- prettier-ignore -->
+        {% if  allocation.room.floor == 0 %} ground {% else%} {{ allocation.room.floor }} {% endif %}
+      </p>
+      {% else %}
+      <p style="opacity: 0.6; font-size: 0.85rem">
+        No hostel allocation for this session.
+      </p>
+      {% endif %} {% endwith %}
     </div>
     {% else %}
     <div class="nonresident-card">
-      <h3><i class="fas fa-home"></i> Non-Resident Student</h3>
+      <h3>🏠 Non-Resident Student</h3>
       <p style="font-size: 0.75rem; margin-top: 0.3rem">
-        Off‑campus guide, housing, and transport resources available.
+        Off-campus guide, housing, and transport resources available.
       </p>
       <button
         style="
@@ -196,7 +245,6 @@
           padding: 0.3rem 0.8rem;
           border-radius: 30px;
         "
-        onclick="alert('Redirect to Off-Campus Guide')"
       >
         Explore Guide →
       </button>

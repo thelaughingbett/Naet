@@ -3,14 +3,401 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Sign In — Naet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --navy: #0a2540;
+        --maroon: #9e2a2b;
+        --blue: #1f6392;
+        --bg: #f5f7fb;
+        --white: #ffffff;
+        --border: #e9edf2;
+        --text: #1f2a3e;
+        --muted: #5a6874;
+        --font: "Plus Jakarta Sans", sans-serif;
+        --radius: 16px;
+        --shadow: 0 8px 32px rgba(10, 37, 64, 0.1);
+      }
+
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+
+      /* split layout */
+      .login-wrap {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 900px;
+        width: 100%;
+        background: var(--white);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+      }
+
+      /* left — brand panel */
+      .login-brand {
+        background: linear-gradient(160deg, #0a2b3e 0%, #07212f 100%);
+        padding: 3rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: white;
+      }
+
+      .brand-logo {
+        font-size: 1.6rem;
+        font-weight: 800;
+        background: linear-gradient(120deg, #fff, #c0d9f0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+      }
+
+      .brand-tagline {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.4;
+        margin-top: auto;
+        margin-bottom: 1rem;
+      }
+
+      .brand-tagline span {
+        color: #c0d9f0;
+        font-weight: 400;
+        font-size: 0.9rem;
+        display: block;
+        margin-top: 8px;
+      }
+
+      .brand-pills {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 2rem;
+      }
+
+      .brand-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 40px;
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        color: #c0d9f0;
+      }
+
+      /* right — form panel */
+      .login-form-wrap {
+        padding: 3rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .form-heading {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .form-sub {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 2rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.1rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 0.9rem;
+        font-family: var(--font);
+        color: var(--text);
+        background: var(--bg);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(31, 99, 146, 0.12);
+        background: white;
+      }
+
+      .btn-login {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, var(--navy), #1a3a5c);
+        color: white;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: var(--font);
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition:
+          opacity 0.2s,
+          transform 0.15s;
+        letter-spacing: 0.2px;
+      }
+
+      .btn-login:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+
+      .form-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .form-footer a {
+        color: var(--blue);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .form-footer a:hover {
+        text-decoration: underline;
+      }
+
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 1.2rem 0;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      @media (max-width: 640px) {
+        .login-brand {
+          display: none;
+        }
+        .login-wrap {
+          grid-template-columns: 1fr;
+          max-width: 420px;
+        }
+        .login-form-wrap {
+          padding: 2rem 1.5rem;
+        }
+      }
+
+      #id_password {
+        padding-right: 44px;
+      }
+    </style>
   </head>
   <body>
-    <form action="{% url 'base-login' %}" method="post">
-      {% csrf_token %}{{form.as_p}}
-      <input type="submit" value="login" />
-    </form>
+    {% if form.errors %}
+    <div
+      style="
+        background: #fdecea;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        color: #a32d2d;
+        margin-bottom: 1rem;
+      "
+    >
+      ⚠️ {{ form.non_field_errors|join:", " }}
+    </div>
+    {% endif %}
+    <div class="login-wrap">
+      <!-- brand panel -->
+      <div class="login-brand">
+        <div class="brand-logo">🎓 Naet</div>
+        <div>
+          <div class="brand-tagline">
+            Your academic life, in one place.
+            <span>Fees · Results · Timetable · Hostel</span>
+          </div>
+          <div class="brand-pills">
+            <div class="brand-pill">✅ Fee payments &amp; statements</div>
+            <div class="brand-pill">📚 Unit registration &amp; results</div>
+            <div class="brand-pill">🏠 Hostel allocation &amp; booking</div>
+            <div class="brand-pill">📅 Timetable &amp; exam schedule</div>
+          </div>
+        </div>
+      </div>
 
-    <a href="{% url 'base-register' %}"> register </a>
+      <!-- form panel -->
+      <div class="login-form-wrap">
+        <h1 class="form-heading">Welcome back</h1>
+        <p class="form-sub">Sign in to your student portal</p>
+
+        <form action="{% url 'base-login' %}" method="post">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email address</label>
+            {{ form.email }} {% if form.email.errors %}
+            <small style="color: var(--maroon)"
+              >{{ form.email.errors|join:", " }}</small
+            >
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Password</label>
+
+            <!-- password field + toggle button wrapper -->
+            <div style="position: relative">
+              {{ form.password }}
+              <button
+                type="button"
+                id="togglePassword"
+                onclick="togglePasswordVisibility()"
+                style="
+                  position: absolute;
+                  right: 12px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  font-size: 1rem;
+                  color: var(--muted);
+                  padding: 0;
+                  line-height: 1;
+                "
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+
+            {% if form.password.errors %}
+            <small style="color: var(--maroon)"
+              >{{ form.password.errors|join:", " }}</small
+            >
+            {% endif %}
+          </div>
+
+          <!-- remember me + forgot password row -->
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin: 0.2rem 0 1.2rem;
+            "
+          >
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.82rem;
+                color: var(--muted);
+                font-weight: 500;
+                text-transform: none;
+                letter-spacing: 0;
+                cursor: pointer;
+              "
+            >
+              {{ form.remember_me }} Remember me
+            </label>
+            <a
+              href="#"
+              style="
+                font-size: 0.82rem;
+                color: var(--blue);
+                text-decoration: none;
+                font-weight: 500;
+              "
+            >
+              Forgot password?
+            </a>
+          </div>
+
+          {% if form.non_field_errors %}
+          <div
+            style="
+              background: #fdecea;
+              border-radius: 12px;
+              padding: 10px 14px;
+              font-size: 0.82rem;
+              color: #a32d2d;
+              margin-bottom: 1rem;
+            "
+          >
+            ⚠️ {{ form.non_field_errors|join:", " }}
+          </div>
+          {% endif %}
+
+          <button type="submit" class="btn-login">Sign in →</button>
+        </form>
+
+        <div class="form-footer">
+          Don't have an account?
+          <a href="{% url 'base-register' %}">Register here</a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function togglePasswordVisibility() {
+        const input = document.getElementById("id_password");
+        const btn = document.getElementById("togglePassword");
+        const isText = input.type === "text";
+        input.type = isText ? "password" : "text";
+        btn.textContent = isText ? "👁️" : "🙈";
+      }
+    </script>
   </body>
 </html>

@@ -52,7 +52,9 @@ from django.db import (
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from base.models import (
-    Curriculum
+    Curriculum,
+    HostelAllocation,
+    HostelEvaluation
 )
 
 from .base import (
@@ -78,7 +80,12 @@ class CourseEvaluationView(
             session=session
         ).select_related('course') if student and session else []
 
+        curricula = Curriculum.objects.filter(
+            session=session,
+            Tclass=student.class_entered
+        )
         context = {
+            'curricula': curricula,
             'courses': enrolled_courses,
             'student': student,
         }
@@ -97,20 +104,18 @@ class LecturerEvaluationView(
         student = self.get_student(request)
         session = self.get_active_session()
 
-        lecturers = Curriculum.objects.filter(
+        # Fetch Curriculum instances with prefetched relationships
+        curricula = Curriculum.objects.filter(
             Tclass=student.class_entered,
             session=session
+        ).select_related(
+            'course'
         ).prefetch_related(
-            'professor'
-        ).values(
-            'professor__user__first_name',
-            'professor__user__last_name',
-            'professor__record_id',
-            'course__course_name'
+            'professor__user'
         ) if student and session else []
 
         context = {
-            'lecturers': lecturers,
+            'curricula': curricula,
             'student': student,
         }
         return render(request, 'base/evaluations/lecturer.html', context)
@@ -127,9 +132,27 @@ class HostelEvaluationView(
 
     def get(self, request):
         student = self.get_student(request)
+        session = self.get_active_session()
         # TODO : check if hostel records exist else redirect to referer
+
+        try:
+            allocation = HostelAllocation.objects.get(
+                student=student,
+                session=session
+            )
+
+            try:
+                evaluation = HostelEvaluation.objects.get(
+                    allocation=allocation)
+            except:
+                evaluation = None
+
+        except:
+            allocation = None
+
         context = {
+            'allocation': allocation,
             'student': student,
-            'hostel': student if student else None,
+            'evaluation': evaluation
         }
         return render(request, 'base/evaluations/hostel.html', context)

@@ -66,17 +66,14 @@
     <div class="unit-details">
       <div><strong>Semester:</strong> {{unit.session}}</div>
       <div>
-        <!-- Prefetch professors count to determine label format -->
-        {% with prof_count=curriculum.professor.all|length %}
-        <strong>Instructor{{ prof_count|pluralize:"s" }}:</strong>
-        {% endwith %}
+        {% with professors=unit.professor.all %}
+        <strong>Instructor{{ professors|length|pluralize:"s" }}:</strong>
 
-        <!-- Loop through and display the professors -->
-        {% for prof in curriculum.professor.all %} {{ prof.name }}
-        <template></template>
-        {% if not forloop.last %}, {% endif %} {% empty %}
+        <!-- prettier-ignore -->
+        {% for prof in professors %} {{ prof.name }}
+        {% if not  forloop.last %}, {% endif %} {% empty %}
         <em>No instructor assigned</em>
-        {% endfor %}
+        {% endfor %} {% endwith %}
       </div>
     </div>
   </div>

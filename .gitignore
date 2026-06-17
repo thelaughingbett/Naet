@@ -11,6 +11,7 @@ cache/
 .vs
 user-upload/
 node_modules/
+.veny
 
 # Python
 *.pyc
@@ -219,3 +220,4 @@ cython_debug/
 #.idea/
 
 # End of https://www.toptal.com/devel
+bin/

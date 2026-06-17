@@ -1,0 +1,11 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+Your results for the {{ session }} session are now available.
+
+View your results: {{ portal_url }}
+
+Log in to the student portal to view your full transcript.
+{% endblock %}

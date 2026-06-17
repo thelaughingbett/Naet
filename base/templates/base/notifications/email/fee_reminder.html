@@ -1,0 +1,17 @@
+{% extends "base/notifications/email/base.html" %} {% block content %}
+<p>Hi {{ student_name }},</p>
+<p>This is a friendly reminder that you have an outstanding balance due.</p>
+
+<div class="highlight">
+  <div class="label">Amount Due</div>
+  <div class="value">KES {{ balance }}</div>
+</div>
+
+<p><strong>Due Date:</strong> {{ due_date }}</p>
+
+<div class="cta">
+  <a href="{{ portal_url }}">Pay Now</a>
+</div>
+
+<p>Please settle this balance to avoid disruption to your studies.</p>
+{% endblock %}

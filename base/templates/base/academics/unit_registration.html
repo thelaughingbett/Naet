@@ -99,7 +99,78 @@
         </tbody>
       </table>
     </form>
-
+    {% elif not session %}
+    <div
+      style="
+        background: var(--color-background-primary);
+        border: 0.5px solid var(--color-border-tertiary);
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      "
+    >
+      <div
+        style="
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background: var(--color-background-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <span
+          class="ti ti-calendar-off"
+          style="font-size: 24px; color: var(--color-text-secondary)"
+          aria-hidden="true"
+          >🗓️</span
+        >
+      </div>
+      <div>
+        <p
+          style="
+            font-size: 15px;
+            font-weight: 500;
+            margin: 0 0 6px;
+            color: var(--color-text-primary);
+          "
+        >
+          No active session
+        </p>
+        <p
+          style="
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin: 0;
+            line-height: 1.6;
+            max-width: 300px;
+          "
+        >
+          There is no active academic session at the moment. Check back when a
+          new session is opened.
+        </p>
+      </div>
+      <a
+        href="#"
+        style="
+          font-size: 13px;
+          color: var(--color-text-info);
+          text-decoration: none;
+          margin-top: 4px;
+        "
+        >Contact department
+        <i
+          class="ti ti-arrow-right"
+          style="font-size: 12px"
+          aria-hidden="true"
+        ></i
+      ></a>
+    </div>
     {% else %}
     <div class="empty-state">
       <div class="empty-icon">📭</div>

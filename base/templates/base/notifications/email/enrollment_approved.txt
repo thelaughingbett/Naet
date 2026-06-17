@@ -1,0 +1,11 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+Your unit registration for the {{ session }} session has been approved.
+
+View your units: {{ portal_url }}
+
+You're all set for the session.
+{% endblock %}

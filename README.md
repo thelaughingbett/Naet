@@ -251,15 +251,17 @@ Role-based access is enforced automatically:
 
 ---
 
-## 📦 Module Breakdown
+## 📦 [Module Breakdown](docs/modules/README.md)
 
-| Module                                                        | Description                             |
-| ------------------------------------------------------------- | --------------------------------------- |
-| [🎓 Enrollment](docs/modules/enrollment/index.md)             | How students get into courses           |
-| [💰 Fees & Payments](docs/modules/fees/index.md)              | Payment processing and overdraft logic  |
-| [🔄 Session Rollover](docs/modules/session-rollover/index.md) | Academic year transition                |
-| [🔑 Auth & Access](docs/modules/auth/index.md)                | Login flow and role-based access        |
-| [🕐 Timetabling](docs/modules/timetabling/index.md)           | Schedule management and clash detection |
+| Module                                                        | Description                              |
+| ------------------------------------------------------------- | ---------------------------------------- |
+| [📧 Email Generation](docs/modules/email_generation/index.md) | Automated email creation and delivery    |
+| [🏢 ERP](docs/modules/erp/index.md)                           | Enterprise resource planning integration |
+| [📅 Events](docs/modules/events/index.md)                     | Event scheduling and management          |
+| [📰 News](docs/modules/news/index.md)                         | News publishing and feed management      |
+| [💳 Payments](docs/modules/payments/index.md)                 | Payment processing and transaction logic |
+| [📊 Results](docs/modules/results/index.md)                   | Academic results and grade management    |
+| [🕐 Timetabling](docs/modules/timetabling/index.md)           | Schedule management and clash detection  |
 
 ## 👨‍💻 Author
 

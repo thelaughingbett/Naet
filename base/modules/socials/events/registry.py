@@ -10,7 +10,7 @@ background workers and webhook routes.
 """
 
 from typing import Dict
-from events.backends.base import AbstractEventsBackend
+from .backends import AbstractEventsBackend
 
 
 class EventsRegistry:

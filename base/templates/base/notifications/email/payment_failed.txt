@@ -1,0 +1,13 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+Unfortunately, your recent payment attempt did not go through.
+
+Amount: KES {{ amount }}
+
+This can happen due to insufficient funds, an expired card, or a network issue. Please try again, or contact the finance office if the problem continues.
+
+Retry your payment: {{ portal_url }}
+{% endblock %}

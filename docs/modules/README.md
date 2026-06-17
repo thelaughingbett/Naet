@@ -1,15 +1,14 @@
 ## 📦 Module Breakdown
 
-> Each module has its own index page with flowcharts, sequence diagrams,
-> class diagrams, and user journeys — all in one place.
-
-| Module                                                   | Description                             |
-| -------------------------------------------------------- | --------------------------------------- |
-| [🎓 Enrollment](enrollment/index.md)                     | How students get into courses           |
-| [💰 Fees & Payments](modules/fees/index.md)              | Payment processing and overdraft logic  |
-| [🔄 Session Rollover](modules/session-rollover/index.md) | Academic year transition                |
-| [🔑 Auth & Access](modules/auth/index.md)                | Login flow and role-based access        |
-| [🕐 Timetabling](modules/timetabling/index.md)           | Schedule management and clash detection |
+| Module                                             | Description                              |
+| -------------------------------------------------- | ---------------------------------------- |
+| [📧 Email Generation](./email_generation/index.md) | Automated email creation and delivery    |
+| [🏢 ERP](./erp/index.md)                           | Enterprise resource planning integration |
+| [📅 Events](./events/index.md)                     | Event scheduling and management          |
+| [📰 News](./news/index.md)                         | News publishing and feed management      |
+| [💳 Payments](./payments/index.md)                 | Payment processing and transaction logic |
+| [📊 Results](./results/index.md)                   | Academic results and grade management    |
+| [🕐 Timetabling](./timetabling/index.md)           | Schedule management and clash detection  |
 
 ---
 

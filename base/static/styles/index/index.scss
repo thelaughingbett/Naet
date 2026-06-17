@@ -765,3 +765,81 @@
   border-radius: var(--radius);
   padding: 1rem;
 }
+
+/* ========== SCHEDULE CARD (dashboard) ========== */
+.card__header-link {
+  font-size: 0.75rem;
+  color: var(--blue-card);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+}
+
+.schedule-slot {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+
+  &__time {
+    min-width: 70px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding-top: 3px;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+
+  &__block {
+    flex: 1;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    border-left: 3px solid transparent;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    &--c {
+      background: #e6f1fb;
+      border-color: #185fa5;
+    } /* Core */
+    &--e {
+      background: #eaf3de;
+      border-color: #3b6d11;
+    } /* Elective */
+    &--cc {
+      background: #faeeda;
+      border-color: #854f0b;
+    } /* Common unit */
+    &--free {
+      background: var(--border);
+      border-color: var(--border);
+      opacity: 0.6;
+    }
+  }
+
+  &__name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  &__meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  &__free {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+}

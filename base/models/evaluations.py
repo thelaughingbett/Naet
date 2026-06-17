@@ -22,6 +22,8 @@ class CourseEvaluation(BaseModelMixin):
         on_delete=models.CASCADE
     )
 
+    # TODO :  add enrollment here instead of curriculum
+
     rating = models.IntegerField(
         default=0
     )
@@ -40,6 +42,8 @@ class LecturerEvaluation(
         on_delete=models.CASCADE
     )
 
+    # TODO :  add enrollment here instead of curriculum make sure its not returned anywhere
+
     lecturer = models.ForeignKey(
         "Lecturer",
         on_delete=models.CASCADE
@@ -53,3 +57,44 @@ class LecturerEvaluation(
         blank=True,
         null=True
     )
+
+
+# models.py
+
+HOSTEL_EVALUATION_CATEGORIES = [
+    ('cleanliness',  'Cleanliness'),
+    ('security',     'Security'),
+    ('water_supply', 'Water Supply'),
+    ('electricity',  'Electricity & Power'),
+    ('noise_levels', 'Noise Levels'),
+    ('maintenance',  'Maintenance & Repairs'),
+]
+
+_RATING_CHOICES = [(i, i) for i in range(1, 6)]
+
+
+class HostelEvaluation(BaseModelMixin):
+    """
+    One evaluation per HostelAllocation — i.e. one per student per session
+    they were resident. Category field names are derived from
+    HOSTEL_EVALUATION_CATEGORIES (<key>_rating), so the view can build
+    kwargs for create() generically.
+    """
+    allocation = models.OneToOneField(
+        'HostelAllocation',
+        on_delete=models.CASCADE,
+        related_name='evaluation'
+    )
+
+    cleanliness_rating = models.IntegerField(choices=_RATING_CHOICES)
+    security_rating = models.IntegerField(choices=_RATING_CHOICES)
+    water_supply_rating = models.IntegerField(choices=_RATING_CHOICES)
+    electricity_rating = models.IntegerField(choices=_RATING_CHOICES)
+    noise_levels_rating = models.IntegerField(choices=_RATING_CHOICES)
+    maintenance_rating = models.IntegerField(choices=_RATING_CHOICES)
+
+    rating = models.IntegerField(choices=_RATING_CHOICES)  # overall
+    comments = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Evaluation for {self.allocation}"

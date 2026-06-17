@@ -1,6 +1,0 @@
-{
-  "devDependencies": {
-    "prettier": "^3.8.4",
-    "prettier-plugin-jinja-template": "^2.2.0"
-  }
-}

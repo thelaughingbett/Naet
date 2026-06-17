@@ -1,5 +1,3 @@
-# erp/tasks/sync.py
-
 import logging
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
@@ -20,8 +18,12 @@ def erp_sync(self, app_label: str, model_name: str, instance_id: str, event: str
         instance_id: Primary key of the instance
         event:       Event string e.g. 'payment.confirmed'
     """
-    from erp.registry import erp_registry
-    from erp.models import ERPSyncLog
+    from base.modules.erp.registry import erp_registry
+    from base.modules.erp.models import ERPSyncLog
+
+    logger.info(
+        f"[erp_sync] fired — event={event} model={model_name} id={instance_id}"
+    )
 
     # resolve the model and instance dynamically
     try:
@@ -44,7 +46,7 @@ def erp_sync(self, app_label: str, model_name: str, instance_id: str, event: str
 
 
 def _run_handler(task, handler, instance, event):
-    from erp.models import ERPSyncLog
+    from base.modules.erp.models import ERPSyncLog
 
     log = ERPSyncLog.objects.create(
         content_type_str=f"{instance.__class__.__name__}:{instance.pk}",

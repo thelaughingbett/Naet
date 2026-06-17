@@ -1,0 +1,37 @@
+Hi {{ student.user.first_name }},
+
+You're now officially enrolled at {{ student.class_entered.programme.department.school.school_name }}. Here's everything you need to get started.
+
+SCHOOL EMAIL
+{{ student.school_email }}
+Use this to log in to all university systems.
+
+REGISTRATION NUMBER
+{{ student.registration_number }}
+
+PROGRAMME
+{{ student.class_entered.programme.programme_name }}
+
+CLASS
+{{ student.class_entered.class_name }}
+
+----
+
+🔑 CHANGE YOUR PASSWORD ON FIRST LOGIN
+Your default password is your registration number ({{ student.registration_number }}).
+You are required to change it the first time you log in. Do not share it with anyone.
+
+{% if student.stay == 'resident' and not student.current_hostel %}
+🏠 ONE MORE STEP — BOOK YOUR HOSTEL
+You selected on-campus accommodation. Complete your hostel booking before your arrival date.
+{{ hostel_booking_url }}
+{% endif %}
+
+Go to your dashboard: {{ dashboard_url }}
+
+A confirmation has been sent to {{ student.user.email }}.
+
+----
+This is an automated message — please do not reply directly to this email.
+Need help? Contact {{ support_email|default:"support@institution.ac.ke" }}
+{% block footer %}{% endblock %}

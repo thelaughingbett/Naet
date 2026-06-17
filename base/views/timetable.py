@@ -52,7 +52,9 @@ from django.db import (
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from base.models import (
-    Timetable
+    Timetable,
+    ExamSession,
+    Session
 )
 
 from .base import (
@@ -70,29 +72,54 @@ class WeeklyScheduleView(
     login_url = config("LOGIN_URL") + '?next=timetable/schedule/'
     redirect_field_name = config("REDIRECT_FIELD_NAME")
 
+    DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
+
     def get(self, request):
         student = self.get_student(request)
         session = self.get_active_session()
 
-        schedule = {}
-        days = ['MON', 'TUE', 'WED', 'THU', 'FRI']
+        timetable = []
+        has_slots = False
 
         if student and session:
-            slots = Timetable.objects.filter(
-                tclass=student.class_entered,
-                session=session
-            ).select_related('course', 'lecturer__user').order_by('start_time')
+            entries = Timetable.objects.filter(
+                curriculum__Tclass=student.class_entered,
+                curriculum__session=session,
+            ).select_related(
+                'curriculum__course',
+                'curriculum__Tclass',
+                'venue',
+            ).prefetch_related(
+                'curriculum__professor__user'
+            ).order_by('time_slot')
 
-            for day in days:
-                schedule[day] = slots.filter(day=day)
+            has_slots = entries.exists()
 
-        context = {
-            'schedule': schedule,
-            'days': days,
-            'student': student,
-            'session': session,
-        }
-        return render(request, 'base/timetable/weekly_schedule.html', context)
+            # build lookup: {(time_slot, day): entry}
+            grid = {
+                (e.time_slot, e.day): e
+                for e in entries
+            }
+
+            # use TIME_SLOTS from the model directly
+            for slot_value, slot_label in Timetable.TIME_SLOTS:
+                row = {
+                    'value': slot_value,   # '08:00-10:00'
+                    'label': slot_label,   # '1st Slot (08:00 - 10:00)'
+                    'days': {
+                        day: grid.get((slot_value, day))
+                        for day in self.DAYS
+                    }
+                }
+                timetable.append(row)
+
+        return render(request, 'base/timetable/weekly_schedule.html', {
+            'timetable':  timetable,
+            'has_slots':  has_slots,
+            'days':       self.DAYS,
+            'student':    student,
+            'session':    session,
+        })
 
 
 class ExamTimetableView(
@@ -108,9 +135,24 @@ class ExamTimetableView(
         student = self.get_student(request)
         session = self.get_active_session()
 
-        context = {
-            'student': student,
-            'session': session,
-            # wire to ExamSession model when built
-        }
-        return render(request, 'base/timetable/exam.html', context)
+        exam_sessions = ExamSession.objects.filter(
+            curriculum__Tclass=student.class_entered,
+            curriculum__session=session,
+        ).select_related(
+            'curriculum__course',
+            'curriculum__session',
+        ).prefetch_related(
+            'venues__venue',
+            'venues__invigilator__user',
+        ).order_by('date', 'time_slot') if session else []
+
+        all_sessions = Session.objects.filter(
+            curricula__exam_sessions__isnull=False
+        ).distinct().order_by('-academic_year', '-semester')
+
+        return render(request, 'base/timetable/exam.html', {
+            'student':       student,
+            'session':       session,
+            'exam_sessions': exam_sessions,
+            'all_sessions':  all_sessions,
+        })

@@ -3,4 +3,84 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
+}
+
+/* ========== SCHEDULE CARD (dashboard) ========== */
+.card__header-link {
+  font-size: 0.75rem;
+  color: var(--blue-card);
+  text-decoration: none;
+  font-weight: 500;
+}
+.card__header-link:hover {
+  text-decoration: underline;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+}
+
+.schedule-slot {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.schedule-slot__time {
+  min-width: 70px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding-top: 3px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.schedule-slot__block {
+  flex: 1;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  border-left: 3px solid transparent;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.schedule-slot__block--c {
+  background: #e6f1fb;
+  border-color: #185fa5;
+}
+.schedule-slot__block {
+  /* Core */
+}
+.schedule-slot__block--e {
+  background: #eaf3de;
+  border-color: #3b6d11;
+}
+.schedule-slot__block {
+  /* Elective */
+}
+.schedule-slot__block--cc {
+  background: #faeeda;
+  border-color: #854f0b;
+}
+.schedule-slot__block {
+  /* Common unit */
+}
+.schedule-slot__block--free {
+  background: var(--border);
+  border-color: var(--border);
+  opacity: 0.6;
+}
+.schedule-slot__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.schedule-slot__meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.schedule-slot__free {
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }/*# sourceMappingURL=index.css.map */

@@ -14,8 +14,13 @@ from .finance import *     # noqa: F401, E402
 from .hostel import *      # noqa: F401, E402
 from .misc import *        # noqa: F401, E402
 from .users import *       # noqa: F401, E402
+from .timetabling import *       # noqa: F401, E402
 
 
-admin.site.site_header = 'Student Portal Admin'
-admin.site.site_title = 'Student Portal Admin'
+admin.site.site_header = 'Naet Admin portal'
+admin.site.site_title = 'Naet Admin portal'
 admin.site.index_title = 'Welcome to the administration portal'
+
+
+# passwords
+# lecturer - email:lecturer@email.com - password@123!

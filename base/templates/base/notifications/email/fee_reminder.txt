@@ -1,0 +1,14 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+This is a friendly reminder that you have an outstanding balance due.
+
+Amount Due: KES {{ balance }}
+Due Date: {{ due_date }}
+
+Pay now: {{ portal_url }}
+
+Please settle this balance to avoid disruption to your studies.
+{% endblock %}

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from decouple import config, Csv
 
@@ -8,7 +9,10 @@ SECRET_KEY = config('SECRET')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1',
+    cast=Csv()
+)
 
 
 INSTALLED_APPS = [
@@ -101,13 +105,36 @@ MEDIA_URL = 'media/'
 
 AUTH_USER_MODEL = 'base.User'
 
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-#         'LOCATION': BASE_DIR / 'cache',
-#     }
-# }
 
+# Ensure this only runs in local development
+DEBUG = True
+
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = '127.0.0.1'       # Use 'localhost' or 'mailpit' if using Docker networks
+    EMAIL_PORT = 1025              # Mailpit's default SMTP port
+    EMAIL_USE_TLS = False          # Mailpit does not use encryption by default
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_USER = ''           # No authentication needed
+    EMAIL_HOST_PASSWORD = ''
+    DEFAULT_FROM_EMAIL = 'testing@yourdomain.local'
+
+# 1. Direct django-sms to use its built-in official Twilio wrapper
+SMS_BACKEND = 'sms.backends.twilio.SmsBackend'
+
+# 2. Add credentials (Use your real ones in production, dummy ones work for MessagePit)
+TWILIO_ACCOUNT_SID = os.environ.get(
+    'TWILIO_ACCOUNT_SID', 'AC_prod_or_local_sid')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', 'prod_or_local_token')
+DEFAULT_FROM_SMS = os.environ.get('TWILIO_NUMBER', '+15550001111')
+
+# 3. CRITICAL INTERCEPT FOR NATIVE MESSAGEPIT
+if DEBUG:
+    # Forces the official Twilio SDK client to talk to your native local port
+    os.environ['TWILIO_BASE_URL'] = 'http://127.0.0'
+
+DEFAULT_FROM_SMS = '+15550001111'
+SMS_SENDER_ID = '+15550001111'
 
 # M-Pesa (Daraja API)
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', '')
@@ -121,7 +148,7 @@ BANK_WEBHOOK_SECRET = config('BANK_WEBHOOK_SECRET', '')
 
 # settings.py
 
-SCHOOL_EMAIL_DOMAIN = 'isttitute.ac.ke'
+SCHOOL_EMAIL_DOMAIN = 'institute.ac.ke'
 SCHOOL_EMAIL_STRATEGY = 'default'
 
 # or point to a custom function in your codebase
@@ -131,6 +158,13 @@ SCHOOL_EMAIL_STRATEGY = 'default'
 # # Optional: Route user sessions to Redis for an extra speed boost
 # SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 # SESSION_CACHE_ALIAS = "default"
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': BASE_DIR / 'cache',
+#     }
+# }
 
 CACHES = {
     "default": {
@@ -160,3 +194,59 @@ CELERY_TIMEZONE = 'UTC'
 
 # Switch Celery Beat to look inside the SQL Database for schedules
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    'sync-news-feeds': {
+        'task':     'base.modules.news.tasks.sync_news_feeds',
+        'schedule': 60 * 30,   # every 30 minutes
+    },
+    'sync-event-feeds': {
+        'task':     'events.tasks.sync_event_feeds',
+        'schedule': 60 * 30,   # every 30 minutes
+    },
+}
+
+
+# Modules Config
+TIMETABLE_MODULE_CONFIG = {
+    'DAYS':  (
+        ("MON", "Monday"),
+        ("TUE", "Tuesday"),
+        ("WED", "Wednesday"),
+        ("THU", "Thursday"),
+        ("FRI", "Friday"),
+    ),
+    'SLOTS': (
+        ('08:00-10:00', '1st Slot (08:00 - 10:00)'),
+        ('10:00-12:00', '2nd Slot (10:00 - 12:00)'),
+        ('12:00-13:00', '3rd Slot (12:00 - 13:00)'),
+        ('13:00-15:00', '4th Slot (13:00 - 15:00)'),
+        ('15:00-17:00', '5th Slot (15:00 - 17:00)'),
+        ('17:00-19:00', '6th Slot (17:00 - 19:00)'),
+    ),
+    'EXAM_SLOTS':  [
+        ('08:00-11:00', '1st Slot (08:00 – 11:00)'),
+        ('11:00-14:00', '2nd Slot (11:00 – 14:00)'),
+        ('14:00-17:00', '3rd Slot (14:00 – 17:00)'),
+        ('17:00-20:00', '4th Slot (17:00 – 20:00)'),
+        ('20:00-23:00', '5th Slot (20:00 – 23:00)'),
+    ],
+    'STRATEGY': 'base.modules.timetabling.strategies.greedy.GreedyStrategy'
+
+}
+
+RESULTS_MODULE_CONFIG = {
+
+
+    # default — Excel import
+    "STRATEGY": 'base.modules.results.strategies.excel.ExcelResultsStrategy',
+
+    # swap to LMS push (used by the API view, not the management command)
+    # RESULTS_STRATEGY = 'base.modules.results.strategies.lms.LMSPushStrategy'
+
+    # Excel-specific settings
+    'EXCEL_SHEET': 0,  # first sheet
+    'EXCEL_HEADER_ROW': 1   # headers on row 1, data from row 2
+}
+
+MESSAGEPIT_WEBHOOK_URL = 'http://localhost:8300'

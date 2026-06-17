@@ -73,7 +73,7 @@ from .base import (
 )
 
 __all__ = (
-    ' NewsArticle',
+    'NewsArticle',
     'NewsFetchResult',
     'WebhookVerificationResult',
     'AbstractNewsBackend'

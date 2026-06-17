@@ -1,0 +1,13 @@
+{% extends "base/notifications/email/base.html" %} {% block content %}
+<p>Hi {{ student_name }},</p>
+<p>
+  Your reporting for the <strong>{{ session }}</strong> session has been
+  confirmed. Welcome back!
+</p>
+
+<div class="cta">
+  <a href="{{ portal_url }}">Go to Student Portal</a>
+</div>
+
+<p>We're glad to have you continuing your studies with us.</p>
+{% endblock %}

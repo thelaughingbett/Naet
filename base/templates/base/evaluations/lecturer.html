@@ -15,98 +15,80 @@
       communication, and support
     </div>
   </div>
-
-  {% if lecturer_curricula %} {% for item in lecturer_curricula %}
-  <div class="eval-card">
-    <div class="eval-header">
-      <div>
-        <div class="lecturer-name">{{ item.lecturer.user.full_name }}</div>
-        <div class="course-info">
-          {{ item.curriculum.course.course_code }} – {{
-          item.curriculum.course.course_name }}
+{% if curricula %}
+  {% for curriculum in curricula %}
+    {% for professor in curriculum.professor.all %}
+    <div class="eval-card">
+      <div class="eval-header">
+        <div>
+          <!-- Accessing user via the professor ManyToMany element -->
+          <div class="lecturer-name">{{ professor.name }}</div>
+          <div class="course-info">
+            {{ curriculum.course.course_code }} – {{ curriculum.course.course_name }}
+          </div>
         </div>
-      </div>
-      {% if item.evaluation %}
-      <span class="submitted-badge">✓ Submitted</span>
-      {% endif %}
-    </div>
-
-    <div class="eval-body">
-      {% if item.evaluation %}
-      <!-- read only -->
-      <div class="feedback-label">Rating</div>
-      <div class="rating-stars">
-        {% for i in "12345" %}
-        <span
-          class="star {% if item.evaluation.rating >= forloop.counter %}selected{% endif %}"
-          >★</span
-        >
-        {% endfor %}
-      </div>
-      <div
-        style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)"
-      >
-        {{ item.evaluation.comments|default:"No additional comments." }}
-      </div>
-      <div
-        style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
-      >
-        ⭐ Rating: {{ item.evaluation.rating }}/5 • Submitted on {{
-        item.evaluation.created_at|date:"d M Y" }}
+        
+        {# Note: Implement an evaluation check here if you track submitted evaluations #}
+        {% if False %}
+        <span class="submitted-badge">✓ Submitted</span>
+        {% endif %}
       </div>
 
-      {% else %}
-      <!-- form -->
-      <form method="post" action="{% url 'base-lecturer-evaluation' %}">
-        {% csrf_token %}
-        <input
-          type="hidden"
-          name="curriculum_id"
-          value="{{ item.curriculum.record_id }}"
-        />
-        <input
-          type="hidden"
-          name="lecturer_id"
-          value="{{ item.lecturer.record_id }}"
-        />
-
-        <div class="feedback-label">
-          Rate this lecturer (1 = Poor, 5 = Excellent)
-        </div>
-        <div
-          class="rating-stars"
-          id="stars-{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}"
-        >
+      <div class="eval-body">
+        {% if False %}
+        <!-- Read-only section if already evaluated -->
+        <div class="feedback-label">Rating</div>
+        <div class="rating-stars">
           {% for i in "12345" %}
-          <span
-            class="star"
-            data-value="{{ forloop.counter }}"
-            onclick="setRating('{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}', {{ forloop.counter }})"
-            >★</span
-          >
+          <span class="star">★</span>
           {% endfor %}
         </div>
-        <input
-          type="hidden"
-          name="rating"
-          id="rating-{{ item.lecturer.record_id }}-{{ item.curriculum.record_id }}"
-          required
-        />
+        {% else %}
+        <!-- Form configured unique to each professor + curriculum combination -->
+        <form method="post" action="{% url 'base-lecturer-evaluation' %}">
+          {% csrf_token %}
+          <!-- Pass IDs using the proper model property names -->
+          <input type="hidden" name="curriculum_id" value="{{ curriculum.record_id }}" />
+          <input type="hidden" name="lecturer_id" value="{{ professor.record_id }}" />
 
-        <div class="feedback-label" style="margin-top: 0.8rem">
-          Additional Comments (optional)
-        </div>
-        <textarea
-          name="comments"
-          rows="2"
-          placeholder="Teaching style, communication, availability, etc."
-        ></textarea>
+          <div class="feedback-label">
+            Rate this lecturer (1 = Poor, 5 = Excellent)
+          </div>
+          
+          <!-- Made JavaScript IDs globally unique combining both table records -->
+          <div class="rating-stars" id="stars-{{ professor.record_id }}-{{ curriculum.record_id }}">
+            {% for i in "12345" %}
+            <span
+              class="star"
+              data-value="{{ forloop.counter }}"
+              onclick="setRating('{{ professor.record_id }}-{{ curriculum.record_id }}', {{ forloop.counter }})"
+              >★</span
+            >
+            {% endfor %}
+          </div>
+          
+          <input
+            type="hidden"
+            name="rating"
+            id="rating-{{ professor.record_id }}-{{ curriculum.record_id }}"
+            required
+          />
 
-        <button type="submit" class="submit-btn">Submit Evaluation</button>
-      </form>
-      {% endif %}
+          <div class="feedback-label" style="margin-top: 0.8rem">
+            Additional Comments (optional)
+          </div>
+          <textarea
+            name="comments"
+            rows="2"
+            placeholder="Teaching style, communication, availability, etc."
+          ></textarea>
+
+          <button type="submit" class="submit-btn">Submit Evaluation</button>
+        </form>
+        {% endif %}
+      </div>
     </div>
-  </div>
+    {% endfor %}
   {% endfor %}
 
   <div class="info-box">

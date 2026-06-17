@@ -84,6 +84,7 @@ class Room(BaseModelMixin):
     capacity = models.IntegerField(default=2)
     floor = models.IntegerField(default=1)
     # is_active = models.BooleanField(default=True)
+    price_per_semester = models.PositiveIntegerField(default=0)  # KES
 
     class Meta:
         unique_together = ('hostel', 'room_number')
@@ -126,6 +127,8 @@ class HostelAllocation(BaseModelMixin):
     )
     allocated_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    move_in_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
 
     class Meta:
         # one room slot per student per session

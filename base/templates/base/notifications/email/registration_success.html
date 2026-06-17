@@ -1,0 +1,75 @@
+{% extends "base/notifications/email/base.html" %} {% block subject %}Welcome to
+<!-- prettier-ignore -->
+{{student.class_entered.programme.department.school.school_name }} — Registration
+Confirmed{% endblock %} {% block content %}
+<p>Hi <strong>{{ student.user.first_name }}</strong> 👋,</p>
+<p>
+  You're now officially enrolled at
+  <strong
+    >{{ student.class_entered.programme.department.school.school_name }}</strong
+  >. Here's everything you need to get started.
+</p>
+
+<div class="highlight">
+  <div class="label">School Email</div>
+  <div class="value">{{ student.school_email }}</div>
+  <p style="font-size: 13px; color: #6b7280; margin: 6px 0 0">
+    Use this to log in to all university systems
+  </p>
+</div>
+
+<div class="highlight">
+  <div class="label">Registration Number</div>
+  <div class="value">{{ student.registration_number }}</div>
+</div>
+
+<div class="highlight">
+  <div class="label">Programme</div>
+  <div class="value" style="font-size: 16px">
+    {{ student.class_entered.programme.programme_name }}
+  </div>
+</div>
+
+<div class="highlight">
+  <div class="label">Class</div>
+  <div class="value" style="font-size: 16px">
+    {{ student.class_entered.class_name }}
+  </div>
+</div>
+
+<div class="highlight" style="border-left: 4px solid #f59e0b">
+  <p style="margin: 0 0 6px">
+    <strong>🔑 Change your password on first login</strong>
+  </p>
+  <p style="margin: 0; font-size: 13px; color: #6b7280">
+    Your default password is your registration number (<strong
+      >{{ student.registration_number }}</strong
+    >). You are required to change it the first time you log in. Do not share it
+    with anyone.
+  </p>
+</div>
+
+{% if student.stay == 'resident' and not student.current_hostel %}
+<div class="highlight" style="border-left: 4px solid #3b82f6">
+  <p style="margin: 0 0 6px">
+    <strong>🏠 One more step — book your hostel</strong>
+  </p>
+  <p style="margin: 0; font-size: 13px; color: #6b7280">
+    You selected on-campus accommodation. Complete your hostel booking before
+    your arrival date.
+  </p>
+</div>
+{% endif %}
+
+<div class="cta">
+  {% if student.stay == 'resident' and not student.current_hostel %}
+  <a href="{{ hostel_booking_url }}">Book Hostel →</a>
+  {% else %}
+  <a href="{{ dashboard_url }}">Go to Dashboard →</a>
+  {% endif %}
+</div>
+
+<p style="font-size: 13px; color: #6b7280; margin-top: 24px">
+  A confirmation has been sent to <strong>{{ student.user.email }}</strong>.
+</p>
+{% endblock %}

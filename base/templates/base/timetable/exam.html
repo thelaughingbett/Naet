@@ -1,11 +1,98 @@
-{% extends 'base/main.html' %} {% load static %} {% load humanize %}
 <!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
+
 {% block head %}
 <link
   rel="stylesheet"
   href="{% static 'base/styles/timetable/exam-schedule/index.css' %}"
 />
 <title>Exam Timetable</title>
+<style>
+  /* ========== ADDITIONAL RESPONSIVE STYLES (embedded) ========== */
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.8rem;
+    }
+    .filter-group {
+      justify-content: space-between;
+    }
+    .filter-group label {
+      min-width: 70px;
+    }
+    select,
+    .filter-group input {
+      flex: 1;
+    }
+    .countdown-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+    .countdown-timer {
+      font-size: 1.2rem;
+    }
+    .exam-table th,
+    .exam-table td {
+      padding: 0.7rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .exam-table .exam-type-badge {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.4rem;
+    }
+    .venue-badge {
+      display: inline-block;
+      margin: 0.15rem 0;
+    }
+    .info-note {
+      font-size: 0.7rem;
+      line-height: 1.4;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-title {
+      font-size: 1.3rem;
+    }
+    .exam-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.8rem;
+    }
+    .countdown-card div:first-child .countdown-title {
+      font-size: 0.75rem;
+    }
+    .exam-table th,
+    .exam-table td {
+      padding: 0.5rem 0.3rem;
+      font-size: 0.7rem;
+    }
+    .exam-table th {
+      font-size: 0.65rem;
+    }
+  }
+
+  /* Ensure table container scrolls horizontally on any screen smaller than table min-width */
+  .exam-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .exam-table {
+    min-width: 800px;
+  }
+  /* Better no-results message */
+  #noSearchResults {
+    padding: 2rem;
+  }
+</style>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📖 Exam Timetable</h1>
@@ -16,25 +103,14 @@
 
 {% if exam_sessions %}
 
-<!-- Filter bar -->
 <div class="filter-bar">
   <div class="filter-group">
     <label>📅 Session:</label>
     <select id="sessionSelect" onchange="filterTable()">
       <option value="all">All</option>
       {% for s in all_sessions %}
-      <option
-        value="{{ s.record_id }}"
-        {%
-        if
-        s=""
-        ="session"
-        %}selected{%
-        endif
-        %}
-      >
-        {{ s }}
-      </option>
+      <!-- prettier-ignore -->
+      <option value="{{ s.record_id }}" {% if s == session %}selected{% endif %}>{{ s }}</option>
       {% endfor %}
     </select>
   </div>
@@ -54,77 +130,76 @@
   </div>
 </div>
 
-<!-- Countdown -->
+<!-- countdown — uses time_slot split, not start_time -->
 {% with first=exam_sessions.0 %}
 <div
   class="countdown-card"
   id="countdownCard"
   data-date="{{ first.date|date:'Y-m-d' }}"
-  data-time="{{ first.start_time|time:'H:i' }}"
-  data-code="{{ first.course.course_code }}"
-  data-label="{{ first.date|date:'j M Y' }} • {{ first.start_time|time:'g:i A' }}"
+  data-slot="{{ first.time_slot }}"
+  data-code="{{ first.curriculum.course.course_code }}"
 >
   <div>
     <div class="countdown-title">⏰ Countdown to first exam</div>
     <div class="countdown-timer" id="countdownTimer">calculating...</div>
   </div>
   <div>
-    📌 {{ first.course.course_code }} • {{ first.date|date:"j M Y" }} • {{
-    first.start_time|time:"g:i A" }}
+    📌 {{ first.curriculum.course.course_code }} • {{ first.date|date:"j M Y" }}
+    • {{ first.time_slot }}
   </div>
 </div>
 {% endwith %}
 
-<!-- Exam table -->
 <div class="exam-table-container">
   <table class="exam-table" id="examTable">
     <thead>
       <tr>
         <th>Date</th>
         <th>Day</th>
-        <th>Time</th>
+        <th>Time Slot</th>
         <th>Course Code</th>
         <th>Course Name</th>
+        <th>Type</th>
         <th>Venue</th>
-        <th>Seat No.</th>
+        <th>Invigilator</th>
       </tr>
     </thead>
     <tbody id="examTableBody">
       {% for exam in exam_sessions %}
       <tr
-        data-code="{{ exam.course.course_code|lower }}"
-        data-name="{{ exam.course.course_name|lower }}"
-        data-session="{{ exam.session.record_id }}"
+        data-code="{{ exam.curriculum.course.course_code|lower }}"
+        data-name="{{ exam.curriculum.course.course_name|lower }}"
+        data-session="{{ exam.curriculum.session.record_id }}"
       >
         <td>{{ exam.date|date:"j M Y" }}</td>
         <td>{{ exam.date|date:"l" }}</td>
+        <td>{{ exam.time_slot }}</td>
+        <td><strong>{{ exam.curriculum.course.course_code }}</strong></td>
+        <td>{{ exam.curriculum.course.course_name }}</td>
         <td>
-          {{ exam.start_time|time:"g:i A" }} – {{ exam.end_time|time:"g:i A" }}
+          <span
+            class="exam-type-badge exam-type-badge--{{ exam.exam_type|lower }}"
+          >
+            {{ exam.get_exam_type_display }}
+          </span>
         </td>
-        <td><strong>{{ exam.course.course_code }}</strong></td>
-        <td>{{ exam.course.course_name }}</td>
         <td>
-          {% for venue in exam.venues.all %}
-          <span class="venue-badge">{{ venue.venue }}</span>
+          {% for ev in exam.venues.all %}
+          <span class="venue-badge">{{ ev.venue }}</span>
           {% empty %}
           <span style="opacity: 0.5">TBA</span>
           {% endfor %}
         </td>
-        <td class="seat-number">
+        <td style="font-size: 0.8rem">
           <!-- prettier-ignore -->
-          {% for venue in exam.venues.all %}
-           {% if venue.tclass == student.class_entered %} 
-           {{ venue.venue }} 
-           {% endif %} 
-           {% empty %} —
-          {% endfor %}
+          {% for ev in exam.venues.all %} {{ ev.invigilator.user.full_name }}
+          {% if not forloop.last %}, {% endif %} {% empty %}—{% endfor %}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <!-- no search results state — shown by JS -->
   <div
     id="noSearchResults"
     style="display: none; text-align: center; padding: 40px; opacity: 0.5"
@@ -140,8 +215,6 @@
 </div>
 
 {% else %}
-
-<!-- No exams -->
 <div
   class="exam-table-container"
   style="text-align: center; padding: 60px 20px; opacity: 0.5"
@@ -149,16 +222,15 @@
   <div style="font-size: 2.5rem; margin-bottom: 12px">📭</div>
   <div style="font-weight: 600; margin-bottom: 6px">No exam timetable yet</div>
   <div style="font-size: 0.8rem">
-    {% if session %} No exams have been scheduled for {{ session }}. {% else %}
-    There is no active session at the moment. {% endif %}
+    {% if session %}No exams have been scheduled for {{ session }}.
+    <!-- prettier-ignore -->
+    {% else %}There is no active session at the moment.{% endif %}
     <br />Check back closer to the end of semester.
   </div>
 </div>
-
 {% endif %}
 
 <script>
-  // --- filter ---
   function filterTable() {
     const search =
       document.getElementById("searchExam")?.value.toLowerCase() || "";
@@ -167,36 +239,28 @@
     let visible = 0;
 
     rows.forEach((row) => {
-      const code = row.dataset.code || "";
-      const name = row.dataset.name || "";
-      const session = row.dataset.session || "";
-
-      const matchSearch = code.includes(search) || name.includes(search);
-      const matchSession = sessionId === "all" || session === sessionId;
-
-      if (matchSearch && matchSession) {
-        row.style.display = "";
-        visible++;
-      } else {
-        row.style.display = "none";
-      }
+      const matchSearch =
+        row.dataset.code.includes(search) || row.dataset.name.includes(search);
+      const matchSession =
+        sessionId === "all" || row.dataset.session === sessionId;
+      row.style.display = matchSearch && matchSession ? "" : "none";
+      if (matchSearch && matchSession) visible++;
     });
 
-    const noResults = document.getElementById("noSearchResults");
-    if (noResults) noResults.style.display = visible === 0 ? "block" : "none";
+    document.getElementById("noSearchResults").style.display =
+      visible === 0 ? "block" : "none";
   }
 
-  // --- countdown ---
   function updateCountdown() {
     const card = document.getElementById("countdownCard");
     if (!card) return;
 
-    const date = card.dataset.date;
-    const time = card.dataset.time;
-    const timer = document.getElementById("countdownTimer");
-
-    const examDate = new Date(`${date}T${time}:00`);
+    // slot is '08:00-11:00' — extract start time
+    const slot = card.dataset.slot;
+    const start = slot ? slot.split("-")[0] : "08:00";
+    const examDate = new Date(`${card.dataset.date}T${start}:00`);
     const diff = examDate - new Date();
+    const timer = document.getElementById("countdownTimer");
 
     if (diff <= 0) {
       timer.innerText = "Exam in progress";

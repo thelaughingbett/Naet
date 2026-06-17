@@ -549,4 +549,15 @@ body {
   .layout-grid {
     grid-template-columns: 1fr;
   }
+}
+.empty-state {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }/*# sourceMappingURL=index.css.map */

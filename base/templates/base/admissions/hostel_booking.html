@@ -1,38 +1,48 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/admissions/hostel/index.css' %}"
+  href="{% static 'base/styles/admissions/hostel/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Hostel Booking</title>
 {% endblock %} {% block body %}
+
 <div class="page-header">
   <h1 class="page-title">🏠 Hostel Booking</h1>
+  {% if session %}
   <div class="status-chip" style="background: #dff9e6; color: #1e6f3f">
-    Booking Period: Open (Jan 2026 Intake)
+    Booking Period: Open ({{ session }})
   </div>
+  {% else %}
+  <div class="status-chip" style="background: #fde2e2; color: #a33">
+    Booking Period: Closed (no active session)
+  </div>
+  {% endif %}
 </div>
 
+{% if not current_allocation %}
 <!-- Filter / Room Search -->
 <div class="filter-bar">
   <div class="filter-group">
     <label>Hostel / Hall</label>
     <select id="hallFilter">
       <option value="all">All Halls</option>
-      <option value="Kirinyaga">Kirinyaga Halls</option>
-      <option value="Kenya">Kenya Hall</option>
-      <option value="Mombasa">Mombasa Hall</option>
+      {% for hostel in hostels %}
+      <option value="{{ hostel.name }}">{{ hostel.name }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="filter-group">
     <label>Room Type</label>
     <select id="typeFilter">
       <option value="all">All Types</option>
-      <option value="Single">Single Room</option>
-      <option value="Double">Double Room (Sharing)</option>
-      <option value="Executive">Executive Suite</option>
+      {% for value, label in room_types %}
+      <option value="{{ value }}">{{ label }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="filter-group">
@@ -44,68 +54,47 @@
 
 <!-- Available Rooms Grid -->
 <div id="roomsContainer" class="rooms-grid">
-  <!-- dynamic room cards -->
+  <!-- populated from rooms-data below -->
 </div>
+{%endif%} {{ rooms_json|json_script:"rooms-data" }}
 
-<!-- Booking Section (Form + Current Booking) -->
+<!-- Booking Section -->
 <div class="booking-section">
-  <!-- Booking Form -->
-  <div class="card">
-    <div class="card-header">📝 Book a Room</div>
-    <div class="card-body">
-      <div class="form-group">
-        <label>Select Room</label>
-        <select id="bookingRoomSelect">
-          <option value="">-- Choose a room from above --</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Move-in Date</label>
-        <input type="date" id="moveInDate" value="2026-01-10" />
-      </div>
-      <div class="form-group">
-        <label>Duration (Semesters)</label>
-        <select id="durationSelect">
-          <option>1 Semester</option>
-          <option selected>2 Semesters (Full Academic Year)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Special Requests</label>
-        <textarea
-          rows="2"
-          id="specialReq"
-          placeholder="Any special needs (e.g., accessibility, dietary...)"
-        ></textarea>
-      </div>
-      <button class="btn-primary" id="confirmBookingBtn">
-        ✅ Confirm Booking
-      </button>
-    </div>
-  </div>
-
-  <!-- Current / Previous Booking -->
-  <div class="card">
+  {% if current_allocation %}
+  <!-- Already allocated this session — show status only -->
+  <div class="card" style="grid-column: 1 / -1">
     <div class="card-header">🏷️ My Booking Status</div>
     <div class="card-body">
-      <div id="currentBookingDisplay">
-        <div class="current-booking">
-          <strong>Current Booking:</strong><br />
-          <span>🏠 <strong>Kirinyaga Halls</strong> – Room B-203 (Double)</span
-          ><br />
-          <span>📅 Move-in: 10 Jan 2026 | Duration: 2 Semesters</span><br />
-          <span>💰 Paid: KES 15,000 / 28,500 (Deposit paid)</span><br />
-          <span style="color: #1e6f3f">✅ Booking confirmed</span>
-        </div>
-      </div>
-      <hr style="margin: 1rem 0" />
-      <div>
-        <strong>Payment Summary</strong><br />
+      <div class="current-booking">
+        <strong>Current Booking:</strong><br />
         <span
-          >Hostel Fee: KES 28,500 per semester<br />Deposit paid: KES 15,000<br />Balance:
-          KES 13,500</span
+          >🏠 <strong>{{ current_allocation.room.hostel.name }}</strong> – Room
+          <!-- prettier-ignore -->
+          {{ current_allocation.room.room_number }}
+           ({{ current_allocation.room.get_room_type_display }})</span
+        ><br />
+        {% if current_allocation.move_in_date %}
+        <span
+          >📅 Move-in: {{ current_allocation.move_in_date|date:"d M Y" }}</span
+        ><br />
+        {% endif %} {% if current_allocation.room.price_per_semester %}
+        <span
+          >💰 Hostel Fee: KES {{
+          current_allocation.room.price_per_semester|intcomma }} /
+          semester</span
+        ><br />
+        {% endif %}
+        <span style="color: #1e6f3f"
+          >✅ Allocation confirmed for {{ current_allocation.session }}</span
         >
       </div>
+      {% if current_allocation.notes %}
+      <hr style="margin: 1rem 0" />
+      <strong>Special Requests</strong>
+      <div style="font-size: 0.8rem; color: var(--text-muted)">
+        {{ current_allocation.notes }}
+      </div>
+      {% endif %} {% if current_allocation.room.price_per_semester %}
       <button
         style="
           margin-top: 1rem;
@@ -118,75 +107,68 @@
         "
         onclick="alert('Redirect to payment portal for hostel fees.')"
       >
-        💰 Pay Balance
+        💰 Pay Hostel Fee
       </button>
+      {% endif %}
     </div>
   </div>
+
+  {% else %}
+  <!-- Booking Form -->
+  <div class="card">
+    <div class="card-header">📝 Book a Room</div>
+    <div class="card-body">
+      <form
+        method="post"
+        action="{% url 'base-hostel-booking' %}"
+        id="hostelBookingForm"
+      >
+        {% csrf_token %}
+        <input type="hidden" name="room" id="bookingRoomInput" required />
+
+        <div class="form-group">
+          <label>Select Room</label>
+          <select id="bookingRoomSelect">
+            <option value="">-- Choose a room from above --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Move-in Date</label>
+          <input
+            type="date"
+            name="move_in_date"
+            id="moveInDate"
+            {%
+            if
+            session.start_date
+            %}value="{{ session.start_date|date:'Y-m-d' }}"
+            {%
+            endif
+            %}
+          />
+        </div>
+        <div class="form-group">
+          <label>Special Requests</label>
+          <textarea
+            name="special_requests"
+            id="specialReq"
+            rows="2"
+            placeholder="Any special needs (e.g., accessibility, dietary...)"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn-primary" id="confirmBookingBtn">
+          ✅ Confirm Booking
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 </div>
+
 <script>
-  // Room data
-  const roomsData = [
-    {
-      id: 1,
-      hall: "Kirinyaga Halls",
-      type: "Single",
-      name: "Single Room (En-suite)",
-      capacity: 1,
-      price: 35000,
-      available: true,
-      image: "🛏️",
-    },
-    {
-      id: 2,
-      hall: "Kirinyaga Halls",
-      type: "Double",
-      name: "Double Room (Shared)",
-      capacity: 2,
-      price: 28500,
-      available: true,
-      image: "🛌🛌",
-    },
-    {
-      id: 3,
-      hall: "Kenya Hall",
-      type: "Single",
-      name: "Standard Single",
-      capacity: 1,
-      price: 32000,
-      available: true,
-      image: "🛏️",
-    },
-    {
-      id: 4,
-      hall: "Kenya Hall",
-      type: "Double",
-      name: "Double Room",
-      capacity: 2,
-      price: 27000,
-      available: false,
-      image: "🛌🛌",
-    },
-    {
-      id: 5,
-      hall: "Mombasa Hall",
-      type: "Executive",
-      name: "Executive Suite",
-      capacity: 1,
-      price: 50000,
-      available: true,
-      image: "🌟",
-    },
-    {
-      id: 6,
-      hall: "Mombasa Hall",
-      type: "Double",
-      name: "Double (Sea View)",
-      capacity: 2,
-      price: 32000,
-      available: true,
-      image: "🌊",
-    },
-  ];
+  const roomsData = JSON.parse(
+    document.getElementById("rooms-data").textContent,
+  );
 
   function renderRooms(
     filterHall = "all",
@@ -209,14 +191,17 @@
     container.innerHTML = filtered
       .map(
         (room) => `
-      <div class="room-card" data-id="${room.id}" data-name="${room.name}" data-price="${room.price}" data-hall="${room.hall}">
-        <div class="room-image">${room.image} ${room.type}</div>
+      <div class="room-card" data-id="${room.id}">
+        <div class="room-image">🛏️ ${room.type_display}</div>
         <div class="room-details">
-          <div class="room-title">${room.name}</div>
+          <div class="room-title">${room.type_display} — Room ${room.room_number}</div>
           <div>${room.hall}</div>
           <div class="room-price">KES ${room.price.toLocaleString()} / semester</div>
-          <div>${room.available ? "✅ Available" : "❌ Unavailable"}</div>
-          <button class="book-btn" ${!room.available ? 'disabled style="opacity:0.5;"' : ""} onclick="selectRoomForBooking(${room.id}, '${room.name.replace(/'/g, "\\'")}', ${room.price}, '${room.hall}')">${room.available ? "Select Room" : "Not Available"}</button>
+          <div>${room.available ? `✅ ${room.available_beds} bed(s) available` : "❌ Full"}</div>
+          <button class="book-btn" ${!room.available ? 'disabled style="opacity:0.5;"' : ""}
+            onclick="selectRoomForBooking(${room.id}, '${room.type_display} — Room ${room.room_number}', '${room.hall}')">
+            ${room.available ? "Select Room" : "Not Available"}
+          </button>
         </div>
       </div>
     `,
@@ -224,149 +209,50 @@
       .join("");
   }
 
-  // Global function to populate select dropdown
-  window.selectRoomForBooking = function (id, name, price, hall) {
+  window.selectRoomForBooking = function (id, name, hall) {
     const select = document.getElementById("bookingRoomSelect");
-    // Add or update option
+    const roomInput = document.getElementById("bookingRoomInput");
+    if (!select || !roomInput) return; // already booked — form not rendered
+
     let option = select.querySelector(`option[value="${id}"]`);
     if (!option) {
       option = document.createElement("option");
       option.value = id;
       select.appendChild(option);
     }
-    option.textContent = `${hall} - ${name} (KES ${price.toLocaleString()})`;
+    option.textContent = `${hall} - ${name}`;
     option.selected = true;
-    // Scroll to booking form
+    roomInput.value = id;
+
     document
       .querySelector(".booking-section")
       .scrollIntoView({ behavior: "smooth" });
-    alert(`Room "${name}" selected. Please confirm booking details.`);
   };
+
+  document
+    .getElementById("bookingRoomSelect")
+    ?.addEventListener("change", (e) => {
+      document.getElementById("bookingRoomInput").value = e.target.value;
+    });
+
+  document
+    .getElementById("hostelBookingForm")
+    ?.addEventListener("submit", (e) => {
+      if (!document.getElementById("bookingRoomInput").value) {
+        e.preventDefault();
+        alert("Please select a room from the available rooms first.");
+      }
+    });
 
   // Filter handling
   const hallFilter = document.getElementById("hallFilter");
   const typeFilter = document.getElementById("typeFilter");
   const priceFilter = document.getElementById("priceFilter");
-  const filterBtn = document.getElementById("filterBtn");
-
-  function applyFilters() {
+  document.getElementById("filterBtn").addEventListener("click", () => {
     renderRooms(hallFilter.value, typeFilter.value, priceFilter.value);
-  }
-  filterBtn.addEventListener("click", applyFilters);
+  });
 
   // Initial render
   renderRooms();
-
-  // Populate room select with default (existing booking not needed)
-  // Booking confirmation
-  document
-    .getElementById("confirmBookingBtn")
-    ?.addEventListener("click", () => {
-      const roomSelect = document.getElementById("bookingRoomSelect");
-      const selectedRoomId = roomSelect.value;
-      if (!selectedRoomId) {
-        alert("Please select a room from the available rooms first.");
-        return;
-      }
-      const room = roomsData.find((r) => r.id == selectedRoomId);
-      if (!room) {
-        alert("Invalid room selection");
-        return;
-      }
-      const moveIn = document.getElementById("moveInDate").value;
-      const duration = document.getElementById("durationSelect").value;
-      const special = document.getElementById("specialReq").value;
-
-      alert(
-        `✅ Booking Confirmed!\n\nRoom: ${room.hall} - ${room.name}\nMove-in: ${moveIn}\nDuration: ${duration}\nSpecial Requests: ${special || "None"}\n\nA confirmation email has been sent. You will be redirected to payment to complete deposit.`,
-      );
-
-      // Update current booking display (demo)
-      document.getElementById("currentBookingDisplay").innerHTML = `
-      <div class="current-booking">
-        <strong>Current Booking (Updated):</strong><br/>
-        <span>🏠 <strong>${room.hall}</strong> – ${room.name}</span><br/>
-        <span>📅 Move-in: ${moveIn} | Duration: ${duration}</span><br/>
-        <span>💰 Pending deposit: KES ${(room.price * 0.5).toLocaleString()}</span><br/>
-        <span style="color: #b45f06;">⏳ Awaiting payment confirmation</span>
-      </div>
-    `;
-    });
-
-  // Sidebar toggle
-  const layout = document.getElementById("layoutRoot");
-  const toggleFloat = document.getElementById("floatToggleBtn");
-  function toggleSidebar() {
-    layout.classList.toggle("layout--collapsed");
-    toggleFloat.innerHTML = layout.classList.contains("layout--collapsed")
-      ? "▶"
-      : "◀";
-  }
-  if (toggleFloat) toggleFloat.addEventListener("click", toggleSidebar);
-
-  // Submenu toggles
-  const toggles = document.querySelectorAll(".sidebar__link--toggle");
-  toggles.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-target");
-      const subMenu = document.getElementById(targetId);
-      if (!subMenu) return;
-      const isOpen = subMenu.classList.contains("sidebar__submenu--open");
-      document
-        .querySelectorAll(".sidebar__submenu--open")
-        .forEach((openSub) => {
-          if (openSub !== subMenu)
-            openSub.classList.remove("sidebar__submenu--open");
-        });
-      if (!isOpen) subMenu.classList.add("sidebar__submenu--open");
-      else subMenu.classList.remove("sidebar__submenu--open");
-    });
-  });
-
-  // Ensure admission submenu open
-  const admissionSub = document.getElementById("admission-sub");
-  if (
-    admissionSub &&
-    !admissionSub.classList.contains("sidebar__submenu--open")
-  ) {
-    admissionSub.classList.add("sidebar__submenu--open");
-    const parentGroup = document.querySelector(".sidebar__item--group.active");
-    if (parentGroup) parentGroup.classList.add("sidebar__item--open");
-  }
-
-  // User section collapsible
-  const userSection = document.getElementById("userSection");
-  const userToggle = document.getElementById("userCollapseToggle");
-  if (userSection && userToggle) {
-    const isCollapsed = localStorage.getItem("userSectionCollapsed") === "true";
-    if (isCollapsed)
-      userSection.classList.add("sidebar__user-section--collapsed");
-    userToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userSection.classList.toggle("sidebar__user-section--collapsed");
-      localStorage.setItem(
-        "userSectionCollapsed",
-        userSection.classList.contains("sidebar__user-section--collapsed"),
-      );
-    });
-  }
-
-  // Mock actions
-  document
-    .getElementById("notificationBtn")
-    ?.addEventListener("click", () =>
-      alert("🔔 2 notifications: Hostel booking deadline & Payment reminder."),
-    );
-  document
-    .getElementById("settingsBtn")
-    ?.addEventListener("click", () => alert("⚙️ Settings panel coming soon."));
-  document
-    .getElementById("logoutBtn")
-    ?.addEventListener("click", () => alert("🚪 Logout simulation."));
-
-  const footerSpan = document.querySelector(".sidebar__footer span");
-  if (footerSpan)
-    footerSpan.innerText = `© ${new Date().getFullYear()} Legion Software`;
 </script>
-{%endblock%}
+{% endblock %}

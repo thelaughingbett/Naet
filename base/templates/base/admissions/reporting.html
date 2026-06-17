@@ -72,12 +72,14 @@
           You have reported for {{ session }}
         </div>
         <div style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px">
-          Reported on {{ already_reported.reported_at | date:"d M Y, g:i A" }}
-          via {{ already_reported.get_reported_via_display }}
+          Reported on
+          <!-- prettier-ignore -->
+          {{ already_reported.reported_at | date:"d M Y, g:i A" }} 
+          {% if already_reported.reported_via == 'online' %}  via  School Portal
+          {% else %} physically {% endif %}
         </div>
         <div class="info-box" style="text-align: left">
-          ℹ️ Your reporting slip and orientation schedule have been sent to your
-          university email.
+          ℹ️ Your reporting slip has been sent to your university email.
         </div>
       </div>
       {% endif %}
@@ -86,7 +88,7 @@
 
   <!-- RIGHT COLUMN: Instructions & contact -->
   <div>
-    <div class="card">
+    <!-- <div class="card">
       <div class="card-header">📌 Reporting Guidelines</div>
       <div class="card-body">
         <ul
@@ -103,7 +105,7 @@
           <li>Late reporting fee: KES 5,000 after deadline</li>
         </ul>
       </div>
-    </div>
+    </div> -->
     <div class="card">
       <div class="card-header">📞 Admission Helpdesk</div>
       <div class="card-body">

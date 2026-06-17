@@ -1,0 +1,9 @@
+Hi {{ student.user.first_name }}, your registration is confirmed.
+
+Reg No: {{ student.registration_number }}
+Email: {{ student.school_email }}
+Default password: your registration number — change it on first login.
+{% if student.stay == 'resident' and not student.current_hostel %}
+Book your hostel: {{ hostel_booking_url }}
+{% endif %}
+— {{ institution_name|default:"Student Portal" }}

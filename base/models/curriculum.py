@@ -38,7 +38,8 @@ class Curriculum(BaseModelMixin):
 
     session = models.ForeignKey(
         'Session',
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
+        related_name="curricula"
     )
 
     results = models.ManyToManyField(
@@ -59,26 +60,34 @@ class Curriculum(BaseModelMixin):
         source = cls.objects.filter(
             session_id=from_session_id
         ).prefetch_related('professor')
-        new_records = []
-        professor_map = {}
 
+        professor_map = {}  # {(course_id, tclass_id): [professors]}
+
+        new_records = []
         for req in source:
             obj = cls(
                 course=req.course,
                 Tclass=req.Tclass,
                 session_id=to_session_id,
             )
-            new_records.append((obj, list(req.professor.all())))
+            new_records.append(obj)
+            professor_map[(req.course_id, req.Tclass_id)
+                          ] = list(req.professor.all())
 
-        created_objs = cls.objects.bulk_create(
-            [r[0] for r in new_records],
-            ignore_conflicts=True
+        cls.objects.bulk_create(new_records, ignore_conflicts=True)
+
+        created = cls.objects.filter(
+            session_id=to_session_id,
+            course_id__in=[r.course_id for r in new_records],
+            Tclass_id__in=[r.Tclass_id for r in new_records],
         )
 
-        for obj, professors in zip(created_objs, new_records):
-            obj.professor.set(professors[1])
+        for obj in created:
+            professors = professor_map.get((obj.course_id, obj.Tclass_id), [])
+            if professors:
+                obj.professor.set(professors)
 
-        return len(created_objs)
+        return created.count()
 
 
 class CommonUnitCurriculum(Curriculum):

@@ -17,7 +17,7 @@ import logging
 
 
 from django.core.exceptions import PermissionDenied
-
+from django.shortcuts import redirect
 
 from ..models import (
     Student,
@@ -56,6 +56,7 @@ class StudentProfileRequiredMixin:
 
         if not hasattr(request.user, 'student_profile'):
             # Stop the user and show an error page
+            return redirect('/admin')
             raise PermissionDenied("You do not have a student profile.")
 
         return super().dispatch(request, *args, **kwargs)

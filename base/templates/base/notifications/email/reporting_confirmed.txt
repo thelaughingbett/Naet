@@ -1,0 +1,11 @@
+{% extends "base/notifications/email/base.txt" %}
+
+{% block content %}
+Hi {{ student_name }},
+
+Your reporting for the {{ session }} session has been confirmed. Welcome back!
+
+Go to the student portal: {{ portal_url }}
+
+We're glad to have you continuing your studies with us.
+{% endblock %}

@@ -1,5 +1,5 @@
 from typing import Dict, List
-from news.backends.base import AbstractNewsBackend
+from .backends import AbstractNewsBackend
 
 
 class NewsRegistry:

@@ -24,11 +24,6 @@ class ResultAdmin(BaseAdmin):
     pass
 
 
-@admin.register(Timetable)
-class TimetableAdmin(BaseAdmin):
-    pass
-
-
 @admin.register(Enrollment)
 class EnrollmentAdmin(BaseAdmin):
     pass

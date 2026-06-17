@@ -49,6 +49,10 @@ class Lecturer(WithDepartmentMixin, StaffUserMixin, BaseModelMixin):
     def __str__(self):
         return f"{self.staff_number} - {self.user}"
 
+    @property
+    def name(self):
+        return f"{self.get_title_display()}{self.user.half_name}"
+
 
 class DeptAdmin(BaseModelMixin, StaffUserMixin, WithDepartmentMixin):
     pass

@@ -12,51 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from base.models import Payment
-from django.views.decorators.cache import never_cache
-from django.contrib import messages
-
-from http import HTTPStatus
-import logging
-
 from decouple import config
 
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import (
-    get_object_or_404,
     render,
-    redirect
 )
-from django.urls import reverse
 from django.views import View
-from django.views.generic import (
-    DetailView,
-    ListView,
-    DeleteView
-)
 from django.http import HttpResponse
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
-    PermissionRequiredMixin
 )
-from django.contrib.auth import (
-    authenticate,
-    login,
-    logout
-)
-from django.db import (
-    DatabaseError,
-    IntegrityError,
-    transaction
-)
-from django.utils.http import url_has_allowed_host_and_scheme
 
 from base.models import (
     Curriculum,
     Session,
 )
-
-
 from .base import (
     StudentProfileRequiredMixin,
     StudentContextMixin
@@ -87,7 +57,7 @@ class CurriculumView(
 
         # 1. Find the earliest session this class was ever a part of
         earliest_session = Session.objects.filter(
-            curriculum__Tclass=target_class
+            curricula__Tclass=target_class
         ).order_by('start_date').first()
 
         if not earliest_session:
@@ -98,6 +68,11 @@ class CurriculumView(
                 start_date__gte=earliest_session.start_date
             ).order_by('start_date')
 
+        print(curriculum)
+
+        for professor in curriculum.first().professor.all():
+            print(professor
+                  )
         context = {
             'curriculum': curriculum,
             'session': session,
@@ -192,7 +167,7 @@ class ResultsView(
 
             # 1. Find the earliest session this class was ever a part of
             earliest_session = Session.objects.filter(
-                curriculum__Tclass=target_class
+                curricula__Tclass=target_class
             ).order_by('start_date').first()
 
             if not earliest_session:

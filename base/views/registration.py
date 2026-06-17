@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from http import HTTPStatus
+import types
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
@@ -21,6 +22,7 @@ from django.shortcuts import (
     render,
     redirect
 )
+from django.urls import reverse
 from django.views import View
 from django.http import HttpResponse
 from django.contrib.auth import (
@@ -42,6 +44,9 @@ from base.models import (
     School,
     Department,
     User,
+    FeeStructure,
+    StudentFeeAccount,
+    Session
 )
 from base.forms import (
     EmergencyContactFormSet,
@@ -168,14 +173,17 @@ class RegisterView(View):
 
                     # Use registration number securely as a password string
                     reg_num = str(
-                        EducationalInf.cleaned_data['registration_number'])
+                        EducationalInf.cleaned_data['registration_number']
+                    )
+
                     user_instance.set_password(reg_num)
                     user_instance.save()
 
                     # Process institutional email string safely
-                    from base.utils.email_generator import email_generator
+                    from base.modules.email_generation.generator import email_generator
                     all_data['school_email'] = email_generator.generate_unique(
-                        reg_num)
+                        reg_num
+                    )
 
                     # Instantiate student object
                     instance = Student(**all_data)
@@ -186,8 +194,10 @@ class RegisterView(View):
                     instance.class_entered = programme_obj.current_class
                     instance.save()
 
-                    primary_index = int(request.POST.get(
-                        'primary_contact_index', 0))
+                    primary_index = int(
+                        request.POST.get('primary_contact_index', 0)
+                    )
+
                     for index, form in enumerate(emergencyContactInfoFormset):
                         # 1. Skip empty extra forms that the user didn't fill out
                         if not form.has_changed():
@@ -207,16 +217,42 @@ class RegisterView(View):
                             is_primary=is_primary_choice
                         )
 
-                    # Save the final student record
-
-                    # TODO : send notificatio here for sucessful registration,with schoolemail details
-
-                    # TODO :  check if student chose resident and redirect to hostel booking form else redirect to successful registration and tell of email notification
+                    # TODO : send notification here for sucessful registration,with school email details ✔️
+                    from base.modules.notifications.service import NotificationService
+                    NotificationService.send(
+                        user=types.SimpleNamespace(
+                            email=user_instance.email,
+                            phone_number=instance.telephone_no
+                        ),
+                        template_key='registration_success',
+                        channels=['sms', 'email'],
+                        context={
+                            'student': instance,
+                            'hostel_booking_url': reverse('base-hostel-booking'),
+                            'dashboard_url': reverse('base-index')
+                        }
+                    )
+                    # TODO :  check if student chose resident and redirect to hostel booking form else redirect to successful registration and tell of email notification✔️
 
                     # after instance.save() and login(request, user_instance)
-                # login(request, user_instance)
                 stay = all_data.get('stay', 'outside')
+                session = Session.objects.filter(is_active=True).first()
+                feesturcture = FeeStructure.objects.get(
+                    session=session,
+                    Tclass=instance.class_entered
+                )
 
+                try:
+                    feeaccount = StudentFeeAccount.objects.create(
+                        student=instance,
+                        fee_structure=feesturcture
+                    )
+
+                    # TODO : send a notification to create fee account to finance erp✔️
+                    from base.modules.erp.dispatch import dispatch_erp_event
+                    dispatch_erp_event(feeaccount, "feeaccount.created")
+                except Exception:
+                    pass  # fail silently  or notify finance
                 if stay == 'resident':
                     # redirect to hostel booking with a success message
                     messages.success(
@@ -234,21 +270,6 @@ class RegisterView(View):
                         f"Your school email is {instance.school_email}. "
                         f"A confirmation has been sent to {user_instance.email}."
                     )
-                    # fire notification
-                    from base.utils.signals import send_notification
-                    transaction.on_commit(lambda: send_notification.send(
-                        sender=Student,
-                        user=user_instance,
-                        template_key='registration_confirmed',
-                        channels=['email', 'sms'],
-                        context={
-                            'student_name':  user_instance.first_name,
-                            'school_email':  instance.school_email,
-                            'reg_number':    instance.registration_number,
-                            'programme':     programme_obj.programme_name,
-                            'class':         instance.class_entered.class_name,
-                        }
-                    ))
 
                     request.session['new_student_id'] = str(instance.record_id)
                     return redirect('base-registration-sucess')
@@ -272,8 +293,6 @@ class RegisterView(View):
                 messages.error(
                     request, "A database system error occurred. Please verify your connection and try again.")
                 return HttpResponse("General Database Error during contact registration for Student ID {instance.registration_number}: {e}")
-
-            return redirect("/", permanent=True)
 
         return HttpResponse("failed to create")
 

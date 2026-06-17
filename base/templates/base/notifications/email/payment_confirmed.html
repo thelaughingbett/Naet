@@ -1,0 +1,20 @@
+{% extends "base/notifications/email/base.html" %} {% block content %}
+<p>Hi {{ student_name }},</p>
+<p>We've received your payment. Here are the details:</p>
+
+<div class="highlight">
+  <div class="label">Amount Paid</div>
+  <div class="value">KES {{ amount }}</div>
+</div>
+
+<p>
+  <strong>Reference:</strong> {{ ref }}<br />
+  <strong>New Balance:</strong> KES {{ balance }}
+</p>
+
+<div class="cta">
+  <a href="{{ portal_url }}">View Statement</a>
+</div>
+
+<p>Thank you for your payment.</p>
+{% endblock %}

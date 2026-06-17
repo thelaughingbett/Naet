@@ -55,17 +55,24 @@ class EventItem(BaseModelMixin):
 
 
 class NewsItem(BaseModelMixin):
-    external_id = models.CharField(
-        max_length=100, unique=True)  # ID from source
+    """
+    Lightweight card-data store for news from external CMS.
+    Never stores full article content — just enough to render a card.
+    source_url is the redirect to the full article.
+    """
+    external_id = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=255)
     summary = models.TextField()
     category = models.CharField(max_length=50)
     date = models.DateField()
-    badge = models.CharField(max_length=50, null=True, blank=True)
-    source_url = models.URLField()           # ← the redirect target
+    source_url = models.URLField()
     source_name = models.CharField(max_length=100)
+    badge = models.CharField(max_length=50, null=True, blank=True)
     thumbnail = models.URLField(null=True, blank=True)
     is_published = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-date']
+
+    def __str__(self):
+        return self.title

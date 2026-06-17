@@ -1,0 +1,6 @@
+{% block content %}{% endblock %}
+
+----
+This is an automated message — please do not reply directly to this email.
+Need help? Contact {{ support_email|default:"finance@institution.ac.ke" }}
+{% block footer %}{% endblock %}

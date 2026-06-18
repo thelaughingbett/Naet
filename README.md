@@ -247,17 +247,18 @@ Role-based access is enforced automatically:
 
 ---
 
-## 📦 [Module Breakdown](docs/modules/README.md)
+## 📦 Module Breakdown
 
-| Module                                                        | Description                              |
-| ------------------------------------------------------------- | ---------------------------------------- |
-| [📧 Email Generation](docs/modules/email_generation/index.md) | Automated email creation and delivery    |
-| [🏢 ERP](docs/modules/erp/index.md)                           | Enterprise resource planning integration |
-| [📅 Events](docs/modules/events/index.md)                     | Event scheduling and management          |
-| [📰 News](docs/modules/news/index.md)                         | News publishing and feed management      |
-| [💳 Payments](docs/modules/payments/index.md)                 | Payment processing and transaction logic |
-| [📊 Results](docs/modules/results/index.md)                   | Academic results and grade management    |
-| [🕐 Timetabling](docs/modules/timetabling/index.md)           | Schedule management and clash detection  |
+| Module                                                        | Description                                   |
+| ------------------------------------------------------------- | --------------------------------------------- |
+| [📧 Email Generation](docs/modules/email_generation/index.md) | Automated email creation and delivery         |
+| [🏢 ERP](docs/modules/erp/index.md)                           | Enterprise resource planning integration      |
+| [📅 Events](docs/modules/events/index.md)                     | Event scheduling and management               |
+| [📰 News](docs/modules/news/index.md)                         | News publishing and feed management           |
+| [🔔 Notifications](docs/modules/notifications/index.md)       | Email and SMS delivery via pluggable backends |
+| [💳 Payments](docs/modules/payments/index.md)                 | Payment processing and transaction logic      |
+| [📊 Results](docs/modules/results/index.md)                   | Academic results and grade management         |
+| [🕐 Timetabling](docs/modules/timetabling/index.md)           | Schedule management and clash detection       |
 
 ## 👨‍💻 Author
 

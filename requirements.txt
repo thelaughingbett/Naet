@@ -29,3 +29,4 @@ factory-boy # for test's
 gunicorn
 django-sms
 flower
+whitenoise

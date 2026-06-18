@@ -31,7 +31,7 @@
 - ⏸️ Deferral and graduation tracking
 - 🪟 Proxy model views: Resident Students, Deferred Students, Graduated Students
 
-### 💰 Fee Management
+### 💰 Fee Management (under consideration to be moved to erp's)
 
 - 🧾 Per-class fee structures with itemised breakdowns (tuition, registration, hostel, etc.)
 - 📊 Per-student fee accounts with real-time balance tracking
@@ -185,13 +185,9 @@ python manage.py runserver
 
 ## 🚀 Live Demo
 
-[**View Demo →**](https://studentsportal.railway.app)
+[ → Live Demo ](https://naet-tat2.onrender.com/)
 
-| Role              | Email                   | Password |
-| ----------------- | ----------------------- | -------- |
-| Student           | demo@portal.ac.ke       | demo1234 |
-| Dept Admin        | admin@portal.ac.ke      | demo1234 |
-| Institution Admin | superadmin@portal.ac.ke | demo1234 |
+[→ Credentials](./credentials.txt)
 
 > Demo data is non-persistent
 
@@ -216,7 +212,7 @@ Role-based access is enforced automatically:
 
 - 🔑 **UUID primary keys** on all models for security and portability
 - 🗓️ **Session is institution-wide** — one active session at a time, referenced by all academic and financial records
-- ⚠️ **Overdraft handling** — overpayments are recorded separately and either carried forward to the next session or flagged for refund
+
 - 🪟 **Proxy models** — `DeferredStudent`, `ResidentStudent`, and `GraduatedStudent` provide filtered admin views of the same student table without duplicating data
 - ⚡ **Signal-driven enrollment** — students are automatically enrolled in core and common unit courses when created
 
@@ -225,8 +221,8 @@ Role-based access is enforced automatically:
 ## 🗺️ Roadmap
 
 - [ ] 📅 Attendance tracking (per timetable slot)
-- [ ] 📝 Exam scheduling and invigilation assignment
-- [ ] 📱 SMS notifications via Africa's Talking API
+- [x] 📝 Exam scheduling and invigilation assignment
+- [x] 📱 SMS notifications via Africa's Talking API
 - [ ] 🌐 REST API (Django REST Framework)
 - [ ] 🖥️ Student and staff self-service portal
 - [ ] 📚 Library management module

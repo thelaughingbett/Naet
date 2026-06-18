@@ -2,6 +2,7 @@
 
 > Field-by-field breakdown of every model in the system.
 > Use this as your data dictionary — no need to dig through `models.py`.
+> P.s all models are just guides you are free to mess with them as much as you want
 
 ---
 
@@ -367,7 +368,7 @@
 
 ---
 
-## 🏛️ Tclass
+## 🏛️ Tclass [Tclass because class was taken 🙃]
 
 > A class cohort within a programme — e.g. BSc CS Year 1 (2024 intake).
 

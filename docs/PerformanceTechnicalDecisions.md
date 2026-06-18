@@ -66,17 +66,6 @@ The caching layer is abstracted behind a `utils/cache.py` module, so switching t
 
 --- -->
 
-### 💸 Why PostgreSQL as the Primary Database
-
-| Decision                         | Reasoning                                                                                                                  |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| PostgreSQL over SQLite           | Production-grade, handles concurrent writes, supports UUID indexing well                                                   |
-| No separate cache DB             | File-based cache avoids DB-as-cache anti-pattern for this scale                                                            |
-| `unique_together` constraints    | Critical business rules (one report per session, no venue double-booking) enforced at DB level, not just application level |
-| `transaction.atomic()` on writes | Financial operations and session rollover are all-or-nothing — no partial state                                            |
-
----
-
 ### 🏗️ Why Class-Based Views
 
 All views inherit from Django's `View` with a shared `StudentContextMixin`:
@@ -88,6 +77,8 @@ class StudentContextMixin:
 ```
 
 This keeps `get_student()` and `get_active_session()` in one place — every view calls the cached version automatically without duplicating the lookup logic.
+
+and the other over mixinised [its a word now] stuff
 
 ---
 

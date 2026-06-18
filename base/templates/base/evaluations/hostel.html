@@ -41,7 +41,7 @@
     {% if evaluation %}
     <!-- read only -->
     <div class="feedback-label">Category Ratings</div>
-    {% for category, label in categories %}
+    {% for label, score in category_scores %}
     <div
       style="
         display: flex;
@@ -54,13 +54,11 @@
     >
       <span style="font-size: 0.8rem">{{ label }}</span>
       <div class="rating-stars">
-        <!-- prettier-ignore -->
-        {% with score=evaluation.rating|default:0 %}
-                {% for i in "12345" %}
+        {% for i in "12345" %}
         <span class="star {% if score >= forloop.counter %}selected{% endif %}"
           >★</span
         >
-        {% endfor %} {% endwith %}
+        {% endfor %}
       </div>
     </div>
     {% endfor %}
@@ -148,7 +146,7 @@
         >
         {% endfor %}
       </div>
-      <input type="hidden" name="overall_rating" id="rating-overall" required />
+      <input type="hidden" name="overall_rating" id="rating-overall" />
 
       <div class="feedback-label" style="margin-top: 0.8rem">
         Additional Comments / Suggestions
@@ -193,5 +191,23 @@
       star.classList.toggle("selected", parseInt(star.dataset.value) <= value);
     });
   }
+
+  // Every category hidden input is named "<category>_rating" (including
+  // "overall_rating"), so one selector covers all of them. The `required`
+  // attribute does nothing on type="hidden", hence this guard.
+  document.getElementById("hostelEvalForm")?.addEventListener("submit", (e) => {
+    const ratingInputs = document.querySelectorAll(
+      '#hostelEvalForm input[type="hidden"][name$="_rating"]',
+    );
+    for (const input of ratingInputs) {
+      if (!input.value) {
+        e.preventDefault();
+        alert(
+          "Please rate every category, including the overall rating, before submitting.",
+        );
+        return;
+      }
+    }
+  });
 </script>
 {% endblock %}

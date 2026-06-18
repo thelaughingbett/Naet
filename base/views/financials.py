@@ -111,7 +111,8 @@ class FeeStatementView(LoginRequiredMixin, StudentProfileRequiredMixin, StudentC
             'fee_structure':       fee_structure,
             'account':             account,
             'all_sessions':        all_sessions,
-            'selected_session_id': session_id or '',
+            # Always the actual session record_id so the dropdown stays selected
+            'selected_session_id': str(session.record_id) if session else '',
             'student':             student,
             'session':             session,
         })

@@ -1,16 +1,18 @@
 # Copyright 2026 Emmanuel Kipng'eno
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #        http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from .base import BaseModelMixin
@@ -68,19 +70,27 @@ class StudentFeeAccount(BaseModelMixin):
         on_delete=models.PROTECT
     )
 
-    amount_paid = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
-
     history = HistoricalRecords()
 
     class Meta:
         unique_together = ('student', 'fee_structure')
 
     @property
+    def amount_paid(self):
+        """
+        Sum of completed payments against this account. This is the only
+        source of truth for how much has been paid — there is no separate
+        stored ledger value to keep in sync.
+        """
+        total = self.payments.filter(
+            status='completed'
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total or Decimal('0.00')
+
+    @property
     def balance(self):
+        # Can go negative if the student has overpaid — that's fine,
+        # a negative balance just reads as a credit.
         return self.amount_billed - self.amount_paid
 
     @property
@@ -101,74 +111,6 @@ class StudentFeeAccount(BaseModelMixin):
 
     def __str__(self):
         return f"{self.student.registration_number} - {self.fee_structure} - balance: {self.balance}"
-
-
-class OverDraft(BaseModelMixin):
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),      # just recorded, not yet processed
-        ('carried', 'Carried Over'),  # applied to next session
-        ('refunded', 'Refunded'),    # refunded to student
-    ]
-
-    account = models.ForeignKey(
-        "StudentFeeAccount",
-        on_delete=models.PROTECT,
-        related_name='overdrafts'
-    )
-
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-
-    transaction = models.ForeignKey(
-        "Payment",
-        on_delete=models.PROTECT
-    )
-
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
-
-    applied_to = models.ForeignKey(
-        'StudentFeeAccount',
-        on_delete=models.PROTECT,
-        related_name='credits',
-        null=True,
-        blank=True
-    )  # points to the next session account if carried over
-
-    history = HistoricalRecords()
-
-    def process(self):
-        from django.utils import timezone
-
-        student = self.account.student
-
-        # find next active session account for this student
-        next_account = StudentFeeAccount.objects.filter(
-            student=student,
-        ).exclude(
-            record_id=self.account.record_id
-        ).order_by('created_at').last()
-
-        if next_account and not next_account.is_cleared:
-            # carry forward
-            next_account.amount_paid += self.amount
-            next_account.save()
-
-            self.status = 'carried'
-            self.applied_to = next_account
-            self.save()
-
-        else:
-            # no active next session — flag for refund
-            self.status = 'refunded'
-            self.save()
-            # TODO: trigger refund notification/process here
 
 
 class Payment(BaseModelMixin):
@@ -248,7 +190,9 @@ class Payment(BaseModelMixin):
     def confirm(self, transaction_ref, provider_ref=None):
         """
         Called by the webhook handler when payment is confirmed.
-        Updates the account balance and fires notifications.
+        Fires notifications. amount_paid/balance update automatically
+        since they're derived from completed payments — nothing to
+        write back to the account here.
         """
         from django.utils import timezone
         from base.utils.signals import send_notification
@@ -258,19 +202,6 @@ class Payment(BaseModelMixin):
         self.provider_ref = provider_ref
         self.paid_at = timezone.now()
         self.save()  # now safe — only checks is_cleared on creation, not here
-
-        # the ONLY place amount_paid is updated
-        balance = self.account.balance
-        if self.amount > balance:
-            OverDraft.objects.create(
-                account=self.account,
-                amount=self.amount - balance,
-                transaction=self
-            )
-            self.account.amount_paid += balance
-        else:
-            self.account.amount_paid += self.amount
-        self.account.save()
 
         # fire notification
         send_notification.send(

@@ -10,7 +10,14 @@ from django.db.models.signals import (
 )
 from django.db import transaction
 
-from base.models import Curriculum, Enrollment, Session, User
+from base.models import (
+    Curriculum,
+    Enrollment,
+    Session,
+    Student,
+    FeeStructure,
+    StudentFeeAccount
+)
 from base.utils.signals import send_notification
 from base.utils.notifications.handlers import NotificationEngine
 
@@ -72,6 +79,24 @@ def auto_enroll_core_courses(
 
         except Session.DoesNotExist:
             pass
+
+        session = Session.objects.filter(is_active=True).first()
+        feesturcture = FeeStructure.objects.get(
+            session=session,
+            Tclass=instance.class_entered
+        )
+
+        try:
+            feeaccount = StudentFeeAccount.objects.create(
+                student=instance,
+                fee_structure=feesturcture
+            )
+
+            # TODO : send a notification to create fee account to finance erp✔️
+            from base.modules.erp.dispatch import dispatch_erp_event
+            dispatch_erp_event(feeaccount, "feeaccount.created")
+        except Exception:
+            pass  # fail silently  or notify finance
 
 
 # To Intergrator  - update the permissions with new models added
@@ -426,3 +451,32 @@ def handle_notification_broadcast(
     transaction.on_commit(
         lambda: NotificationEngine.route(user, template_key, channels, context)
     )
+
+
+@receiver(post_save, sender='base.Curriculum')
+def auto_enroll_curriculum_course(sender,
+                                  instance,
+                                  created,
+                                  **kwargs):
+    if created:
+
+        current_session = Session.objects.get(is_active=True)
+        if instance.course.course_type in ['C', 'CC'] and instance.session == current_session:
+            try:
+                students = Student.objects.filter(
+                    class_entered=instance.Tclass
+                )
+
+                Enrollment.objects.bulk_create([
+                    Enrollment(
+                        student=student,
+                        curriculum=instance,
+                        status='approved'
+                    )
+                    for student in students
+                ],
+                    ignore_conflicts=True
+                )
+
+            except Exception:
+                pass

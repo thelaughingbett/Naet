@@ -236,18 +236,20 @@
       <p style="font-size: 0.75rem; margin-top: 0.3rem">
         Off-campus guide, housing, and transport resources available.
       </p>
-      <button
-        style="
-          margin-top: 0.5rem;
-          background: var(--navy);
-          color: white;
-          border: none;
-          padding: 0.3rem 0.8rem;
-          border-radius: 30px;
-        "
-      >
-        Explore Guide →
-      </button>
+      <a href="{% url 'base-hostel-guide' %}">
+        <button
+          style="
+            margin-top: 0.5rem;
+            background: var(--navy);
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+          "
+        >
+          Explore Guide →
+        </button>
+      </a>
     </div>
     {% endif %}
     <div class="card">

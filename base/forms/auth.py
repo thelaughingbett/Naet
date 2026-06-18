@@ -19,17 +19,7 @@ from django import forms
 from base.models import (
     EmergencyContact,
     Student,
-    School,
-    Department,
-    Programme,
-    Tclass,
     User,
-    Session,
-    Reporting,
-    FeeStructure,
-    StudentFeeAccount,
-    Payment,
-    Curriculum
 )
 from django.contrib.auth.forms import (
     ReadOnlyPasswordHashField,
@@ -120,3 +110,30 @@ EmergencyContactFormSet = modelformset_factory(
     max_num=4,    # Strict absolute cap on total objects allowed
     can_delete=True  # Allows users to check a box to remove an existing contact
 )
+
+
+class ChangePasswordform(forms.Form):
+
+    old_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '••••••••',
+            'autocomplete': 'current-password',
+            'id': 'current-password',
+        })
+    )
+
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '••••••••',
+            'autocomplete': 'new-password',
+            'id': 'new-password',
+        })
+    )
+
+    password_confirm = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '••••••••',
+            'autocomplete': 'confirm-new-password',
+            'id': 'password-confirm',
+        })
+    )

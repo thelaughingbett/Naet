@@ -15,6 +15,7 @@ from base.models import (
     HostelWarden,
     ResidentStudent,
     Room,
+    HostelListing
 )
 
 
@@ -40,4 +41,9 @@ class HostelWardenAdmin(BaseAdmin):
 
 @admin.register(ResidentStudent)
 class ResidentStudentAdmin(BaseAdmin):
+    pass
+
+
+@admin.register(HostelListing)
+class HostelListingAdmin(BaseAdmin):
     pass

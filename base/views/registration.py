@@ -236,23 +236,7 @@ class RegisterView(View):
 
                     # after instance.save() and login(request, user_instance)
                 stay = all_data.get('stay', 'outside')
-                session = Session.objects.filter(is_active=True).first()
-                feesturcture = FeeStructure.objects.get(
-                    session=session,
-                    Tclass=instance.class_entered
-                )
 
-                try:
-                    feeaccount = StudentFeeAccount.objects.create(
-                        student=instance,
-                        fee_structure=feesturcture
-                    )
-
-                    # TODO : send a notification to create fee account to finance erp✔️
-                    from base.modules.erp.dispatch import dispatch_erp_event
-                    dispatch_erp_event(feeaccount, "feeaccount.created")
-                except Exception:
-                    pass  # fail silently  or notify finance
                 if stay == 'resident':
                     # redirect to hostel booking with a success message
                     messages.success(

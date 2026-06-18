@@ -57,10 +57,10 @@ def _build_constraints(session, exam_type) -> ExamConstraints:
         if (start + datetime.timedelta(days=i)).weekday() < 5
     ]
 
-    venues = list(Venue.objects.values('id', 'name', 'capacity'))
+    venues = list(Venue.objects.values('record_id', 'venue_name', 'capacity'))
     invigilators = list(
         Lecturer.objects.select_related('user')
-        .values('id', name=models.F('user__get_full_name'))
+        .values('record_id', name=models.F('user__first_name'))
     )
 
     curriculum_qs = (

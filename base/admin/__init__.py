@@ -24,3 +24,4 @@ admin.site.index_title = 'Welcome to the administration portal'
 
 # passwords
 # lecturer - email:lecturer@email.com - password@123!
+# admin - email:admin@email.com - admin

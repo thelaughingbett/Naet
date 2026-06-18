@@ -1,15 +1,14 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
-
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %} {% load static %} {% load humanize %}
+ {% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/academics/results/index.css' %}"
+  href="{% static 'base/styles/academics/results/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Results & Transcript</title>
 {% endblock %} {% block body %}
 <div class="page-header">
-  <h1 class="page-title">📊 Results & Transcript</h1>
+  <h1 class="page-title">📊 Results &amp; Transcript</h1>
   <div class="action-buttons">
     <button class="btn-secondary" id="printBtn">🖨️ Print / Download</button>
     <button class="btn-secondary" id="refreshBtn">⟳ Refresh</button>
@@ -19,20 +18,20 @@
 <!-- Student info -->
 <div class="student-info-card">
   <div class="info-item">
-    <span class="info-label">Student Name</span
-    ><span class="info-value">{{student.user.half_name}}</span>
+    <span class="info-label">Student Name</span>
+    <span class="info-value">{{ student.user.half_name }}</span>
   </div>
   <div class="info-item">
-    <span class="info-label">Reg No.</span
-    ><span class="info-value">{{student.registration_number | upper}}</span>
+    <span class="info-label">Reg No.</span>
+    <span class="info-value">{{ student.registration_number|upper }}</span>
   </div>
   <div class="info-item">
-    <span class="info-label">Programme</span
-    ><span class="info-value">{{student.class_entered.programme}}</span>
+    <span class="info-label">Programme</span>
+    <span class="info-value">{{ student.class_entered.programme }}</span>
   </div>
   <div class="info-item">
-    <span class="info-label">Academic Year</span
-    ><span class="info-value">{{session.academic_year}}</span>
+    <span class="info-label">Academic Year</span>
+    <span class="info-value">{{ session.academic_year }}</span>
   </div>
 </div>
 
@@ -40,10 +39,13 @@
 <div class="semester-selector">
   <label>📅 Select Semester:</label>
   <select id="semesterSelect">
-    <option value="all">--- select semester ---</option>
+    <option value="all">All Semesters</option>
     {% for ses in sessions %}
-    <option value="{{ses}}">{{ses}}</option>
-    {%endfor%}
+    <!-- prettier-ignore -->
+    <option value="{{ ses }}" {% if ses == session %}selected{% endif %}>
+      {{ ses }}{% if ses.is_active %} (Current){% endif %}
+    </option>
+    {% endfor %}
   </select>
 </div>
 
@@ -58,49 +60,59 @@
         <th>Unit Code</th>
         <th>Unit Name</th>
         <th>Credits</th>
-        <th>Grade</th>
+        <th>CAT</th>
         <th>Exam</th>
+        <th>Total</th>
+        <th>Grade</th>
       </tr>
     </thead>
     <tbody id="resultsBody" data-activesession="{{ session }}">
       {% for result in results %}
       <tr
         data-session="{{ result.curricula.session }}"
-        data-courseCode="{{ result.curricula.course.course_code }}"
+        data-coursecode="{{ result.curricula.course.course_code }}"
+        data-coursename="{{ result.curricula.course.course_name }}"
         data-credits="{{ result.curricula.course.credits }}"
         data-score="{{ result.score }}"
+        data-type="{{ result.type }}"
+        data-title="{{ result.title }}"
       >
         <td>{{ result.curricula.course.course_code }}</td>
         <td>{{ result.curricula.course.course_name }}</td>
         <td>{{ result.curricula.course.credits }}</td>
-        <td>{{ result.score }}</td>
-        <td class="grade-point">{{ result.title }}</td>
+        <td class="cat-score">
+          {% if result.type == 'C' %}{{ result.score }}{% else %}—{% endif %}
+        </td>
+        <td class="exam-score">
+          {% if result.type == 'E' %}{{ result.score }}{% else %}—{% endif %}
+        </td>
+        <td class="total-score">—</td>
+        <td class="grade-point">—</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <div class="gpa-summary" id="gpaSummary">
-    <!-- dynamic GPA -->
-  </div>
+
+  <div class="gpa-summary" id="gpaSummary"></div>
 
   {% else %}
   <div style="text-align: center; padding: 40px 20px; opacity: 0.5">
     <div style="font-size: 2rem; margin-bottom: 8px">📭</div>
     <div style="font-weight: 500; margin-bottom: 4px">No results yet</div>
     <div style="font-size: 0.8rem">
-      Results for {{ session }} will appear here once published
+      Results for {{ session }} will appear here once published.
     </div>
   </div>
   {% endif %}
 </div>
 
-<!-- Cumulative Transcript Summary -->
-<!-- <div class="transcript-card">
+<!-- Cumulative Transcript -->
+<div class="transcript-card" id="transcriptCard">
   <div class="card-header">🎓 Cumulative Transcript Summary</div>
   <div class="transcript-grid">
     <div class="stat-block">
       <div class="stat-number" id="totalCredits">0</div>
-      <div class="info-label">Total Credits Attempted</div>
+      <div class="info-label">Credits Attempted</div>
     </div>
     <div class="stat-block">
       <div class="stat-number" id="totalPoints">0.00</div>
@@ -108,110 +120,224 @@
     </div>
     <div class="stat-block">
       <div class="stat-number" id="cgpa">0.00</div>
-      <div class="info-label">Cumulative GPA (CGPA)</div>
+      <div class="info-label">CGPA</div>
     </div>
     <div class="stat-block">
       <div class="stat-number" id="classification">—</div>
       <div class="info-label">Classification</div>
     </div>
   </div>
-</div> -->
-<script>
-  // Mock results data per semester
-  // Cumulative calculation across all semesters
-  function calculateCumulative() {
-    let seen = {}; // keep track of courses soas not to double count credits and add total
-    let totalCredits = 0;
-    let totalPoints = 0;
-    for (let sem in semesterData) {
-      semesterData[sem].courses.forEach((course) => {
-        let unit = seen[course.dataset.coursecode];
+</div>
 
-        if (unit === undefined) {
-          seen[course.dataset.coursecode] = {
-            passed: true,
-          };
-          totalCredits += parseInt(course.dataset.credits);
+<script>
+  // ── grade helpers ─────────────────────────────────────────────────────────────
+  function letterGrade(total) {
+    if (total >= 70) return "A";
+    if (total >= 60) return "B";
+    if (total >= 50) return "C";
+    if (total >= 40) return "D";
+    return "F";
+  }
+  function gradePoint(total) {
+    if (total >= 70) return 4.0;
+    if (total >= 60) return 3.0;
+    if (total >= 50) return 2.0;
+    if (total >= 40) return 1.0;
+    return 0.0;
+  }
+
+  // ── build data structure from rendered rows ───────────────────────────────────
+  // Groups raw <tr> rows by session key, then merges CAT+Exam per course.
+  // semesterData = { "2022/2023 - Sem 1": { merged: [...], rows: [...] }, ... }
+  let semesterData = {};
+
+  function buildSemesterData() {
+    const allRows = [...document.querySelectorAll("#resultsBody tr")];
+    const grouped = {}; // { session: { courseCode: { cat, exam, credits, row } } }
+
+    allRows.forEach((row) => {
+      const ses = row.dataset.session;
+      const code = row.dataset.coursecode;
+      const credits = parseInt(row.dataset.credits) || 0;
+      const score = parseFloat(row.dataset.score) || 0;
+      const type = row.dataset.type; // 'C' = CAT, 'E' = Exam
+
+      if (!grouped[ses]) grouped[ses] = {};
+      if (!grouped[ses][code]) {
+        grouped[ses][code] = {
+          cat: null,
+          exam: null,
+          credits,
+          name: row.dataset.coursename,
+          catRow: null,
+          examRow: null,
+        };
+      }
+      if (type === "C") {
+        grouped[ses][code].cat = score;
+        grouped[ses][code].catRow = row;
+      }
+      if (type === "E") {
+        grouped[ses][code].exam = score;
+        grouped[ses][code].examRow = row;
+      }
+    });
+
+    // Build merged virtual rows per session
+    semesterData = {};
+    for (const [ses, courses] of Object.entries(grouped)) {
+      const merged = [];
+      for (const [code, data] of Object.entries(courses)) {
+        const cat = data.cat ?? 0;
+        const exam = data.exam ?? 0;
+        const total = cat + exam;
+        merged.push({
+          code,
+          name: data.name,
+          credits: data.credits,
+          cat,
+          exam,
+          total,
+        });
+      }
+      semesterData[ses] = { merged };
+    }
+
+    // Hide all raw rows — we render synthesised rows instead
+    allRows.forEach((r) => (r.style.display = "none"));
+  }
+
+  // ── render one semester (or all) ──────────────────────────────────────────────
+  function renderSemester(semKey) {
+    const tbody = document.getElementById("resultsBody");
+    // Remove any previously injected synthetic rows
+    tbody.querySelectorAll("tr.synthetic").forEach((r) => r.remove());
+
+    let coursesToShow = [];
+    if (semKey === "all") {
+      for (const { merged } of Object.values(semesterData)) {
+        coursesToShow.push(...merged);
+      }
+    } else {
+      coursesToShow = semesterData[semKey]?.merged ?? [];
+    }
+
+    if (!coursesToShow.length) {
+      tbody.insertAdjacentHTML(
+        "beforeend",
+        `<tr class="synthetic">
+         <td colspan="7" style="text-align:center; padding:24px; opacity:0.5">
+           No results for this semester.
+         </td>
+       </tr>`,
+      );
+      renderGPA([]);
+      return;
+    }
+
+    coursesToShow.forEach((c) => {
+      const grade = letterGrade(c.total);
+      tbody.insertAdjacentHTML(
+        "beforeend",
+        `
+      <tr class="synthetic">
+        <td>${c.code}</td>
+        <td>${c.name}</td>
+        <td>${c.credits}</td>
+        <td>${c.cat.toFixed(1)}</td>
+        <td>${c.exam.toFixed(1)}</td>
+        <td>${c.total.toFixed(1)}</td>
+        <td>${grade}</td>
+      </tr>
+    `,
+      );
+    });
+
+    renderGPA(coursesToShow);
+  }
+
+  // ── GPA for the currently displayed set ──────────────────────────────────────
+  function renderGPA(courses) {
+    const credits = courses.reduce((s, c) => s + c.credits, 0);
+    const points = courses.reduce(
+      (s, c) => s + gradePoint(c.total) * c.credits,
+      0,
+    );
+    const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
+
+    document.getElementById("gpaSummary").innerHTML = `
+    <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
+    <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
+  `;
+  }
+
+  // ── cumulative across ALL semesters ──────────────────────────────────────────
+  function calculateCumulative() {
+    const seen = {};
+    let totalCredits = 0,
+      totalPoints = 0;
+
+    for (const { merged } of Object.values(semesterData)) {
+      merged.forEach((c) => {
+        if (!seen[c.code]) {
+          seen[c.code] = true;
+          totalCredits += c.credits;
+          totalPoints += gradePoint(c.total) * c.credits;
         }
-        totalPoints +=
-          parseInt(course.dataset.score) * parseInt(course.dataset.credits);
       });
     }
+
     const cgpa =
       totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-    let classification = "";
-    const cgpaNum = parseFloat(cgpa);
-    if (cgpaNum >= 3.6) classification = "First Class Honours";
-    else if (cgpaNum >= 3.0) classification = "Second Class Honours (Upper)";
-    else if (cgpaNum >= 2.5) classification = "Second Class Honours (Lower)";
-    else if (cgpaNum >= 2.0) classification = "Pass";
-    else classification = "Probation";
+    const n = parseFloat(cgpa);
+    const cls =
+      n >= 3.6
+        ? "First Class Honours"
+        : n >= 3.0
+          ? "Second Class Honours (Upper)"
+          : n >= 2.5
+            ? "Second Class Honours (Lower)"
+            : n >= 2.0
+              ? "Pass"
+              : "Probation";
 
     document.getElementById("totalCredits").innerText = totalCredits;
     document.getElementById("totalPoints").innerText = totalPoints.toFixed(2);
     document.getElementById("cgpa").innerText = cgpa;
-    document.getElementById("classification").innerText = classification;
-    return { totalCredits, totalPoints, cgpa, classification };
+    document.getElementById("classification").innerText = cls;
   }
 
-  // Render selected semester
-  function renderSemester(semKey) {
-    const data = semesterData[semKey];
-    if (!data) return;
-    const tbody = document.getElementById("resultsBody");
-    data.courses.forEach((unit) => {
-      tbody.append(unit);
-    });
-
-    // const gpaDiv = document.getElementById("gpaSummary");
-    // gpaDiv.innerHTML = `
-    // <div class="gpa-item"><div class="gpa-label">Semester GPA</div><div class="gpa-value">${data.semesterGPA.toFixed(2)}</div></div>
-    //<div class="gpa-item"><div class="gpa-label">Credits Earned</div><div class="gpa-value">${data.courses.reduce((sum, c) => sum + c.credits, 0)}</div></div>
-    //`;
-  }
-
-  // Handle semester change
-  const semesterSelect = document.getElementById("semesterSelect");
-  semesterSelect.addEventListener("change", (e) => {
-    renderSemester(e.target.value);
-  });
-
-  // Print function (simulate)
-  document.getElementById("printBtn").addEventListener("click", () => {
-    alert(
-      "📄 Transcript download simulation: A PDF would be generated with full academic record.",
-    );
-  });
-  document.getElementById("refreshBtn").addEventListener("click", () => {
-    const current = semesterSelect.value;
-    renderSemester(current);
-    calculateCumulative();
-    alert("Data refreshed.");
-  });
-
+  // ── init ──────────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
-    const container = document.getElementById("resultsBody");
+    buildSemesterData();
+    calculateCumulative();
 
-    const data = [...container.querySelectorAll("tr")];
+    const activeSession =
+      document.getElementById("resultsBody").dataset.activesession;
+    const select = document.getElementById("semesterSelect");
 
-    let dataDict = {};
-    data.forEach((data, index) => {
-      let ses = dataDict[data.dataset.session];
-      if (ses === undefined) {
-        dataDict[data.dataset.session] = {
-          courses: [data],
-        };
-        return;
-      }
+    // Pre-select the active session if it exists in the dropdown
+    const match = [...select.options].find((o) => o.value === activeSession);
+    if (match) {
+      select.value = activeSession;
+    } else {
+      select.value = "all";
+    }
 
-      dataDict[data.dataset.session] = {
-        courses: [...ses["courses"], data],
-      };
-    });
+    renderSemester(select.value);
 
-    semesterData = dataDict;
-    renderSemester(container.dataset.activesession);
-    //calculateCumulative();
+    select.addEventListener("change", (e) => renderSemester(e.target.value));
+  });
+
+  document
+    .getElementById("printBtn")
+    .addEventListener("click", () =>
+      alert("📄 PDF transcript download coming soon."),
+    );
+  document.getElementById("refreshBtn").addEventListener("click", () => {
+    buildSemesterData();
+    calculateCumulative();
+    renderSemester(document.getElementById("semesterSelect").value);
   });
 </script>
-{%endblock%}
+{% endblock %}

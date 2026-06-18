@@ -1,0 +1,1078 @@
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %} {% load static %} {% load humanize %} 
+{% block head %}
+<title>Campus Hostel Guide</title>
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --navy: #0a2540;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --purple-card: #3c3d77;
+    --sidebar-w: 280px;
+    --font: "Plus Jakarta Sans", sans-serif;
+    --text: #1f2a3e;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f5f7fb;
+    --white: #ffffff;
+    --radius-xl: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.06);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  /* ========== LAYOUT (no top navbar) ========== */
+  .layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+    transition: grid-template-columns var(--transition);
+  }
+  .layout--collapsed {
+    grid-template-columns: 80px 1fr;
+  }
+
+  /* ========== SIDEBAR ========== */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    transition: width var(--transition);
+    z-index: 100;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+    overflow-x: hidden;
+    width: var(--sidebar-w);
+  }
+  .layout--collapsed .sidebar {
+    width: 80px;
+  }
+  .layout--collapsed .sidebar__logo span,
+  .layout--collapsed .sidebar__link span,
+  .layout--collapsed .sidebar__chevron,
+  .layout--collapsed .sidebar__user-info span:not(.toggle-icon),
+  .layout--collapsed .sidebar__user-name,
+  .layout--collapsed .sidebar__user-email,
+  .layout--collapsed .sidebar__user-actions span,
+  .layout--collapsed .sidebar__footer span {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    width: 0;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .layout--collapsed .sidebar__link {
+    justify-content: center;
+    padding: 0.75rem 0;
+  }
+  .layout--collapsed .sidebar__link svg {
+    margin: 0;
+  }
+  .layout--collapsed .sidebar__user-avatar {
+    margin: 0 auto;
+  }
+  .layout--collapsed .sidebar__user-actions {
+    align-items: center;
+  }
+  .layout--collapsed .sidebar__user-actions .user-action-btn span {
+    display: none;
+  }
+  .layout--collapsed .sidebar__user-actions .user-action-btn {
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  /* Logo */
+  .sidebar__logo {
+    padding: 1.8rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    white-space: nowrap;
+  }
+  .sidebar__logo-icon {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .sidebar__logo-text {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.3px;
+    background: linear-gradient(120deg, #fff, #c0d9f0);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  /* Navigation */
+  .sidebar__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem 0;
+  }
+  .sidebar__menu {
+    list-style: none;
+  }
+  .sidebar__item {
+    margin-bottom: 4px;
+  }
+  .sidebar__link,
+  .sidebar__link--toggle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 0.7rem 1.2rem;
+    background: transparent;
+    border: none;
+    color: #dee7ef;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-align: left;
+    border-radius: 12px;
+    margin: 0 8px;
+    width: calc(100% - 16px);
+    text-decoration: none;
+  }
+  .sidebar__link:hover,
+  .sidebar__link--toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+  .sidebar__item.active > .sidebar__link {
+    background: var(--maroon);
+    color: white;
+    box-shadow: 0 4px 10px rgba(158, 42, 43, 0.3);
+  }
+  .sidebar__chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  .sidebar__item--open .sidebar__chevron {
+    transform: rotate(90deg);
+  }
+  .sidebar__submenu {
+    list-style: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.28);
+    margin: 4px 8px;
+    border-radius: 12px;
+  }
+  .sidebar__submenu--open {
+    max-height: 280px;
+  }
+  .sidebar__sublink,
+  .sidebar__sublink--btn {
+    display: block;
+    width: 100%;
+    padding: 0.55rem 1rem 0.55rem 3rem;
+    color: #cbdbe2;
+    font-size: 0.8rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s;
+    border-radius: 8px;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .sidebar__sublink:hover,
+  .sidebar__sublink--btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+
+  /* ========== USER SECTION ========== */
+  .sidebar__user-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all var(--transition);
+  }
+  .user-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+  }
+  .user-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: 0.2s;
+    flex-shrink: 0;
+  }
+  .user-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .user-toggle-icon {
+    transition: transform 0.25s ease;
+  }
+  .user-details-wrapper {
+    padding: 0 1rem 0.75rem 1rem;
+    overflow: hidden;
+    transition:
+      max-height 0.25s ease,
+      opacity 0.2s ease;
+    max-height: 120px;
+    opacity: 1;
+  }
+  .sidebar__user-name-block {
+    padding: 0.25rem 0 0.25rem 0.25rem;
+    border-left: 3px solid var(--maroon);
+    padding-left: 0.75rem;
+  }
+  .sidebar__user-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar__user-email {
+    font-size: 0.7rem;
+    opacity: 0.65;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .sidebar__user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 1rem 1rem 1rem;
+    overflow: hidden;
+    transition:
+      max-height 0.25s ease,
+      opacity 0.2s ease;
+    max-height: 200px;
+    opacity: 1;
+  }
+  .sidebar__user-section--collapsed .user-details-wrapper,
+  .sidebar__user-section--collapsed .sidebar__user-actions {
+    max-height: 0;
+    opacity: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+  .sidebar__user-section--collapsed .user-section-header {
+    padding-bottom: 0.8rem;
+  }
+  .sidebar__user-section--collapsed .user-toggle-icon {
+    transform: rotate(180deg);
+  }
+  .layout--collapsed .user-section-header {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .layout--collapsed .user-section-header span {
+    display: none;
+  }
+  .layout--collapsed .user-toggle-btn {
+    margin: 0 auto;
+  }
+  .sidebar__user-avatar {
+    width: 44px;
+    height: 44px;
+    background: var(--maroon);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: white;
+    flex-shrink: 0;
+  }
+  .user-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 40px;
+    color: #eef2ff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-decoration: none;
+  }
+  .user-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  .badge-notify {
+    background: var(--maroon);
+    border-radius: 30px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    margin-left: auto;
+  }
+  .sidebar__footer {
+    font-size: 0.65rem;
+    text-align: center;
+    padding: 0.8rem 0.5rem;
+    color: #7d8e9e;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* ========== MAIN PAGE CONTENT ========== */
+  .page-content {
+    padding: 2rem;
+    background: var(--bg);
+    min-height: 100vh;
+  }
+  .collapse-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: calc(var(--sidebar-w) + 12px);
+    background: var(--navy);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 200;
+    box-shadow: var(--shadow-md);
+    transition: left var(--transition);
+  }
+  .layout--collapsed .collapse-toggle {
+    left: 92px;
+  }
+
+  /* ========== HOSTEL GUIDE SPECIFIC STYLES ========== */
+
+  /* Hero Banner */
+  .guide-hero {
+    background: linear-gradient(135deg, #0a2b3e 0%, #1f4a6b 100%);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem 2.8rem;
+    color: white;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .guide-hero::after {
+    content: "🏠";
+    position: absolute;
+    right: 2rem;
+    bottom: 1rem;
+    font-size: 6rem;
+    opacity: 0.15;
+  }
+  .guide-hero h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.4rem;
+  }
+  .guide-hero p {
+    font-size: 1rem;
+    opacity: 0.85;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+  .guide-hero .hero-badge {
+    display: inline-block;
+    background: var(--maroon);
+    padding: 0.2rem 1rem;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.6rem;
+    letter-spacing: 0.3px;
+  }
+
+  /* Section Titles */
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title span {
+    background: var(--maroon);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.7rem;
+    border-radius: 40px;
+  }
+
+  /* Guidelines Grid */
+  .guidelines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 2.5rem;
+  }
+  .guideline-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    padding: 1.3rem 1.4rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+  .guideline-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .guideline-card .icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.4rem;
+  }
+  .guideline-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 0.2rem;
+  }
+  .guideline-card p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Hostel List */
+  .hostel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .hostel-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 1.4rem 1.6rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+  .hostel-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .hostel-card .hostel-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hostel-card .hostel-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .hostel-card .hostel-name .tag {
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 0.15rem 0.7rem;
+    border-radius: 40px;
+    background: #dff9e6;
+    color: #1e6f3f;
+  }
+  .hostel-card .hostel-name .tag.popular {
+    background: #fff0db;
+    color: #b45f06;
+  }
+  .hostel-card .hostel-location {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hostel-card .hostel-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem 1.6rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .hostel-card .hostel-details .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hostel-card .hostel-details .detail-item strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .hostel-card .hostel-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .hostel-card .hostel-actions .contact-btn {
+    background: var(--navy);
+    border: none;
+    color: white;
+    padding: 0.4rem 1.2rem;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hostel-card .hostel-actions .contact-btn:hover {
+    background: var(--maroon);
+  }
+  .hostel-card .hostel-actions .contact-phone {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .page-content {
+      padding: 1.2rem;
+    }
+    .collapse-toggle {
+      display: none;
+    }
+    .guide-hero {
+      padding: 1.8rem;
+    }
+    .guide-hero h1 {
+      font-size: 1.5rem;
+    }
+    .guide-hero::after {
+      font-size: 4rem;
+      right: 1rem;
+      bottom: 0.5rem;
+    }
+    .hostel-card {
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
+    }
+    .hostel-card .hostel-actions {
+      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+    .guidelines-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 500px) {
+    .guidelines-grid {
+      grid-template-columns: 1fr;
+    }
+    .hostel-card .hostel-details {
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+
+  /* Scrollable sidebar nav */
+  .sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar__nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+
+  /* Utility: icon inline */
+  .icon-svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ── filter bar ── */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.4rem;
+  }
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.35rem 0.9rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .filter-btn:hover {
+    border-color: var(--navy);
+    color: var(--navy);
+  }
+  .filter-btn.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+
+  /* ── popular card accent ── */
+  .hostel-card.popular {
+    border-color: var(--maroon);
+    border-width: 1.5px;
+  }
+
+  /* ── badge variants ── */
+  .badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 0.15rem 0.7rem;
+    border-radius: 40px;
+  }
+  .badge-popular {
+    background: #fff0db;
+    color: #b45f06;
+  }
+  .badge-generic {
+    background: #dff9e6;
+    color: #1e6f3f;
+  }
+
+  /* ── price row ── */
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.3rem 0 0.5rem;
+  }
+  .price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .price-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .room-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.15rem 0.65rem;
+    border-radius: 40px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: #f0eeff;
+    color: #3c3d77;
+    border: 1px solid #d5d2f7;
+  }
+
+  /* ── amenity chips ── */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.2rem 0.65rem;
+    border-radius: 40px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  /* ── call button ── */
+  .call-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--navy);
+    color: #fff;
+    padding: 0.45rem 1.2rem;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .call-btn:hover {
+    background: var(--maroon);
+  }
+
+  /* ── contact detail lines ── */
+  .contact-detail {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: right;
+  }
+  @media (max-width: 860px) {
+    .contact-detail {
+      text-align: left;
+    }
+  }
+
+  /* ── card inner layout ── */
+  .card-inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+  @media (max-width: 860px) {
+    .card-inner {
+      grid-template-columns: 1fr;
+    }
+    .hostel-actions {
+      flex-direction: row !important;
+      flex-wrap: wrap;
+      align-items: center !important;
+      gap: 6px 12px;
+    }
+    .contact-detail {
+      text-align: left;
+    }
+  }
+
+  /* ── hostel name + badge row ── */
+  .hostel-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+  .hostel-name-text {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy);
+  }
+
+  /* ── hostel location line ── */
+  .hostel-location {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+
+  /* ── no results + empty state ── */
+  .no-results,
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+  .no-results {
+    display: none;
+  }
+  .no-results i,
+  .empty-state i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+  }
+
+  /* ── section label above filters ── */
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+</style>
+
+{% endblock %} {% block body %}
+
+<main class="page-content">
+  <!-- Hero -->
+  <div class="guide-hero">
+    <h1>🏡 Campus Hostel Guide</h1>
+    <p>
+      Your complete resource for finding the perfect place to stay near campus.
+      From on-campus dorms to off-campus gems — we've got you covered.
+    </p>
+  </div>
+
+  <!-- Guidelines -->
+  <div class="section-title">
+    📋 How to pick your place
+    <span>Pro tips</span>
+  </div>
+  <div class="guidelines-grid">
+    <div class="guideline-card">
+      <div class="icon">📍</div>
+      <h4>Location first</h4>
+      <p>
+        Prioritize proximity to campus, public transport, and grocery stores.
+        Walkability matters.
+      </p>
+    </div>
+    <div class="guideline-card">
+      <div class="icon">💰</div>
+      <h4>Budget wisely</h4>
+      <p>
+        Factor in rent + utilities + deposit. Look for all-inclusive deals to
+        avoid surprises.
+      </p>
+    </div>
+    <div class="guideline-card">
+      <div class="icon">🔒</div>
+      <h4>Safety &amp; security</h4>
+      <p>
+        Check for secure entry, CCTV, good lighting, and emergency contact
+        availability.
+      </p>
+    </div>
+    <div class="guideline-card">
+      <div class="icon">🧑‍🤝‍🧑</div>
+      <h4>Community vibe</h4>
+      <p>
+        Visit common areas, talk to current tenants, and ask about noise levels
+        and social life.
+      </p>
+    </div>
+    <div class="guideline-card">
+      <div class="icon">📄</div>
+      <h4>Read the fine print</h4>
+      <p>
+        Understand lease terms, cancellation policies, and what's included
+        (WiFi, laundry, etc.).
+      </p>
+    </div>
+    <div class="guideline-card">
+      <div class="icon">🛠️</div>
+      <h4>Inspect thoroughly</h4>
+      <p>
+        Check plumbing, appliances, internet speed, and pest control before
+        signing anything.
+      </p>
+    </div>
+  </div>
+
+  <!-- Hostel List -->
+  <div class="section-title">
+    🏨 Recommended Hostels
+    <span>Contact &amp; details</span>
+  </div>
+  {% if hostels %}
+
+  <p class="section-label">Filter by amenity</p>
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All hostels</button>
+    <button class="filter-btn" data-filter="wifi">WiFi</button>
+    <button class="filter-btn" data-filter="meals">Meals</button>
+    <button class="filter-btn" data-filter="gym">Gym</button>
+    <button class="filter-btn" data-filter="parking">Parking</button>
+    <button class="filter-btn" data-filter="laundry">Laundry</button>
+  </div>
+
+  <div class="hostel-list" id="hostel-list">
+    {% for hostel in hostels %}
+
+    <div
+      class="hostel-card {% if hostel.badge == 'popular' %}popular{% endif %}"
+      data-amenities="
+           {% if hostel.has_wifi %}wifi {% endif %}
+           {% if hostel.has_meals %}meals {% endif %}
+           {% if hostel.has_gym %}gym {% endif %}
+           {% if hostel.has_parking %}parking {% endif %}
+           {% if hostel.has_laundry %}laundry {% endif %}
+         "
+    >
+      <div class="card-inner">
+        <div class="hostel-info">
+          <div class="hostel-top">
+            <span class="hostel-name">{{ hostel.name }}</span>
+            {% if hostel.badge %}
+            <span
+              class="badge {% if hostel.badge == 'popular' %}badge-popular{% else %}badge-generic{% endif %}"
+            >
+              {{ hostel.get_badge_display }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="hostel-location">
+            📍
+            <!-- prettier-ignore -->
+            {{ hostel.location }}
+            {% if hostel.distance_note %}—
+            {{hostel.distance_note }}
+            {% endif %}
+          </div>
+
+          <div class="price-row">
+            <span class="price"
+              >KES {{ hostel.price_per_month|floatformat:0 }}</span
+            >
+            <span class="price-label">/ month</span>
+            {% if hostel.room_type %}
+            <span class="room-badge">
+              🛏️ {{ hostel.get_room_type_display }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="chips">
+            {% for icon, label in hostel.amenity_chips %}
+            <span class="chip">{{ icon }} {{ label }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="hostel-actions">
+          {% if hostel.phone %}
+          <a href="tel:{{ hostel.phone }}" class="call-btn"> ☎️ Call now </a>
+          <span class="contact-detail">{{ hostel.phone }}</span>
+          {% endif %} {% if hostel.email %}
+          <span class="contact-detail">📩 {{ hostel.email }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+  </div>
+
+  <div class="no-results" id="no-results">
+    <i class="ti ti-building-off"></i>
+    No hostels match that filter.
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <i class="ti ti-building-off"></i>
+    <p>No hostels listed yet. Check back soon.</p>
+  </div>
+  {% endif %}
+
+  <!-- Footer note -->
+  <p
+    style="
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+    "
+  >
+    🏠 All hostels listed are independently verified. Prices and availability
+    subject to change. Always confirm directly with the hostel.
+  </p>
+</main>
+
+<script>
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  const cards = document.querySelectorAll("#hostel-list .hostel-card");
+  const noResults = document.getElementById("no-results");
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", function () {
+      filterBtns.forEach((b) => b.classList.remove("active"));
+      this.classList.add("active");
+
+      const f = this.dataset.filter;
+      let shown = 0;
+
+      cards.forEach((card) => {
+        const amenities = (card.dataset.amenities || "").trim().split(/\s+/);
+        const match = f === "all" || amenities.includes(f);
+        card.style.display = match ? "" : "none";
+        if (match) shown++;
+      });
+
+      noResults.style.display = shown === 0 ? "block" : "none";
+    });
+  });
+</script>
+{% endblock %}

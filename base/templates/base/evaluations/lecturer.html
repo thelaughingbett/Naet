@@ -1,344 +1,162 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
-
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %} {% load static %} {% load humanize %} 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/evaluations/lecturer/index.css' %}"
+  href="{% static 'base/styles/evaluations/lecturer/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Lecturer Evaluations</title>
 {% endblock %} {% block body %}
-  <div class="page-header">
-    <h1 class="page-title">👩‍🏫 Lecturer Evaluations</h1>
-    <div class="subtitle">
-      Rate your instructors and provide feedback on teaching effectiveness,
-      communication, and support
-    </div>
+
+<div class="page-header">
+  <h1 class="page-title">👩‍🏫 Lecturer Evaluations</h1>
+  <div class="subtitle">
+    Rate your instructors and provide feedback on teaching effectiveness,
+    communication, and support
   </div>
-{% if curricula %}
-  {% for curriculum in curricula %}
-    {% for professor in curriculum.professor.all %}
-    <div class="eval-card">
-      <div class="eval-header">
-        <div>
-          <!-- Accessing user via the professor ManyToMany element -->
-          <div class="lecturer-name">{{ professor.name }}</div>
-          <div class="course-info">
-            {{ curriculum.course.course_code }} – {{ curriculum.course.course_name }}
-          </div>
-        </div>
-        
-        {# Note: Implement an evaluation check here if you track submitted evaluations #}
-        {% if False %}
-        <span class="submitted-badge">✓ Submitted</span>
-        {% endif %}
-      </div>
-
-      <div class="eval-body">
-        {% if False %}
-        <!-- Read-only section if already evaluated -->
-        <div class="feedback-label">Rating</div>
-        <div class="rating-stars">
-          {% for i in "12345" %}
-          <span class="star">★</span>
-          {% endfor %}
-        </div>
-        {% else %}
-        <!-- Form configured unique to each professor + curriculum combination -->
-        <form method="post" action="{% url 'base-lecturer-evaluation' %}">
-          {% csrf_token %}
-          <!-- Pass IDs using the proper model property names -->
-          <input type="hidden" name="curriculum_id" value="{{ curriculum.record_id }}" />
-          <input type="hidden" name="lecturer_id" value="{{ professor.record_id }}" />
-
-          <div class="feedback-label">
-            Rate this lecturer (1 = Poor, 5 = Excellent)
-          </div>
-          
-          <!-- Made JavaScript IDs globally unique combining both table records -->
-          <div class="rating-stars" id="stars-{{ professor.record_id }}-{{ curriculum.record_id }}">
-            {% for i in "12345" %}
-            <span
-              class="star"
-              data-value="{{ forloop.counter }}"
-              onclick="setRating('{{ professor.record_id }}-{{ curriculum.record_id }}', {{ forloop.counter }})"
-              >★</span
-            >
-            {% endfor %}
-          </div>
-          
-          <input
-            type="hidden"
-            name="rating"
-            id="rating-{{ professor.record_id }}-{{ curriculum.record_id }}"
-            required
-          />
-
-          <div class="feedback-label" style="margin-top: 0.8rem">
-            Additional Comments (optional)
-          </div>
-          <textarea
-            name="comments"
-            rows="2"
-            placeholder="Teaching style, communication, availability, etc."
-          ></textarea>
-
-          <button type="submit" class="submit-btn">Submit Evaluation</button>
-        </form>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  {% endfor %}
-
-  <div class="info-box">
-    💡 Your feedback is anonymous and helps improve teaching quality. Please
-    rate each lecturer based on your experience this semester.
-  </div>
-
-  {% else %}
-
-  <div style="text-align: center; padding: 60px 20px; opacity: 0.5">
-    <div style="font-size: 2.5rem; margin-bottom: 12px">👩‍🏫</div>
-    <div style="font-weight: 600; margin-bottom: 6px">
-      No lecturers to evaluate
-    </div>
-    <div style="font-size: 0.8rem">
-      {% if session %} You have no enrolled courses with assigned lecturers for
-      {{ session }}. {% else %} There is no active session at the moment.
-      <!-- prettier-ignore -->
-       {% endif %}
-      <br />Evaluations open once lecturers are assigned to your courses.
-    </div>
-  </div>
-
-  {% endif %}
-
-  <script>
-    function setRating(key, value) {
-      document.getElementById(`rating-${key}`).value = value;
-      document.querySelectorAll(`#stars-${key} .star`).forEach((star) => {
-        star.classList.toggle(
-          "selected",
-          parseInt(star.dataset.value) <= value,
-        );
-      });
-    }
-  </script>
 </div>
+
+{% if rows %} {% for row in rows %}
+<div class="eval-card">
+  <div class="eval-header">
+    <div>
+      <div class="lecturer-name">{{ row.professor.name }}</div>
+      <div class="course-info">
+        <!-- prettier-ignore -->
+        {{ row.curriculum.course.course_code }} – 
+        {{ row.curriculum.course.course_name }}
+      </div>
+    </div>
+
+    {% if row.evaluation %}
+    <span class="submitted-badge">✓ Submitted</span>
+    {% endif %}
+  </div>
+
+  <div class="eval-body">
+    {% if row.evaluation %}
+    <!-- already submitted — read only -->
+    <div class="feedback-label">Rating</div>
+    <div class="rating-stars">
+      {% for i in "12345" %}
+      <span
+        class="star {% if row.evaluation.rating >= forloop.counter %}selected{% endif %}"
+        >★</span
+      >
+      {% endfor %}
+    </div>
+    <div
+      style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)"
+    >
+      {{ row.evaluation.comments|default:"No additional comments." }}
+    </div>
+    <div
+      style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
+    >
+      ⭐ Rating: {{ row.evaluation.rating }}/5 • Submitted on
+      <!-- prettier-ignore -->
+      {{ row.evaluation.created_at|date:"d M Y" }}
+    </div>
+
+    {% else %}
+    <!-- not yet submitted — show form -->
+    <form
+      method="post"
+      action="{% url 'base-lecturer-evaluation' %}"
+      data-eval-form
+    >
+      {% csrf_token %}
+      <input
+        type="hidden"
+        name="enrollment_id"
+        value="{{ row.enrollment.record_id }}"
+      />
+      <input
+        type="hidden"
+        name="lecturer_id"
+        value="{{ row.professor.record_id }}"
+      />
+
+      <div class="feedback-label">
+        Rate this lecturer (1 = Poor, 5 = Excellent)
+      </div>
+
+      <div
+        class="rating-stars"
+        id="stars-{{ row.professor.record_id }}-{{ row.enrollment.record_id }}"
+      >
+        {% for i in "12345" %}
+        <span
+          class="star"
+          data-value="{{ forloop.counter }}"
+          onclick="setRating('{{ row.professor.record_id }}-{{ row.enrollment.record_id }}', {{ forloop.counter }})"
+          >★</span
+        >
+        {% endfor %}
+      </div>
+
+      <input
+        type="hidden"
+        name="rating"
+        id="rating-{{ row.professor.record_id }}-{{ row.enrollment.record_id }}"
+      />
+
+      <div class="feedback-label" style="margin-top: 0.8rem">
+        Additional Comments (optional)
+      </div>
+      <textarea
+        name="comments"
+        rows="2"
+        placeholder="Teaching style, communication, availability, etc."
+      ></textarea>
+
+      <button type="submit" class="submit-btn">Submit Evaluation</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="info-box">
+  💡 Your feedback is anonymous and helps improve teaching quality. Please rate
+  each lecturer based on your experience this semester.
+</div>
+
+{% else %}
+
+<div style="text-align: center; padding: 60px 20px; opacity: 0.5">
+  <div style="font-size: 2.5rem; margin-bottom: 12px">👩‍🏫</div>
+  <div style="font-weight: 600; margin-bottom: 6px">
+    No lecturers to evaluate
+  </div>
+  <div style="font-size: 0.8rem">
+    {% if session %} You have no enrolled courses with assigned lecturers for {{
+    session }}. {% else %} There is no active session at the moment. {% endif %}
+    <br />Evaluations open once lecturers are assigned to your courses.
+  </div>
+</div>
+
+{% endif %}
+
 <script>
-  // Mock lecturer data (associated with current courses)
-  const lecturers = [
-    {
-      id: 1,
-      name: "Dr. Grace Muthoni",
-      courseCode: "CSC 411",
-      courseName: "Advanced Web Development",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 2,
-      name: "Prof. Elijah Maina",
-      courseCode: "CSC 423",
-      courseName: "Machine Learning Fundamentals",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 3,
-      name: "Dr. Faith Wangari",
-      courseCode: "CSC 432",
-      courseName: "Cyber Security & Ethics",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 4,
-      name: "Dr. James Otieno",
-      courseCode: "CSC 445",
-      courseName: "Cloud Computing",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-    {
-      id: 5,
-      name: "Prof. Leah Achieng",
-      courseCode: "ICS 401",
-      courseName: "Research Methodology",
-      submitted: false,
-      rating: null,
-      feedback: "",
-    },
-  ];
-
-  // Load saved evaluations from localStorage
-  let lecturerEvals =
-    JSON.parse(localStorage.getItem("lecturerEvaluations")) || {};
-
-  function loadEvaluations() {
-    lecturers.forEach((lecturer) => {
-      if (lecturerEvals[lecturer.id]) {
-        lecturer.submitted = lecturerEvals[lecturer.id].submitted || false;
-        lecturer.rating = lecturerEvals[lecturer.id].rating;
-        lecturer.feedback = lecturerEvals[lecturer.id].feedback || "";
-      } else {
-        lecturer.submitted = false;
-        lecturer.rating = null;
-        lecturer.feedback = "";
-      }
+  function setRating(key, value) {
+    document.getElementById(`rating-${key}`).value = value;
+    document.querySelectorAll(`#stars-${key} .star`).forEach((star) => {
+      star.classList.toggle("selected", parseInt(star.dataset.value) <= value);
     });
   }
 
-  function saveEvaluation(lecturerId, rating, feedback) {
-    lecturerEvals[lecturerId] = {
-      submitted: true,
-      rating: rating,
-      feedback: feedback,
-      submittedAt: new Date().toISOString(),
-    };
-    localStorage.setItem("lecturerEvaluations", JSON.stringify(lecturerEvals));
-    // Update lecturer object
-    const lecturer = lecturers.find((l) => l.id === lecturerId);
-    if (lecturer) {
-      lecturer.submitted = true;
-      lecturer.rating = rating;
-      lecturer.feedback = feedback;
-    }
-  }
-
-  // Helper: render star rating component
-  function renderStars(selectedRating, onStarClick) {
-    const container = document.createElement("div");
-    container.className = "rating-stars";
-    for (let i = 1; i <= 5; i++) {
-      const star = document.createElement("span");
-      star.className = `star ${selectedRating >= i ? "selected" : ""}`;
-      star.textContent = "★";
-      star.setAttribute("data-value", i);
-      star.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onStarClick(i);
-      });
-      container.appendChild(star);
-    }
-    return container;
-  }
-
-  // Render all lecturer evaluation cards
-  function renderLecturers() {
-    const container = document.getElementById("lecturersContainer");
-    container.innerHTML = "";
-
-    lecturers.forEach((lecturer) => {
-      const card = document.createElement("div");
-      card.className = "eval-card";
-
-      // Header
-      const header = document.createElement("div");
-      header.className = "eval-header";
-      header.innerHTML = `
-        <div>
-          <div class="lecturer-name">${lecturer.name}</div>
-          <div class="course-info">${lecturer.courseCode} – ${lecturer.courseName}</div>
-        </div>
-        ${lecturer.submitted ? '<span class="submitted-badge">✓ Submitted</span>' : ""}
-      `;
-
-      // Body
-      const body = document.createElement("div");
-      body.className = "eval-body";
-
-      // Rating label
-      const ratingLabel = document.createElement("div");
-      ratingLabel.className = "feedback-label";
-      ratingLabel.textContent = "Rate this lecturer (1 = Poor, 5 = Excellent)";
-      body.appendChild(ratingLabel);
-
-      const starsWrapper = document.createElement("div");
-      const currentRating = lecturer.rating || 0;
-      const starsContainer = renderStars(currentRating, (newRating) => {
-        if (!lecturer.submitted) {
-          lecturer.rating = newRating;
-          renderLecturers(); // re-render to update display
-        } else {
-          alert(
-            "You have already submitted this evaluation. Edits are not allowed.",
-          );
-        }
-      });
-      starsWrapper.appendChild(starsContainer);
-      body.appendChild(starsWrapper);
-
-      // Feedback textarea
-      const feedbackLabel = document.createElement("div");
-      feedbackLabel.className = "feedback-label";
-      feedbackLabel.style.marginTop = "0.8rem";
-      feedbackLabel.textContent = "Additional Comments (optional)";
-      body.appendChild(feedbackLabel);
-
-      const textarea = document.createElement("textarea");
-      textarea.rows = 2;
-      textarea.placeholder =
-        "Share your thoughts about teaching style, communication, availability, etc.";
-      textarea.value = lecturer.feedback || "";
-      if (lecturer.submitted) {
-        textarea.disabled = true;
-        textarea.style.background = "#f8fafc";
-      } else {
-        textarea.addEventListener("input", (e) => {
-          lecturer.feedback = e.target.value;
-        });
+  // Each lecturer card submits its own form independently. The hidden
+  // "rating" input has no `required` effect since it's type="hidden",
+  // so guard it here instead.
+  document.querySelectorAll("form[data-eval-form]").forEach((form) => {
+    form.addEventListener("submit", (e) => {
+      const ratingInput = form.querySelector('input[name="rating"]');
+      if (!ratingInput.value) {
+        e.preventDefault();
+        alert("Please select a star rating before submitting.");
       }
-      body.appendChild(textarea);
-
-      // Submit button (if not submitted)
-      if (!lecturer.submitted) {
-        const submitBtn = document.createElement("button");
-        submitBtn.className = "submit-btn";
-        submitBtn.textContent = "Submit Evaluation";
-        submitBtn.addEventListener("click", () => {
-          if (!lecturer.rating || lecturer.rating === 0) {
-            alert("Please provide a rating (1–5 stars) before submitting.");
-            return;
-          }
-          saveEvaluation(lecturer.id, lecturer.rating, lecturer.feedback || "");
-          renderLecturers(); // re-render to show submitted badge
-          alert(
-            `✅ Thank you! Your evaluation for ${lecturer.name} has been submitted.`,
-          );
-        });
-        body.appendChild(submitBtn);
-      } else {
-        // Show submitted info
-        const info = document.createElement("div");
-        info.style.fontSize = "0.7rem";
-        info.style.color = "var(--text-muted)";
-        info.style.marginTop = "0.5rem";
-        const submittedDate = lecturerEvals[lecturer.id]?.submittedAt
-          ? new Date(
-              lecturerEvals[lecturer.id].submittedAt,
-            ).toLocaleDateString()
-          : "earlier";
-        info.innerHTML = `⭐ Rating: ${lecturer.rating}/5 • Feedback submitted on ${submittedDate}`;
-        body.appendChild(info);
-      }
-
-      card.appendChild(header);
-      card.appendChild(body);
-      container.appendChild(card);
     });
-  }
-
-  // Load saved evaluations and render
-  loadEvaluations();
-  renderLecturers();
-
-  
- 
+  });
 </script>
-{%endblock%}
+{% endblock %}

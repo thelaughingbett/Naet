@@ -15,3 +15,9 @@ class Command(BaseCommand):
                 capacity=100,
                 venue_name=f"LH-{i}"
             )
+
+        for i in range(1, 21):
+            Venue.objects.get_or_create(
+                capacity=100,
+                venue_name=f"ED-{i}"
+            )

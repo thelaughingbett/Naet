@@ -47,16 +47,18 @@
   </div>
   <div class="filter-group">
     <label>Max Price (KES)</label>
-    <input type="number" id="priceFilter" placeholder="Any" />
+    <input type="number" id="priceFilter" placeholder="Any" min="0" />
   </div>
-  <button class="btn-outline" id="filterBtn">Apply Filters</button>
+  <button class="btn-outline" id="filterBtn" type="button">
+    Apply Filters
+  </button>
 </div>
 
 <!-- Available Rooms Grid -->
 <div id="roomsContainer" class="rooms-grid">
   <!-- populated from rooms-data below -->
 </div>
-{%endif%} {{ rooms_json|json_script:"rooms-data" }}
+{% endif %} {{ rooms_json|json_script:"rooms-data" }}
 
 <!-- Booking Section -->
 <div class="booking-section">
@@ -71,7 +73,7 @@
           >🏠 <strong>{{ current_allocation.room.hostel.name }}</strong> – Room
           <!-- prettier-ignore -->
           {{ current_allocation.room.room_number }}
-           ({{ current_allocation.room.get_room_type_display }})</span
+           ({{  current_allocation.room.get_room_type_display }})</span
         ><br />
         {% if current_allocation.move_in_date %}
         <span
@@ -79,8 +81,9 @@
         ><br />
         {% endif %} {% if current_allocation.room.price_per_semester %}
         <span
-          >💰 Hostel Fee: KES {{
-          current_allocation.room.price_per_semester|intcomma }} /
+          >💰 Hostel Fee: KES
+          <!-- prettier-ignore -->
+          {{ current_allocation.room.price_per_semester|intcomma }} /
           semester</span
         ><br />
         {% endif %}
@@ -113,6 +116,17 @@
     </div>
   </div>
 
+  {% elif not session %}
+  <!-- No active booking session — don't show a form that's guaranteed to fail on submit -->
+  <div class="card" style="grid-column: 1 / -1">
+    <div class="card-header">🚫 Booking Unavailable</div>
+    <div class="card-body" style="text-align: center; color: #a33">
+      There is no active booking session right now. You're welcome to browse
+      available rooms above, but check back once a new session opens to submit a
+      booking.
+    </div>
+  </div>
+
   {% else %}
   <!-- Booking Form -->
   <div class="card">
@@ -124,7 +138,7 @@
         id="hostelBookingForm"
       >
         {% csrf_token %}
-        <input type="hidden" name="room" id="bookingRoomInput" required />
+        <input type="hidden" name="room" id="bookingRoomInput" />
 
         <div class="form-group">
           <label>Select Room</label>
@@ -138,13 +152,7 @@
             type="date"
             name="move_in_date"
             id="moveInDate"
-            {%
-            if
-            session.start_date
-            %}value="{{ session.start_date|date:'Y-m-d' }}"
-            {%
-            endif
-            %}
+            value="{% if session.start_date %}{{ session.start_date|date:'Y-m-d' }}{% endif %}"
           />
         </div>
         <div class="form-group">
@@ -166,93 +174,132 @@
 </div>
 
 <script>
-  const roomsData = JSON.parse(
-    document.getElementById("rooms-data").textContent,
-  );
+  (function () {
+    const roomsDataEl = document.getElementById("rooms-data");
+    const roomsData = roomsDataEl ? JSON.parse(roomsDataEl.textContent) : [];
 
-  function renderRooms(
-    filterHall = "all",
-    filterType = "all",
-    maxPrice = null,
-  ) {
-    let filtered = [...roomsData];
-    if (filterHall !== "all")
-      filtered = filtered.filter((r) => r.hall === filterHall);
-    if (filterType !== "all")
-      filtered = filtered.filter((r) => r.type === filterType);
-    if (maxPrice && !isNaN(maxPrice))
-      filtered = filtered.filter((r) => r.price <= maxPrice);
+    const roomsContainer = document.getElementById("roomsContainer");
+    const hallFilter = document.getElementById("hallFilter");
+    const typeFilter = document.getElementById("typeFilter");
+    const priceFilter = document.getElementById("priceFilter");
+    const filterBtn = document.getElementById("filterBtn");
 
-    const container = document.getElementById("roomsContainer");
-    if (filtered.length === 0) {
-      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem;">No rooms match your criteria.</div>`;
-      return;
+    const bookingSelect = document.getElementById("bookingRoomSelect");
+    const bookingInput = document.getElementById("bookingRoomInput");
+    const bookingForm = document.getElementById("hostelBookingForm");
+
+    // Escape text before it's dropped into innerHTML, since hostel/room
+    // names are admin-entered free text and could contain quotes/markup.
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
-    container.innerHTML = filtered
-      .map(
-        (room) => `
-      <div class="room-card" data-id="${room.id}">
-        <div class="room-image">🛏️ ${room.type_display}</div>
-        <div class="room-details">
-          <div class="room-title">${room.type_display} — Room ${room.room_number}</div>
-          <div>${room.hall}</div>
-          <div class="room-price">KES ${room.price.toLocaleString()} / semester</div>
-          <div>${room.available ? `✅ ${room.available_beds} bed(s) available` : "❌ Full"}</div>
-          <button class="book-btn" ${!room.available ? 'disabled style="opacity:0.5;"' : ""}
-            onclick="selectRoomForBooking(${room.id}, '${room.type_display} — Room ${room.room_number}', '${room.hall}')">
-            ${room.available ? "Select Room" : "Not Available"}
-          </button>
-        </div>
-      </div>
-    `,
-      )
-      .join("");
-  }
 
-  window.selectRoomForBooking = function (id, name, hall) {
-    const select = document.getElementById("bookingRoomSelect");
-    const roomInput = document.getElementById("bookingRoomInput");
-    if (!select || !roomInput) return; // already booked — form not rendered
+    function renderRooms(
+      filterHall = "all",
+      filterType = "all",
+      maxPrice = null,
+    ) {
+      if (!roomsContainer) return; // not rendered: already booked, or grid hidden
 
-    let option = select.querySelector(`option[value="${id}"]`);
-    if (!option) {
-      option = document.createElement("option");
-      option.value = id;
-      select.appendChild(option);
+      let filtered = [...roomsData];
+      if (filterHall !== "all")
+        filtered = filtered.filter((r) => r.hall === filterHall);
+      if (filterType !== "all")
+        filtered = filtered.filter((r) => r.type === filterType);
+      if (maxPrice !== null && maxPrice !== "" && !isNaN(maxPrice)) {
+        filtered = filtered.filter((r) => r.price <= Number(maxPrice));
+      }
+
+      if (filtered.length === 0) {
+        roomsContainer.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem;">No rooms match your criteria.</div>`;
+        return;
+      }
+
+      roomsContainer.innerHTML = filtered
+        .map((room) => {
+          const safeType = escapeHtml(room.type_display);
+          const safeRoomNumber = escapeHtml(room.room_number);
+          const safeHall = escapeHtml(room.hall);
+          const safeName = escapeHtml(
+            `${room.type_display} — Room ${room.room_number}`,
+          );
+          return `
+            <div class="room-card" data-id="${room.id}">
+              <div class="room-image">🛏️ ${safeType}</div>
+              <div class="room-details">
+                <div class="room-title">${safeType} — Room ${safeRoomNumber}</div>
+                <div>${safeHall}</div>
+                <div class="room-price">KES ${room.price.toLocaleString()} / semester</div>
+                <div>${room.available ? `✅ ${room.available_beds} bed(s) available` : "❌ Full"}</div>
+                <button
+                  class="book-btn"
+                  data-room-id="${room.id}"
+                  data-room-name="${safeName}"
+                  data-room-hall="${safeHall}"
+                  ${!room.available ? 'disabled style="opacity:0.5;"' : ""}
+                >
+                  ${room.available ? "Select Room" : "Not Available"}
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
     }
-    option.textContent = `${hall} - ${name}`;
-    option.selected = true;
-    roomInput.value = id;
 
-    document
-      .querySelector(".booking-section")
-      .scrollIntoView({ behavior: "smooth" });
-  };
+    function selectRoomForBooking(id, name, hall) {
+      // Booking form isn't rendered when already booked or no active session.
+      if (!bookingSelect || !bookingInput) return;
 
-  document
-    .getElementById("bookingRoomSelect")
-    ?.addEventListener("change", (e) => {
-      document.getElementById("bookingRoomInput").value = e.target.value;
+      let option = bookingSelect.querySelector(`option[value="${id}"]`);
+      if (!option) {
+        option = document.createElement("option");
+        option.value = id;
+        bookingSelect.appendChild(option);
+      }
+      option.textContent = `${hall} - ${name}`;
+      option.selected = true;
+      bookingInput.value = id;
+
+      document
+        .querySelector(".booking-section")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Event delegation: one listener handles clicks on any (re)rendered book-btn,
+    // and avoids embedding user-controlled text inside inline onclick="" strings.
+    roomsContainer?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".book-btn");
+      if (!btn || btn.disabled) return;
+      selectRoomForBooking(
+        btn.dataset.roomId,
+        btn.dataset.roomName,
+        btn.dataset.roomHall,
+      );
     });
 
-  document
-    .getElementById("hostelBookingForm")
-    ?.addEventListener("submit", (e) => {
-      if (!document.getElementById("bookingRoomInput").value) {
+    bookingSelect?.addEventListener("change", (e) => {
+      bookingInput.value = e.target.value;
+    });
+
+    bookingForm?.addEventListener("submit", (e) => {
+      if (!bookingInput.value) {
         e.preventDefault();
         alert("Please select a room from the available rooms first.");
       }
     });
 
-  // Filter handling
-  const hallFilter = document.getElementById("hallFilter");
-  const typeFilter = document.getElementById("typeFilter");
-  const priceFilter = document.getElementById("priceFilter");
-  document.getElementById("filterBtn").addEventListener("click", () => {
-    renderRooms(hallFilter.value, typeFilter.value, priceFilter.value);
-  });
+    filterBtn?.addEventListener("click", () => {
+      renderRooms(hallFilter.value, typeFilter.value, priceFilter.value);
+    });
 
-  // Initial render
-  renderRooms();
+    // Initial render (no-op if roomsContainer doesn't exist on this page state)
+    renderRooms();
+  })();
 </script>
 {% endblock %}

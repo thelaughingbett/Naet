@@ -18,21 +18,23 @@
   </div>
 </div>
 
-{% if curricula %} {% for curriculum in curricula %}
+{% if enrollments %} {% for enrollment in enrollments %}
 <!-- prettier-ignore -->
-{% with evaluation=curriculum.evaluation %}
+{% with evaluation=enrollment.submitted_evaluation %}
 <div class="eval-card">
   <div class="eval-header">
     <div>
-      <span class="course-code">{{ curriculum.course.course_code }}</span>
+      <span class="course-code"
+        >{{ enrollment.curriculum.course.course_code }}</span
+      >
       <span style="margin-left: 0.8rem; font-weight: 600"
-        >{{ curriculum.course.course_name }}</span
+        >{{ enrollment.curriculum.course.course_name }}</span
       >
       <div
         style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem"
       >
         <!-- prettier-ignore -->
-        Instructor: {% for lecturer in curriculum.professor.all %} 
+        Instructor: {% for lecturer in enrollment.curriculum.professor.all %} 
         {{ lecturer.name }}
         {% if not forloop.last %},
          {% endif %} 
@@ -65,29 +67,33 @@
     <div
       style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem"
     >
-      ⭐ Rating: {{ evaluation.rating }}/5 • Submitted on {{
-      evaluation.created_at | date:"d M Y" }}
+      <!-- prettier-ignore -->
+      ⭐ Rating: {{ evaluation.rating }}/5 • Submitted on {{ evaluation.created_at | date:"d M Y" }}
     </div>
 
     {% else %}
     <!-- not yet submitted — show form -->
-    <form method="post" action="{% url 'base-course-evaluation' %}">
+    <form
+      method="post"
+      action="{% url 'base-course-evaluation' %}"
+      data-eval-form
+    >
       {% csrf_token %}
       <input
         type="hidden"
-        name="curriculum_id"
-        value="{{ curriculum.record_id }}"
+        name="enrollment_id"
+        value="{{ enrollment.record_id }}"
       />
 
       <div class="feedback-label">
         Rate this course (1 = Poor, 5 = Excellent)
       </div>
-      <div class="rating-stars" id="stars-{{ curriculum.record_id }}">
+      <div class="rating-stars" id="stars-{{ enrollment.record_id }}">
         {% for i in "12345" %}
         <span
           class="star"
           data-value="{{ forloop.counter }}"
-          onclick="setRating('{{ curriculum.record_id }}', {{ forloop.counter }})"
+          onclick="setRating('{{ enrollment.record_id }}', {{ forloop.counter }})"
           >★</span
         >
         {% endfor %}
@@ -95,8 +101,7 @@
       <input
         type="hidden"
         name="rating"
-        id="rating-{{ curriculum.record_id }}"
-        required
+        id="rating-{{ enrollment.record_id }}"
       />
 
       <div class="feedback-label" style="margin-top: 0.8rem">
@@ -135,16 +140,29 @@
 {% endif %}
 
 <script>
-  function setRating(curriculumId, value) {
+  function setRating(enrollmentId, value) {
     // update hidden input
-    document.getElementById(`rating-${curriculumId}`).value = value;
+    document.getElementById(`rating-${enrollmentId}`).value = value;
 
     // update star highlights
-    const stars = document.querySelectorAll(`#stars-${curriculumId} .star`);
+    const stars = document.querySelectorAll(`#stars-${enrollmentId} .star`);
     stars.forEach((star) => {
       const starVal = parseInt(star.dataset.value);
       star.classList.toggle("selected", starVal <= value);
     });
   }
+
+  // Each course card submits its own form independently. The hidden
+  // "rating" input has no `required` effect since it's type="hidden",
+  // so guard it here instead.
+  document.querySelectorAll("form[data-eval-form]").forEach((form) => {
+    form.addEventListener("submit", (e) => {
+      const ratingInput = form.querySelector('input[name="rating"]');
+      if (!ratingInput.value) {
+        e.preventDefault();
+        alert("Please select a star rating before submitting.");
+      }
+    });
+  });
 </script>
 {% endblock %}

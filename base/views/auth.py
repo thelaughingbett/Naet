@@ -41,13 +41,15 @@ from base.forms import (
     LoginForm,
 )
 # TODO : check breaking duplicate emergencycontact formset in auth and registration
-from base.forms.auth import EmergencyContactFormSet, StudentSettingsForm, UserSettingsForm
+from base.forms.auth import (
+    EmergencyContactFormSet,
+    StudentSettingsForm,
+    UserSettingsForm,
+    ChangePasswordform
+)
 from .base import StudentContextMixin, StudentProfileRequiredMixin
 from base.models import (
-    StudentFeeAccount,
-
     EmergencyContact,
-    User,
     Student,
     Lecturer,
     DeptAdmin,
@@ -166,6 +168,13 @@ class SettingsView(
                 'formset': emergency_formset,
                 'is_formset': True,
                 'legend': 'Emergency Contact Info (Maximum 4)'
+            },
+            {
+                'id': 'password',
+                'title': "Change Password",
+                'form': ChangePasswordform(),
+                'is_formset': False,
+                'legend': 'Change password'
             }
         ]
 
@@ -181,7 +190,11 @@ class SettingsView(
         )
 
         # Validate all dynamic form components simultaneously
-        if user_form.is_valid() and student_form.is_valid() and emergency_formset.is_valid():
+        if (
+            user_form.is_valid() and
+            student_form.is_valid() and
+            emergency_formset.is_valid()
+        ):
             user_form.save()
             student_form.save()
 
@@ -196,10 +209,14 @@ class SettingsView(
                 deleted_object.delete()
 
             messages.success(
-                request, "Your account profile and settings have been updated.")
+                request,
+                "Your account profile and settings have been updated."
+            )
             return redirect('base-settings')
-
-        return render(request, 'base/settings.html', {'tabs_config': tabs_config})
+        context = {
+            'tabs_config': tabs_config
+        }
+        return render(request, 'base/settings.html', context)
 
 
 class DataExportView(

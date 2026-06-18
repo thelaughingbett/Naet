@@ -19,18 +19,20 @@
 <!-- Session filter -->
 <div style="padding: 0.8rem 0; margin-bottom: 1rem">
   <form method="get" style="display:flex; align-items:center; gap:10px">
-    <label style="font-size:0.8rem; font-weight:500; white-space:nowrap">📅 Session:</label>
-    <!-- prettier-ignore -->
-    <select name="session" onchange="this.form.submit()" style="font-size:0.8rem; padding:4px 10px; border-radius:20px; border:1px solid var(--border); cursor:pointer">
-      <option value="">Current Session</option>
-      {% for s in all_sessions %}
-        <option value="{{ s.record_id }}" {% if s.record_id|stringformat:"s" == selected_session_id %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
-    </select>
-    {% if request.GET.session %}
-      <a href="?" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none">✕ Clear</a>
-    {% endif %}
-  </form>
+  <label style="font-size:0.8rem; font-weight:500; white-space:nowrap">📅 Session:</label>
+  <select name="session" onchange="this.form.submit()"
+          style="font-size:0.8rem; padding:4px 10px; border-radius:20px; border:1px solid var(--border); cursor:pointer">
+    {% for s in all_sessions %}
+      <option value="{{ s.record_id }}"
+        {% if s.record_id|stringformat:"s" == selected_session_id %}selected{% endif %}>
+        {{ s }}{% if s.is_active %} (Current){% endif %}
+      </option>
+    {% endfor %}
+  </select>
+  {% if request.GET.session %}
+    <a href="?" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none">✕ Clear</a>
+  {% endif %}
+</form>
 </div>
 
 <!-- Fee Breakdown — always visible if structure exists -->

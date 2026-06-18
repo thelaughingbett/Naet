@@ -40,7 +40,6 @@ class PaymentService:
         This is the same regardless of provider.
         """
         from base.utils.signals import send_notification
-        from base.models import OverDraft
 
         with db_transaction.atomic():
             payment.status = 'completed'
@@ -51,16 +50,6 @@ class PaymentService:
 
             account = payment.account
             balance = account.balance
-
-            # if payment.amount > balance:
-            #     OverDraft.objects.create(
-            #         account=account,
-            #         amount=payment.amount - balance,
-            #         transaction=payment
-            #     )
-            #     account.amount_paid += balance
-            # else:
-            #     account.amount_paid += payment.amount
 
             account.save()
 

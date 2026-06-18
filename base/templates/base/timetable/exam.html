@@ -192,7 +192,7 @@
         </td>
         <td style="font-size: 0.8rem">
           <!-- prettier-ignore -->
-          {% for ev in exam.venues.all %} {{ ev.invigilator.user.full_name }}
+          {% for ev in exam.venues.all %} {{ ev.invigilator.name }}
           {% if not forloop.last %}, {% endif %} {% empty %}—{% endfor %}
         </td>
       </tr>

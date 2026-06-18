@@ -27,7 +27,8 @@ from django.contrib.auth.mixins import (
 from base.models import (
     Curriculum,
     StudentFeeAccount,
-    Timetable
+    Timetable,
+    Reporting
 )
 from .base import (
     StudentProfileRequiredMixin,
@@ -106,6 +107,7 @@ class IndexView(
             # deadlines
             # TODO :  once  connected to lms add assignments deadlines
             # TODO :  support clubs and add club deadlines
+
             if fee_account and not fee_account.is_cleared:
                 due = fee_account.days_remaining
                 days_left = (due - today).days
@@ -114,6 +116,24 @@ class IndexView(
                     'display':   f'{days_left} days left' if days_left <= 7 else due.strftime('%b %d, %Y'),
                     'is_urgent': days_left <= 7,
                 })
+        already_reported = False
+        if student and session:
+            already_reported = Reporting.objects.filter(
+                student=student,
+                session=session
+            ).exists()
+
+            if not already_reported:
+                start = session.start_date
+                end = start + datetime.timedelta(28)
+                days_left_to_report = (end - today).days
+                deadlines.append(
+                    {
+                        'label': 'Reporting deadline',
+                        'display':   f'{days_left_to_report} days left' if days_left_to_report <= 7 else end.strftime('%b %d, %Y'),
+                        'is_urgent': days_left_to_report <= 7,
+                    }
+                )
 
         return render(request, 'base/index.html', {
             'user':              request.user,

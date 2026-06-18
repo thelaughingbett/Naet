@@ -16,11 +16,12 @@ class BaseConfig(AppConfig):
         registry.register(EquityBankBackend())
 
         if settings.DEBUG:
-            from base.modules.erp.tasks.examples.implementations import DefermentNotificationTask, FeeAccountCreatedTask
+            from base.modules.erp.tasks.examples.implementations import DefermentNotificationTask, FeeAccountCreatedTask, EnrollmentERPTask
             from base.modules.erp.registry import erp_registry
 
             erp_registry.register(DefermentNotificationTask())
             erp_registry.register(FeeAccountCreatedTask())
+            erp_registry.register(EnrollmentERPTask())
 
             from base.modules.notifications.registry import notification_registry
             from base.modules.notifications.emails.Backends.examples.MessagepitEmailBackend import MessagePitEmailBackend

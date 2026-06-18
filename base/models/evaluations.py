@@ -17,49 +17,34 @@ from django.db import models
 
 
 class CourseEvaluation(BaseModelMixin):
-    curriculum = models.ForeignKey(
-        "Curriculum",
-        on_delete=models.CASCADE
+    enrollment = models.OneToOneField(
+        "Enrollment",
+        on_delete=models.CASCADE,
+        related_name="evaluation"
     )
 
-    # TODO :  add enrollment here instead of curriculum
+    rating = models.IntegerField(default=0)
+    comments = models.TextField(blank=True, null=True)
 
-    rating = models.IntegerField(
-        default=0
+
+class LecturerEvaluation(BaseModelMixin):
+    enrollment = models.ForeignKey(
+        "Enrollment",
+        on_delete=models.CASCADE,
+        related_name="lecturer_evaluations"
     )
-
-    comments = models.TextField(
-        blank=True,
-        null=True
-    )
-
-
-class LecturerEvaluation(
-    BaseModelMixin
-):
-    curriculum = models.ForeignKey(
-        "Curriculum",
-        on_delete=models.CASCADE
-    )
-
-    # TODO :  add enrollment here instead of curriculum make sure its not returned anywhere
 
     lecturer = models.ForeignKey(
         "Lecturer",
         on_delete=models.CASCADE
     )
 
-    rating = models.IntegerField(
-        default=0
-    )
+    rating = models.IntegerField(default=0)
+    comments = models.TextField(blank=True, null=True)
 
-    comments = models.TextField(
-        blank=True,
-        null=True
-    )
+    class Meta:
+        unique_together = ('enrollment', 'lecturer')
 
-
-# models.py
 
 HOSTEL_EVALUATION_CATEGORIES = [
     ('cleanliness',  'Cleanliness'),

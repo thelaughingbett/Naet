@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# add to your existing django.http import line
+from django.http import JsonResponse
 from decouple import config
 
 from django.shortcuts import (
@@ -22,6 +24,7 @@ from django.http import HttpResponse
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
 )
+from django.db import transaction
 
 from base.models import (
     Curriculum,
@@ -68,11 +71,6 @@ class CurriculumView(
                 start_date__gte=earliest_session.start_date
             ).order_by('start_date')
 
-        print(curriculum)
-
-        for professor in curriculum.first().professor.all():
-            print(professor
-                  )
         context = {
             'curriculum': curriculum,
             'session': session,
@@ -91,6 +89,8 @@ class UnitRegistrationView(
 ):
     login_url = config("LOGIN_URL") + '?next=academics/units/'
     redirect_field_name = config("REDIRECT_FIELD_NAME")
+    min_credits = config("MIN_ELECTIVE_CREDITS", default=2, cast=int)
+    max_credits = config("MAX_ELECTIVE_CREDITS", default=21, cast=int)
 
     def get(self, request):
         student = self.get_student(request)
@@ -105,7 +105,7 @@ class UnitRegistrationView(
             available = Curriculum.objects.filter(
                 Tclass=student.class_entered,
                 session=session,
-                # course__type='E'  # electives only — core auto-enrolled
+                course__course_type='E',
             ).exclude(
                 record_id__in=enrolled_ids
             ).select_related('course')
@@ -117,33 +117,55 @@ class UnitRegistrationView(
             ).select_related('course') if student and session else [],
             'student': student,
             'session': session,
+            'min_credits': self.min_credits,
+            'max_credits': self.max_credits,
         }
         return render(request, 'base/academics/unit_registration.html', context)
 
     def post(self, request):
-        """Enroll in a selected elective"""
+        """Enroll in one or more selected elective units, pending department approval."""
         student = self.get_student(request)
         session = self.get_active_session()
-        curriculum_id = request.POST.get('curriculum_id')
+        curriculum_ids = request.POST.getlist('curriculum_ids')
 
-        if not all([student, session, curriculum_id]):
-            return HttpResponse('Invalid request', status=400)
+        if not student or not session or not curriculum_ids:
+            return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
 
-        try:
-            curriculum = Curriculum.objects.get(
-                record_id=curriculum_id,
-                Tclass=student.class_entered,
-                session=session,
-                course__type='E'
-            )
-            # student.enrollments.add(curriculum)
-            # TODO : create enrollment here
-            # TODO : make transaction atomic
-        except Curriculum.DoesNotExist:
-            return HttpResponse('Unit not found', status=404)
+        enrolled_ids = student.enrollments.values_list('record_id', flat=True)
 
-        return render(request, 'base/academics/unit_registration.html', {
-            'message': 'Enrolled successfully'
+        curricula = Curriculum.objects.filter(
+            record_id__in=curriculum_ids,
+            Tclass=student.class_entered,
+            session=session,
+            course__course_type='E',
+        ).exclude(
+            record_id__in=enrolled_ids
+        ).select_related('course')
+
+        if not curricula.exists():
+            return JsonResponse({'success': False, 'message': 'No matching units found.'}, status=404)
+
+        total_credits = sum(c.course.credits for c in curricula)
+
+        if total_credits < self.min_credits:
+            return JsonResponse({
+                'success': False,
+                'message': f"Minimum {self.min_credits} credits required — you selected {total_credits}.",
+            }, status=400)
+
+        if total_credits > self.max_credits:
+            return JsonResponse({
+                'success': False,
+                'message': f"Maximum {self.max_credits} credits allowed — you selected {total_credits}.",
+            }, status=400)
+
+        with transaction.atomic():
+            student.enrollments.add(
+                *curricula, through_defaults={'status': 'pending'})
+
+        return JsonResponse({
+            'success': True,
+            'message': f"{curricula.count()} unit(s) submitted for approval.",
         })
 
 

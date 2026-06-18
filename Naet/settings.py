@@ -231,7 +231,8 @@ TIMETABLE_MODULE_CONFIG = {
         ('17:00-20:00', '4th Slot (17:00 – 20:00)'),
         ('20:00-23:00', '5th Slot (20:00 – 23:00)'),
     ],
-    'STRATEGY': 'base.modules.timetabling.strategies.greedy.GreedyStrategy'
+    'STRATEGY': 'base.modules.timetabling.weekly_schedule.strategies.examples.GreedyStrategy.GreedyStrategy',
+    'EXAM_STRATEGY': 'base.modules.timetabling.exam_timetable.strategies.examples.greedy.GreedyExamGenerator'
 
 }
 

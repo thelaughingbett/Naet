@@ -51,7 +51,7 @@ class Lecturer(WithDepartmentMixin, StaffUserMixin, BaseModelMixin):
 
     @property
     def name(self):
-        return f"{self.get_title_display()}{self.user.half_name}"
+        return f"{self.get_title_display()} {self.user.half_name}"
 
 
 class DeptAdmin(BaseModelMixin, StaffUserMixin, WithDepartmentMixin):

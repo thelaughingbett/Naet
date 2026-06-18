@@ -1,98 +1,239 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
 
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static  'base/styles/admissions/defer/index.css' %}"
+  href="{% static 'base/styles/admissions/defer/index.css' %}"
 />
-<title>Dashboard</title>
-
+<title>Deferment of Studies</title>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">⏸️ Deferment of Studies</h1>
-  <div class="status-chip">Current Status: Active Enrollment</div>
+  <div
+    class="status-chip {% if student.deferred %}status-chip--deferred{% endif %}"
+  >
+    Current Status: {% if student.deferred %}Deferred{% else %}Active
+    Enrollment{% endif %}
+  </div>
 </div>
 
 <div class="deferment-grid">
-  <!-- LEFT COLUMN: Deferment Request Form -->
+  <!-- LEFT COLUMN -->
   <div>
-    <div class="card">
-      <div class="card-header">📄 Request for Deferment</div>
+    {% if pending %}
+    <!-- ── Pending state: show submitted card ──────────────────────── -->
+    <div class="card card--pending">
+      <div class="card-header">📨 Deferment Request Submitted</div>
       <div class="card-body">
-        <div class="form-group">
-          <label>Full Name *</label>
-          <input
-            type="text"
-            value="{{student.user.half_name}}"
-            readonly
-            style="background: #f5f7fb"
-          />
+        <div class="pending-banner">
+          <div class="pending-banner__icon">⏳</div>
+          <div>
+            <p class="pending-banner__title">Your request is under review</p>
+            <p class="pending-banner__sub">
+              Reference:
+              <strong
+                >DEF-
+                <!-- prettier-ignore -->
+                {{ pending.record_id|stringformat:"s"|slice:":8"|upper }}</strong
+              >
+            </p>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Registration Number *</label>
-          <input
-            type="text"
-            value="{{student.registration_number | upper}}"
-            readonly
-            style="background: #f5f7fb"
-          />
+
+        <div class="pending-details">
+          <div class="pending-detail-row">
+            <span class="pending-detail-label">Session</span>
+            <span>{{ pending.session_deferred }}</span>
+          </div>
+          <div class="pending-detail-row">
+            <span class="pending-detail-label">Reason</span>
+            <span>{{ pending.get_reason_display }}</span>
+          </div>
+          {% if pending.reason_detail %}
+          <div class="pending-detail-row">
+            <span class="pending-detail-label">Remarks</span>
+            <span>{{ pending.reason_detail }}</span>
+          </div>
+          {% endif %}
+          <div class="pending-detail-row">
+            <span class="pending-detail-label">Documents</span>
+            <span>
+              {% with docs=pending.documents.all %} {% if docs %}
+              <!-- prettier-ignore -->
+              {{ docs|length }} file{{ docs|length|pluralize }} attached {% else %} None
+              attached {% endif %} {% endwith %}
+            </span>
+          </div>
+          <div class="pending-detail-row">
+            <span class="pending-detail-label">Submitted</span>
+            <span>{{ pending.created_at|date:"d M Y" }}</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Programme *</label>
-          <input
-            type="text"
-            value="{{student.class_entered.programme}} (Year {{student.year_of_study}})"
-            readonly
-            style="background: #f5f7fb"
-          />
-        </div>
-        <div class="form-group">
-          <label>Semester to Defer *</label>
-          <select id="deferSemester">
-            <option>Year 3 – Semester I (2025/2026)</option>
-            <option>Year 3 – Semester II (2025/2026)</option>
-            <option>Full Academic Year 2025/2026</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Reason for Deferment *</label>
-          <select id="deferReason">
-            <option>Medical reasons (attach supporting document)</option>
-            <option>Financial difficulties</option>
-            <option>Employment / Work commitment</option>
-            <option>Family / Personal reasons</option>
-            <option>Other (specify in remarks)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Supporting Document (Optional but recommended)</label>
-          <input type="file" id="deferDoc" accept=".pdf,.jpg,.png" />
-          <small style="color: var(--text-muted)"
-            >Upload medical report, letter, or any evidence (max 5MB)</small
-          >
-        </div>
-        <div class="form-group">
-          <label>Additional Remarks</label>
-          <textarea
-            id="deferRemarks"
-            rows="3"
-            placeholder="Provide any extra information..."
-          ></textarea>
-        </div>
-        <button class="btn-primary" id="submitDefermentBtn">
-          📨 Submit Deferment Request
-        </button>
-        <div class="info-box">
-          ⚠️ <strong>Important:</strong> Deferment requests are reviewed within
-          7-10 working days. Approved deferment will allow you to resume studies
-          in the next academic year without reapplying. Tuition fee credit
-          policy applies.
+
+        <div class="info-box info-box--neutral">
+          ℹ️ Requests are reviewed within <strong>7–10 working days</strong>.
+          You will be notified by email once a decision is made.
         </div>
       </div>
     </div>
+
+    {% else %}
+    <!-- ── Form: not yet deferred this session ─────────────────────── -->
+    <div class="card" id="defermentFormCard">
+      <div class="card-header">📄 Request for Deferment</div>
+      <div class="card-body">
+        <!-- success state (shown after AJAX submit) -->
+        <div
+          id="successState"
+          style="display: none; text-align: center; padding: 2rem 1rem"
+        >
+          <div style="font-size: 2.5rem; margin-bottom: 0.75rem">✅</div>
+          <p style="font-weight: 600; margin-bottom: 0.4rem">
+            Request Submitted
+          </p>
+          <p
+            id="successRef"
+            style="font-size: 0.8rem; color: var(--text-muted)"
+          ></p>
+          <p
+            style="
+              font-size: 0.8rem;
+              margin-top: 1rem;
+              color: var(--text-muted);
+            "
+          >
+            Refresh the page to view your pending request.
+          </p>
+          <button
+            class="btn-secondary"
+            style="margin-top: 1rem"
+            onclick="location.reload()"
+          >
+            ↩ Back to Deferment Page
+          </button>
+        </div>
+
+        <!-- error banner -->
+        <div
+          id="errorBanner"
+          style="display: none"
+          class="info-box info-box--error"
+          role="alert"
+        ></div>
+
+        <!-- the actual form -->
+        <form id="defermentForm" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input
+              type="text"
+              value="{{ student.user.half_name }}"
+              readonly
+              style="background: #f5f7fb"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Registration Number</label>
+            <input
+              type="text"
+              value="{{ student.registration_number|upper }}"
+              readonly
+              style="background: #f5f7fb"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Programme</label>
+            <input
+              type="text"
+              value="{{ student.class_entered.programme }} (Yr {{ student.class_entered.year_of_study }})"
+              readonly
+              style="background: #f5f7fb"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="sessionSelect"
+              >Semester to Defer
+              <span style="color: var(--maroon)">*</span></label
+            >
+            <select name="session_deferred" id="sessionSelect" required>
+              <option value="">— select semester —</option>
+              {% for s in available_sessions %}
+              <option value="{{ s.record_id }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="reasonSelect"
+              >Reason for Deferment
+              <span style="color: var(--maroon)">*</span></label
+            >
+            <select name="reason" id="reasonSelect" required>
+              <option value="">— select reason —</option>
+              {% for value, label in reason_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="docInput"
+              >Supporting Documents
+              <small style="color: var(--text-muted)"
+                >(optional, max 5 MB each)</small
+              ></label
+            >
+            <input
+              type="file"
+              name="documents"
+              id="docInput"
+              accept=".pdf,.jpg,.jpeg,.png"
+              multiple
+            />
+            <div
+              id="fileList"
+              style="
+                margin-top: 0.4rem;
+                font-size: 0.75rem;
+                color: var(--text-muted);
+              "
+            ></div>
+          </div>
+
+          <div class="form-group">
+            <label for="remarksInput">Additional Remarks</label>
+            <textarea
+              name="reason_detail"
+              id="remarksInput"
+              rows="3"
+              placeholder="Provide any extra context…"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            📨 Submit Deferment Request
+          </button>
+
+          <div class="info-box" style="margin-top: 1rem">
+            ⚠️ <strong>Important:</strong> Deferment requests are reviewed
+            within 7–10 working days. Approved deferment lets you resume without
+            reapplying. Tuition fee credit policy applies.
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
   </div>
 
-  <!-- RIGHT COLUMN: Deferment Guidelines & History -->
+  <!-- RIGHT COLUMN -->
   <div>
     <div class="card">
       <div class="card-header">📌 Deferment Policy</div>
@@ -102,19 +243,20 @@
             margin-left: 1.2rem;
             color: var(--text-muted);
             font-size: 0.8rem;
+            line-height: 1.8;
           "
         >
           <li>
-            Deferment allowed for a maximum of
-            <strong>two consecutive semesters</strong>.
+            Maximum of <strong>two consecutive semesters</strong> allowed.
           </li>
           <li>
-            Application deadline:
-            <strong>2 weeks before semester exams</strong>.
+            Apply at least <strong>2 weeks before semester exams</strong>.
           </li>
-          <li>Approved deferment means you retain your admission status.</li>
+          <li>Approved deferment retains your admission status.</li>
           <li>No tuition refunds after week 6 of the semester.</li>
-          <li>Hostel allocation will be cancelled and must be rebooked.</li>
+          <li>
+            Hostel allocation is cancelled and must be rebooked on return.
+          </li>
         </ul>
       </div>
     </div>
@@ -122,55 +264,149 @@
     <div class="card">
       <div class="card-header">📋 My Deferment History</div>
       <div class="card-body">
+        {% if history %}
         <div class="deferment-history">
+          {% for d in history %}
           <div class="history-item">
-            <strong>Request ID: DEF-2024-001</strong><br />
-            Semester: Year 2 Sem II (2024)<br />
-            Status: <span style="color: #1e6f3f">✅ Approved</span><br />
-            <span style="font-size: 0.7rem">Resumed: Jan 2025</span>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 4px;
+              "
+            >
+              <!-- prettier-ignore -->
+              <strong>REF: DEF-{{ d.record_id|stringformat:"s"|slice:":8"|upper }}</strong>
+              <span
+                class="history-badge {% if d.request_status == 'approved' %}history-badge--approved {% elif d.request_status == 'rejected' %}history-badge--rejected {% else %}history-badge--pending{% endif %}"
+              >
+                <!-- prettier-ignore -->
+                {% if d.request_status == 'approved' %}✅ Approved 
+                {% elif d.request_status == 'rejected' %}❌ Rejected {% else %}⏳
+                Pending{% endif %}
+              </span>
+            </div>
+            <div
+              style="
+                font-size: 0.78rem;
+                margin-top: 4px;
+                color: var(--text-muted);
+              "
+            >
+              <div>Session: {{ d.session_deferred }}</div>
+              <div>Reason: {{ d.get_reason_display }}</div>
+              {% if d.session_returning %}
+              <div>Returning: {{ d.session_returning }}</div>
+              {% endif %} {% with docs=d.documents.all %} {% if docs %}
+              <div>Documents: {{ docs|length }} attached</div>
+              {% endif %} {% endwith %}
+              <div>Submitted: {{ d.created_at|date:"d M Y" }}</div>
+              {% if d.reinstated_at %}
+              <div>Reinstated: {{ d.reinstated_at|date:"d M Y" }}</div>
+              {% endif %}
+            </div>
           </div>
-          <div class="history-item">
-            <strong>No pending deferment requests</strong><br />
-            <span style="font-size: 0.7rem">You are currently active.</span>
-          </div>
+          {% endfor %}
         </div>
+        {% else %}
+        <div
+          style="
+            text-align: center;
+            padding: 24px;
+            opacity: 0.5;
+            font-size: 0.8rem;
+          "
+        >
+          <div style="font-size: 1.5rem; margin-bottom: 6px">📂</div>
+          No deferment history found.
+        </div>
+        {% endif %}
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">📞 Need Help?</div>
-      <div class="card-body">
+      <div class="card-body" style="font-size: 0.82rem">
         <p>
-          <strong>Academic Registrar</strong><br />Email:
-          registrar@university.edu<br />Phone: +254 700 987 654
+          <strong>Academic Registrar</strong><br />
+          Email: registrar@university.edu<br />
+          Phone: +254 700 987 654
         </p>
         <hr style="margin: 0.8rem 0" />
-        <p><strong>Student Support</strong><br />WhatsApp: +254 712 345 789</p>
+        <p>
+          <strong>Student Support</strong><br />
+          WhatsApp: +254 712 345 789
+        </p>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Submit deferment
+  // ── file list preview ─────────────────────────────────────────────────────────
+  document.getElementById("docInput")?.addEventListener("change", function () {
+    const list = document.getElementById("fileList");
+    const files = [...this.files];
+    list.innerHTML = files.length
+      ? files
+          .map((f) => `📎 ${f.name} (${(f.size / 1024).toFixed(0)} KB)`)
+          .join("<br>")
+      : "";
+  });
+
+  // ── form submit via fetch ─────────────────────────────────────────────────────
   document
-    .getElementById("submitDefermentBtn")
-    ?.addEventListener("click", () => {
-      const semester = document.getElementById("deferSemester").value;
-      const reason = document.getElementById("deferReason").value;
-      const remarks = document.getElementById("deferRemarks").value;
-      const fileInput = document.getElementById("deferDoc");
-      const file = fileInput.files[0];
-      let fileMsg = file ? `Document: ${file.name}` : "No document attached";
+    .getElementById("defermentForm")
+    ?.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-      alert(
-        `📋 Deferment Request Submitted\n\nSemester: ${semester}\nReason: ${reason}\nRemarks: ${remarks || "—"}\n${fileMsg}\n\nYour request has been received. You will receive a confirmation email within 24 hours.\nReference: DEF-${Date.now().toString().slice(-8)}`,
-      );
+      const submitBtn = document.getElementById("submitBtn");
+      const errorBanner = document.getElementById("errorBanner");
+      const successState = document.getElementById("successState");
 
-      // Clear remarks and file for demo
-      document.getElementById("deferRemarks").value = "";
-      fileInput.value = "";
+      // Basic client-side validation
+      const session = document.getElementById("sessionSelect").value;
+      const reason = document.getElementById("reasonSelect").value;
+      if (!session || !reason) {
+        errorBanner.textContent =
+          "⚠️ Please select a session and a reason before submitting.";
+        errorBanner.style.display = "block";
+        return;
+      }
+
+      errorBanner.style.display = "none";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Submitting…";
+
+      try {
+        const res = await fetch("", {
+          // posts to same URL
+          method: "POST",
+          body: new FormData(this),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          this.style.display = "none";
+          document.getElementById("successRef").textContent =
+            `Reference: DEF-${data.ref}  ·  Session: ${data.session}  ·  ${data.doc_count} document(s) attached`;
+          successState.style.display = "block";
+        } else {
+          errorBanner.textContent = `⚠️ ${data.message}`;
+          errorBanner.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "📨 Submit Deferment Request";
+        }
+      } catch (err) {
+        errorBanner.textContent =
+          "⚠️ A network error occurred. Please try again.";
+        errorBanner.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "📨 Submit Deferment Request";
+      }
     });
 </script>
 
-{%endblock%}
+{% endblock %}

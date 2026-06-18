@@ -56,8 +56,8 @@ class GreedyExamGenerator(AbstractExamTimetableGenerator):
                         continue
 
                     class_busy[(entry['id'], date, slot)] = True
-                    venue_busy[(venue['id'], date, slot)] = True
-                    invig_busy[(invigilator['id'], date, slot)] = True
+                    venue_busy[(venue['record_id'], date, slot)] = True
+                    invig_busy[(invigilator['record_id'], date, slot)] = True
                     for sid in enrolled:
                         student_busy[(sid, date, slot)] = True
 
@@ -65,8 +65,8 @@ class GreedyExamGenerator(AbstractExamTimetableGenerator):
                         curriculum_id=entry['id'],
                         date=date,
                         time_slot=slot,
-                        venue_id=venue['id'],
-                        invigilator_id=invigilator['id'],
+                        venue_id=venue['record_id'],
+                        invigilator_id=invigilator['record_id'],
                         exam_type=constraints.exam_type,
                     ))
                     placed = True
@@ -83,17 +83,17 @@ class GreedyExamGenerator(AbstractExamTimetableGenerator):
 
     def _free_venue(self, venues, venue_busy, date, slot):
         for v in venues:
-            if not venue_busy.get((v['id'], date, slot)):
+            if not venue_busy.get((v['record_id'], date, slot)):
                 return v
         return None
 
     def _free_invigilator(self, preferred, all_invigilators, invig_busy, date, slot):
-        all_by_id = {i['id']: i for i in all_invigilators}
+        all_by_id = {i['record_id']: i for i in all_invigilators}
         for pid in preferred:
             inv = all_by_id.get(pid)
             if inv and not invig_busy.get((pid, date, slot)):
                 return inv
         for inv in all_invigilators:
-            if not invig_busy.get((inv['id'], date, slot)):
+            if not invig_busy.get((inv['record_id'], date, slot)):
                 return inv
         return None

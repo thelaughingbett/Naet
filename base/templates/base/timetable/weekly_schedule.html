@@ -120,15 +120,12 @@
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📅 Weekly Timetable</h1>
-  {% if session %}
-  <div class="week-selector">📍 {{ session }}</div>
-  {% endif %}
 </div>
 
 {% if has_slots %}
 
 <div class="info-bar">
-  <div class="info-chip">📘 {{ session }}</div>
+  <div class="info-chip">⏳ {{ session }}</div>
   <div class="info-chip">🏫 {{ student.class_entered.programme }}</div>
   <div class="info-chip">⏰ All times are EAT (UTC+3)</div>
 </div>
@@ -149,7 +146,7 @@
         <td class="time-col">{{ slot.label }}</td>
         {% for day in days %}
         <!-- prettier-ignore -->
-        <td>{% with entry=slot.days|dict_key:day %}{% if entry %}<div class="class-slot"><div class="class-title">{{ entry.curriculum.course.course_name }}</div><div class="class-detail">{{ entry.curriculum.course.course_code }} | {{ entry.venue }}</div><div class="class-detail">👨‍🏫 {% for lecturer in entry.curriculum.professor.all %}{{ lecturer.user.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div><span class="lecture-badge">Lecture</span></div>{% else %}<div class="empty-slot">— Free —</div>{% endif %}{% endwith %}</td>
+        <td>{% with entry=slot.days|dict_key:day %}{% if entry %}<div class="class-slot"><div class="class-title">{{ entry.curriculum.course.course_name }}</div><div class="class-detail">{{ entry.curriculum.course.course_code }} | {{ entry.venue.venue_name }}</div><div class="class-detail">👨‍🏫 {% for lecturer in entry.curriculum.professor.all %}{{ lecturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div><span class="lecture-badge">Lecture</span></div>{% else %}<div class="empty-slot">— Free —</div>{% endif %}{% endwith %}</td>
         {% endfor %}
       </tr>
       {% endfor %}

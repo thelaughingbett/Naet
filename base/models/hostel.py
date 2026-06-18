@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from django.core.exceptions import ValidationError
 from .base import BaseModelMixin
 from django.db import models
 
@@ -110,6 +111,13 @@ class HostelAllocation(BaseModelMixin):
     Links a student to a specific room for a specific session.
     Replaces student.hostel CharField.
     """
+    # 1. Define the status choices using TextChoices
+    class StatusChoices(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+        VACATED = 'VACATED', 'Vacated'
+
     student = models.ForeignKey(
         'Student',
         on_delete=models.PROTECT,
@@ -125,28 +133,42 @@ class HostelAllocation(BaseModelMixin):
         on_delete=models.PROTECT,
         related_name='hostel_allocations'
     )
+
+    # 2. Add the status field with a default and a database index
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING,
+        db_index=True
+    )
+
     allocated_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     move_in_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
 
     class Meta:
-        # one room slot per student per session
+        # One room slot per student per session
         unique_together = ('student', 'session')
 
     def __str__(self):
-        return f"{self.student} → {self.room} ({self.session})"
+        return f"{self.student} → {self.room} ({self.session}) [{self.status}]"
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        if self.room.is_full:
+        super().clean()
+
+        # 3. Only check capacity if the allocation is being approved
+        # This prevents blocking a pending request when a room is currently full
+        if self.status == self.StatusChoices.APPROVED and self.room.is_full:
             raise ValidationError(
                 f"Room {self.room} is at full capacity."
             )
-        # gender check
-        student_gender = self.student.user.gender
-        hostel_gender = self.room.hostel.gender
-        if hostel_gender != 'mixed' and student_gender != hostel_gender:
-            raise ValidationError(
-                f"{self.room.hostel.name} does not accommodate {student_gender} students."
-            )
+
+        # 4. Gender checks apply to all request statuses
+        if self.student_id and self.room_id:
+            student_gender = self.student.user.gender
+            hostel_gender = self.room.hostel.gender
+            if hostel_gender != 'mixed' and student_gender != hostel_gender:
+                raise ValidationError(
+                    f"{self.room.hostel.name} does not accommodate {student_gender} students."
+                )

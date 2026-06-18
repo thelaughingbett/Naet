@@ -9,11 +9,11 @@
 from django.contrib import admin
 
 from base.forms import FeeStructureForm
-from .inlines import OverDraftInline, PaymentInline
+from .inlines import PaymentInline
 from .mixins import BaseAdmin
 from base.models import (
     FeeStructure,
-    OverDraft,
+
     Payment,
     StudentFeeAccount,
     Tclass,
@@ -58,15 +58,10 @@ class FeeStructureAdmin(BaseAdmin):
 
 @admin.register(StudentFeeAccount)
 class StudentFeeAccountAdmin(BaseAdmin):
-    inlines = [PaymentInline, OverDraftInline]
+    inlines = [PaymentInline,]
     readonly_fields = ['balance', 'is_cleared', 'amount_billed']
     list_display = ['student', 'amount_billed',
                     'amount_paid', 'balance', 'is_cleared']
-
-
-@admin.register(OverDraft)
-class OverdraftAdmin(BaseAdmin):
-    pass
 
 
 @admin.register(Payment)

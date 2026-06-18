@@ -21,7 +21,7 @@
       {{student.class_entered.programme}}</span
     >
   </div>
-  <div>Reporting Deadline: <strong>15th January 2026</strong></div>
+  <div>Reporting Deadline: <strong>{{session.end_date}}</strong></div>
 </div>
 
 <div class="reporting-grid">
@@ -31,7 +31,8 @@
       <div class="card-header">📝 Reporting Confirmation Form</div>
 
       {% if not already_reported %}
-      <form class="card-body" method="post">
+
+      <form class="card-body" method="post" action="{% url 'base-reporting' %}">
         {% csrf_token %}
         <div class="form-group">
           <label>Expected Reporting Date</label>
@@ -39,6 +40,17 @@
             type="date"
             id="reportDate"
             value="{{ session.start_date.isoformat }}"
+            disabled
+          />
+        </div>
+        <div class="form-group">
+          <label for="session">Sesion</label>
+          <input name="session" type="hidden" value="{{ session.pk }}" />
+          <input
+            type="text"
+            value="{{ session }}"
+            readonly
+            id="session"
             disabled
           />
         </div>
@@ -118,17 +130,5 @@
     </div>
   </div>
 </div>
-<script>
-  // Reporting confirmation button
-  document
-    .getElementById("submitReportingBtn")
-    ?.addEventListener("click", () => {
-      const date = document.getElementById("reportDate").value;
-      const mode = document.getElementById("reportMode").value;
-      const accommodation = document.getElementById("accommodation").value;
-      alert(
-        `✅ Reporting confirmed for ${date}.\nMode: ${mode}\nAccommodation: ${accommodation}\nYou will receive a confirmation email shortly.`,
-      );
-    });
-</script>
+<script></script>
 {%endblock%}

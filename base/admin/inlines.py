@@ -12,7 +12,6 @@ from base.models import (
     Curriculum,
     FeeStructure,
     Lecturer,
-    OverDraft,
     Payment,
     Session,
 )
@@ -23,13 +22,6 @@ class PaymentInline(admin.StackedInline):
     extra = 0
     readonly_fields = ['paid_at', 'transaction_ref',
                        'method', 'amount', 'phone_number', 'provider_ref']
-
-
-class OverDraftInline(admin.StackedInline):
-    model = OverDraft
-    extra = 0
-    fk_name = 'account'
-    readonly_fields = ['amount', 'transaction', 'status']
 
 
 class CurriculumInline(admin.StackedInline):

@@ -195,6 +195,7 @@
       <li class="empty-row">No units selected</li>
     </ul>
     <div class="total-credits" id="totalCredits">Total Credits: 0</div>
+
     <button
       class="btn-primary"
       id="registerBtn"
@@ -204,6 +205,7 @@
     >
       ✅ Submit for Approval
     </button>
+    <div id="formMessage" class="form-message"></div>
     <div class="credit-hint">
       Minimum: {{ min_credits|default:7 }} credits | Maximum:
       <!-- prettier-ignore -->
@@ -252,72 +254,96 @@
 </div>
 
 <script>
-  const MIN_CREDITS = {{ min_credits|default:7 }};
-  const MAX_CREDITS = {{ max_credits|default:21 }};
+    const MIN_CREDITS = {{ min_credits|default:2 }};
+    const MAX_CREDITS = {{ max_credits|default:21 }};
 
-  const tbody       = document.getElementById('unitsBody');
-  const registerBtn = document.getElementById('registerBtn');
-  const totalEl     = document.getElementById('totalCredits');
-  const listEl      = document.getElementById('selectedList');
+    const tbody       = document.getElementById('unitsBody');
+    const registerBtn = document.getElementById('registerBtn');
+    const totalEl     = document.getElementById('totalCredits');
+    const listEl      = document.getElementById('selectedList');
 
-  function getSelectedRows() {
-    if (!tbody) return [];
-    return [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
-      .map(cb => cb.closest('tr'));
-  }
-
-  function updateSummary() {
-    if (!totalEl) return; // no available units rendered
-
-    const selected = getSelectedRows();
-    const totalCredits = selected.reduce(
-      (sum, row) => sum + parseInt(row.dataset.credits, 10),
-      0
-    );
-
-    totalEl.textContent = `Total Credits: ${totalCredits}`;
-
-    if (selected.length === 0) {
-      listEl.innerHTML = '<li class="empty-row">No units selected</li>';
-    } else {
-      listEl.innerHTML = selected
-        .map(row => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`)
-        .join('');
+    function getSelectedRows() {
+      if (!tbody) return [];
+      return [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
+        .map(cb => cb.closest('tr'));
     }
 
-    if (totalCredits < MIN_CREDITS) {
-      registerBtn.disabled = true;
-      registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
-    } else if (totalCredits > MAX_CREDITS) {
-      registerBtn.disabled = true;
-      registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
-    } else {
-      registerBtn.disabled = false;
-      registerBtn.title = '';
-    }
-  }
+    function updateSummary() {
+      if (!totalEl) return; // no available units rendered
 
-  tbody?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', updateSummary);
-  });
+      const selected = getSelectedRows();
+      const totalCredits = selected.reduce(
+        (sum, row) => sum + parseInt(row.dataset.credits, 10),
+        0
+      );
 
-  // confirm before submitting — electives go to approval
-  document.getElementById('registrationForm')?.addEventListener('submit', (e) => {
-    const selected = getSelectedRows();
-    if (selected.length === 0) {
-      e.preventDefault();
-      return;
+      totalEl.textContent = `Total Credits: ${totalCredits}`;
+
+      if (selected.length === 0) {
+        listEl.innerHTML = '<li class="empty-row">No units selected</li>';
+      } else {
+        listEl.innerHTML = selected
+          .map(row => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`)
+          .join('');
+      }
+
+      if (totalCredits < MIN_CREDITS) {
+        registerBtn.disabled = true;
+        registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
+      } else if (totalCredits > MAX_CREDITS) {
+        registerBtn.disabled = true;
+        registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
+      } else {
+        registerBtn.disabled = false;
+        registerBtn.title = '';
+      }
     }
+
+    tbody?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSummary);
+    });
+
+    // confirm before submitting — electives go to approval
+    document.getElementById('registrationForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const form      = e.target;
+    const selected  = getSelectedRows();
+    const messageEl = document.getElementById('formMessage');
+
+    if (selected.length === 0) return;
 
     const codes = selected.map(r => r.dataset.coursecode).join(', ');
     const ok = confirm(
       `Submit ${selected.length} unit(s) for approval?\n\n${codes}\n\n` +
       `These will appear as "Pending" until your department approves them.`
     );
-    if (!ok) e.preventDefault();
+    if (!ok) return;
+
+    registerBtn.disabled = true;
+
+    try {
+      const response = await fetch(window.location.pathname, {
+        method: 'POST',
+        body: new FormData(form),   // includes the csrf token automatically
+      });
+      const data = await response.json();
+
+      messageEl.textContent = data.message;
+      messageEl.className = `form-message form-message--${data.success ? 'success' : 'error'}`;
+      setTimeout(() => {
+              window.location.reload();
+      }, 5000);
+
+    } catch (err) {
+      messageEl.textContent = 'Something went wrong submitting your request. Please try again.';
+      messageEl.className = 'form-message form-message--error';
+    } finally {
+      registerBtn.disabled = false;
+    }
   });
 
-  // initial state
-  updateSummary();
+    // initial state
+    updateSummary();
 </script>
 {% endblock %}

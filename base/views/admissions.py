@@ -12,52 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from base.modules.notifications.webhooks import fire_webhook
+from django.shortcuts import redirect, render
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+import datetime
+import types
+
 from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 
 from django.shortcuts import render, redirect
-from base.models import Payment
-from django.views.decorators.cache import never_cache
 from django.contrib import messages
 
-from http import HTTPStatus
-import logging
 
 from decouple import config
 
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import (
-    get_object_or_404,
     render,
     redirect
 )
 from django.urls import reverse
 from django.views import View
-from django.views.generic import (
-    DetailView,
-    ListView,
-    DeleteView
-)
 from django.http import HttpResponse
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
-    PermissionRequiredMixin
-)
-from django.contrib.auth import (
-    authenticate,
-    login,
-    logout
-)
-from django.db import (
-    DatabaseError,
-    IntegrityError,
-    transaction
-)
-from django.utils.http import url_has_allowed_host_and_scheme
 
+)
 from base.forms import ReportingForm
 from base.models import (
     Reporting,
@@ -67,7 +49,10 @@ from base.models import (
     Session,
     ExamCard,
     ExamClash,
-    ExamSession
+    ExamSession,
+    HostelListing,
+    Deferment,
+    DefermentDocument
 )
 from .base import (
     StudentProfileRequiredMixin,
@@ -109,8 +94,8 @@ class ReportingView(
         student = self.get_student(request)
         session = self.get_active_session()
 
+        already_reported = None
         if student and session:
-
             already_reported = Reporting.objects.filter(
                 student=student,
                 session=session
@@ -119,18 +104,11 @@ class ReportingView(
         context = {
             'already_reported': already_reported,
             'session': session,
-            'student': student
+            'student': student,
         }
         return render(request, 'base/admissions/reporting.html', context)
 
     def post(self, request):
-        """
-        Processes term check-in submissions.
-
-        Validates form inputs and runs an idempotency query against the active 
-        session to reject duplicate check-in requests with a 400 response.
-        """
-
         student = self.get_student(request)
         session = self.get_active_session()
 
@@ -145,12 +123,35 @@ class ReportingView(
             reporting = form.save(commit=False)
             reporting.student = student
             reporting.session = session
+            reporting.reported_at = datetime.datetime.now()
+            reporting.reported_via = Reporting.REPORTED_VIA_CHOICES[0][0]
             reporting.save()
-            return redirect('base-dashboard')
 
+            from base.modules.notifications.service import NotificationService
+            NotificationService.send(
+                user=types.SimpleNamespace(
+                    email=student.user.email,
+                    phone_number=student.telephone_no
+                ),
+                template_key='reporting_confirmed',
+                channels=['sms', 'email'],
+                context={
+                    'student_name': student.user.half_name,
+                    'session': session,
+                    # BUG 🪳 sends  wrong reverse  url
+                    # TODO 📋: FIX BUG
+                    'portal_url': reverse('base-index')
+                }
+            )
+            # ← back to self, GET will pick up already_reported
+            return redirect('base-reporting')
+
+        student_obj = self.get_student(request)
         context = {
             'form': form,
             'session': session,
+            'student': student_obj,
+            'already_reported': None,
         }
         return render(request, 'base/admissions/reporting.html', context)
 
@@ -159,27 +160,108 @@ class DefermentView(
     LoginRequiredMixin,
     StudentProfileRequiredMixin,
     StudentContextMixin,
-    View
+    View,
 ):
     login_url = config("LOGIN_URL") + '?next=admissions/defer/'
     redirect_field_name = config("REDIRECT_FIELD_NAME")
 
     def get(self, request):
-        """Confirmation page before deferring"""
-        context = {
-            'student': self.get_student(request)
-        }
-        return render(request, 'base/admissions/defer.html', context)
+        student = self.get_student(request)
+        active_session = self.get_active_session()
+
+        # All sessions available to defer into (active + future)
+        available_sessions = Session.objects.filter(
+            start_date__gte=active_session.start_date
+        ).order_by('start_date') if active_session else Session.objects.none()
+
+        # Current pending request if any
+        pending = Deferment.objects.filter(
+            student=student,
+            request_status='pending'
+        ).first() if student else None
+
+        # Full history
+        history = Deferment.objects.filter(
+            student=student
+        ).select_related(
+            'session_deferred', 'session_returning', 'approved_by'
+        ).prefetch_related(
+            'documents'
+        ).order_by('-created_at') if student else []
+
+        return render(request, 'base/admissions/defer.html', {
+            'student':            student,
+            'active_session':     active_session,
+            'available_sessions': available_sessions,
+            'reason_choices':     Deferment.REASON_CHOICES,
+            'pending':            pending,
+            'history':            history,
+        })
 
     def post(self, request):
         student = self.get_student(request)
         if not student:
-            return HttpResponse('Student not found', status=404)
+            return JsonResponse({'success': False, 'message': 'Student not found.'}, status=404)
 
-        student.deffered = True
-        # TODO :  add defer record here
+        session_id = request.POST.get('session_deferred')
+        reason = request.POST.get('reason')
+        reason_detail = request.POST.get('reason_detail', '').strip()
+        files = request.FILES.getlist('documents')
+
+        # Validate
+        if not session_id or not reason:
+            return JsonResponse({
+                'success': False,
+                'message': 'Session and reason are required.'
+            }, status=400)
+
+        session = Session.objects.filter(record_id=session_id).first()
+        if not session:
+            return JsonResponse({'success': False, 'message': 'Invalid session.'}, status=400)
+
+        # Prevent duplicate pending request for same session
+        if Deferment.objects.filter(student=student, session_deferred=session).exists():
+            return JsonResponse({
+                'success': False,
+                'message': f'You already have a deferment request for {session}.'
+            }, status=400)
+
+        # Create deferment record
+        deferment = Deferment.objects.create(
+            student=student,
+            session_deferred=session,
+            reason=reason,
+            reason_detail=reason_detail or None,
+            request_status='pending',
+            status='active',
+        )
+
+        # Attach documents
+        for f in files:
+            if f.size > 5 * 1024 * 1024:   # 5 MB cap
+                deferment.delete()
+                return JsonResponse({
+                    'success': False,
+                    'message': f'File "{f.name}" exceeds the 5 MB limit.'
+                }, status=400)
+            DefermentDocument.objects.create(
+                deferment=deferment,
+                file=f,
+                original_name=f.name,
+            )
+
+        # Flag student as deferred
+        student.deferred = True
         student.save()
-        return redirect('base-dashboard')
+
+        return JsonResponse({
+            'success':    True,
+            'message':    'Your deferment request has been submitted and is pending review.',
+            'ref':        str(deferment.record_id)[:8].upper(),
+            'session':    str(session),
+            'reason':     deferment.get_reason_display(),
+            'doc_count':  len(files),
+        })
 
 
 class HostelBookingView(
@@ -308,6 +390,8 @@ class ExamCardView(
     """
 
     template_name = 'base/exam-card/exam_card.html'
+    login_url = config("LOGIN_URL") + '?next=/admissions/exam-card/'
+    redirect_field_name = config("REDIRECT_FIELD_NAME")
 
     def _get_fee_account(self, student, session):
         """
@@ -492,4 +576,12 @@ class ExamCardView(
             'success':     True,
             'serial':      card.serial_number,
             'qr_payload':  card.qr_payload,
+        })
+
+
+class HostelGuideView(View):
+    def get(self, request):
+        hostels = HostelListing.objects.filter(is_published=True)
+        return render(request, 'base/hostel-guide.html', {
+            'hostels': hostels
         })

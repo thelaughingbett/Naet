@@ -5,7 +5,7 @@ from django.utils.module_loading import import_string
 from base.models import Timetable
 
 
-DEFAULT_STRATEGY = 'base.modules.timetabling.strategies.greedy.GreedyStrategy'
+DEFAULT_STRATEGY = 'base.modules.timetabling.strategies.examples.GreedyStrategy.GreedyStrategy'
 
 
 def get_strategy():

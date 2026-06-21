@@ -131,15 +131,15 @@
 
 **Address**
 
-| Field          | Type      | Notes                                 |
-| -------------- | --------- | ------------------------------------- |
-| `domicile`     | CharField |                                       |
-| `county`       | CharField |                                       |
-| `sub_county`   | CharField |                                       |
-| `constituency` | CharField |                                       |
-| `division`     | CharField |                                       |
-| `location`     | CharField |                                       |
-| `home_adress`  | CharField | Note: field name has a typo in source |
+| Field          | Type      | Notes |
+| -------------- | --------- | ----- |
+| `domicile`     | CharField |       |
+| `county`       | CharField |       |
+| `sub_county`   | CharField |       |
+| `constituency` | CharField |       |
+| `division`     | CharField |       |
+| `location`     | CharField |       |
+| `home_address` | CharField |       |
 
 **Academic Info**
 

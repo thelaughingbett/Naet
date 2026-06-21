@@ -83,7 +83,7 @@ class Room(BaseModelMixin):
     room_number = models.CharField(max_length=20)
     room_type = models.CharField(max_length=10, choices=ROOM_TYPE_CHOICES)
     capacity = models.IntegerField(default=2)
-    floor = models.IntegerField(default=1)
+    floor = models.IntegerField(default=0)
     # is_active = models.BooleanField(default=True)
     price_per_semester = models.PositiveIntegerField(default=0)  # KES
 

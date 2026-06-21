@@ -87,11 +87,17 @@ class ExamSession(BaseModelMixin):
         'Curriculum',
         on_delete=models.PROTECT,
         related_name='exam_sessions'
-    )
+    )  # when generating timetable common unit should be a concern here
 
-    exam_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    exam_type = models.CharField(
+        max_length=10,
+        choices=TYPE_CHOICES
+    )
     date = models.DateField()
-    time_slot = models.CharField(max_length=11, choices=TIME_SLOTS)
+    time_slot = models.CharField(
+        max_length=11,
+        choices=TIME_SLOTS
+    )
 
     class Meta:
         # one exam type per curriculum entry (course+class+session)
@@ -174,7 +180,7 @@ class ExamVenue(BaseModelMixin):
         'Lecturer',
         on_delete=models.PROTECT,
         related_name='invigilation_duties'
-    )
+    )  # for large venues this may not hold true and may require multiple invigilators consider a many to many relationship
 
     class Meta:
         unique_together = ('exam_session', 'venue')
@@ -185,7 +191,7 @@ class ExamVenue(BaseModelMixin):
         clash = ExamVenue.objects.filter(
             invigilator=self.invigilator,
             exam_session__date=self.exam_session.date,
-            exam_session__time_slot=self.exam_session.time_slot,  # ← time_slot not start_time
+            exam_session__time_slot=self.exam_session.time_slot,
         ).exclude(record_id=self.record_id)
 
         if clash.exists():
@@ -196,7 +202,7 @@ class ExamVenue(BaseModelMixin):
                 )
             })
 
-        super().clean()  # ← fixed syntax
+        super().clean()
 
     def __str__(self):
         return f"{self.exam_session} — {self.venue} — {self.invigilator}"
@@ -236,6 +242,12 @@ class Venue(BaseModelMixin):
         unique=True
     )
 
+    floor = models.PositiveIntegerField(
+        default=0
+    )  # for checks with students with disability
+
+    ramps = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.venue_name} - {self.capacity}"
 
@@ -266,7 +278,10 @@ class ExamCard(BaseModelMixin):
     is_active = models.BooleanField(default=True)
 
     issued_at = models.DateTimeField(auto_now_add=True)
-    last_printed_at = models.DateTimeField(null=True, blank=True)
+    last_printed_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     class Meta:
         unique_together = ('student', 'session', 'is_active')
@@ -277,6 +292,7 @@ class ExamCard(BaseModelMixin):
 
     @classmethod
     def generate_serial(cls):
+        # TODO : change this to a strategy
         """UNI-2026-XXXX-XXXX format, guaranteed unique."""
         import random
         from datetime import datetime

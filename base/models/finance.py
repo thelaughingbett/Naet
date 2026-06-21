@@ -172,7 +172,7 @@ class Payment(BaseModelMixin):
     )  # for M-Pesa STK push
 
     paid_at = models.DateTimeField(auto_now_add=True)
-    initiated_at = models.DateTimeField(auto_now_add=True)
+    initiated_at = models.DateTimeField(auto_now_add=True)  # ???
 
     history = HistoricalRecords()
 

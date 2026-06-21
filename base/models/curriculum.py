@@ -45,7 +45,7 @@ class Curriculum(BaseModelMixin):
     results = models.ManyToManyField(
         "Student",
         through='Result'
-    )
+    )  # TODO :  remove this and put it in enrollments
 
     history = HistoricalRecords()
 
@@ -129,11 +129,17 @@ class Enrollment(BaseModelMixin):
         related_name='enrollment_records'
     )
 
+    # results = models.ManyToManyField(
+    #     "Student",
+    #     through='Result'
+    # )  # TODO :  uncomment this
+
     status = models.CharField(
         max_length=25,
         choices=STATUS_CHOICES,
         default='pending'
-    )  # TODO : add  approved by,approved when
+    )
+    # TODO : add  approved by,approved when
 
     history = HistoricalRecords()
 
@@ -155,10 +161,20 @@ class Result(BaseModelMixin):
         on_delete=models.PROTECT
     )
 
+    # enrollment = models.ForeignKey(
+    #     Enrollment,
+    #     on_delete=models.PROTECT
+    # )
+
+    # entered_by = models.ForeignKey(
+    #     'User',
+    #     on_delete=models.DO_NOTHING
+    # ) # non-repudiation field to track who touched record tracked by historical records
+
     student = models.ForeignKey(
         'Student',
         on_delete=models.PROTECT
-    )
+    )  # TODO :  remove since its already recorded in enrollment
 
     type = models.CharField(
         choices=type_result,

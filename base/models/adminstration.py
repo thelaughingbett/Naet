@@ -209,14 +209,19 @@ class HostelListing(BaseModelMixin):
     has_bike_storage = models.BooleanField(default=False)
     has_ethernet = models.BooleanField(default=False)
     wifi_note = models.CharField(
-        max_length=60, blank=True, help_text='e.g. High-speed, WiFi + study rooms')
+        max_length=60,
+        blank=True,
+        help_text='e.g. High-speed, WiFi + study rooms'
+    )
 
     phone = models.CharField(max_length=20)
     email = models.EmailField()
 
     is_published = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(
-        default=0, help_text='Lower = appears first')
+        default=0,
+        help_text='Lower = appears first'
+    )
 
     class Meta:
         ordering = ['sort_order', 'price_per_month']

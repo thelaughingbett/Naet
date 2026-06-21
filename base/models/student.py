@@ -48,7 +48,10 @@ class Student(BaseModelMixin, hasUserMixin):
     name_of_spouse = models.CharField(max_length=255, null=True, blank=True)
     spouse_contact = models.CharField(max_length=19, null=True, blank=True)
     occupation_of_spouse = models.CharField(
-        max_length=255, null=True, blank=True)
+        max_length=255,
+        null=True,
+        blank=True
+    )
     number_of_children = models.IntegerField(null=True, blank=True)
 
     id_type = models.CharField(
@@ -60,26 +63,34 @@ class Student(BaseModelMixin, hasUserMixin):
     nationality = models.CharField(max_length=34, default='Kenyan')
     ethnicity = models.CharField(max_length=34, default=' ')
     date_of_birth = models.DateField(default=datetime.date(2000, 4, 12))
-    place_of_birth = models.CharField(max_length=255, default='')
+    place_of_birth = models.CharField(max_length=255, default='')  # ??
     telephone_no = models.CharField(max_length=78, default='07xxxxx')
     school_email = models.EmailField(default='example@inst.com', unique=True)
 
     domicile = models.CharField(max_length=78, default='kenya')
+    # ask  for consent or check if kenyan
     county = models.CharField(max_length=78, default='kenya')
     sub_county = models.CharField(max_length=78, default='kenya')
     constituency = models.CharField(max_length=78, default='kenya')
     division = models.CharField(max_length=78, default='')
     location = models.CharField(max_length=78, default='kenya')
-    home_adress = models.CharField(max_length=78, default='kenya')
+    home_address = models.CharField(max_length=78, default='kenya')
 
     # --- educational info ---
     registration_number = models.CharField(
-        max_length=78, default='programme/000/2X', unique=True)
+        max_length=78,
+        unique=True
+    )
 
     class_entered = models.ForeignKey('Tclass', on_delete=models.PROTECT)
 
+    disabled = models.BooleanField(default=False)
+
     stay = models.CharField(
-        max_length=78, default='resident', choices=stay_choices)
+        max_length=78,
+        default='resident',
+        choices=stay_choices
+    )
 
     enrolled = models.DateTimeField(auto_now_add=True)
     deferred = models.BooleanField(default=False)

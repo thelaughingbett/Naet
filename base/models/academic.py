@@ -12,7 +12,11 @@ import re
 from django.db import models, transaction
 
 
-from .base import BaseModelMixin, WithDepartmentMixin, WithSchoolMixin
+from .base import (
+    BaseModelMixin,
+    WithDepartmentMixin,
+    WithSchoolMixin
+)
 
 
 class Institution(BaseModelMixin):
@@ -124,6 +128,7 @@ class Session(BaseModelMixin):
     semester = models.CharField(max_length=1, choices=SEMESTER_CHOICES)
     start_date = models.DateField()
     end_date = models.DateField(null=True)
+    # is this redundant given that active session is set in school ?
     is_active = models.BooleanField(default=False)
 
     class Meta:
@@ -218,6 +223,7 @@ class Course(BaseModelMixin):
 
     prerequisites = models.ManyToManyField("self", blank=True)
 
+    # used to check during curriculum assignments against year of study
     offered = models.IntegerField(default=1)
 
     def __str__(self):

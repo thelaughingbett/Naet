@@ -1,0 +1,1763 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/lecturer/shell.html' %}
+{% load static %}
+{% block head %}
+<title>Class List · Lecturer · Naet</title>
+
+<style>
+  /* ============================================
+           RESET & VARIABLES
+           ============================================ */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --sidebar-w: 280px;
+    --topnav-h: 64px;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ============================================
+           SIDEBAR
+           ============================================ */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-w);
+    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  }
+  .sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+  }
+
+  .sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.2rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    min-height: var(--topnav-h);
+  }
+  .sidebar__brand-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .sidebar__brand-text {
+    font-weight: 800;
+    font-size: 1.1rem;
+    background: linear-gradient(120deg, #fff, #c0d9f0);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+  }
+
+  .sidebar__nav {
+    flex: 1;
+    padding: 0.6rem 0.6rem;
+    overflow-y: auto;
+  }
+  .sidebar__item {
+    margin-bottom: 2px;
+  }
+
+  .sidebar__link,
+  .sidebar__link--toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+  }
+  .sidebar__link:hover,
+  .sidebar__link--toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+  .sidebar__link.active,
+  .sidebar__link--toggle.active {
+    background: var(--maroon);
+    color: white;
+    box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+  }
+  .sidebar__link i,
+  .sidebar__link--toggle i {
+    width: 20px;
+    text-align: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  .sidebar__chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+  }
+  .sidebar__item--open .sidebar__chevron {
+    transform: rotate(180deg);
+  }
+
+  .sidebar__submenu {
+    list-style: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin: 0 0.5rem 0 0.5rem;
+  }
+  .sidebar__submenu--open {
+    max-height: 600px;
+  }
+  .sidebar__sublink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 400;
+    transition: 0.2s;
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .sidebar__sublink:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+  }
+  .sidebar__sublink.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .sidebar__sublink .badge {
+    margin-left: auto;
+    background: var(--maroon);
+    color: white;
+    font-size: 0.55rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+  }
+
+  .sidebar__footer {
+    padding: 1rem 1.2rem;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* ============================================
+           MOBILE OVERLAY
+           ============================================ */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+  }
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ============================================
+           MAIN CONTENT
+           ============================================ */
+  .main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    padding: 1.8rem 2rem 2rem;
+    background: var(--bg);
+  }
+
+  /* ============================================
+           TOP BAR
+           ============================================ */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Course Selector ===== */
+  .course-selector {
+    position: relative;
+    min-width: 220px;
+  }
+  .course-selector__trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1rem 0.4rem 1rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: 0.2s;
+    box-shadow: var(--shadow);
+    min-width: 200px;
+    justify-content: space-between;
+  }
+  .course-selector__trigger:hover {
+    border-color: var(--navy);
+    box-shadow: var(--shadow-md);
+  }
+  .course-selector__trigger .code {
+    color: var(--navy);
+    font-weight: 800;
+  }
+  .course-selector__trigger .chevron {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .course-selector__trigger.open .chevron {
+    transform: rotate(180deg);
+  }
+
+  .course-selector__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+    display: none;
+    max-height: 320px;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .course-selector__dropdown.open {
+    display: flex;
+  }
+  .course-selector__search {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .course-selector__search input {
+    width: 100%;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    font-family: var(--font);
+    font-size: 0.75rem;
+    outline: none;
+    transition: 0.2s;
+  }
+  .course-selector__search input:focus {
+    border-color: var(--navy);
+  }
+  .course-selector__list {
+    overflow-y: auto;
+    padding: 0.3rem 0;
+  }
+  .course-selector__item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  .course-selector__item:hover {
+    background: var(--bg);
+  }
+  .course-selector__item.active {
+    background: #eef2ff;
+  }
+  .course-selector__item .code {
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .course-selector__item .title {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  .course-selector__item .check {
+    color: var(--green);
+    font-size: 0.8rem;
+  }
+  .course-selector__item .students {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 0.05rem 0.5rem;
+    border-radius: 30px;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm:hover {
+    background: var(--bg);
+    border-color: #cbd5e1;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+
+  /* ============================================
+           COURSE CONTEXT HEADER
+           ============================================ */
+  .course-context {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .course-context__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .course-context__code {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--navy);
+  }
+  .course-context__title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .course-context__meta {
+    display: flex;
+    gap: 1.2rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    flex-wrap: wrap;
+  }
+  .course-context__meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .course-context__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* ============================================
+           STATS ROW (Class Summary)
+           ============================================ */
+  .class-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .class-stat {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .class-stat__number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .class-stat__label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    margin-top: 0.1rem;
+  }
+
+  /* ============================================
+           SEARCH & FILTER BAR
+           ============================================ */
+  .search-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    align-items: center;
+  }
+  .search-filter-bar__search {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg);
+    padding: 0.3rem 0.8rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+  }
+  .search-filter-bar__search:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .search-filter-bar__search i {
+    color: var(--text-muted);
+  }
+  .search-filter-bar__search input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 0;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+  }
+  .search-filter-bar__filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-filter-bar__filters select {
+    padding: 0.4rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-family: var(--font);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  .search-filter-bar__filters select:focus {
+    border-color: var(--navy);
+  }
+
+  /* ============================================
+           STUDENT TABLE
+           ============================================ */
+  .table-wrapper {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .table-scroll {
+    overflow-x: auto;
+  }
+  .student-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .student-table th {
+    background: var(--bg);
+    padding: 0.8rem 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  .student-table th i {
+    margin-left: 0.3rem;
+    font-size: 0.6rem;
+  }
+  .student-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .student-table tr:last-child td {
+    border-bottom: none;
+  }
+  .student-table tr:hover td {
+    background: #f8fafc;
+  }
+
+  .student-table .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eef2ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+  .student-table .student-info {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .student-table .student-name {
+    font-weight: 600;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status-badge.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .grade-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--bg);
+    color: var(--text-muted);
+  }
+  .grade-pill.a {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .grade-pill.b {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .grade-pill.c {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .grade-pill.d {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .grade-pill.f {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .attendance-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .attendance-bar .track {
+    width: 60px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 30px;
+    overflow: hidden;
+  }
+  .attendance-bar .fill {
+    height: 100%;
+    border-radius: 30px;
+    background: var(--green);
+  }
+  .attendance-bar .fill.warn {
+    background: var(--gold);
+  }
+  .attendance-bar .fill.danger {
+    background: var(--maroon);
+  }
+  .attendance-bar .pct {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .student-table .actions-cell {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .student-table .actions-cell .btn-sm {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  /* ============================================
+           PAGINATION
+           ============================================ */
+  .table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1.2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .table-footer__pagination {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .table-footer__pagination button {
+    padding: 0.2rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    background: var(--white);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: 0.2s;
+    color: var(--text);
+  }
+  .table-footer__pagination button:hover {
+    background: var(--bg);
+  }
+  .table-footer__pagination button.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
+  /* ============================================
+           MODALS
+           ============================================ */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-overlay.active .modal {
+    animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    padding: 0;
+  }
+  .modal--large {
+    max-width: 640px;
+  }
+  .modal__header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    border-radius: var(--radius) var(--radius) 0 0;
+    z-index: 2;
+  }
+  .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  .modal__close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal__body {
+    padding: 1.5rem;
+  }
+  .modal__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    background: var(--bg);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .detail-row {
+    display: flex;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row__label {
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .detail-row__value {
+    flex: 1;
+    color: var(--text);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font);
+    font-size: 0.85rem;
+    background: var(--white);
+    transition: 0.2s;
+    color: var(--text);
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  /* ============================================
+           TOAST
+           ============================================ */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  /* ============================================
+           RESPONSIVE
+           ============================================ */
+  @media (max-width: 1024px) {
+    .class-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .search-filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-filter-bar__filters {
+      flex-wrap: wrap;
+    }
+    .search-filter-bar__filters select {
+      flex: 1;
+      min-width: 100px;
+    }
+    .course-context {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .course-context__actions {
+      justify-content: flex-start;
+    }
+    .student-table th,
+    .student-table td {
+      padding: 0.5rem 0.7rem;
+    }
+    .student-table .student-info .avatar {
+      display: none;
+    }
+    .table-footer {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+    .table-footer__pagination {
+      justify-content: center;
+    }
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    .modal {
+      max-width: 100%;
+      margin: 1rem;
+    }
+    .modal--large {
+      max-width: 100%;
+    }
+    .course-selector {
+      min-width: 100%;
+    }
+    .course-selector__trigger {
+      min-width: 100%;
+    }
+    .topbar__left {
+      width: 100%;
+    }
+  }
+  @media (max-width: 480px) {
+    .class-stats {
+      grid-template-columns: 1fr;
+    }
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .student-table {
+      font-size: 0.7rem;
+    }
+    .student-table .actions-cell .btn-sm {
+      padding: 0.1rem 0.4rem;
+      font-size: 0.55rem;
+    }
+    .attendance-bar .track {
+      width: 40px;
+    }
+    .detail-row {
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .detail-row__label {
+      width: auto;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title"><i class="fas fa-list-ul"></i> Class List</h1>
+    {% if session %}
+    <span class="topbar__badge"
+      ><i class="fas fa-calendar"></i> {{ session }}</span
+    >
+    {% endif %} {% if unit_list %}
+    <div class="course-selector" id="courseSelector">
+      <button class="course-selector__trigger" id="courseTrigger" type="button">
+        {% if selected %}
+        <span>
+          <span class="code">{{ selected.course.course_code }}</span>
+          {{ selected.course.course_name|truncatechars:28 }}
+        </span>
+        {% else %}
+        <span>Select a course</span>
+        {% endif %}
+        <span class="chevron"><i class="fas fa-chevron-down"></i></span>
+      </button>
+      <div class="course-selector__dropdown" id="courseDropdown">
+        <div class="course-selector__search">
+          <input
+            type="text"
+            id="courseSearchInput"
+            placeholder="Search courses…"
+          />
+        </div>
+        <div class="course-selector__list" id="courseList">
+          {% for item in unit_list %}
+          <a
+            href="?curriculum={{ item.curriculum.record_id }}"
+            class="course-selector__item {% if item.curriculum == selected %}active{% endif %}"
+            data-code="{{ item.curriculum.course.course_code|lower }}"
+            data-title="{{ item.curriculum.course.course_name|lower }}"
+          >
+            <div class="item-left">
+              <span class="code">{{ item.curriculum.course.course_code }}</span>
+              <span class="title"
+                >{{ item.curriculum.course.course_name }}</span
+              >
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem">
+              <span class="students">
+                <i class="fas fa-user-graduate"></i> {{ item.total_enrolled }}
+              </span>
+              {% if item.curriculum == selected %}
+              <span class="check"><i class="fas fa-check-circle"></i></span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="topbar__actions">
+    <button class="btn btn-outline" id="exportBtn">
+      <i class="fas fa-download"></i> Export CSV
+    </button>
+    <button class="btn btn-success" id="emailAllBtn">
+      <i class="fas fa-envelope"></i> Email All
+    </button>
+  </div>
+</div>
+
+{% if not session %}
+<div class="card" style="text-align: center; padding: 48px 24px">
+  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600">No active session</div>
+</div>
+
+{% elif not selected %}
+<div class="card" style="text-align: center; padding: 48px 24px">
+  <div style="font-size: 2rem; margin-bottom: 12px">📚</div>
+  <div style="font-weight: 600">No courses assigned to you this session</div>
+</div>
+
+{% else %}
+<div class="course-context">
+  <div>
+    <div>
+      <span class="course-context__code"
+        >{{ selected.course.course_code }}</span
+      >
+      <span class="course-context__title"
+        >{{ selected.course.course_name }}</span
+      >
+    </div>
+    <div class="course-context__meta">
+      <span><i class="far fa-calendar-alt"></i> {{ selected.session }}</span>
+      {% if selected_slot %}
+      <span>
+        <!-- prettier-ignore -->
+        <i class="fas fa-clock"></i> {{ selected_slot.get_day_display }} · {{
+        selected_slot.time_slot }}</span
+      >
+      <span
+        ><i class="fas fa-map-pin"></i> {{ selected_slot.venue.venue_name }} ·
+        {{ selected.Tclass.class_name }}</span
+      >
+      {% else %}
+      <span
+        ><i class="fas fa-map-pin"></i> {{ selected.Tclass.class_name }}</span
+      >
+      <span style="font-style: italic; opacity: 0.6"
+        ><i class="fas fa-clock"></i> No timetable slot yet</span
+      >
+      {% endif %}
+      <span>
+        <i class="fas fa-user-graduate"></i>
+        <!-- prettier-ignore -->
+        {{ stats.total }} student{{ stats.total|pluralize }}</span
+      >
+      <span><i class="fas fa-chalkboard-teacher"></i> {{ lecturer.name }}</span>
+    </div>
+  </div>
+  <div class="course-context__actions">
+    <button class="btn-sm primary" id="exportBtnCtx">
+      <i class="fas fa-download"></i> Export
+    </button>
+    <button class="btn-sm" onclick="window.print()">
+      <i class="fas fa-print"></i> Print
+    </button>
+  </div>
+</div>
+<div class="class-stats">
+  <div class="class-stat">
+    <div class="class-stat__number">{{ stats.total }}</div>
+    <div class="class-stat__label">Total Enrolled</div>
+  </div>
+  <div class="class-stat">
+    <div class="class-stat__number">{{ stats.approved }}</div>
+    <div class="class-stat__label">Approved</div>
+  </div>
+  <div class="class-stat">
+    <div class="class-stat__number">{{ stats.pending }}</div>
+    <div class="class-stat__label">Pending</div>
+  </div>
+  <div class="class-stat">
+    <div class="class-stat__number">{{ stats.rejected }}</div>
+    <div class="class-stat__label">Rejected</div>
+  </div>
+</div>
+<div class="search-filter-bar">
+  <div class="search-filter-bar__search">
+    <i class="fas fa-search"></i>
+    <input
+      type="text"
+      id="studentSearch"
+      placeholder="Search by name, ID or email…"
+      onkeyup="filterTable()"
+    />
+  </div>
+  <div class="search-filter-bar__filters">
+    <select id="statusFilter" onchange="filterTable()">
+      <option value="">All Status</option>
+      <option value="approved">Approved</option>
+      <option value="pending">Pending</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <select id="gradeFilter" onchange="filterTable()">
+      <option value="">All Grades</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+      <option value="F">F</option>
+      <option value="—">Not entered</option>
+    </select>
+    <button class="btn-sm" onclick="resetFilters()">
+      <i class="fas fa-undo"></i> Reset
+    </button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <div class="table-scroll">
+    <table class="student-table" id="studentTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)"># <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(1)">Student <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(2)">Reg. No. <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(3)">Email <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(4)">Status <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(5)">CAT</th>
+          <th onclick="sortTable(6)">Exam</th>
+          <th onclick="sortTable(7)">Total</th>
+          <th onclick="sortTable(8)">Grade <i class="fas fa-sort"></i></th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        {% for row in student_rows %}
+        <tr
+          class="student-row"
+          data-name="{{ row.full_name|lower }}"
+          data-reg="{{ row.registration_no|lower }}"
+          data-email="{{ row.email|lower }}"
+          data-status="{{ row.status }}"
+          data-grade="{{ row.grade }}"
+          data-enrollment="{{ row.enrollment_id }}"
+        >
+          <td class="row-index"></td>
+          <td>
+            <div class="student-info">
+              <span class="avatar">{{ row.initials }}</span>
+              <div>
+                <div class="student-name">{{ row.full_name }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <code
+              style="
+                font-size: 0.7rem;
+                background: var(--bg);
+                padding: 0.1rem 0.4rem;
+                border-radius: 4px;
+              "
+            >
+              {{ row.registration_no|upper }}
+            </code>
+          </td>
+          <td>
+            <span style="font-size: 0.7rem; color: var(--text-muted)"
+              >{{ row.school_email }}</span
+            >
+          </td>
+          <td>
+            <span class="status-badge {{ row.status }}">
+              <i class="fas fa-circle" style="font-size: 0.4rem"></i>
+              {{ row.status|title }}
+            </span>
+          </td>
+          <td class="score-cell">
+            {% if row.cat %}{{ row.cat }}{% else %}<span style="opacity: 0.4"
+              >—</span
+            >{% endif %}
+          </td>
+          <td class="score-cell">
+            {% if row.exam %}{{ row.exam }}{% else %}<span style="opacity: 0.4"
+              >—</span
+            >{% endif %}
+          </td>
+          <td class="score-cell">
+            {% if row.total %}{{ row.total }}{% else %}<span
+              style="opacity: 0.4"
+              >—</span
+            >{% endif %}
+          </td>
+          <td>
+            <span class="grade-pill {{ row.grade }}">{{ row.grade }}</span>
+          </td>
+          <td>
+            <div class="actions-cell">
+              <button
+                class="btn-sm"
+                title="View"
+                onclick="openViewModal('{{ row.enrollment_id }}')"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+              <button
+                class="btn-sm"
+                title="Email student"
+                onclick="openEmailModal('{{ row.email }}', '{{ row.full_name }}')"
+              >
+                <i class="fas fa-envelope"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td
+            colspan="10"
+            style="text-align: center; padding: 3rem; opacity: 0.5"
+          >
+            <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
+            No students enrolled in this course yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="table-footer">
+    <span id="rowCount"
+      >{{ student_rows|length }} student{{ student_rows|length|pluralize
+      }}</span
+    >
+  </div>
+</div>
+
+{% endif %}
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-user-circle" style="color: var(--navy)"></i> Student
+        Profile
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewModalBody">
+      <div style="text-align: center; padding: 2rem; opacity: 0.5">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem"></i>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewModal')">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="emailModal">
+  <div class="modal modal--lg">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-envelope" style="color: var(--blue-card)"></i> Send
+        Email
+      </h2>
+      <button class="modal__close" onclick="closeModal('emailModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label>To</label>
+        <input type="email" id="emailTo" readonly style="background: #f5f7fb" />
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="emailSubject" placeholder="Enter subject…" />
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea
+          id="emailMessage"
+          rows="5"
+          placeholder="Write your message here…"
+        ></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('emailModal')">
+        Cancel
+      </button>
+      <button class="btn btn-success" onclick="sendEmail()">
+        <i class="fas fa-paper-plane"></i> Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const trigger = document.getElementById("courseTrigger");
+  const dropdown = document.getElementById("courseDropdown");
+  const searchIn = document.getElementById("courseSearchInput");
+
+  trigger?.addEventListener("click", () => {
+    dropdown.classList.toggle("open");
+    trigger.classList.toggle("open");
+    if (dropdown.classList.contains("open")) searchIn?.focus();
+  });
+
+  searchIn?.addEventListener("input", () => {
+    const q = searchIn.value.toLowerCase();
+    document.querySelectorAll(".course-selector__item").forEach((item) => {
+      const match =
+        item.dataset.code?.includes(q) || item.dataset.title?.includes(q);
+      item.style.display = match ? "" : "none";
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    const sel = document.getElementById("courseSelector");
+    if (sel && !sel.contains(e.target)) {
+      dropdown?.classList.remove("open");
+      trigger?.classList.remove("open");
+    }
+  });
+
+  let sortCol = -1,
+    sortAsc = true;
+
+  function filterTable() {
+    const q = document.getElementById("studentSearch").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    const grade = document.getElementById("gradeFilter").value;
+    let idx = 1;
+
+    document.querySelectorAll("#tableBody .student-row").forEach((row) => {
+      const matchQ =
+        !q ||
+        row.dataset.name.includes(q) ||
+        row.dataset.reg.includes(q) ||
+        row.dataset.email.includes(q);
+      const matchS = !status || row.dataset.status === status;
+      const matchG = !grade || row.dataset.grade === grade;
+      const show = matchQ && matchS && matchG;
+      row.style.display = show ? "" : "none";
+      if (show) row.querySelector(".row-index").textContent = idx++;
+    });
+
+    const visible = idx - 1;
+    document.getElementById("rowCount").textContent =
+      `${visible} student${visible !== 1 ? "s" : ""}`;
+  }
+
+  function resetFilters() {
+    document.getElementById("studentSearch").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("gradeFilter").value = "";
+    filterTable();
+  }
+
+  function sortTable(col) {
+    if (sortCol === col) sortAsc = !sortAsc;
+    else {
+      sortCol = col;
+      sortAsc = true;
+    }
+
+    const tbody = document.getElementById("tableBody");
+    const rows = [...tbody.querySelectorAll(".student-row")];
+    const keys = ["", "name", "reg", "email", "status", "", "", "", "grade"];
+
+    rows.sort((a, b) => {
+      const ak = (
+        a.dataset[keys[col]] ||
+        a.cells[col]?.textContent ||
+        ""
+      ).toLowerCase();
+      const bk = (
+        b.dataset[keys[col]] ||
+        b.cells[col]?.textContent ||
+        ""
+      ).toLowerCase();
+      return sortAsc ? ak.localeCompare(bk) : bk.localeCompare(ak);
+    });
+    rows.forEach((r) => tbody.appendChild(r));
+    filterTable();
+  }
+
+  function openViewModal(enrollmentId) {
+    openModal("viewModal");
+    document.getElementById("viewModalBody").innerHTML =
+      '<div style="text-align:center;padding:2rem;opacity:.5"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem"></i></div>';
+
+    fetch(`/staff/lecturer/class-list/student/${enrollmentId}/`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) {
+          showToast("Could not load student.", "warning");
+          return;
+        }
+
+        const gradeClass = ["A", "B", "C", "D", "F"].includes(d.grade)
+          ? d.grade
+          : "";
+        document.getElementById("viewModalBody").innerHTML = `
+        <div class="detail-row">
+          <span class="detail-row__label">Full Name</span>
+          <span><strong>${d.full_name}</strong></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Reg. No.</span>
+          <span><code style="background:var(--bg);padding:.1rem .5rem;border-radius:4px">${d.registration_no.toUpperCase()}</code></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Email</span>
+          <span><a href="mailto:${d.email}" style="color:var(--blue-card)">${d.email}</a></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Status</span>
+          <span class="status-badge ${d.status}">${d.status.charAt(0).toUpperCase() + d.status.slice(1)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">CAT</span>
+          <span>${d.cat || "—"}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Exam</span>
+          <span>${d.exam || "—"}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Total / Grade</span>
+          <span>${d.total || "—"} &nbsp;
+            <span class="grade-pill ${gradeClass}">${d.grade}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row__label">Course</span>
+          <span><strong>${d.course_code}</strong> — ${d.course_name}</span>
+        </div>
+      `;
+      })
+      .catch(() => showToast("Network error loading student.", "warning"));
+  }
+
+  function openEmailModal(email, name) {
+    document.getElementById("emailTo").value = email;
+    document.getElementById("emailSubject").value =
+      `[{{ selected.course.course_code|default:"" }}] Message for ${name}`;
+    document.getElementById("emailMessage").value =
+      `Dear ${name},\n\nI hope this message finds you well.\n\n\nBest regards,\n{{ lecturer.name|default:"" }}\n{{ selected.course.course_code|default:"" }} — {{ selected.course.course_name|default:"" }}`;
+    openModal("emailModal");
+  }
+
+  function sendEmail() {
+    const to = document.getElementById("emailTo").value;
+    closeModal("emailModal");
+    showToast(`📧 Email sent to ${to}`, "success");
+    // TODO: wire to NotificationService endpoint
+  }
+
+  document.getElementById("exportBtn")?.addEventListener("click", exportCSV);
+  document.getElementById("exportBtnCtx")?.addEventListener("click", exportCSV);
+
+  function exportCSV() {
+    const rows = [
+      ...document.querySelectorAll("#tableBody .student-row"),
+    ].filter((r) => r.style.display !== "none");
+    const header = [
+      "#",
+      "Name",
+      "Reg No",
+      "Email",
+      "Status",
+      "CAT",
+      "Exam",
+      "Total",
+      "Grade",
+    ];
+    const lines = [header.join(",")];
+    rows.forEach((r, i) => {
+      const cells = [...r.querySelectorAll("td")].map(
+        (td) => `"${td.textContent.trim().replace(/"/g, '""')}"`,
+      );
+      lines.push(cells.join(","));
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(blob),
+      download: `{{ selected.course.course_code|default:"classlist" }}_classlist.csv`,
+    });
+    a.click();
+    showToast("📊 CSV downloaded", "success");
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+  document.querySelectorAll(".modal-overlay").forEach((o) => {
+    o.addEventListener("click", (e) => {
+      if (e.target === o) {
+        closeModal(o.id);
+      }
+    });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape")
+      document
+        .querySelectorAll(".modal-overlay.active")
+        .forEach((o) => closeModal(o.id));
+  });
+
+  document.querySelectorAll(".sidebar__link--toggle").forEach((btn) => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      const sub = document.getElementById(this.dataset.target);
+      const item = this.closest(".sidebar__item--group");
+      if (!sub) return;
+      sub.classList.toggle("sidebar__submenu--open");
+      item.classList.toggle("sidebar__item--open");
+      this.setAttribute(
+        "aria-expanded",
+        sub.classList.contains("sidebar__submenu--open"),
+      );
+    });
+  });
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  hamburgerBtn?.addEventListener("click", () => {
+    sidebar.classList.toggle("open");
+    overlay?.classList.toggle("active");
+  });
+  overlay?.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove("open");
+      overlay?.classList.remove("active");
+    }
+  });
+
+  function showToast(msg, type = "info") {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove("show"), 3500);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    filterTable();
+
+    const sub = document.getElementById("teaching-sub");
+    const btn = document.querySelector('[data-target="teaching-sub"]');
+    if (sub && btn) {
+      sub.classList.add("sidebar__submenu--open");
+      btn
+        .closest(".sidebar__item--group")
+        ?.classList.add("sidebar__item--open");
+      btn.setAttribute("aria-expanded", "true");
+    }
+  });
+</script>
+{% endblock %}

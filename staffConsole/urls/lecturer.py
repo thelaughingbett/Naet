@@ -1,0 +1,95 @@
+from django.urls import path
+
+from staffConsole.views.lecturer import (
+    LecturerDashboardView,
+    ClassListView,
+    StudentDetailAjaxView,
+    MyCourseView,
+    MyTimetableView,
+    EnterResultsView,
+    AssessmentStudentsAjaxView,
+    SaveScoreAjaxView,
+    AddAssessmentAjaxView,
+    DeleteAssessmentAjaxView,
+    BulkSaveScoresAjaxView,
+    ExportTemplateView,
+    InvigilationDutiesView,
+    LecturerProfileDetailView,
+    LecturerProfileUpdateAjaxView
+)
+
+urlpatterns = [
+    path('dashboard/', LecturerDashboardView.as_view(), name='lecturer-dashboard'),
+    path(
+        'class-list/',
+        ClassListView.as_view(),
+        name='lecturer-class-list'
+    ),
+    path(
+        'courses/',
+        MyCourseView.as_view(),
+        name='lecturer-courses'
+    ),
+    path(
+        'class-list/student/<uuid:enrollment_id>/',
+        StudentDetailAjaxView.as_view(),
+        name='lecturer-student-detail'
+    ),
+    path(
+        'timetable/',
+        MyTimetableView.as_view(),
+        name='lecturer-timetable'
+    ),
+    path(
+        'enter-results/',
+        EnterResultsView.as_view(),
+        name='lecturer-enter-results'
+    ),
+
+
+    path(
+        'results/assessment-students/',
+        AssessmentStudentsAjaxView.as_view(),
+        name='lecturer-assessment-students'
+    ),
+    path(
+        'results/save-score/',
+        SaveScoreAjaxView.as_view(),
+        name='lecturer-save-score'
+    ),
+    path(
+        'results/add-assessment/',
+        AddAssessmentAjaxView.as_view(),
+        name='lecturer-add-assessment'
+    ),
+    path(
+        'results/delete-assessment/',
+        DeleteAssessmentAjaxView.as_view(),
+        name='lecturer-delete-assessment'
+    ),
+    path(
+        'results/bulk-save/',
+        BulkSaveScoresAjaxView.as_view(),
+        name='lecturer-bulk-save-scores'
+    ),
+    path(
+        'results/export-template/',
+        ExportTemplateView.as_view(),
+        name='lecturer-export-template'
+    ),
+    path(
+        'invigilation/',
+        InvigilationDutiesView.as_view(),
+        name='lecturer-invigilation'
+    ),
+    path(
+        'profile/',
+        LecturerProfileDetailView.as_view(),
+        name='lecturer-profile-details'
+    ),
+    path(
+        'profile/update/',
+        LecturerProfileUpdateAjaxView.as_view(),
+        name='lecturer-profile-update'
+    ),
+]

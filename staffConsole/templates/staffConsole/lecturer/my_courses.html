@@ -1,0 +1,947 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/lecturer/shell.html' %}
+{% load static %}
+{% block head %}
+<title>My Courses · Lecturer · Naet</title>
+
+<style>
+  /* ============================================
+       RESET & VARIABLES
+       ============================================ */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --sidebar-w: 280px;
+    --topnav-h: 64px;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ============================================
+       SIDEBAR
+       ============================================ */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-w);
+    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  }
+  .sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+  }
+
+  .sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.2rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    min-height: var(--topnav-h);
+  }
+  .sidebar__brand-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .sidebar__brand-text {
+    font-weight: 800;
+    font-size: 1.1rem;
+    background: linear-gradient(120deg, #fff, #c0d9f0);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+  }
+
+  .sidebar__nav {
+    flex: 1;
+    padding: 0.6rem 0.6rem;
+    overflow-y: auto;
+  }
+  .sidebar__item {
+    margin-bottom: 2px;
+  }
+
+  .sidebar__link,
+  .sidebar__link--toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+  }
+  .sidebar__link:hover,
+  .sidebar__link--toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+  .sidebar__link.active,
+  .sidebar__link--toggle.active {
+    background: var(--maroon);
+    color: white;
+    box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+  }
+  .sidebar__link i,
+  .sidebar__link--toggle i {
+    width: 20px;
+    text-align: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  .sidebar__chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+  }
+  .sidebar__item--open .sidebar__chevron {
+    transform: rotate(180deg);
+  }
+
+  .sidebar__submenu {
+    list-style: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin: 0 0.5rem 0 0.5rem;
+  }
+  .sidebar__submenu--open {
+    max-height: 600px;
+  }
+  .sidebar__sublink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 400;
+    transition: 0.2s;
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .sidebar__sublink:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+  }
+  .sidebar__sublink.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .sidebar__sublink .badge {
+    margin-left: auto;
+    background: var(--maroon);
+    color: white;
+    font-size: 0.55rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+  }
+
+  .sidebar__footer {
+    padding: 1rem 1.2rem;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* ============================================
+       MOBILE OVERLAY
+       ============================================ */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+  }
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ============================================
+       MAIN CONTENT
+       ============================================ */
+  .main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    padding: 1.8rem 2rem 2rem;
+    background: var(--bg);
+  }
+
+  /* ============================================
+       TOP BAR
+       ============================================ */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+
+  /* ============================================
+       STATS GRID (Horizontal)
+       ============================================ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.1rem;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__sub {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.1);
+    margin-top: -0.2rem;
+  }
+
+  /* ============================================
+       SEARCH & FILTER BAR
+       ============================================ */
+  .search-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    align-items: center;
+  }
+  .search-filter-bar__search {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg);
+    padding: 0.3rem 0.8rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+  }
+  .search-filter-bar__search:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .search-filter-bar__search i {
+    color: var(--text-muted);
+  }
+  .search-filter-bar__search input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 0;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+  }
+  .search-filter-bar__filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .search-filter-bar__filter select {
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-family: var(--font);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  .search-filter-bar__filter select:focus {
+    border-color: var(--navy);
+  }
+
+  /* ============================================
+       COURSE GRID
+       ============================================ */
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .course-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .course-card__header {
+    padding: 1rem 1.2rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .course-card__code {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--navy);
+    background: rgba(10, 37, 64, 0.08);
+    padding: 0.1rem 0.6rem;
+    border-radius: 30px;
+  }
+  .course-card__semester {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .course-card__body {
+    padding: 1rem 1.2rem;
+    flex: 1;
+  }
+  .course-card__title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+  }
+  .course-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .course-card__meta i {
+    width: 18px;
+    color: var(--navy);
+  }
+  .course-card__meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .course-card__progress {
+    margin-top: 0.8rem;
+  }
+  .course-card__progress .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+  }
+  .course-card__progress .progress-track {
+    background: var(--border);
+    border-radius: 30px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .course-card__progress .progress-fill {
+    height: 100%;
+    border-radius: 30px;
+    background: var(--green);
+  }
+  .course-card__progress .progress-fill.warn {
+    background: var(--gold);
+  }
+  .course-card__progress .progress-fill.danger {
+    background: var(--maroon);
+  }
+
+  .course-card__footer {
+    padding: 0.8rem 1.2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    background: var(--bg);
+  }
+  .course-card__footer .btn-sm {
+    padding: 0.25rem 0.8rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .course-card__footer .btn-sm:hover {
+    background: var(--bg);
+    border-color: #cbd5e1;
+  }
+  .course-card__footer .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .course-card__footer .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .course-card__footer .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .course-card__footer .btn-sm.success:hover {
+    background: #14532d;
+  }
+
+  /* ============================================
+       TOAST
+       ============================================ */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  /* ============================================
+       RESPONSIVE
+       ============================================ */
+  @media (max-width: 1024px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .course-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .search-filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-filter-bar__filter {
+      justify-content: stretch;
+    }
+    .search-filter-bar__filter select {
+      flex: 1;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .course-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title"><i class="fas fa-book-open"></i> My Courses</h1>
+    {% if session %}
+    <span class="topbar__badge">
+      <i class="fas fa-calendar"></i> {{ session }}
+    </span>
+    {% endif %}
+  </div>
+  <div class="topbar__actions">
+    <a href="{% url 'lecturer-timetable' %}" class="btn btn-outline">
+      <i class="fas fa-calendar-alt"></i> Timetable
+    </a>
+    <!-- <a href="#" class="btn btn-primary">
+      <i class="fas fa-chart-line"></i> Analytics
+    </a> -->
+  </div>
+</div>
+
+{% if not session %}
+<div class="card" style="text-align: center; padding: 48px 24px">
+  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600; margin-bottom: 6px">No active session</div>
+  <div style="font-size: 0.85rem; color: var(--text-muted)">
+    There is no active academic session right now.
+  </div>
+</div>
+
+{% else %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-book stat-card__icon"></i>
+    <div class="stat-card__number">{{ distinct_course_count }}</div>
+    <div class="stat-card__label">Total Courses</div>
+    <div class="stat-card__sub">{{ session }}</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-users stat-card__icon"></i>
+    <div class="stat-card__number">{{ total_students }}</div>
+    <div class="stat-card__label">Total Students</div>
+    <div class="stat-card__sub">across all classes</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-clipboard-list stat-card__icon"
+      style="color: var(--maroon)"
+    ></i>
+    <div class="stat-card__number">{{ results_pending|length }}</div>
+    <div class="stat-card__label">Results Pending</div>
+    <div class="stat-card__sub">need entry before deadline</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-user-shield stat-card__icon"
+      style="color: var(--gold)"
+    ></i>
+    <div class="stat-card__number">{{ invigilation_duties|length }}</div>
+    <div class="stat-card__label">Invigilation Duties</div>
+    <div class="stat-card__sub">this exam period</div>
+  </div>
+</div>
+
+<div class="search-filter-bar">
+  <div class="search-filter-bar__search">
+    <i class="fas fa-search"></i>
+    <input
+      type="text"
+      id="courseSearch"
+      placeholder="Search by code or title…"
+      onkeyup="filterCourses()"
+    />
+  </div>
+  <div class="search-filter-bar__filter">
+    <i class="fas fa-filter" style="color: var(--text-muted)"></i>
+    <select id="semesterFilter" onchange="filterCourses()">
+      <option value="all">All Semesters</option>
+      {% for s in all_sessions %}
+      <!-- prettier-ignore -->
+      <option value="{{ s }}" {% if s == session %}selected{% endif %}>
+        {{ s }}{% if s.is_active %} (Current){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="course-grid" id="courseGrid">
+  {% for row in course_rows %}
+  <div
+    class="course-card"
+    data-semester="{{ row.curriculum.session }}"
+    data-code="{{ row.curriculum.course.course_code|lower }}"
+    data-title="{{ row.curriculum.course.course_name|lower }}"
+  >
+    <div class="course-card__header">
+      <span class="course-card__code"
+        >{{ row.curriculum.course.course_code }}</span
+      >
+      <span class="course-card__semester">{{ row.curriculum.session }}</span>
+    </div>
+
+    <div class="course-card__body">
+      <div class="course-card__title">
+        {{ row.curriculum.course.course_name }}
+      </div>
+
+      <div class="course-card__meta">
+        {% if row.slot %}
+        <span>
+          <i class="fas fa-clock"></i>
+          {{ row.slot.get_day_display }} · {{ row.slot.time_slot }}
+        </span>
+        <span>
+          <i class="fas fa-map-pin"></i>
+          <!-- prettier-ignore -->
+          {{ row.slot.venue.venue_name }} · {{ row.curriculum.Tclass.class_name }}
+        </span>
+        {% else %}
+        <span>
+          <i class="fas fa-map-pin"></i>
+          {{ row.curriculum.Tclass.class_name }}
+        </span>
+        <span
+          style="
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-style: italic;
+          "
+        >
+          <i class="fas fa-clock"></i> No timetable slot yet
+        </span>
+        {% endif %}
+        <span>
+          <i class="fas fa-user-graduate"></i>
+          {{ row.approved }} student{{ row.approved|pluralize }}
+        </span>
+      </div>
+
+      <div class="course-card__progress">
+        <div class="progress-label">
+          <span>Results Entry</span>
+          <span>{{ row.pct }}%</span>
+        </div>
+        <div class="progress-track">
+          <div
+            class="progress-fill {% if row.pct == 0 %} {% elif row.pct < 30 %}danger {% elif row.pct < 100 %}warn {% endif %}"
+            style="width:{{ row.pct }}%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="course-card__footer">
+      <a
+        href="{% url 'lecturer-class-list'%}?curriculum={{row.curriculum.record_id}}"
+        class="btn-sm"
+      >
+        <i class="fas fa-list"></i> Class List
+      </a>
+      <a
+        href="{% url 'lecturer-enter-results'%}?curriculum={{row.curriculum.record_id}}"
+        class="btn-sm success"
+      >
+        <i class="fas fa-pen"></i> Results
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <div class="empty-state__icon">📭</div>
+    <div style="font-weight: 600; margin-bottom: 4px">No courses assigned</div>
+    <div style="font-size: 0.8rem">
+      You have no curriculum entries for {{ session }}.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── client-side search + semester filter ────────────────────────────────────
+  function filterCourses() {
+    const q = document.getElementById("courseSearch").value.toLowerCase();
+    const semVal = document.getElementById("semesterFilter").value;
+
+    document.querySelectorAll(".course-card").forEach((card) => {
+      const matchSearch =
+        !q || card.dataset.code.includes(q) || card.dataset.title.includes(q);
+      const matchSem = semVal === "all" || card.dataset.semester === semVal;
+      card.style.display = matchSearch && matchSem ? "flex" : "none";
+    });
+  }
+
+  // ── sidebar collapsible groups ───────────────────────────────────────────────
+  document.querySelectorAll(".sidebar__link--toggle").forEach((btn) => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      const sub = document.getElementById(this.dataset.target);
+      const parentItem = this.closest(".sidebar__item--group");
+      if (!sub) return;
+      sub.classList.toggle("sidebar__submenu--open");
+      parentItem.classList.toggle("sidebar__item--open");
+      this.setAttribute(
+        "aria-expanded",
+        sub.classList.contains("sidebar__submenu--open"),
+      );
+    });
+  });
+
+  // ── mobile sidebar ───────────────────────────────────────────────────────────
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+
+  function toggleMobileSidebar() {
+    sidebar.classList.toggle("open");
+    overlay?.classList.toggle("active");
+  }
+  hamburgerBtn?.addEventListener("click", toggleMobileSidebar);
+  overlay?.addEventListener("click", toggleMobileSidebar);
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove("open");
+      overlay?.classList.remove("active");
+    }
+  });
+
+  // ── toast helper (matches the shell pattern) ─────────────────────────────────
+  function showToast(message, type = "info") {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  // ── init ────────────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+    // ensure My Teaching is open on load
+    const sub = document.getElementById("teaching-sub");
+    const btn = document.querySelector('[data-target="teaching-sub"]');
+    if (sub && btn) {
+      sub.classList.add("sidebar__submenu--open");
+      btn
+        .closest(".sidebar__item--group")
+        ?.classList.add("sidebar__item--open");
+      btn.setAttribute("aria-expanded", "true");
+    }
+  });
+</script>
+
+{% endblock %}

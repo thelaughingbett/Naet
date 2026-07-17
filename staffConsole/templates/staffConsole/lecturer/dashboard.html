@@ -1,0 +1,1063 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/lecturer/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>Lecturer Dashboard · Naet</title>
+
+<style>
+  /* ============================================
+       RESET & VARIABLES
+       ============================================ */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --sidebar-w: 280px;
+    --topnav-h: 64px;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ============================================
+       SIDEBAR
+       ============================================ */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-w);
+    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  }
+  .sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+  }
+
+  .sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.2rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    min-height: var(--topnav-h);
+  }
+  .sidebar__brand-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .sidebar__brand-text {
+    font-weight: 800;
+    font-size: 1.1rem;
+    background: linear-gradient(120deg, #fff, #c0d9f0);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+  }
+
+  .sidebar__nav {
+    flex: 1;
+    padding: 0.6rem 0.6rem;
+    overflow-y: auto;
+  }
+  .sidebar__item {
+    margin-bottom: 2px;
+  }
+
+  .sidebar__link,
+  .sidebar__link--toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+  }
+  .sidebar__link:hover,
+  .sidebar__link--toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+  .sidebar__link.active,
+  .sidebar__link--toggle.active {
+    background: var(--maroon);
+    color: white;
+    box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+  }
+  .sidebar__link i,
+  .sidebar__link--toggle i {
+    width: 20px;
+    text-align: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  .sidebar__chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+  }
+  .sidebar__item--open .sidebar__chevron {
+    transform: rotate(180deg);
+  }
+
+  .sidebar__submenu {
+    list-style: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin: 0 0.5rem 0 0.5rem;
+  }
+  .sidebar__submenu--open {
+    max-height: 600px;
+  }
+  .sidebar__sublink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 400;
+    transition: 0.2s;
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .sidebar__sublink:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+  }
+  .sidebar__sublink.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .sidebar__sublink .badge {
+    margin-left: auto;
+    background: var(--maroon);
+    color: white;
+    font-size: 0.55rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+  }
+
+  .sidebar__footer {
+    padding: 1rem 1.2rem;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* ============================================
+       MOBILE OVERLAY
+       ============================================ */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+  }
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ============================================
+       MAIN CONTENT
+       ============================================ */
+  .main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    padding: 1.8rem 2rem 2rem;
+    background: var(--bg);
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+
+  /* ============================================
+       UNIFORM STATS GRID (Lecturer)
+       ============================================ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    position: relative;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.1rem;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__sub {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.1);
+    margin-top: -0.2rem;
+  }
+
+  /* ============================================
+       DASHBOARD GRID
+       ============================================ */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .card__header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .card__header a {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--blue-card);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .card__body {
+    padding: 0.2rem 0;
+  }
+
+  /* ============================================
+       TIMETABLE
+       ============================================ */
+  .timetable-strip {
+    padding: 0.8rem 1.2rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .timetable-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+  .timetable-row__time {
+    font-weight: 700;
+    color: var(--navy);
+    width: 64px;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+  }
+  .timetable-row__details {
+    flex: 1;
+  }
+  .timetable-row__details strong {
+    font-weight: 600;
+  }
+  .timetable-row__meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+  .timetable-row__tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 30px;
+    background: #eef2ff;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+  .timetable-row__tag.invig {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  /* ============================================
+       PROGRESS ROWS
+       ============================================ */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+    gap: 1rem;
+  }
+  .progress-row:last-child {
+    border-bottom: none;
+  }
+  .progress-row__label {
+    flex: 1;
+    min-width: 0;
+  }
+  .progress-row__label strong {
+    font-weight: 600;
+    display: block;
+  }
+  .progress-row__label span {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+  .progress-row__bar-wrap {
+    flex: 1;
+    max-width: 120px;
+  }
+  .progress-row__bar-track {
+    background: var(--border);
+    border-radius: 30px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-row__bar-fill {
+    background: var(--green);
+    height: 100%;
+    border-radius: 30px;
+  }
+  .progress-row__bar-fill.warn {
+    background: var(--gold);
+  }
+  .progress-row__bar-fill.danger {
+    background: var(--maroon);
+  }
+  .progress-row__pct {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    width: 34px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ============================================
+       QUICK ACTIONS
+       ============================================ */
+  .quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.8rem 1.2rem 1.2rem;
+  }
+  .quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+  }
+  .quick-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .quick-action-btn i {
+    width: 20px;
+    color: var(--navy);
+  }
+
+  /* ============================================
+       PENDING / DEADLINES
+       ============================================ */
+  .pending-list {
+    padding: 0.2rem 0;
+  }
+  .pending-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+  .pending-item:last-child {
+    border-bottom: none;
+  }
+  .pending-item__label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pending-item__count {
+    background: var(--maroon);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+  }
+
+  /* ============================================
+       TOAST
+       ============================================ */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  /* ============================================
+       RESPONSIVE
+       ============================================ */
+  @media (max-width: 1024px) {
+    .dash-grid {
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </h1>
+    {% if session %}
+    <span class="topbar__badge"
+      ><i class="fas fa-calendar"></i> {{ session }}</span
+    >
+    {% endif %}
+  </div>
+</div>
+
+{% if not session %}
+<div class="card" style="text-align: center; padding: 48px 24px">
+  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600; margin-bottom: 6px">No active session</div>
+  <div style="font-size: 0.85rem; color: var(--text-muted)">
+    There is no active academic session right now. Check back once one has been
+    set.
+  </div>
+</div>
+
+{% else %}
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-book stat-card__icon"></i>
+    <div class="stat-card__number">{{ distinct_course_count }}</div>
+    <div class="stat-card__label">Courses This Session</div>
+    <div class="stat-card__sub">{{ session }}</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-users stat-card__icon"></i>
+    <div class="stat-card__number">{{ total_students }}</div>
+    <div class="stat-card__label">Students Taught</div>
+    <div class="stat-card__sub">across all classes</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-clipboard-list stat-card__icon"
+      style="color: var(--maroon)"
+    ></i>
+    <div class="stat-card__number">{{ pending_results|length }}</div>
+    <div class="stat-card__label">Results Pending</div>
+    <div class="stat-card__sub">need entry before deadline</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-user-shield stat-card__icon"
+      style="color: var(--gold)"
+    ></i>
+    <div class="stat-card__number">{{ invigilation|length }}</div>
+    <div class="stat-card__label">Invigilation Duties</div>
+    <div class="stat-card__sub">this exam period</div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD GRID ===== -->
+<div class="dash-grid">
+  <!-- Left Column -->
+  <div>
+    <!-- Today's Schedule -->
+    <div class="card" style="margin-bottom: 1.2rem">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-calendar-day"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Today's Schedule</span
+        >
+        <a
+          href="{% url 'lecturer-timetable' %}"
+          data-page="my-timetable"
+          class="sidebar__sublink-trigger"
+          >Full timetable →</a
+        >
+      </div>
+
+      {% if today_slots %}
+      <div class="timetable-strip">
+        {% for slot in today_slots %}
+        <div class="timetable-row">
+          <div class="timetable-row__time">
+            <!-- prettier-ignore -->
+            {{ slot.time_slot|cut:"-"|slice:":5" }}<br />
+            {{ slot.time_slot|slice:"6:" }}
+          </div>
+          <div class="timetable-row__details">
+            <strong>{{ slot.curriculum.course.course_name }}</strong>
+            <div class="timetable-row__meta">
+              <!-- prettier-ignore -->
+              {{ slot.curriculum.course.course_code }} · {{ slot.venue }} · {{ slot.curriculum.Tclass.class_name }}
+            </div>
+          </div>
+          <span class="timetable-row__tag">Lecture</span>
+        </div>
+        <!-- prettier-ignore -->
+        {% endfor %} {% for invig in invigilation %}
+         {% if invig.exam_session.date == today_date %}
+        <div class="timetable-row">
+          <div class="timetable-row__time">
+            {{ invig.exam_session.time_slot|cut:"-"|slice:":5" }}<br />
+            <!-- prettier-ignore -->
+            {{ invig.exam_session.time_slot|slice:"6:" }}
+          </div>
+          <div class="timetable-row__details">
+            <!-- prettier-ignore -->
+            <strong
+              >{{ invig.exam_session.exam_type }} — {{ invig.exam_session.curriculum.course.course_code }}</strong
+            >
+            <div class="timetable-row__meta">
+              {{ invig.venue }} · Invigilation duty
+            </div>
+          </div>
+          <span class="timetable-row__tag invig">Invigilate</span>
+        </div>
+        {% endif %} {% endfor %}
+      </div>
+
+      {% else %}
+      <div style="text-align: center; padding: 32px 20px; opacity: 0.5">
+        <div style="font-size: 1.6rem; margin-bottom: 8px">🎉</div>
+        <div style="font-size: 0.85rem">No classes scheduled today</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Results Entry Progress -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-clipboard-list"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Results Entry Progress</span
+        >
+        <a href="{% url 'lecturer-enter-results' %}" data-page="enter-results">
+          Enter results →
+        </a>
+      </div>
+
+      {% if results_progress %}
+      <div class="card__body">
+        {% for row in results_progress %}
+        <div class="progress-row">
+          <div class="progress-row__label">
+            <strong>{{ row.unit.course.course_code }}</strong>
+            <!-- prettier-ignore -->
+            <span
+              >{{ row.unit.course.course_code }} ({{ row.unit.Tclass.class_name }}) results due · {{ row.total }} student{{ row.total|pluralize }}</span
+            >
+          </div>
+          <div class="progress-row__bar-wrap">
+            <div class="progress-row__bar-track">
+              <div
+                class="progress-row__bar-fill{% if row.pct < 30 %} danger{% elif row.pct < 100 %} warn{% endif %}"
+                style="width: {{ row.pct }}%"
+              ></div>
+            </div>
+          </div>
+          <div class="progress-row__pct">{{ row.pct }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 32px 20px; opacity: 0.5">
+        <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
+        <div style="font-size: 0.85rem">
+          No courses assigned to you this session
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div>
+    <!-- Quick Actions -->
+    <div class="card" style="margin-bottom: 1.2rem">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-bolt"
+            style="color: var(--gold); margin-right: 0.4rem"
+          ></i>
+          Quick Actions</span
+        >
+      </div>
+      <div class="quick-actions">
+        <a
+          href="{% url 'lecturer-enter-results' %}"
+          class="quick-action-btn"
+          data-page="enter-results"
+        >
+          <i class="fas fa-pen"></i> Enter Results
+        </a>
+        <a
+          href="{% url 'lecturer-class-list' %}"
+          class="quick-action-btn"
+          data-page="class-lists"
+        >
+          <i class="fas fa-list"></i> View Class List
+        </a>
+        <a
+          href="{% url 'lecturer-timetable' %}"
+          class="quick-action-btn"
+          data-page="my-timetable"
+        >
+          <i class="fas fa-calendar-alt"></i> My Timetable
+        </a>
+        <a
+          href="{% url 'lecturer-profile-details' %}"
+          class="quick-action-btn"
+          data-page="profile-details"
+        >
+          <i class="fas fa-id-badge"></i> My Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Upcoming Deadlines -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-hourglass-half"
+            style="color: var(--maroon); margin-right: 0.4rem"
+          ></i>
+          Upcoming Deadlines</span
+        >
+      </div>
+
+      {% if pending_results or invigilation %}
+      <div class="pending-list">
+        {% for row in pending_results %}
+        <div class="pending-item">
+          <span class="pending-item__label">
+            <i class="fas fa-clipboard-list"></i>
+            <!-- prettier-ignore -->
+            {{ row.unit.course.course_code }} ({{ row.unit.Tclass.class_name }}) results due
+          </span>
+          <span class="pending-item__count">{{ row.pct }}%</span>
+        </div>
+        {% endfor %} {% for invig in invigilation %}
+        <div class="pending-item">
+          <span class="pending-item__label">
+            <i class="fas fa-user-shield"></i> Invigilation — {{ invig.venue }}
+          </span>
+          <span class="pending-item__count"
+            >{{ invig.exam_session.date|date:"d M" }}</span
+          >
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 24px 20px; opacity: 0.5">
+        <div style="font-size: 1.4rem; margin-bottom: 6px">✅</div>
+        <div style="font-size: 0.8rem">Nothing outstanding</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+<script>
+  // ============================================
+  // COLLAPSIBLE SUBMODULES
+  // ============================================
+  document.querySelectorAll(".sidebar__link--toggle").forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      const targetId = this.dataset.target;
+      const submenu = document.getElementById(targetId);
+      const parentItem = this.closest(".sidebar__item--group");
+      if (!submenu) return;
+
+      submenu.classList.toggle("sidebar__submenu--open");
+      parentItem.classList.toggle("sidebar__item--open");
+      const isOpen = submenu.classList.contains("sidebar__submenu--open");
+      this.setAttribute("aria-expanded", isOpen);
+    });
+  });
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+  const navLinks = document.querySelectorAll(
+    ".sidebar__link, .sidebar__sublink",
+  );
+  const pageTitle = document.getElementById("pageTitle");
+
+  navLinks.forEach((link) => {
+    link.addEventListener("click", function (e) {
+      if (this.getAttribute("href") === "#") e.preventDefault();
+
+      document
+        .querySelectorAll(".sidebar__link, .sidebar__sublink")
+        .forEach((l) => l.classList.remove("active"));
+      this.classList.add("active");
+
+      const text = this.innerText.trim();
+      const icon = this.querySelector("i")?.className || "fa-tachometer-alt";
+      pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+      if (window.innerWidth <= 768) {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("sidebarOverlay").classList.remove("active");
+      }
+
+      showToast(`📂 Navigated to ${text}`, "info");
+    });
+  });
+
+  // ============================================
+  // MOBILE SIDEBAR TOGGLE
+  // ============================================
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+
+  function toggleMobileSidebar() {
+    sidebar.classList.toggle("open");
+    overlay.classList.toggle("active");
+  }
+
+  hamburgerBtn.addEventListener("click", toggleMobileSidebar);
+  overlay.addEventListener("click", toggleMobileSidebar);
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+  });
+
+  // ============================================
+  // TOAST
+  // ============================================
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.className = "toast " + type;
+    toast.classList.add("show");
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  // ============================================
+  // INIT — set default open submenus
+  // ============================================
+  document.addEventListener("DOMContentLoaded", () => {
+    // Ensure "My Teaching" and "Profile" are open by default
+    const teachingToggle = document.querySelector(
+      '[data-target="teaching-sub"]',
+    );
+    if (teachingToggle) {
+      const sub = document.getElementById("teaching-sub");
+      if (sub) {
+        sub.classList.add("sidebar__submenu--open");
+        teachingToggle
+          .closest(".sidebar__item--group")
+          ?.classList.add("sidebar__item--open");
+      }
+    }
+    const profileToggle = document.querySelector('[data-target="profile-sub"]');
+    if (profileToggle) {
+      const sub = document.getElementById("profile-sub");
+      if (sub) {
+        sub.classList.add("sidebar__submenu--open");
+        profileToggle
+          .closest(".sidebar__item--group")
+          ?.classList.add("sidebar__item--open");
+      }
+    }
+    document
+      .querySelectorAll(".sidebar__item--open .sidebar__link--toggle")
+      .forEach((el) => {
+        el.setAttribute("aria-expanded", "true");
+      });
+  });
+</script>
+{% endblock %}

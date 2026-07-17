@@ -26,7 +26,8 @@ INSTALLED_APPS = [
 
     'django_celery_beat',
 
-    "base.apps.BaseConfig"
+    "base.apps.BaseConfig",
+    "staffConsole.apps.StaffconsoleConfig"
 ]
 
 MIDDLEWARE = [
@@ -98,7 +99,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-    ('base', BASE_DIR / 'base/static')
+    ('base', BASE_DIR / 'base/static'),
+    ('staff', BASE_DIR / 'staffConsole/static'),
 ]
 
 MEDIA_ROOT = BASE_DIR / 'user-upload/'

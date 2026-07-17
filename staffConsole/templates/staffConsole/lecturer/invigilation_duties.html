@@ -1,0 +1,905 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/lecturer/shell.html' %}
+{% load static %}
+{% block head %}
+<title>Invigilation Duties · Lecturer · Naet</title>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm:hover {
+    background: var(--bg);
+    border-color: #cbd5e1;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    position: relative;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.1rem;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__sub {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.1);
+    margin-top: -0.2rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    align-items: center;
+  }
+  .filter-bar__input {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg);
+    padding: 0.3rem 0.8rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+  }
+  .filter-bar__input:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .filter-bar__input i {
+    color: var(--text-muted);
+  }
+  .filter-bar__input input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 0;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+  }
+  .filter-bar__filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-bar__filters select {
+    padding: 0.4rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-family: var(--font);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  .filter-bar__filters select:focus {
+    border-color: var(--navy);
+  }
+
+  .table-wrapper {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .table-scroll {
+    overflow-x: auto;
+  }
+  .duties-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .duties-table th {
+    background: var(--bg);
+    padding: 0.8rem 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .duties-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .duties-table tr:last-child td {
+    border-bottom: none;
+  }
+  .duties-table tr:hover td {
+    background: #f8fafc;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-badge.upcoming {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-badge.ongoing {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-badge.completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .type-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+  .type-badge.CAT {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .type-badge.MAIN {
+    background: #fce4ec;
+    color: #9e2a2b;
+  }
+  .type-badge.SUPP {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .type-badge.SPECIAL {
+    background: #ede9fe;
+    color: #5b21b6;
+  }
+  .type-badge.PRACTICAL {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .duties-table .actions-cell {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .duties-table .actions-cell .btn-sm {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-overlay.active .modal {
+    animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    padding: 0;
+  }
+  .modal__header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    border-radius: var(--radius) var(--radius) 0 0;
+    z-index: 2;
+  }
+  .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  .modal__close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal__body {
+    padding: 1.5rem;
+  }
+  .modal__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    background: var(--bg);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .detail-row {
+    display: flex;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row__label {
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .detail-row__value {
+    flex: 1;
+    color: var(--text);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  @media (max-width: 1024px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .duties-table th,
+    .duties-table td {
+      padding: 0.5rem 0.7rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .duties-table {
+      font-size: 0.7rem;
+    }
+    .detail-row {
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .detail-row__label {
+      width: auto;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title">
+      <i class="fas fa-user-shield"></i> Invigilation Duties
+    </h1>
+    {% if session %}
+    <span class="topbar__badge"
+      ><i class="fas fa-calendar"></i> {{ session }}</span
+    >
+    {% endif %}
+  </div>
+  <div class="topbar__actions">
+    <button class="btn btn-outline" onclick="window.print()">
+      <i class="fas fa-print"></i> Print
+    </button>
+  </div>
+</div>
+
+{% if not session %}
+<div class="card" style="text-align: center; padding: 48px 24px">
+  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
+  <div style="font-weight: 600; margin-bottom: 6px">No active session</div>
+  <div style="font-size: 0.85rem; color: var(--text-muted)">
+    There is no active academic session right now.
+  </div>
+</div>
+
+{% else %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-tasks stat-card__icon"></i>
+    <div class="stat-card__number" id="statTotal">{{ stat_total }}</div>
+    <div class="stat-card__label">Total Duties</div>
+    <div class="stat-card__sub">{{ session }}</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-clock stat-card__icon" style="color: var(--gold)"></i>
+    <div class="stat-card__number" id="statUpcoming">{{ stat_upcoming }}</div>
+    <div class="stat-card__label">Upcoming</div>
+    <div class="stat-card__sub">Scheduled for future or current dates</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-check-circle stat-card__icon"
+      style="color: var(--green)"
+    ></i>
+    <div class="stat-card__number" id="statCompleted">{{ stat_completed }}</div>
+    <div class="stat-card__label">Completed</div>
+    <div class="stat-card__sub">Already invigilated</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-map-marker-alt stat-card__icon"
+      style="color: var(--blue-card)"
+    ></i>
+    <div class="stat-card__number" id="statVenues">{{ stat_venues }}</div>
+    <div class="stat-card__label">Venues</div>
+    <div class="stat-card__sub">Different exam locations</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-bar__input">
+    <i class="fas fa-search"></i>
+    <input
+      type="text"
+      id="dutySearch"
+      placeholder="Search by course code or title…"
+      onkeyup="filterDuties()"
+    />
+  </div>
+  <div class="filter-bar__filters">
+    <select id="statusFilter" onchange="filterDuties()">
+      <option value="all">All Status</option>
+      <option value="upcoming">Upcoming</option>
+      <option value="ongoing">Ongoing</option>
+      <option value="completed">Completed</option>
+    </select>
+    <select id="typeFilter" onchange="filterDuties()">
+      <option value="all">All Types</option>
+      <option value="CAT">CAT</option>
+      <option value="MAIN">Main Exam</option>
+      <option value="SUPP">Supplementary</option>
+      <option value="SPECIAL">Special / Supplementary</option>
+      <option value="PRACTICAL">Practical</option>
+    </select>
+    <button class="btn-sm" onclick="resetFilters()">
+      <i class="fas fa-undo"></i> Reset
+    </button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <div class="table-scroll">
+    <table class="duties-table" id="dutiesTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Course</th>
+          <th>Venue</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="dutiesTableBody">
+        <!-- Rendered by JS from DUTIES -->
+      </tbody>
+    </table>
+  </div>
+  <div
+    class="table-footer"
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 1.2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    "
+  >
+    <span id="dutyCount">Showing 0 duties</span>
+  </div>
+</div>
+{% endif %}
+
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-clipboard-list" style="color: var(--navy)"></i>
+        Invigilation Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewModalBody">
+      <!-- Filled dynamically -->
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewModal')">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============================================
+  // SERVER DATA
+  // ============================================
+  let currentDuties = {{ duties_json|safe }};
+  let filteredDuties = [...currentDuties];
+
+  // ============================================
+  // RENDER
+  // ============================================
+  function getStatusBadge(status) {
+    const map = {
+      'upcoming':  '<span class="status-badge upcoming"><i class="fas fa-clock"></i> Upcoming</span>',
+      'ongoing':   '<span class="status-badge ongoing"><i class="fas fa-spinner fa-spin"></i> Ongoing</span>',
+      'completed': '<span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span>',
+    };
+    return map[status] || status;
+  }
+
+  function getTypeBadge(type, typeDisplay) {
+    return `<span class="type-badge ${type}">${typeDisplay || type}</span>`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+
+  function renderDuties(dutyList) {
+    const tbody = document.getElementById('dutiesTableBody');
+    if (!tbody) return;
+
+    if (dutyList.length === 0) {
+      tbody.innerHTML =
+        `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No invigilation duties found matching your filters.</td></tr>`;
+      document.getElementById('dutyCount').textContent = 'Showing 0 duties';
+      return;
+    }
+
+    let html = '';
+    dutyList.forEach((d, index) => {
+      html += `
+        <tr data-duty-id="${d.id}">
+          <td>${index + 1}</td>
+          <td><span style="font-weight:600;">${d.date}</span></td>
+          <td>${d.time}</td>
+          <td>
+            <div>
+              <div style="font-weight:600;font-size:0.8rem;">${escapeHtml(d.course_code)}</div>
+              <div style="font-size:0.7rem;color:var(--text-muted);">${escapeHtml(d.course_title)} · ${escapeHtml(d.class_name)}</div>
+            </div>
+          </td>
+          <td>${escapeHtml(d.venue)}</td>
+          <td>${getTypeBadge(d.type, d.type_display)}</td>
+          <td>${getStatusBadge(d.status)}</td>
+          <td>
+            <div class="actions-cell">
+              <button class="btn-sm primary" onclick="openViewModal('${d.id}')" title="View Details">
+                <i class="fas fa-eye"></i> View
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+    document.getElementById('dutyCount').textContent = `Showing ${dutyList.length} duties`;
+  }
+
+  // ============================================
+  // FILTER
+  // ============================================
+  function filterDuties() {
+    const search = document.getElementById('dutySearch')?.value.toLowerCase() || '';
+    const status = document.getElementById('statusFilter')?.value || 'all';
+    const type   = document.getElementById('typeFilter')?.value || 'all';
+
+    filteredDuties = currentDuties.filter(d => {
+      const matchSearch = d.course_code.toLowerCase().includes(search) ||
+        d.course_title.toLowerCase().includes(search);
+      const matchStatus = status === 'all' || d.status === status;
+      const matchType = type === 'all' || d.type === type;
+      return matchSearch && matchStatus && matchType;
+    });
+
+    renderDuties(filteredDuties);
+  }
+
+  function resetFilters() {
+    const searchEl = document.getElementById('dutySearch');
+    const statusEl = document.getElementById('statusFilter');
+    const typeEl   = document.getElementById('typeFilter');
+    if (searchEl) searchEl.value = '';
+    if (statusEl) statusEl.value = 'all';
+    if (typeEl) typeEl.value = 'all';
+    filterDuties();
+  }
+
+  // ============================================
+  // VIEW MODAL
+  // ============================================
+  function openViewModal(dutyId) {
+    const duty = currentDuties.find(d => d.id === dutyId);
+    if (!duty) return;
+
+    const body = document.getElementById('viewModalBody');
+    body.innerHTML = `
+      <div class="detail-row">
+        <span class="detail-row__label">Course</span>
+        <span class="detail-row__value"><strong>${escapeHtml(duty.course_code)}</strong> — ${escapeHtml(duty.course_title)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Class</span>
+        <span class="detail-row__value">${escapeHtml(duty.class_name)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Date &amp; Time</span>
+        <span class="detail-row__value">${duty.date} · ${duty.time}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Venue</span>
+        <span class="detail-row__value">${escapeHtml(duty.venue)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Type</span>
+        <span class="detail-row__value">${escapeHtml(duty.type_display)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Status</span>
+        <span class="detail-row__value">${duty.status}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Students</span>
+        <span class="detail-row__value">${duty.students} enrolled</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row__label">Special Instructions</span>
+        <span class="detail-row__value">${duty.instructions ? escapeHtml(duty.instructions) : 'No special instructions provided.'}</span>
+      </div>
+    `;
+
+    openModal('viewModal');
+  }
+
+  // ============================================
+  // MODAL HELPERS
+  // ============================================
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function (e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ============================================
+  // SIDEBAR TOGGLE (mirrors my_courses.html)
+  // ============================================
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function toggleMobileSidebar() {
+    sidebar?.classList.toggle('open');
+    overlay?.classList.toggle('active');
+  }
+  hamburgerBtn?.addEventListener('click', toggleMobileSidebar);
+  overlay?.addEventListener('click', toggleMobileSidebar);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar?.classList.remove('open');
+      overlay?.classList.remove('active');
+    }
+  });
+
+  // ============================================
+  // TOAST
+  // ============================================
+  function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // ============================================
+  // INIT
+  // ============================================
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDuties(currentDuties);
+  });
+</script>
+
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.db import transaction
 from base.models import (
-    Curriculum, ExamSession, ExamVenue, Lecturer, Session, Student, Venue
+    Curriculum, ExamSession, ExamVenue, Lecturer,  Venue, ExamInvigilatorAssignment
 )
 
 # must match ExamSession.TIME_SLOTS values exactly
@@ -161,14 +161,22 @@ def generate_exam_timetable(session, exam_type='MAIN'):
         ])
 
         # match created sessions back to placements by index
-        exam_venues = [
-            ExamVenue(
+
+        exam_venues = []
+        for exam_session, p in zip(created_sessions, placement_map):
+            exam_venue = ExamVenue(
                 exam_session=exam_session,
                 venue=p['venue'],
-                invigilator=p['invigilator'],
             )
-            for exam_session, p in zip(created_sessions, placement_map)
-        ]
+
+            invigilator_for_v = ExamInvigilatorAssignment.objects.create(
+                exam_venue=exam_venue,
+                lecturer=p['invigilator'],
+                role='Chief',
+                status='Confirmed'
+            )
+
+            exam_venues.append(exam_venue)
 
         ExamVenue.objects.bulk_create(exam_venues)
 

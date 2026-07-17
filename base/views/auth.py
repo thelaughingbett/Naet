@@ -1,117 +1,149 @@
 # Copyright 2026 Emmanuel Kipng'eno
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #        http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-from django.contrib.auth import authenticate, login
-from django.shortcuts import redirect
-from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views import View
 
 from decouple import config
 
-from django.contrib import messages
-from django.shortcuts import (
-    render,
-    redirect
-)
-from django.urls import reverse
-from django.views import View
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-)
-from django.contrib.auth import (
-    authenticate,
-    login,
-    logout
-)
-
-from base.forms import (
-    LoginForm,
-)
-# TODO : check breaking duplicate emergencycontact formset in auth and registration
+from base.forms import LoginForm
 from base.forms.auth import (
+    ChangePasswordform,
     EmergencyContactFormSet,
     StudentSettingsForm,
     UserSettingsForm,
-    ChangePasswordform
+)
+from base.models import (
+
+    EmergencyContact,
+    Enrollment,
+    ItStaff,
+    Lecturer,
+    Student,
 )
 from .base import StudentContextMixin, StudentProfileRequiredMixin
-from base.models import (
-    EmergencyContact,
-    Student,
-    Lecturer,
-    DeptAdmin,
-    ItStaff,
-    Enrollment
-)
+from staffConsole.views.base import get_staff_dashboard_url
 
-from django.db import models
+
+def _resolve_post_login_url(request, user) -> str:
+    """
+    Priority order:
+      1. ?next= query param (only if it's a safe relative path — prevents
+         open-redirect attacks by ignoring anything that looks like an
+         absolute URL or starts with //).
+      2. Role-based dashboard from get_staff_dashboard_url (staff users).
+      3. base-index (students / fallback).
+    """
+    next_url = request.GET.get('next', '').strip()
+
+    # Accept the next param only if it's a safe relative URL.
+    if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+        return next_url
+
+    # Staff → their role-specific dashboard.
+    if user.is_staff:
+        staff_url = get_staff_dashboard_url(user)
+        if staff_url and staff_url != '/':
+            return staff_url
+
+    # Students and any unrecognised role → student portal landing page.
+    return reverse('base-index')
 
 
 class LoginView(View):
+
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('base-index')
+            return redirect(_resolve_post_login_url(request, request.user))
         return render(request, 'base/login.html', {'form': LoginForm()})
 
     def post(self, request):
         form = LoginForm(request.POST)
 
-        if form.is_valid():
-            input_login = form.cleaned_data['email'].strip()
-            password = form.cleaned_data['password']
+        if not form.is_valid():
+            return render(request, 'base/login.html', {'form': form})
 
-            user = authenticate(
-                request, username=input_login, password=password)
+        input_login = form.cleaned_data['email'].strip()
+        password = form.cleaned_data['password']
 
-            if not user:
-                resolved_email = None
+        # ── attempt 1: treat input as a real email ────────────────────────
+        user = authenticate(
+            request,
+            username=input_login,
+            password=password
+        )
 
-                student_match = Student.objects.filter(
-                    models.Q(registration_number__iexact=input_login) |
-                    models.Q(school_email__iexact=input_login)
-                ).select_related('user').first()
+        # ── attempt 2: resolve reg-number / school-email / staff-number ──
+        if user is None:
+            resolved_email = _resolve_login_identifier(input_login)
+            if resolved_email:
+                user = authenticate(
+                    request,
+                    username=resolved_email,
+                    password=password
+                )
 
-                if student_match and hasattr(student_match, 'user') and student_match.user:
-                    resolved_email = student_match.user.email
-                else:
-                    for staff_model in [Lecturer, DeptAdmin, ItStaff]:
-                        match = staff_model.objects.filter(
-                            models.Q(staff_number__iexact=input_login)
-                        ).select_related('user').first()
-
-                        if match and hasattr(match, 'user') and match.user:
-                            resolved_email = match.user.email
-                            break
-
-                if resolved_email:
-                    user = authenticate(
-                        request, username=resolved_email, password=password)
-
-            if user:
-                login(request, user)
-                if form.cleaned_data.get('remember_me'):
-                    request.session.set_expiry(60 * 60 * 24 * 30)
-                else:
-                    request.session.set_expiry(0)
-                return redirect(request.GET.get('next', 'base-index'))
-
+        if user is None:
             form.add_error(None, "Invalid credentials or password.")
+            return render(request, 'base/login.html', {'form': form})
 
-        return render(request, 'base/login.html', {'form': form})
+        # ── success ───────────────────────────────────────────────────────
+        login(request, user)
 
+        if form.cleaned_data.get('remember_me'):
+            request.session.set_expiry(60 * 60 * 24 * 30)  # 30 days
+        else:
+            request.session.set_expiry(0)                   # browser session
+
+        return redirect(_resolve_post_login_url(request, user))
+
+
+def _resolve_login_identifier(input_login: str) -> str | None:
+    """
+    Given a non-email identifier (registration number, school email, or staff
+    number), return the canonical auth email for that user, or None.
+
+    Kept as a module-level function so it can be unit-tested independently.
+    """
+    # Student: match by registration number or school email
+    student_match = (
+        Student.objects
+        .filter(
+            models.Q(registration_number__iexact=input_login) |
+            models.Q(school_email__iexact=input_login)
+        )
+        .select_related('user')
+        .first()
+    )
+    if student_match and getattr(student_match, 'user', None):
+        return student_match.user.email
+
+    # Staff: match by staff number across all staff models
+    for staff_model in (Lecturer, ItStaff):
+        match = (
+            staff_model.objects
+            .filter(staff_number__iexact=input_login)
+            .select_related('user')
+            .first()
+        )
+        if match and getattr(match, 'user', None):
+            return match.user.email
+
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 class LogoutView(View):
     login_url = config("LOGIN_URL") + '?next=/'
@@ -121,87 +153,81 @@ class LogoutView(View):
         logout(request)
         return redirect(reverse('base-login'))
 
-# TODO :  cross check this code for bugs especially on post 👇🏿👇🏿
 
+# ─────────────────────────────────────────────────────────────────────────────
 
 class SettingsView(
     LoginRequiredMixin,
     StudentProfileRequiredMixin,
     StudentContextMixin,
-    View
+    View,
 ):
     login_url = config('LOGIN_URL') + '?next=settings'
     redirect_field_name = config("REDIRECT_FIELD_NAME")
 
-    def get_tab_data(self, request, post_data=None, files_data=None):
-        """Helper to build all form instances bound to active records."""
+    def _build_tabs(self, request, post_data=None, files_data=None):
         user = request.user
-        # Assuming Student is accessible via related name or mixin
         student = self.get_student(request)
         queryset = EmergencyContact.objects.filter(student=student)
 
-        # Initialize forms with conditional POST data binding
         user_form = UserSettingsForm(post_data, files_data, instance=user)
         student_form = StudentSettingsForm(post_data, instance=student)
         emergency_formset = EmergencyContactFormSet(
-            post_data, queryset=queryset, prefix='emergency')
+            post_data, queryset=queryset, prefix='emergency'
+        )
 
-        # This structural array powers our dynamic frontend tabs completely!
         tabs_config = [
             {
-                'id': 'general',
-                'title': 'General Info',
-                'form': user_form,
+                'id':         'general',
+                'title':      'General Info',
+                'form':       user_form,
                 'is_formset': False,
-                'legend': 'General Profile Details'
+                'legend':     'General Profile Details',
             },
             {
-                'id': 'personal',
-                'title': 'Personal Info',
-                'form': student_form,
+                'id':         'personal',
+                'title':      'Personal Info',
+                'form':       student_form,
                 'is_formset': False,
-                'legend': 'Personal Settings & Identification'
+                'legend':     'Personal Settings & Identification',
             },
             {
-                'id': 'emergency',
-                'title': 'Emergency Contacts',
-                'formset': emergency_formset,
+                'id':         'emergency',
+                'title':      'Emergency Contacts',
+                'formset':    emergency_formset,
                 'is_formset': True,
-                'legend': 'Emergency Contact Info (Maximum 4)'
+                'legend':     'Emergency Contact Info (Maximum 4)',
             },
             {
-                'id': 'password',
-                'title': "Change Password",
-                'form': ChangePasswordform(),
+                'id':         'password',
+                'title':      'Change Password',
+                'form':       ChangePasswordform(),
                 'is_formset': False,
-                'legend': 'Change password'
-            }
+                'legend':     'Change password',
+            },
         ]
-
         return tabs_config, user_form, student_form, emergency_formset
 
     def get(self, request):
-        tabs_config, _, _, _ = self.get_tab_data(request)
+        tabs_config, *_ = self._build_tabs(request)
         return render(request, 'base/settings.html', {'tabs_config': tabs_config})
 
     def post(self, request):
-        tabs_config, user_form, student_form, emergency_formset = self.get_tab_data(
+        tabs_config, user_form, student_form, emergency_formset = self._build_tabs(
             request, request.POST, request.FILES
         )
 
-        # Validate all dynamic form components simultaneously
         if (
-            user_form.is_valid() and
-            student_form.is_valid() and
-            emergency_formset.is_valid()
+            user_form.is_valid()
+            and student_form.is_valid()
+            and emergency_formset.is_valid()
         ):
             user_form.save()
             student_form.save()
 
-            # Process multi-row formset modifications safely
             instances = emergency_formset.save(commit=False)
             for instance in instances:
-                instance.student = request.user.student
+                instance.student = request.user.student_profile
                 instance.save()
 
             emergency_formset.save_m2m()
@@ -213,60 +239,60 @@ class SettingsView(
                 "Your account profile and settings have been updated."
             )
             return redirect('base-settings')
-        context = {
-            'tabs_config': tabs_config
-        }
-        return render(request, 'base/settings.html', context)
 
+        return render(request, 'base/settings.html', {'tabs_config': tabs_config})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 class DataExportView(
     LoginRequiredMixin,
     StudentContextMixin,
     StudentProfileRequiredMixin,
-    View
+    View,
 ):
-    """Student safely downlinks a clean snapshot copy of their own data as a secure application/json file payload tracking dump."""
+    """Student downloads a JSON snapshot of their own data."""
 
     def get(self, request):
-        # Defensively resolve student profile link records safely across context mixers mapping systems
         try:
             student = self.get_student(request)
         except AttributeError:
-            return JsonResponse({'error': 'No profile data found for this active user account context.'}, status=404)
+            return JsonResponse(
+                {'error': 'No profile data found for this user.'}, status=404
+            )
 
-        # Pull collections with pre-targeted values mappings directly from standard relational lookups
         data = {
             'personal': {
-                'full_name': request.user.full_name,
-                'email': request.user.email,
-                'telephone': student.telephone_no,
-                'national_id': student.national_id,
-                'religion': student.religion,
-                'domicile': student.domicile,
-                # Expose human readable text mappings automatically
+                'full_name':      request.user.full_name,
+                'email':          request.user.email,
+                'telephone':      student.telephone_no,
+                'national_id':    student.national_id,
+                'religion':       student.religion,
+                'domicile':       student.domicile,
                 'marital_status': student.get_marital_status_display(),
             },
-            'emergency_contacts': list(student.emergency_contacts.values(
-                'name', 'phone', 'email', 'relationship', 'address'
-            )),
+            'emergency_contacts': list(
+                student.emergency_contacts.values(
+                    'name', 'phone', 'email', 'relationship', 'address'
+                )
+            ),
             'academic': list(
-                Enrollment.objects.filter(student=student)
+                Enrollment.objects
+                .filter(student=student)
                 .values(
                     'curriculum__course__course_name',
                     'curriculum__course__course_code',
-                    'status'  # Use the exact column name defined on your intermediate enrollment table
+                    'status',
                 )
             ),
-            'parents': list(student.parents.all().values(
-                # Fallback space placeholder: plug additional account processing structures here cleanly if required
-            ) if hasattr(student, 'parents') else []),
+            'parents': list(
+                student.parents.values() if hasattr(student, 'parents') else []
+            ),
         }
 
-        # Initialize native JsonResponse with proper content-type, encoding parameters, and safety layers
-        # Formats nested trees cleanly with beautiful formatting indent lines natively
         response = JsonResponse(data, json_dumps_params={'indent': 2})
-
-        # Force browser to process stream chunk as file download buffer stream
-        response[
-            'Content-Disposition'] = f'attachment; filename="student_profile_{student.registration_number.replace("/", "_")}.json"'
+        safe_reg = student.registration_number.replace('/', '_')
+        response['Content-Disposition'] = (
+            f'attachment; filename="student_profile_{safe_reg}.json"'
+        )
         return response

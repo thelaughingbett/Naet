@@ -20,25 +20,19 @@ from http import HTTPStatus
 
 from decouple import config
 
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import (
-    get_object_or_404,
     render,
-    redirect
 )
-from django.urls import reverse
 from django.views import View
 
-from django.http import HttpResponse
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
-    PermissionRequiredMixin
+
 )
 
 from django.db import (
     models
 )
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Q
 
 from base.models import (
@@ -47,7 +41,7 @@ from base.models import (
 )
 from .base import (
     StudentProfileRequiredMixin,
-    StudentContextMixin
+
 )
 
 from base.modules.socials.news.registry import news_registry

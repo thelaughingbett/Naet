@@ -142,7 +142,7 @@ class CurriculumAdmin(BaseAdmin):
     list_display = ('course', 'Tclass', 'session')
     list_filter = ('session', 'Tclass', 'course__course_type')
     actions = ['copy_to_current_session', 'bulk_clone_wizard']
-    filter_horizontal = ('professor',)
+    # filter_horizontal = ('professor',)
 
     @admin.action(description='Clone selected structures to the active session')
     def copy_to_current_session(self, request, queryset):

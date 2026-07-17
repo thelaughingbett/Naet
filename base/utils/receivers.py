@@ -1,4 +1,7 @@
-from django.contrib.auth.models import Group, Permission
+from django.db.models.signals import post_save, post_delete
+from base.models import SecurityAuditTrail
+from base.middleware import get_current_request_context
+from django.contrib.auth.models import (Group, Permission)
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.db.models.signals import (
@@ -22,6 +25,7 @@ from base.utils.signals import send_notification
 from base.utils.notifications.handlers import NotificationEngine
 
 
+# TODO :  rmove this from this file
 class ScopedUser:
     @staticmethod
     def getProfile(instance):
@@ -76,6 +80,8 @@ def auto_enroll_core_courses(
             ],
                 ignore_conflicts=True
             )
+
+            # TODO : send notification here and update lms
 
         except Session.DoesNotExist:
             pass
@@ -424,7 +430,7 @@ def create_roles_and_permissions(
 
 @receiver(post_save, sender="base.User")
 def assign_user_to_group(sender, instance, created, **kwargs):
-    if not created:
+    if created:
         return
 
     group_name = ScopedUser.getProfile(instance)
@@ -449,17 +455,23 @@ def handle_notification_broadcast(
     """Intercepts custom signals and routes them safely."""
 
     transaction.on_commit(
-        lambda: NotificationEngine.route(user, template_key, channels, context)
+        lambda: NotificationEngine.route(
+            user,
+            template_key,
+            channels,
+            context
+        )
     )
 
 
 @receiver(post_save, sender='base.Curriculum')
-def auto_enroll_curriculum_course(sender,
-                                  instance,
-                                  created,
-                                  **kwargs):
+def auto_enroll_curriculum_course(
+    sender,
+    instance,
+    created,
+    **kwargs
+):
     if created:
-
         current_session = Session.objects.get(is_active=True)
         if instance.course.course_type in ['C', 'CC'] and instance.session == current_session:
             try:
@@ -478,5 +490,48 @@ def auto_enroll_curriculum_course(sender,
                     ignore_conflicts=True
                 )
 
+                # TODO :  send notifications here and update lms
+
             except Exception:
                 pass
+
+
+# Explicitly isolate sensitive tables that legally demand ODPC oversight
+# TODO : correct list
+SENSITIVE_MODELS = [
+    'student',
+    'studentmedicalprofile',
+    'complaint',
+    'studentfinancialledger'
+]
+
+
+@receiver([post_save, post_delete])
+def auto_track_database_mutations(sender, instance, **kwargs):
+    """
+    Global interceptor loop: Captures and saves tracking rows whenever 
+    a sensitive target table instance experiences mutations.
+    """
+    model_name = sender._meta.model_name
+
+    if model_name in SENSITIVE_MODELS:
+        context = get_current_request_context()
+        if not context:
+            return  # Skip if action didn't originate from a web view request framework
+
+        # Parse active state type
+        if 'created' in kwargs:
+            action = 'CREATE' if kwargs['created'] else 'UPDATE'
+        else:
+            action = 'DELETE'
+
+        # Instantly log into our immutable security audit tracking block
+        SecurityAuditTrail.objects.create(
+            user=context['user'],
+            ip_address=context['ip_address'],
+            user_agent=context['user_agent'],
+            action_type=action,
+            target_model=sender._meta.object_name,
+            record_id=str(instance.pk),
+            action_summary=f"Automated signal intercept: Row payload mutation executed successfully via database ORM layers."
+        )

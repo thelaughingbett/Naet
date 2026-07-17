@@ -27,7 +27,7 @@ class PaymentInline(admin.StackedInline):
 class CurriculumInline(admin.StackedInline):
     model = Curriculum
     extra = 1
-    fields = ['course', 'professor', 'session']
+    fields = ['course',  'session']
 
 
 class FeeStructureInline(admin.StackedInline):
@@ -38,7 +38,7 @@ class FeeStructureInline(admin.StackedInline):
 
 class CurriculumProfessorInline(admin.TabularInline):
     model = Curriculum
-    fields = ['Tclass', 'session', 'professor']
+    fields = ['Tclass', 'session', ]
     readonly_fields = ['Tclass', 'session']
     extra = 0
     can_delete = False

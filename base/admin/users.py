@@ -17,10 +17,7 @@ from .mixins import BaseAdmin
 from base.models import (
     Curriculum,
     Department,
-    DeptAdmin,
-    InstitutionAdmin,
     Lecturer,
-    SchoolAdmin,
     Student,
     Tclass,
     User,
@@ -192,36 +189,4 @@ class LecturerAdmin(BaseAdmin):
                 kwargs['queryset'] = Department.objects.filter(
                     school=request.user.schooladmin_profile.school
                 )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-
-@admin.register(InstitutionAdmin)
-class InstitutionAdminAdmin(BaseAdmin):
-    pass
-
-
-@admin.register(SchoolAdmin)
-class SchoolAdminAdmin(BaseAdmin):
-    pass
-
-
-@admin.register(DeptAdmin)
-class DeptAdminAdmin(BaseAdmin):
-    def get_queryset(self, request):
-        qs = self.model._default_manager.get_queryset()
-        user = request.user
-
-        if user.is_superuser or hasattr(user, 'institutionadmin_profile'):
-            return qs
-
-        if hasattr(user, 'schooladmin_profile'):
-            return qs.filter(department__school=user.schooladmin_profile.school)
-
-        return qs.none()
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'user':
-            kwargs['queryset'] = User.objects.filter(role='staff').exclude(
-                record_id=request.user.record_id
-            )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

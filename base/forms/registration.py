@@ -22,23 +22,8 @@ from base.models import (
     School,
     Department,
     Programme,
-    Tclass,
     User,
-    Session,
-    Reporting,
-    FeeStructure,
-    StudentFeeAccount,
-    Payment,
-    Curriculum
 )
-from django.contrib.auth.forms import (
-    ReadOnlyPasswordHashField,
-    UsernameField
-)
-
-from django.core.exceptions import ValidationError
-from django.contrib.auth import password_validation
-from django.utils.safestring import mark_safe
 
 
 class UserDetailsForm(forms.ModelForm):
@@ -80,11 +65,7 @@ class ContactInfoForm(forms.ModelForm):
             'telephone_no',
             'domicile',
             'county',
-            'sub_county',
-            'location',
-            'division',
-            'constituency',
-            'home_adress',
+            'home_address',
         ]
         labels = {
             'domicile': 'domicile/country of residence'
@@ -102,6 +83,7 @@ class EmergencyContactInfoForm(forms.ModelForm):
             'relationship',
             'address'
         ]
+
 
         # TODO :  make this a formset✔️
 EmergencyContactFormSet = modelformset_factory(

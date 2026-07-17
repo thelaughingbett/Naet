@@ -15,7 +15,6 @@ from base.models import (
     Enrollment,
     Reporting,
     Result,
-    Timetable,
 )
 
 

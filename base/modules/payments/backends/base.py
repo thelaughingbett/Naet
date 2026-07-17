@@ -11,8 +11,8 @@ class FormField:
     type:        str              # "tel", "text", "select", "hidden"
     required:    bool = True
     placeholder: str = ""
-    help_text:   str = ""
     # for type="select" → [{"value": "...", "label": "..."}]
+    help_text:   str = ""
     options:     list = None
 
 

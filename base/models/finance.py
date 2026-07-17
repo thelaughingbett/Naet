@@ -55,6 +55,8 @@ class FeeStructure(BaseModelMixin):
     def __str__(self):
         return f"{self.Tclass} - {self.session}"
 
+    # TODO : add a method to copy past structure to next class during rollover
+
 
 class StudentFeeAccount(BaseModelMixin):
     """Per-student ledger for a session"""

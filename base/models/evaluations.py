@@ -15,12 +15,30 @@
 from .base import BaseModelMixin
 from django.db import models
 
+_RATING_CHOICES = [(i, i) for i in range(1, 6)]
 
+
+# TODO : implement  clean methods to make sure that students are touching what they are supposed to be touching
 class CourseEvaluation(BaseModelMixin):
     enrollment = models.OneToOneField(
         "Enrollment",
         on_delete=models.CASCADE,
         related_name="evaluation"
+    )
+
+    teaching_quality = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
+    )
+
+    course_content = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
+    )
+
+    course_material = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
     )
 
     rating = models.IntegerField(default=0)
@@ -37,6 +55,26 @@ class LecturerEvaluation(BaseModelMixin):
     lecturer = models.ForeignKey(
         "Lecturer",
         on_delete=models.CASCADE
+    )  # TODO : add clean method to check fo sure that lecturer is assigned to said course
+
+    teaching_ability = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
+    )
+
+    subject_knowledge = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
+    )
+
+    communication_skills = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
+    )
+
+    student_interaction = models.PositiveIntegerField(
+        choices=_RATING_CHOICES,
+        default=0
     )
 
     rating = models.IntegerField(default=0)
@@ -54,8 +92,6 @@ HOSTEL_EVALUATION_CATEGORIES = [
     ('noise_levels', 'Noise Levels'),
     ('maintenance',  'Maintenance & Repairs'),
 ]
-
-_RATING_CHOICES = [(i, i) for i in range(1, 6)]
 
 
 class HostelEvaluation(BaseModelMixin):

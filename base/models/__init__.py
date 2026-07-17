@@ -18,6 +18,8 @@ from .hostel import *  # noqa: F401, E402
 from .staff import *  # noqa: F401, E402
 from .timetables import *  # noqa: F401, E402
 from .users import *  # noqa : F401,E402
+from .security import *  # noqa : F401,E402
+from .regulatory import *  # noqa : F401,E402
 
 from .socials import *  # noqa : F401,E402
 from .erp import *  # noqa : F401,E402

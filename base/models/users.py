@@ -13,8 +13,6 @@ from django.db import models
 from .base import (
     BaseModelMixin,
     GENDER_CHOICES,
-
-    id_type_choices,
 )
 from base.managers import (
     UserManager,
@@ -25,12 +23,6 @@ class User(BaseModelMixin, AbstractBaseUser, PermissionsMixin):
     STUDENT = 'student'
     STAFF = 'staff'
     ADMIN = 'admin'
-
-    ROLE_CHOICES = [
-        (STUDENT, 'Student'),
-        (STAFF,   'Staff'),
-        (ADMIN,   'Admin'),
-    ]
 
     first_name = models.CharField(max_length=78, null=True)
     last_name = models.CharField(max_length=78, null=True)
@@ -49,7 +41,6 @@ class User(BaseModelMixin, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_activated = models.BooleanField(default=False)
 
     EMAIL_FIELD = "email"

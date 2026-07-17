@@ -16,7 +16,6 @@ from django.db import models
 
 from .base import (
     BaseModelMixin,
-
     id_type_choices,
 )
 
@@ -29,7 +28,10 @@ class ParentGuardian(BaseModelMixin):
     ]
 
     student = models.ForeignKey(
-        'Student', on_delete=models.CASCADE, related_name='parents')
+        'Student',
+        on_delete=models.CASCADE,
+        related_name='parents'
+    )
     relation = models.CharField(max_length=20, choices=RELATION_CHOICES)
     name = models.CharField(max_length=255)
     id_type = models.CharField(max_length=24, choices=id_type_choices)
@@ -57,12 +59,17 @@ class EmergencyContact(BaseModelMixin):
     ]
 
     student = models.ForeignKey(
-        'Student', on_delete=models.CASCADE, related_name='emergency_contacts')
+        'Student',
+        on_delete=models.CASCADE,
+        related_name='emergency_contacts'
+    )
     name = models.CharField(max_length=78)
     phone = models.CharField(max_length=78)
     email = models.CharField(max_length=78)
     relationship = models.CharField(
-        max_length=78, choices=RELATIONSHIP_CHOICES)
+        max_length=78,
+        choices=RELATIONSHIP_CHOICES
+    )
     address = models.CharField(max_length=78, null=True)
     is_primary = models.BooleanField(default=False)
 

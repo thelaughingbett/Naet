@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from django.core.exceptions import ValidationError
 from .base import BaseModelMixin
 from django.db import models
 from base.models import Session
@@ -22,7 +23,7 @@ class Timetable(BaseModelMixin):
 
     curriculum = models.ForeignKey(
         "Curriculum",
-        on_delete=models.PROTECT,  # TODO : change this to curriculum ✔️
+        on_delete=models.PROTECT,
         related_name='timetable_slots'
     )
 
@@ -35,6 +36,7 @@ class Timetable(BaseModelMixin):
         ("FRI", "Friday"),
     ]
 
+    # TODO : move this to settings.py
     TIME_SLOTS = [
         ('08:00-10:00', '1st Slot (08:00 - 10:00)'),
         ('10:00-12:00', '2nd Slot (10:00 - 12:00)'),
@@ -43,6 +45,21 @@ class Timetable(BaseModelMixin):
         ('15:00-17:00', '5th Slot (15:00 - 17:00)'),
         ('17:00-19:00', '6th Slot (17:00 - 19:00)'),
     ]
+
+    TIMETABLE_SLOT_TYPE_CHOICES = [
+        ('Lecture', 'Regular Lecture Class'),
+        ('Practical', 'Practical / Laboratory Session'),
+        ('CAT', 'Continuous Assessment Test (CAT)'),
+        ('Tutorial', 'Tutorial / Discussion Group'),
+    ]
+
+    slot_type = models.CharField(
+        max_length=15,
+        choices=TIMETABLE_SLOT_TYPE_CHOICES,
+        default='Lecture',
+        db_index=True,
+        help_text="Tracks session allocation styles required for specialized capacity audits."
+    )
 
     day = models.CharField(max_length=3, choices=DAY_CHOICES)
     time_slot = models.CharField(max_length=11, choices=TIME_SLOTS)
@@ -54,19 +71,187 @@ class Timetable(BaseModelMixin):
     )
 
     class Meta:
-        # prevent double-booking a venue or lecturer
         unique_together = [
-            # ('curriculum__session', 'venue', 'day', 'start_time'),
-            # ('curriculum_session', 'lecturer', 'day', 'start_time'),
+            # Prevent a cohort from being split into two slots at once
+            ('curriculum', 'day', 'time_slot'),
+            # Prevent double-booking a single physical venue space
+            ('venue', 'day', 'time_slot'),
         ]
+        verbose_name = "Master Timetable Slot"
+        verbose_name_plural = "Master Timetable Slots"
+
+    def clean(self):
+        """
+        Compliance Audit: Verifies space limitations and facility traits 
+        against the designated slot requirements.
+        """
+        super().clean()
+
+        if self.venue_id and self.curriculum_id:
+            # 1. Computer Lab Resource Safe-Check
+            # If the class is flagged as a Practical/Lab session, ensure the assigned venue actually has computers.
+            if self.slot_type == 'Practical' and not self.venue.has_computers:
+                raise ValidationError({
+                    'venue': f"Resource Defieciency: Cannot assign a 'Practical' slot type to '{self.venue.venue_name}' "
+                    f"because this venue record indicates it lacks computer/lab workstations."
+                })
+
+            # 2. Strict Class Capacity Guardrail
+            # Ensure the cohort student size (Tclass size) does not exceed the maximum physical sitting limits of the venue.
+            # Assuming a student_count tracker exists on Tclass
+            cohort_size = self.curriculum.Tclass.student_count
+            if cohort_size > self.venue.capacity:
+                raise ValidationError({
+                    'venue': f"Capacity Breach: The cohort class size ({cohort_size} students) exceeds "
+                    f"the maximum legal capacity of '{self.venue.venue_name}' ({self.venue.capacity} seats)."
+                })
 
     def __str__(self):
-        return f"{self.curriculum}- {self.day}"
+        return f"{self.curriculum.course.course_code} ({self.slot_type}) — {self.day} [{self.time_slot}]"
+
+
+EXECUTION_STATUS_CHOICES = [
+    ('Scheduled', 'Scheduled (Default state for the day)'),
+    ('Attended', 'Attended / Successfully Taught'),
+    ('Missed', 'Missed / Lecturer No-Show'),
+    ('Cancelled', 'Cancelled / General University Holiday'),
+    ('Rescheduled', 'Rescheduled to a New Slot'),
+]
+
+RESCHEDULE_INITIATOR_CHOICES = [
+    ('LECTURER', 'Requested by Assigned Faculty/Lecturer'),
+    ('STUDENT', 'Requested by Student Cohort / Class Rep'),
+    ('ADMIN', 'Enforced by University Administration'),
+]
+
+
+class DailyClassExecution(BaseModelMixin):
+    """
+    Tracks the actual day-to-day execution and attendance of a timetable slot.
+    Feeds directly into CUE quality audits for class contact-hour verification.
+    """
+    timetable_slot = models.ForeignKey(
+        'Timetable',
+        on_delete=models.PROTECT,
+        related_name='daily_executions'
+    )
+
+    # The actual calendar date for this specific lecture instance
+    calendar_date = models.DateField(db_index=True)
+
+    # Updated to point directly to the list variable
+    status = models.CharField(
+        max_length=20,
+        choices=EXECUTION_STATUS_CHOICES,
+        default='Scheduled',
+        db_index=True
+    )
+
+    # --- STUDENT ATTENDANCE CONFIRMATION ENGINE ---
+    class_representative = models.ForeignKey(
+        'Student',
+        on_delete=models.PROTECT,
+        related_name='confirmed_daily_classes',
+        null=True,
+        blank=True,
+        help_text="The Class Representative or student who signs off/vouchers that the class took place."
+    )
+    student_confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        auto_now_add=True
+    )
+
+    # --- RESCHEDULING ENGINE METRICS ---
+    rescheduled_by = models.ForeignKey(
+        "User",
+        on_delete=models.PROTECT,
+        related_name='initiated_class_reschedules',
+        null=True,
+        blank=True,
+        help_text="The staff user (lecturer/admin) who processed the adjustment in the system."
+    )
+
+    # Updated to point directly to the list variable
+    reschedule_requested_by_role = models.CharField(
+        max_length=15,
+        choices=RESCHEDULE_INITIATOR_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Tracks whether the request came from the lecturer or the student group."
+    )
+
+    # The new target coordinates if status == 'Rescheduled'
+    rescheduled_to_date = models.DateField(null=True, blank=True)
+    rescheduled_to_time_slot = models.CharField(
+        max_length=11,
+        choices=Timetable.TIME_SLOTS,  # Reuses choices array from your main Timetable class
+        null=True,
+        blank=True
+    )
+
+    rescheduled_to_venue = models.ForeignKey(
+        'Venue',
+        on_delete=models.PROTECT,
+        related_name='rescheduled_classes',
+        null=True,
+        blank=True
+    )
+
+    notes = models.TextField(
+        blank=True,
+        help_text="Reasoning for cancellation or rescheduling parameters."
+    )
+
+    class Meta:
+        unique_together = ('timetable_slot', 'calendar_date')
+        verbose_name = "Daily Class Execution"
+        verbose_name_plural = "Daily Class Executions"
+        ordering = ['-calendar_date']
+
+    def clean(self):
+        """
+        Enforces strict logical guardrails over class sign-offs and reschedule moves.
+        """
+        super().clean()
+
+        # 1. Verification Guardrail
+        if self.status == 'Attended':
+            if not self.class_representative:
+                raise ValidationError({
+                    'class_representative': "CUE Academic Audit Rule: Cannot log a lecture instance as 'Attended' "
+                                            "without assigning a verifying Student representative code."
+                })
+            if not self.student_confirmed_at:
+                from django.utils import timezone
+                self.student_confirmed_at = timezone.now()
+
+        # 2. Rescheduling Data Integrity Guardrail
+        if self.status == 'Rescheduled':
+            if not self.rescheduled_by or not self.reschedule_requested_by_role:
+                raise ValidationError({
+                    'rescheduled_by': "Please document the user and requesting role initiating this reschedule event."
+                })
+            if not self.rescheduled_to_date or not self.rescheduled_to_time_slot or not self.rescheduled_to_venue:
+                raise ValidationError({
+                    'rescheduled_to_date': "You must complete all target fields (Date, Time, and Venue) when moving a class."
+                })
+
+            # Prevent moving a class onto the exact same coordinates
+            if (self.calendar_date == self.rescheduled_to_date and
+                self.timetable_slot.time_slot == self.rescheduled_to_time_slot and
+                    self.timetable_slot.venue == self.rescheduled_to_venue):
+                raise ValidationError(
+                    "Invalid Reschedule: Target coordinates match the original slot parameters.")
+
+    def __str__(self):
+        return f"{self.calendar_date} : {self.timetable_slot.curriculum.course.course_code} -> [{self.get_status_display()}]"
 
 
 class ExamSession(BaseModelMixin):
     """A single exam sitting."""
 
+    # TODO : move this to settings.py
     TIME_SLOTS = [
         ('08:00-11:00', '1st Slot (08:00 – 11:00)'),
         ('11:00-14:00', '2nd Slot (11:00 – 14:00)'),
@@ -161,9 +346,18 @@ class ExamSession(BaseModelMixin):
                 )
 
 
-class ExamVenue(BaseModelMixin):
-    """Which venue hosts an exam session, and who invigilates."""
+INVIGILATOR_ROLE_CHOICES = [
+    ('Chief', 'Chief Invigilator (Room Lead)'),
+    ('Assistant', 'Assistant Invigilator'),
+    ('Relief', 'Relief / Floating Invigilator'),
+]
 
+
+class ExamVenue(BaseModelMixin):
+    """
+    Maps a specific physical space to an exam session slot.
+    Supports a scalable squad of invigilators via an explicit through-table.
+    """
     exam_session = models.ForeignKey(
         'ExamSession',
         on_delete=models.PROTECT,
@@ -172,40 +366,121 @@ class ExamVenue(BaseModelMixin):
 
     venue = models.ForeignKey(
         'Venue',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         related_name='exam_venues'
     )
 
-    invigilator = models.ForeignKey(
+    invigilators = models.ManyToManyField(
         'Lecturer',
-        on_delete=models.PROTECT,
-        related_name='invigilation_duties'
-    )  # for large venues this may not hold true and may require multiple invigilators consider a many to many relationship
+        through='ExamInvigilatorAssignment',
+        related_name='assigned_exam_venues',
+        blank=True
+    )
 
     class Meta:
         unique_together = ('exam_session', 'venue')
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-
-        clash = ExamVenue.objects.filter(
-            invigilator=self.invigilator,
-            exam_session__date=self.exam_session.date,
-            exam_session__time_slot=self.exam_session.time_slot,
-        ).exclude(record_id=self.record_id)
-
-        if clash.exists():
-            raise ValidationError({
-                'invigilator': (
-                    f'{self.invigilator} is already assigned '
-                    f'to another venue at this time'
-                )
-            })
-
-        super().clean()
+        verbose_name = "Exam Venue Slot"
+        verbose_name_plural = "Exam Venue Slots"
 
     def __str__(self):
-        return f"{self.exam_session} — {self.venue} — {self.invigilator}"
+        return f"{self.exam_session} at {self.venue}"
+
+
+# --- ADDED STATUS CHOICES ---
+INVIGILATOR_ASSIGNMENT_STATUS_CHOICES = [
+    ('Draft', 'Draft Assignment (Internal Planning)'),
+    ('Published', 'Published / Notified (Lecturer Alerted)'),
+    ('Confirmed', 'Confirmed / Accepted by Lecturer'),
+    ('Excused', 'Excused / Absent with Apology'),
+    ('Present', 'Present / Duty Executed (Exam Day Checked)'),
+    ('Absent', 'Absent Without Apology (Flagged for HR review)'),
+]
+
+
+class ExamInvigilatorAssignment(BaseModelMixin):
+    """
+    Intermediary through-table linking lecturers to an ExamVenue slot.
+    Tracks duty scheduling states, structural hierarchy, and attendance compliance.
+    """
+    exam_venue = models.ForeignKey(
+        'ExamVenue',
+        on_delete=models.CASCADE,
+        related_name='invigilator_assignments'
+    )
+    lecturer = models.ForeignKey(
+        'Lecturer',
+        on_delete=models.PROTECT,
+        related_name='exam_assignments'
+    )
+
+    role = models.CharField(
+        max_length=20,
+        choices=INVIGILATOR_ROLE_CHOICES,
+        default='Assistant'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=INVIGILATOR_ASSIGNMENT_STATUS_CHOICES,
+        default='Draft',
+        db_index=True,
+        help_text="Tracks the scheduling lifecycle and actual attendance on exam day."
+    )
+
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam_venue', 'lecturer')
+        verbose_name = "Exam Invigilating Duty"
+        verbose_name_plural = "Exam Invigilating Duties"
+
+    def clean(self):
+        """
+        Operational Guardrails: Checks calendar collisions, status exceptions, 
+        and leadership conflicts before saving.
+        """
+        super().clean()
+
+        if self.exam_venue_id and self.lecturer_id:
+            session = self.exam_venue.exam_session
+
+            # 1. Smart Calendar Conflict Engine
+            # Bugfix/Optimization: Only check for double-booking clashes if the assignment
+            # is active ('Draft', 'Published', 'Confirmed', 'Present').
+            # If the lecturer is 'Excused' or 'Absent', they are no longer occupying that time slot,
+            # allowing the system to schedule a replacement lecturer without errors.
+            active_statuses = ['Draft', 'Published', 'Confirmed', 'Present']
+
+            if self.status in active_statuses:
+                clash = ExamInvigilatorAssignment.objects.filter(
+                    lecturer=self.lecturer,
+                    exam_venue__exam_session__date=session.date,
+                    exam_venue__exam_session__time_slot=session.time_slot,
+                    status__in=active_statuses
+                ).exclude(pk=self.pk)
+
+                if clash.exists():
+                    raise ValidationError({
+                        'lecturer': f"Scheduling Clash: {self.lecturer} is already active "
+                        f"at room '{clash.first().exam_venue.venue}' during this time block."
+                    })
+
+            # 2. Chief Leader Constraint Gatekeeper
+            if self.role == 'Chief' and self.status in active_statuses:
+                clashing_chiefs = ExamInvigilatorAssignment.objects.filter(
+                    exam_venue=self.exam_venue,
+                    role='Chief',
+                    status__in=active_statuses
+                ).exclude(pk=self.pk)
+
+                if clashing_chiefs.exists():
+                    raise ValidationError({
+                        'role': f"Leadership Conflict: '{self.exam_venue.venue}' already has an active Chief Invigilator. "
+                        f"Please register subsequent staff as Assistants."
+                    })
+
+    def __str__(self):
+        return f"{self.lecturer} ({self.role}) - [{self.get_status_display()}]"
 
 
 class ExamClash(BaseModelMixin):
@@ -235,18 +510,130 @@ class ExamClash(BaseModelMixin):
         return f"Clash for {self.student} — {self.session_a} vs {self.session_b}"
 
 
+# TODO : create field for exam venue viability
+class Building(BaseModelMixin):
+    """
+    Represents a physical block or structure on the university campus.
+    Tracks core structural assets required for CUE infrastructure returns.
+    """
+    building_name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="e.g., Science Complex, Phase 2 Block"
+    )
+    building_code = models.CharField(
+        max_length=10,
+        unique=True,
+        help_text="e.g., SCI, ADM, LIB"
+    )
+
+    total_floors = models.PositiveIntegerField(default=1)
+
+    has_lift = models.BooleanField(
+        default=False,
+        verbose_name="Has Functional Lift/Elevator",
+        help_text="Crucial for calculating upper floor accessibility defaults."
+    )
+
+    has_ramp_access = models.BooleanField(
+        default=False,
+        verbose_name="Has Ground Floor Ramp Access",
+        help_text="Verifies wheelchair entry points into the physical block."
+    )
+
+    # is_exam_venue = models.BooleanField(default=True)
+    def __str__(self):
+        return f"{self.building_name} ({self.building_code})"
+
+
 class Venue(BaseModelMixin):
-    capacity = models.IntegerField()
+    """
+    Represents an individual room, lecture hall, lab, or auditorium inside a building.
+    """
+    building = models.ForeignKey(
+        "Building",
+        on_delete=models.PROTECT,
+        related_name='venues',
+        help_text="The physical structure housing this specific venue."
+    )
+
+    capacity = models.IntegerField(
+        help_text="Maximum sitting capacity approved for student allocations."
+    )
+
     venue_name = models.CharField(
         max_length=34,
-        unique=True
+        unique=True,
+        help_text="e.g., SCI 101, Auditorium A"
     )
 
     floor = models.PositiveIntegerField(
-        default=0
+        default=0,
+        help_text="0 for Ground Floor, 1 for First Floor, etc."
     )  # for checks with students with disability
 
-    ramps = models.BooleanField(default=False)
+    # --- CUE ACCREDITATION & FACILITY AUDIT FIELDS ---
+    has_projector = models.BooleanField(
+        default=False,
+        verbose_name="Projector Available",
+        help_text="Is a fixed digital projector installed in the room?"
+    )
+
+    has_smartboard = models.BooleanField(
+        default=False,
+        verbose_name="Smartboard Installed",
+        help_text="Is an interactive digital smartboard present?"
+    )
+
+    has_audio_system = models.BooleanField(
+        default=False,
+        verbose_name="Audio System",
+        help_text="Includes built-in microphones, amplifiers, or sound speakers."
+    )
+
+    has_computers = models.BooleanField(
+        default=False,
+        verbose_name="Computers Available",
+        help_text="Equipped with student workstations (e.g., for ICT/Computer Lab audits)."
+    )
+
+    is_accessible = models.BooleanField(
+        default=False,
+        verbose_name="Accessible (Ramps/Lifts)",
+        help_text="Mandatory CUE/ODPC compliance flag for wheelchair and disability accessibility."
+    )
+
+    has_whiteboard = models.BooleanField(
+        default=True,  # Default True since almost every lecture room has a basic board
+        verbose_name="Whiteboard Available",
+        help_text="Standard writing whiteboard or chalkboard is mounted."
+    )
+
+    def clean(self):
+        """
+        Structural Integrity Engine: Automates and cross-references floor layout validation
+        against parent building configurations.
+        """
+        super().clean()
+
+        if self.building:
+            # 1. Floor Bound Guardrail
+            if self.floor >= self.building.total_floors:
+                raise ValidationError({
+                    'floor': f"Invalid floor assignment. {self.building.building_name} only has {self.building.total_floors} floors (Indices 0 to {self.building.total_floors - 1})."
+                })
+
+            # 2. Automated Disability Accessibility Logic Check
+            # Ground floor (floor=0) only needs a ramp at the building entrance to be accessible.
+            if self.floor == 0 and self.building.has_ramp_access:
+                self.is_accessible = True
+            # Upper floors can ONLY be wheelchair-accessible if the building itself features an active lift.
+            elif self.floor > 0 and not self.building.has_lift:
+                if self.is_accessible:
+                    raise ValidationError({
+                        'is_accessible': "Compliance Validation Error: Upper-floor venues cannot be marked accessible if the parent building structure lacks a functional elevator system."
+                    })
+                self.is_accessible = False
 
     def __str__(self):
         return f"{self.venue_name} - {self.capacity}"

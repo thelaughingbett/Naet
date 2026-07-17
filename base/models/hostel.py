@@ -29,19 +29,15 @@ class Hostel(BaseModelMixin):
 
     name = models.CharField(max_length=78)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
-    # school = models.ForeignKey(
-    #     'School',
-    #     on_delete=models.PROTECT,
-    #     related_name='hostels'
-    # )
     warden = models.ForeignKey(
-        'HostelWarden',  # or User
+        'HostelWarden',  # or User ,can also be limited based on gender of hostel
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='managed_hostels'
     )
-    # is_active = models.BooleanField(default=True)
+
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -84,7 +80,7 @@ class Room(BaseModelMixin):
     room_type = models.CharField(max_length=10, choices=ROOM_TYPE_CHOICES)
     capacity = models.IntegerField(default=2)
     floor = models.IntegerField(default=0)
-    # is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     price_per_semester = models.PositiveIntegerField(default=0)  # KES
 
     class Meta:
@@ -112,11 +108,18 @@ class HostelAllocation(BaseModelMixin):
     Replaces student.hostel CharField.
     """
     # 1. Define the status choices using TextChoices
-    class StatusChoices(models.TextChoices):
-        PENDING = 'PENDING', 'Pending'
-        APPROVED = 'APPROVED', 'Approved'
-        REJECTED = 'REJECTED', 'Rejected'
-        VACATED = 'VACATED', 'Vacated'
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('VACATED', 'Vacated'),
+    ]
+
+    # choices to support automated system pipelines vs manual human allocations
+    ALLOCATION_SOURCE_CHOICES = [
+        ('SYSTEM', 'Automated ERP Batch Allocation Algorithm'),
+        ('WARDEN', 'Manual Assignment / Warden Override'),
+    ]
 
     student = models.ForeignKey(
         'Student',
@@ -137,8 +140,8 @@ class HostelAllocation(BaseModelMixin):
     # 2. Add the status field with a default and a database index
     status = models.CharField(
         max_length=20,
-        choices=StatusChoices.choices,
-        default=StatusChoices.PENDING,
+        choices=STATUS_CHOICES,
+        default='PENDING',
         db_index=True
     )
 
@@ -146,6 +149,22 @@ class HostelAllocation(BaseModelMixin):
     is_active = models.BooleanField(default=True)
     move_in_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+
+    allocated_by = models.CharField(
+        max_length=10,
+        choices=ALLOCATION_SOURCE_CHOICES,
+        default='SYSTEM',
+        help_text="Indicates whether the Room was processed via auto-algorithms or assigned by hand."
+    )
+
+    allocating_warden = models.ForeignKey(
+        'User',
+        on_delete=models.PROTECT,
+        related_name='processed_room_allocations',
+        null=True,
+        blank=True,
+        help_text="The specific staff user account (Warden/Housekeeper) who manually approved this record."
+    )
 
     class Meta:
         # One room slot per student per session
@@ -157,18 +176,31 @@ class HostelAllocation(BaseModelMixin):
     def clean(self):
         super().clean()
 
-        # 3. Only check capacity if the allocation is being approved
-        # This prevents blocking a pending request when a room is currently full
-        if self.status == self.StatusChoices.APPROVED and self.room.is_full:
+        # 1. Structural Source Trail Guardrail
+        if self.allocated_by == 'WARDEN' and not self.allocating_warden:
+            raise ValidationError({
+                'allocating_warden': "Data Integrity Block: If 'allocated_by' is set to WARDEN, you must associate the actual staff User object handling this file."
+            })
+
+        if self.allocated_by == 'SYSTEM' and self.allocating_warden:
+            raise ValidationError({
+                'allocating_warden': "Data Integrity Block: System-allocated rows must leave the 'allocating_warden' field empty."
+            })
+
+        # 2. Adjusted Capacity Checks
+        if self.status == 'APPROVED' and self.room.is_full:
             raise ValidationError(
-                f"Room {self.room} is at full capacity."
+                f"Room {self.room} is currently at full capacity constraints."
             )
 
-        # 4. Gender checks apply to all request statuses
+       # 3. Dynamic Gender Security Checks
         if self.student_id and self.room_id:
+            # Cross-reference student profiles safely across relationships
             student_gender = self.student.user.gender
             hostel_gender = self.room.hostel.gender
+
             if hostel_gender != 'mixed' and student_gender != hostel_gender:
                 raise ValidationError(
-                    f"{self.room.hostel.name} does not accommodate {student_gender} students."
+                    f"Safety Violation: {self.room.hostel.name} is a designated {hostel_gender.upper()} wing. "
+                    f"Cannot allocate a {student_gender} student here."
                 )

@@ -503,7 +503,7 @@
 ## 🗓️ Session
 
 > An academic semester — e.g. 2024/2025 Semester 1.
-> There is only ever **one active session** institution-wide.
+> There is only ever **one active session** institution-wide.[for now]
 
 **Relationships**
 

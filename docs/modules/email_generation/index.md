@@ -278,13 +278,13 @@ class YourInstitutionStrategyTest(TestCase):
 
 ## 🔗 Where to Go Next
 
-| Topic                           | Document                                     |
-| ------------------------------- | -------------------------------------------- |
-| 📰 News module                  | [News Module](news.md)                       |
-| 🔌 ERP sync module              | [ERP Module](erp.md)                         |
-| 💳 Payments module              | [Payments Module](payments.md)               |
-| 🗃️ `Student.school_email` field | [Models Reference](../models.md)             |
-| 📋 Generator & resolution logic | `base/modules/email_generation/generator.py` |
+| Topic                           | Document                                                            |
+| ------------------------------- | ------------------------------------------------------------------- |
+| 📰 News module                  | [News Module](../news/index.md)                                     |
+| 🔌 ERP sync module              | [ERP Module](../erp/index.md)                                       |
+| 💳 Payments module              | [Payments Module](../payments/index.md)                             |
+| 🗃️ `Student.school_email` field | [Models Reference](../models.md)                                    |
+| 📋 Generator & resolution logic | [generator.py](../../../base/modules/email_generation/generator.py) |
 
 ---
 

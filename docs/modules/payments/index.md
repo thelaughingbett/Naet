@@ -281,9 +281,8 @@ class EquityBankBackendTest(TestCase):
 
 ## 🔗 Where to Go Next
 
-| Topic                      | Document                         |
-| -------------------------- | -------------------------------- |
-| 💰 Fee ledger logic        | [Fees Module](fees/index.md)     |
-| 🔄 How webhooks are routed | `payments/urls.py`               |
-| 🧾 Payment model fields    | [Models Reference](../models.md) |
-| 📋 Registry pattern        | `payments/registry.py`           |
+| Topic                      | Document                                                  |
+| -------------------------- | --------------------------------------------------------- |
+| 🔄 How webhooks are routed | [urls.py](../../../base/modules/payments/urls.py)         |
+| 🧾 Payment model fields    | [Models Reference](../models.md)                          |
+| 📋 Registry pattern        | [registry.py](../../../base/modules/payments/registry.py) |

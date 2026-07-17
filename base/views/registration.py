@@ -16,7 +16,6 @@ from http import HTTPStatus
 import types
 
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import (
     get_object_or_404,
     render,
@@ -25,11 +24,6 @@ from django.shortcuts import (
 from django.urls import reverse
 from django.views import View
 from django.http import HttpResponse
-from django.contrib.auth import (
-    authenticate,
-    login,
-    logout
-)
 from django.db import (
     DatabaseError,
     IntegrityError,
@@ -44,9 +38,7 @@ from base.models import (
     School,
     Department,
     User,
-    FeeStructure,
-    StudentFeeAccount,
-    Session
+
 )
 from base.forms import (
     EmergencyContactFormSet,

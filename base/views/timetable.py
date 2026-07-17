@@ -29,28 +29,9 @@ from django.shortcuts import (
 )
 from django.urls import reverse
 from django.views import View
-from django.views.generic import (
-    DetailView,
-    ListView,
-    DeleteView
-)
-from django.http import HttpResponse
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
-    PermissionRequiredMixin
 )
-from django.contrib.auth import (
-    authenticate,
-    login,
-    logout
-)
-from django.db import (
-    DatabaseError,
-    IntegrityError,
-    transaction
-)
-from django.utils.http import url_has_allowed_host_and_scheme
-
 from base.models import (
     Timetable,
     ExamSession,
@@ -143,13 +124,14 @@ class ExamTimetableView(
             'curriculum__session',
         ).prefetch_related(
             'venues__venue',
-            'venues__invigilator__user',
+            'venues__invigilators__user',
         ).order_by('date', 'time_slot') if session else []
 
         all_sessions = Session.objects.filter(
             curricula__exam_sessions__isnull=False
         ).distinct().order_by('-academic_year', '-semester')
 
+        print('invg: ', exam_sessions[0])
         return render(request, 'base/timetable/exam.html', {
             'student':       student,
             'session':       session,

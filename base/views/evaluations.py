@@ -27,7 +27,6 @@ from django.contrib.auth.mixins import (
 
 )
 from base.models import (
-    Curriculum,
     HostelAllocation,
     HostelEvaluation,
     CourseEvaluation,
@@ -77,7 +76,8 @@ class CourseEvaluationView(
             }
             for enrollment in enrollments:
                 enrollment.submitted_evaluation = evaluation_by_enrollment.get(
-                    enrollment.pk)
+                    enrollment.pk
+                )
 
         context = {
             'enrollments': enrollments,

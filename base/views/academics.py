@@ -200,8 +200,8 @@ class ResultsView(
                     start_date__gte=earliest_session.start_date
                 ).order_by('start_date')
                 results = Result.objects.filter(
-                    student=student
-                ).select_related('curricula__course').order_by('-created_at')
+                    enrollment__student=student
+                ).select_related('enrollment__curriculum__course').order_by('-created_at')
 
         context = {
             'results': results,

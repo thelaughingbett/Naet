@@ -30,3 +30,4 @@ gunicorn
 django-sms
 flower
 whitenoise
+python-magic # or python-magic-bin for windows

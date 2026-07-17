@@ -68,7 +68,7 @@ Universities operating in Kenya are regulated by the CUE.
 **What applies:**
 
 - Academic records must be maintained **accurately and permanently** —
-  your `Result`, `Enrollment`, and `Reporting` models satisfy this
+  `Result`, `Enrollment`, and `Reporting` models satisfy this
 - Student transcripts and certificates are legal documents —
   the `Results` model feeds directly into these
 - Admission records must be retained indefinitely —

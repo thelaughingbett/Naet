@@ -31,7 +31,7 @@
 - ⏸️ Deferral and graduation tracking
 - 🪟 Proxy model views: Resident Students, Deferred Students, Graduated Students
 
-### 💰 Fee Management (under consideration to be moved to erp's)
+### 💰 Fee Management (under consideration to be moved to financial erp's)
 
 - 🧾 Per-class fee structures with itemised breakdowns (tuition, registration, hostel, etc.)
 - 📊 Per-student fee accounts with real-time balance tracking
@@ -70,14 +70,13 @@ I'm a CS student. I got bored. Here we are.
 
 ## 🛠️ Tech Stack
 
-| Layer         | Technology                                              |
-| ------------- | ------------------------------------------------------- |
-| 🐍 Backend    | Python, Django                                          |
-| 🧑‍💻 Frontend   | HTML,CSS,JS                                             |
-| 🗄️ Database   | PostgreSQL                                              |
-| 🔐 Auth       | Django AbstractBaseUser + custom UserManager            |
-| 🖥️ Admin      | Django Admin with custom scoping, proxy models, inlines |
-| ⚡ Automation | Django signals for enrollment and session events        |
+| Layer         | Technology                                       |
+| ------------- | ------------------------------------------------ |
+| 🐍 Backend    | Python, Django                                   |
+| 🧑‍💻 Frontend   | HTML,CSS,JS                                      |
+| 🗄️ Database   | PostgreSQL                                       |
+| 🔐 Auth       | Django AbstractBaseUser + custom UserManager     |
+| ⚡ Automation | Django signals for enrollment and session events |
 
 ---
 
@@ -224,9 +223,6 @@ Role-based access is enforced automatically:
 - [x] 📝 Exam scheduling and invigilation assignment
 - [x] 📱 SMS notifications via Africa's Talking API
 - [ ] 🌐 REST API (Django REST Framework)
-- [ ] 🖥️ Student and staff self-service portal
-- [ ] 📚 Library management module
-- [ ] 💼 Payroll for staff
 - [ ] 🌾 IoT sensor integration for smart campus monitoring
 
 ---

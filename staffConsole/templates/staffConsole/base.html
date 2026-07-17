@@ -1,0 +1,211 @@
+<!-- prettier-ignore -->
+{% load static %}
+
+{% block head %}
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
+<link rel="stylesheet" href="{% static 'staff/styles/index.css' %}" />
+{% block extra_head %}{% endblock %} {% endblock %} {% block body %}
+
+<div class="staff-layout">
+  {% block sidebar %}
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__brand-icon">🎓</span>
+      <span class="sidebar__brand-text">Naet</span>
+    </div>
+
+    <nav class="sidebar__nav">{% block sidebar_nav %}{% endblock %}</nav>
+
+    <div class="sidebar__user-section" id="userSection">
+      {% block sidebar_user %}
+      <div class="sidebar__user-info">
+        <div class="sidebar__user-avatar">
+          <!-- prettier-ignore -->
+          {{ request.user.first_name|first|upper }}
+          {{request.user.last_name|first|upper }}
+        </div>
+        <div class="sidebar__user-details">
+          <div class="sidebar__user-name">
+            {{ request.user.get_full_name|default:request.user.email }}
+          </div>
+          <div class="sidebar__user-email">{{ request.user.email }}</div>
+        </div>
+      </div>
+      <a href="{% url 'base-logout' %}" class="sidebar__sublink">
+        <i class="fas fa-sign-out-alt"></i> Log out
+      </a>
+      {% endblock %}
+    </div>
+
+    <div class="sidebar__footer">© {% now "Y" %} Naet</div>
+  </aside>
+  {% endblock %}
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  {# ── main content ── #}
+  <main class="main-content" id="mainContent">
+    {% if messages %}
+    <div
+      class="messages"
+      style="
+        margin-bottom: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      "
+    >
+      {% for message in messages %}
+      <div class="alert alert--{{ message.tags|default:'info' }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% block content %}{% endblock %}
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{% endblock %} {% block scripts %}
+<script>
+  // ============================================
+  // COLLAPSIBLE SUBMODULES
+  // ============================================
+  document.querySelectorAll(".sidebar__link--toggle").forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      const targetId = this.dataset.target;
+      const submenu = document.getElementById(targetId);
+      const parentItem = this.closest(".sidebar__item--group");
+      if (!submenu) return;
+
+      submenu.classList.toggle("sidebar__submenu--open");
+      parentItem.classList.toggle("sidebar__item--open");
+      const isOpen = submenu.classList.contains("sidebar__submenu--open");
+      this.setAttribute("aria-expanded", isOpen);
+    });
+  });
+
+  // ============================================
+  // NAVIGATION (highlight + title swap, real links navigate normally)
+  // ============================================
+  const navLinks = document.querySelectorAll(
+    ".sidebar__link, .sidebar__sublink",
+  );
+  const pageTitle = document.getElementById("pageTitle");
+
+  navLinks.forEach((link) => {
+    link.addEventListener("click", function (e) {
+      const isPlaceholder = this.getAttribute("href") === "#";
+      if (isPlaceholder) e.preventDefault();
+
+      document
+        .querySelectorAll(".sidebar__link, .sidebar__sublink")
+        .forEach((l) => l.classList.remove("active"));
+      this.classList.add("active");
+
+      if (pageTitle) {
+        const text = this.innerText.trim();
+        const icon = this.querySelector("i")?.className || "fa-tachometer-alt";
+        pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+      }
+
+      if (window.innerWidth <= 768) {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("sidebarOverlay")?.classList.remove("active");
+      }
+
+      if (isPlaceholder) {
+        showToast(`📂 ${this.innerText.trim()} — coming soon`, "info");
+      }
+    });
+  });
+
+  // ============================================
+  // QUICK-ACTION SHORTCUTS — jump to the matching sidebar link by data-page
+  // ============================================
+  document.querySelectorAll("[data-page]").forEach((el) => {
+    if (
+      el.classList.contains("sidebar__link") ||
+      el.classList.contains("sidebar__sublink")
+    )
+      return;
+    el.addEventListener("click", function (e) {
+      const targetPage = this.dataset.page;
+      const target = document.querySelector(
+        `.sidebar__link[data-page="${targetPage}"], .sidebar__sublink[data-page="${targetPage}"]`,
+      );
+      if (target) {
+        e.preventDefault();
+        target.click();
+      }
+    });
+  });
+
+  // ============================================
+  // MOBILE SIDEBAR TOGGLE
+  // ============================================
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+
+  function toggleMobileSidebar() {
+    sidebar.classList.toggle("open");
+    overlay.classList.toggle("active");
+  }
+
+  hamburgerBtn?.addEventListener("click", toggleMobileSidebar);
+  overlay?.addEventListener("click", toggleMobileSidebar);
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove("open");
+      overlay?.classList.remove("active");
+    }
+  });
+
+  // ============================================
+  // TOAST
+  // ============================================
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = "toast " + type;
+    toast.classList.add("show");
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  // ============================================
+  // INIT — open the submenu containing the active link
+  // ============================================
+  document.addEventListener("DOMContentLoaded", () => {
+    document
+      .querySelectorAll(".sidebar__sublink.active, .sidebar__link.active")
+      .forEach((activeLink) => {
+        const submenu = activeLink.closest(".sidebar__submenu");
+        if (submenu) {
+          submenu.classList.add("sidebar__submenu--open");
+          submenu
+            .closest(".sidebar__item--group")
+            ?.classList.add("sidebar__item--open");
+        }
+      });
+
+    document
+      .querySelectorAll(".sidebar__item--open .sidebar__link--toggle")
+      .forEach((el) => {
+        el.setAttribute("aria-expanded", "true");
+      });
+  });
+</script>
+{% block extra_scripts %}{% endblock %} {% endblock %}

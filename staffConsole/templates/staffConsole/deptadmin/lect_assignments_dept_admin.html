@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Lecturer Assignment · Dept Admin · UniManage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ============================================
+           RESET & VARIABLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --navy: #0a2540;
+            --navy-light: #1a3a5c;
+            --maroon: #9e2a2b;
+            --maroon-hover: #b13e3f;
+            --blue-card: #1f6392;
+            --green: #1e6f3f;
+            --gold: #fbbf24;
+            --sidebar-w: 280px;
+            --topnav-h: 64px;
+            --font: "Inter", "Segoe UI", sans-serif;
+            --text: #1e293b;
+            --text-muted: #5a6874;
+            --border: #e9edf2;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --radius: 14px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ============================================
+           SIDEBAR
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-w);
+            background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+            color: #eef2ff;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+
+        .sidebar__brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1.2rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+            min-height: var(--topnav-h);
+        }
+        .sidebar__brand-icon { font-size: 1.6rem; flex-shrink: 0; }
+        .sidebar__brand-text {
+            font-weight: 800;
+            font-size: 1.1rem;
+            background: linear-gradient(120deg, #fff, #c0d9f0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            white-space: nowrap;
+        }
+
+        .sidebar__nav {
+            flex: 1;
+            padding: 0.6rem 0.6rem;
+            overflow-y: auto;
+        }
+        .sidebar__item { margin-bottom: 2px; }
+
+        .sidebar__link,
+        .sidebar__link--toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.78);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            text-align: left;
+        }
+        .sidebar__link:hover,
+        .sidebar__link--toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+        .sidebar__link.active,
+        .sidebar__link--toggle.active {
+            background: var(--maroon);
+            color: white;
+            box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+        }
+        .sidebar__link i,
+        .sidebar__link--toggle i { width: 20px; text-align: center; font-size: 0.95rem; flex-shrink: 0; }
+        .sidebar__chevron { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
+        .sidebar__item--open .sidebar__chevron { transform: rotate(180deg); }
+
+        .sidebar__submenu {
+            list-style: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin: 0 0.5rem 0 0.5rem;
+        }
+        .sidebar__submenu--open { max-height: 600px; }
+        .sidebar__sublink {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.76rem;
+            font-weight: 400;
+            transition: 0.2s;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .sidebar__sublink:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+        .sidebar__sublink.active { color: white; background: rgba(255, 255, 255, 0.1); }
+        .sidebar__sublink .badge {
+            margin-left: auto;
+            background: var(--maroon);
+            color: white;
+            font-size: 0.55rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        .sidebar__footer {
+            padding: 1rem 1.2rem;
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* ============================================
+           MOBILE OVERLAY
+           ============================================ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+        }
+        .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            padding: 1.8rem 2rem 2rem;
+            background: var(--bg);
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .topbar__left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .topbar__hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--navy);
+            cursor: pointer;
+            padding: 0.3rem;
+        }
+        .topbar__title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .topbar__badge {
+            background: var(--navy);
+            color: white;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .topbar__actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.35rem 1rem;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: inherit;
+        }
+        .btn-primary { background: var(--navy); color: white; }
+        .btn-primary:hover { background: var(--navy-light); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-success:hover { background: #14532d; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-sm {
+            padding: 0.2rem 0.7rem;
+            font-size: 0.65rem;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--text);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-sm:hover { background: var(--bg); border-color: #cbd5e1; }
+        .btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+        .btn-sm.primary:hover { background: var(--navy-light); }
+
+        /* ============================================
+           STATS CARDS
+           ============================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.2rem 1rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .stat-card__number { font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.1rem; }
+        .stat-card__label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.4px; margin-top: 0.2rem; }
+        .stat-card__sub { font-size: 0.6rem; color: var(--text-muted); margin-top: 0.15rem; }
+        .stat-card__icon { float: right; font-size: 1.6rem; color: rgba(10, 37, 64, 0.1); margin-top: -0.2rem; }
+
+        /* ============================================
+           FILTER BAR
+           ============================================ */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--white);
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            align-items: center;
+        }
+        .filter-bar__input {
+            flex: 2;
+            min-width: 180px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+        }
+        .filter-bar__input:focus-within {
+            border-color: var(--navy);
+            box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+        }
+        .filter-bar__input i { color: var(--text-muted); }
+        .filter-bar__input input {
+            border: none;
+            background: transparent;
+            padding: 0.5rem 0;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            width: 100%;
+            outline: none;
+            color: var(--text);
+        }
+        .filter-bar__filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
+        }
+        .filter-bar__filters select {
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            font-family: var(--font);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .filter-bar__filters select:focus { border-color: var(--navy); }
+
+        /* ============================================
+           COURSE TABLE
+           ============================================ */
+        .table-wrapper {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .table-scroll { overflow-x: auto; }
+        .courses-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .courses-table th {
+            background: var(--bg);
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .courses-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .courses-table tr:last-child td { border-bottom: none; }
+        .courses-table tr:hover td { background: #f8fafc; }
+
+        .courses-table .code-badge {
+            font-weight: 700;
+            color: var(--navy);
+            background: #eef2ff;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+        }
+        .courses-table .class-badge {
+            font-weight: 500;
+            color: var(--blue-card);
+            background: #e0f2fe;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+
+        .lecturer-chips {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #eef2ff;
+            color: var(--navy);
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 0.15rem 0.5rem 0.15rem 0.7rem;
+            border-radius: 30px;
+        }
+        .chip .remove {
+            cursor: pointer;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            transition: 0.2s;
+            padding: 0.1rem;
+            border-radius: 50%;
+            line-height: 1;
+        }
+        .chip .remove:hover {
+            color: var(--maroon);
+            background: rgba(158, 42, 43, 0.1);
+        }
+
+        .add-lecturer-select {
+            border: 1px dashed var(--border);
+            background: transparent;
+            padding: 0.1rem 0.4rem;
+            border-radius: 30px;
+            font-family: var(--font);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            outline: none;
+            transition: 0.2s;
+            min-width: 60px;
+        }
+        .add-lecturer-select:hover {
+            border-color: var(--navy);
+            color: var(--navy);
+        }
+        .add-lecturer-select:focus {
+            border-color: var(--navy);
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-pill.assigned { background: #d1fae5; color: #065f46; }
+        .status-pill.unassigned { background: #fef3c7; color: #92400e; }
+        .status-pill.partial { background: #dbeafe; color: #1e40af; }
+
+        .courses-table .actions-cell { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .courses-table .actions-cell .btn-sm { padding: 0.15rem 0.5rem; font-size: 0.6rem; }
+
+        /* ============================================
+           BULK ASSIGN MODAL (Horizontal)
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-overlay.active .modal { animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            max-width: 820px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            padding: 0;
+        }
+        .modal__header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            border-radius: var(--radius) var(--radius) 0 0;
+            z-index: 2;
+        }
+        .modal__header h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; }
+        .modal__close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .modal__close:hover { background: var(--bg); color: var(--text); }
+        .modal__body { padding: 1.5rem; }
+        .modal__footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            background: var(--bg);
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 0.55rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: var(--font);
+            font-size: 0.85rem;
+            background: var(--white);
+            transition: 0.2s;
+            color: var(--text);
+        }
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--navy);
+            box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+        }
+
+        .horizontal-course-list {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 0.8rem;
+            padding: 0.8rem 0.2rem 1.2rem;
+            margin: 0 -0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        .horizontal-course-list::-webkit-scrollbar { height: 6px; }
+        .horizontal-course-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 10px; }
+        .horizontal-course-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        .course-card {
+            flex: 0 0 200px;
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            border: 2px solid transparent;
+            transition: 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            position: relative;
+        }
+        .course-card:hover { border-color: var(--border); }
+        .course-card.selected {
+            border-color: var(--navy);
+            background: #eef2ff;
+        }
+        .course-card .checkbox {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--navy);
+            cursor: pointer;
+        }
+        .course-card .code { font-weight: 700; font-size: 0.85rem; color: var(--navy); }
+        .course-card .title { font-size: 0.75rem; color: var(--text); }
+        .course-card .meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.2rem;
+        }
+        .course-card .meta .class-badge { font-size: 0.6rem; }
+
+        .bulk-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .bulk-actions .btn-sm { padding: 0.25rem 0.8rem; }
+
+        /* ============================================
+           VIEW COURSE MODAL
+           ============================================ */
+        .detail-row {
+            display: flex;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row__label {
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 120px;
+            flex-shrink: 0;
+        }
+        .detail-row__value { flex: 1; color: var(--text); }
+
+        /* ============================================
+           TOAST
+           ============================================ */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--navy);
+            color: white;
+            padding: 0.7rem 1.3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.3s;
+            z-index: 2000;
+            font-size: 0.85rem;
+            font-family: var(--font);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--green); }
+        .toast.warning { background: #92400e; }
+        .toast.info { background: var(--navy); }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .topbar__hamburger { display: block; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: var(--sidebar-w) !important; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; padding: 1rem; }
+            .topbar__title { font-size: 1.2rem; }
+            .sidebar-overlay.active { opacity: 1; visibility: visible; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+            .courses-table th, .courses-table td { padding: 0.5rem 0.7rem; }
+            .modal { max-width: 100%; margin: 0.5rem; }
+            .horizontal-course-list { flex-wrap: nowrap; gap: 0.5rem; }
+            .course-card { flex: 0 0 160px; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .topbar__actions { width: 100%; }
+            .topbar__actions .btn { flex: 1; justify-content: center; }
+            .courses-table { font-size: 0.7rem; }
+            .course-card { flex: 0 0 140px; }
+            .lecturer-chips .chip { font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+    SIDEBAR OVERLAY (Mobile)
+    ============================================ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============================================
+    SIDEBAR
+    ============================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__brand">
+            <span class="sidebar__brand-icon">🏛️</span>
+            <span class="sidebar__brand-text">UniManage</span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <ul class="sidebar__menu">
+                <li class="sidebar__item">
+                    <a href="#" class="sidebar__link" data-page="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar__item sidebar__item--group sidebar__item--open">
+                    <button class="sidebar__link--toggle active" data-target="teaching-sub">
+                        <i class="fas fa-chalkboard-teacher"></i> <span>Teaching &amp; Enrollment</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu sidebar__submenu--open" id="teaching-sub">
+                        <li><a href="#" class="sidebar__sublink active" data-page="assignment">Assignment</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="enrollments">Enrollments <span class="badge">18</span></a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="assessment-sub">
+                        <i class="fas fa-clipboard-list"></i> <span>Assessments</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="assessment-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="results">Results <span class="badge">12</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="transcripts">Transcripts</a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="scheduling-sub">
+                        <i class="fas fa-calendar-alt"></i> <span>Scheduling</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="scheduling-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="timetable">Timetable</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="exams">Exams</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="venues">Venues</a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="eval-sub">
+                        <i class="fas fa-star-half-alt"></i> <span>Evaluations</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="eval-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="course-evaluation">Course Evaluation</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="lecturer-evaluation">Lecturer Evaluation</a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="services-sub">
+                        <i class="fas fa-hands-helping"></i> <span>Student Services</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="services-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="deferments">Deferments <span class="badge">3</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="complaints">Complaints</a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="reports-sub">
+                        <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="reports-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="analytics">Analytics</a></li>
+                    </ul>
+                </li>
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="profile-sub">
+                        <i class="fas fa-id-badge"></i> <span>My Profile</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="profile-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-details">Profile Details</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-settings">Settings</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar__footer">© 2026 UniManage · v2.0</div>
+    </aside>
+
+    <!-- ============================================
+    MAIN CONTENT
+    ============================================ -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar__left">
+                <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="topbar__title" id="pageTitle">
+                    <i class="fas fa-chalkboard-teacher"></i> Lecturer Assignment
+                </h1>
+            </div>
+            <div class="topbar__actions">
+                <button class="btn btn-outline" onclick="showToast('📋 Assignment report generated', 'info')">
+                    <i class="fas fa-file-pdf"></i> Report
+                </button>
+                <button class="btn btn-primary" onclick="openBulkAssignModal()">
+                    <i class="fas fa-users-cog"></i> Bulk Assign
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== STATS ===== -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-book stat-card__icon"></i>
+                <div class="stat-card__number" id="statTotal">0</div>
+                <div class="stat-card__label">Total Courses</div>
+                <div class="stat-card__sub">This semester</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-user-check stat-card__icon" style="color: var(--green);"></i>
+                <div class="stat-card__number" id="statAssigned">0</div>
+                <div class="stat-card__label">Assigned</div>
+                <div class="stat-card__sub">With lecturers</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-user-slash stat-card__icon" style="color: var(--maroon);"></i>
+                <div class="stat-card__number" id="statUnassigned">0</div>
+                <div class="stat-card__label">Unassigned</div>
+                <div class="stat-card__sub">Needs lecturer</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-percent stat-card__icon" style="color: var(--gold);"></i>
+                <div class="stat-card__number" id="statCompletion">0%</div>
+                <div class="stat-card__label">Completion Rate</div>
+                <div class="stat-card__sub">Assignment progress</div>
+            </div>
+        </div>
+
+        <!-- ===== FILTER BAR ===== -->
+        <div class="filter-bar">
+            <div class="filter-bar__input">
+                <i class="fas fa-search"></i>
+                <input type="text" id="courseSearch" placeholder="Search by code, title, or class..." onkeyup="filterCourses()" />
+            </div>
+            <div class="filter-bar__filters">
+                <select id="classFilter" onchange="filterCourses()">
+                    <option value="all">All Classes</option>
+                    <option value="Year 1A">Year 1A</option>
+                    <option value="Year 1B">Year 1B</option>
+                    <option value="Year 2A">Year 2A</option>
+                    <option value="Year 2B">Year 2B</option>
+                    <option value="Year 3A">Year 3A</option>
+                    <option value="Year 3B">Year 3B</option>
+                    <option value="Year 4">Year 4</option>
+                </select>
+                <select id="semesterFilter" onchange="filterCourses()">
+                    <option value="all">All Semesters</option>
+                    <option value="2025/2026 Sem I" selected>2025/2026 Sem I</option>
+                    <option value="2024/2025 Sem II">2024/2025 Sem II</option>
+                </select>
+                <select id="statusFilter" onchange="filterCourses()">
+                    <option value="all">All Status</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="unassigned">Unassigned</option>
+                    <option value="partial">Partial</option>
+                </select>
+                <button class="btn-sm" onclick="resetFilters()">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== COURSES TABLE ===== -->
+        <div class="table-wrapper">
+            <div class="table-scroll">
+                <table class="courses-table" id="coursesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Course</th>
+                            <th>Class</th>
+                            <th>Semester</th>
+                            <th>Students</th>
+                            <th>Assigned Lecturers</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coursesTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-footer" style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1.2rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--text-muted);flex-wrap:wrap;gap:0.5rem;">
+                <span id="courseCount">Showing 0 courses</span>
+                <div class="table-footer__pagination" style="display:flex;gap:0.3rem;">
+                    <button class="active" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">1</button>
+                    <button onclick="showToast('📄 Page 2 loaded', 'info')" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">2</button>
+                    <button onclick="showToast('📄 Page 3 loaded', 'info')" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">3</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================
+    BULK ASSIGN MODAL (Horizontal)
+    ============================================ -->
+    <div class="modal-overlay" id="bulkAssignModal">
+        <div class="modal">
+            <div class="modal__header">
+                <h2><i class="fas fa-users-cog" style="color: var(--gold);"></i> Bulk Assign Lecturers</h2>
+                <button class="modal__close" onclick="closeModal('bulkAssignModal')">&times;</button>
+            </div>
+            <div class="modal__body">
+                <div class="form-group">
+                    <label for="bulkLecturerSelect">Assign Lecturer</label>
+                    <select id="bulkLecturerSelect">
+                        <option value="">— Select Lecturer —</option>
+                        <option value="Dr. Sarah Mwangi">Dr. Sarah Mwangi</option>
+                        <option value="Prof. James Ochieng">Prof. James Ochieng</option>
+                        <option value="Dr. Michael Odhiambo">Dr. Michael Odhiambo</option>
+                        <option value="Dr. Grace Akinyi">Dr. Grace Akinyi</option>
+                        <option value="Prof. David Kimani">Prof. David Kimani</option>
+                        <option value="Dr. Mary Atieno">Dr. Mary Atieno</option>
+                    </select>
+                </div>
+                <div class="bulk-actions">
+                    <button class="btn-sm" onclick="selectAllBulk()"><i class="fas fa-check-double"></i> Select All</button>
+                    <button class="btn-sm" onclick="deselectAllBulk()"><i class="fas fa-square"></i> Deselect All</button>
+                    <span style="font-size:0.7rem;color:var(--text-muted);margin-left:0.5rem;" id="bulkCount">0 courses selected</span>
+                </div>
+                <div class="horizontal-course-list" id="bulkCourseList">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn-outline" onclick="closeModal('bulkAssignModal')">Cancel</button>
+                <button class="btn btn-success" onclick="bulkAssign()">
+                    <i class="fas fa-check"></i> Assign Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    VIEW COURSE MODAL
+    ============================================ -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal">
+            <div class="modal__header">
+                <h2><i class="fas fa-info-circle" style="color: var(--navy);"></i> Course Details</h2>
+                <button class="modal__close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="modal__body" id="viewModalBody">
+                <!-- Filled dynamically -->
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn-outline" onclick="closeModal('viewModal')">Close</button>
+                <button class="btn btn-primary" onclick="closeModal('viewModal'); showToast('✏️ Course editor opened', 'info')">
+                    <i class="fas fa-edit"></i> Edit Course
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    TOAST
+    ============================================ -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================
+        // DATA
+        // ============================================
+        const allLecturers = [
+            'Dr. Sarah Mwangi',
+            'Prof. James Ochieng',
+            'Dr. Michael Odhiambo',
+            'Dr. Grace Akinyi',
+            'Prof. David Kimani',
+            'Dr. Mary Atieno'
+        ];
+
+        let coursesData = [
+            { id: 1, code: 'CSC 411', title: 'Advanced Web Development', semester: '2025/2026 Sem I', class: 'Year 3A',
+                students: 48, lecturers: ['Dr. Sarah Mwangi'] },
+            { id: 2, code: 'CSC 423', title: 'Machine Learning Fundamentals', semester: '2025/2026 Sem I', class: 'Year 3B',
+                students: 52, lecturers: [] },
+            { id: 3, code: 'CSC 432', title: 'Cyber Security & Ethics', semester: '2025/2026 Sem I', class: 'Year 3B',
+                students: 41, lecturers: ['Dr. Michael Odhiambo'] },
+            { id: 4, code: 'ICS 401', title: 'Research Methodology', semester: '2025/2026 Sem I', class: 'Year 4',
+                students: 45, lecturers: [] },
+            { id: 5, code: 'CSC 301', title: 'Database Systems', semester: '2024/2025 Sem II', class: 'Year 2A',
+                students: 55, lecturers: ['Prof. James Ochieng'] },
+            { id: 6, code: 'CSC 302', title: 'Software Engineering', semester: '2024/2025 Sem II', class: 'Year 2B',
+                students: 50, lecturers: [] },
+            { id: 7, code: 'CSC 304', title: 'Data Structures & Algorithms', semester: '2025/2026 Sem I', class: 'Year 2A',
+                students: 60, lecturers: ['Dr. Grace Akinyi'] },
+            { id: 8, code: 'ICS 402', title: 'Data Science & Analytics', semester: '2025/2026 Sem I', class: 'Year 4',
+                students: 38, lecturers: [] },
+            { id: 9, code: 'CSC 433', title: 'Computer Networks', semester: '2025/2026 Sem I', class: 'Year 3A',
+                students: 44, lecturers: ['Prof. David Kimani'] },
+            { id: 10, code: 'CSC 305', title: 'Operating Systems', semester: '2024/2025 Sem II', class: 'Year 2B',
+                students: 48, lecturers: ['Dr. Mary Atieno'] },
+            { id: 11, code: 'CSC 306', title: 'Compiler Design', semester: '2024/2025 Sem II', class: 'Year 3A',
+                students: 35, lecturers: [] },
+            { id: 12, code: 'ICS 403', title: 'Project Management', semester: '2025/2026 Sem I', class: 'Year 4',
+                students: 42, lecturers: [] }
+        ];
+
+        let currentCourses = [...coursesData];
+        let filteredCourses = [...currentCourses];
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function getStatus(lecturers) {
+            if (!lecturers || lecturers.length === 0) return 'unassigned';
+            if (lecturers.length === 1) return 'assigned';
+            return 'partial';
+        }
+
+        function getStatusBadge(status) {
+            const map = {
+                'assigned': '<span class="status-pill assigned"><i class="fas fa-check-circle"></i> Assigned</span>',
+                'unassigned': '<span class="status-pill unassigned"><i class="fas fa-exclamation-circle"></i> Unassigned</span>',
+                'partial': '<span class="status-pill partial"><i class="fas fa-minus-circle"></i> Partial</span>'
+            };
+            return map[status] || status;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        // ============================================
+        // RENDER TABLE
+        // ============================================
+        function renderCourses(courseList) {
+            const tbody = document.getElementById('coursesTableBody');
+            if (!tbody) return;
+
+            if (courseList.length === 0) {
+                tbody.innerHTML =
+                    `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No courses found matching your filters.</td></tr>`;
+                document.getElementById('courseCount').textContent = 'Showing 0 courses';
+                updateStats();
+                return;
+            }
+
+            let html = '';
+            courseList.forEach((c, index) => {
+                const status = getStatus(c.lecturers);
+                const lecturerChips = c.lecturers.map(l =>
+                    `<span class="chip">
+                                ${l}
+                                <span class="remove" onclick="removeLecturer(${c.id}, '${l}')"><i class="fas fa-times"></i></span>
+                            </span>`
+                ).join('');
+
+                // Build the add lecturer dropdown
+                const availableLecturers = allLecturers.filter(l => !c.lecturers.includes(l));
+                const addOptions = availableLecturers.map(l =>
+                    `<option value="${l}">${l}</option>`
+                ).join('');
+
+                html += `
+                        <tr data-course-id="${c.id}">
+                            <td>${index + 1}</td>
+                            <td>
+                                <div>
+                                    <span class="code-badge">${c.code}</span>
+                                    <div style="font-size:0.75rem;margin-top:0.1rem;color:var(--text-muted);">${c.title}</div>
+                                </div>
+                            </td>
+                            <td><span class="class-badge">${c.class}</span></td>
+                            <td style="font-size:0.75rem;">${c.semester}</td>
+                            <td style="text-align:center;">${c.students}</td>
+                            <td>
+                                <div class="lecturer-chips">
+                                    ${lecturerChips}
+                                    <select class="add-lecturer-select" onchange="addLecturer(${c.id}, this.value)">
+                                        <option value="">+ Add</option>
+                                        ${addOptions}
+                                    </select>
+                                </div>
+                            </td>
+                            <td>${getStatusBadge(status)}</td>
+                            <td>
+                                <div class="actions-cell">
+                                    <button class="btn-sm" onclick="viewCourse(${c.id})" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            });
+
+            tbody.innerHTML = html;
+            document.getElementById('courseCount').textContent = `Showing ${courseList.length} courses`;
+            updateStats();
+        }
+
+        // ============================================
+        // LECTURER MANAGEMENT
+        // ============================================
+        function addLecturer(courseId, lecturerName) {
+            if (!lecturerName) return;
+            const course = currentCourses.find(c => c.id === courseId);
+            if (!course) return;
+            if (!course.lecturers.includes(lecturerName)) {
+                course.lecturers.push(lecturerName);
+            }
+            // Reset the select dropdown
+            const select = document.querySelector(`.add-lecturer-select[onchange*="${courseId}"]`);
+            if (select) select.value = '';
+            filterCourses();
+            showToast(`✅ Added ${lecturerName} to ${course.code}`, 'success');
+        }
+
+        function removeLecturer(courseId, lecturerName) {
+            const course = currentCourses.find(c => c.id === courseId);
+            if (!course) return;
+            course.lecturers = course.lecturers.filter(l => l !== lecturerName);
+            filterCourses();
+            showToast(`↺ Removed ${lecturerName} from ${course.code}`, 'info');
+        }
+
+        // ============================================
+        // VIEW COURSE
+        // ============================================
+        function viewCourse(courseId) {
+            const course = currentCourses.find(c => c.id === courseId);
+            if (!course) return;
+
+            const body = document.getElementById('viewModalBody');
+            body.innerHTML = `
+                    <div class="detail-row">
+                        <span class="detail-row__label">Course Code</span>
+                        <span class="detail-row__value"><strong>${course.code}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Title</span>
+                        <span class="detail-row__value">${course.title}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Class</span>
+                        <span class="detail-row__value">${course.class}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Semester</span>
+                        <span class="detail-row__value">${course.semester}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Students</span>
+                        <span class="detail-row__value">${course.students} enrolled</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Lecturers</span>
+                        <span class="detail-row__value">${course.lecturers.length > 0 ? course.lecturers.join(', ') : 'Not assigned'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Status</span>
+                        <span class="detail-row__value">${getStatusBadge(getStatus(course.lecturers))}</span>
+                    </div>
+                `;
+
+            openModal('viewModal');
+        }
+
+        // ============================================
+        // BULK ASSIGN (Horizontal)
+        // ============================================
+        let bulkSelected = new Set();
+
+        function openBulkAssignModal() {
+            bulkSelected = new Set();
+            const container = document.getElementById('bulkCourseList');
+            container.innerHTML = currentCourses.map(c => `
+                    <div class="course-card" data-id="${c.id}" onclick="toggleBulkSelect(${c.id})">
+                        <input type="checkbox" class="checkbox" ${bulkSelected.has(c.id) ? 'checked' : ''} 
+                               onclick="event.stopPropagation(); toggleBulkSelect(${c.id})" />
+                        <div class="code">${c.code}</div>
+                        <div class="title">${c.title}</div>
+                        <div class="meta">
+                            <span class="class-badge">${c.class}</span>
+                            <span>${c.students} students</span>
+                        </div>
+                    </div>
+                `).join('');
+            document.getElementById('bulkCount').textContent = '0 courses selected';
+            openModal('bulkAssignModal');
+        }
+
+        function toggleBulkSelect(courseId) {
+            if (bulkSelected.has(courseId)) {
+                bulkSelected.delete(courseId);
+            } else {
+                bulkSelected.add(courseId);
+            }
+            const container = document.getElementById('bulkCourseList');
+            const cards = container.querySelectorAll('.course-card');
+            cards.forEach(card => {
+                const id = parseInt(card.dataset.id);
+                const checkbox = card.querySelector('.checkbox');
+                if (bulkSelected.has(id)) {
+                    card.classList.add('selected');
+                    checkbox.checked = true;
+                } else {
+                    card.classList.remove('selected');
+                    checkbox.checked = false;
+                }
+            });
+            document.getElementById('bulkCount').textContent = `${bulkSelected.size} courses selected`;
+        }
+
+        function selectAllBulk() {
+            currentCourses.forEach(c => bulkSelected.add(c.id));
+            const container = document.getElementById('bulkCourseList');
+            const cards = container.querySelectorAll('.course-card');
+            cards.forEach(card => {
+                const id = parseInt(card.dataset.id);
+                card.classList.add('selected');
+                card.querySelector('.checkbox').checked = true;
+            });
+            document.getElementById('bulkCount').textContent = `${bulkSelected.size} courses selected`;
+        }
+
+        function deselectAllBulk() {
+            bulkSelected.clear();
+            const container = document.getElementById('bulkCourseList');
+            const cards = container.querySelectorAll('.course-card');
+            cards.forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('.checkbox').checked = false;
+            });
+            document.getElementById('bulkCount').textContent = '0 courses selected';
+        }
+
+        function bulkAssign() {
+            const lecturer = document.getElementById('bulkLecturerSelect').value;
+            if (!lecturer) {
+                showToast('⚠️ Please select a lecturer', 'warning');
+                return;
+            }
+            if (bulkSelected.size === 0) {
+                showToast('⚠️ Please select at least one course', 'warning');
+                return;
+            }
+
+            let updated = 0;
+            bulkSelected.forEach(id => {
+                const course = currentCourses.find(c => c.id === id);
+                if (course && !course.lecturers.includes(lecturer)) {
+                    course.lecturers.push(lecturer);
+                    updated++;
+                }
+            });
+
+            closeModal('bulkAssignModal');
+            filterCourses();
+            showToast(`✅ Assigned ${lecturer} to ${updated} course${updated !== 1 ? 's' : ''}`, 'success');
+        }
+
+        // ============================================
+        // FILTERS
+        // ============================================
+        function filterCourses() {
+            const search = document.getElementById('courseSearch').value.toLowerCase();
+            const classFilter = document.getElementById('classFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            let filtered = currentCourses.filter(c => {
+                const matchSearch = c.code.toLowerCase().includes(search) ||
+                    c.title.toLowerCase().includes(search) ||
+                    c.class.toLowerCase().includes(search);
+                const matchClass = classFilter === 'all' || c.class === classFilter;
+                const matchSemester = semester === 'all' || c.semester === semester;
+                const courseStatus = getStatus(c.lecturers);
+                const matchStatus = status === 'all' || courseStatus === status;
+                return matchSearch && matchClass && matchSemester && matchStatus;
+            });
+
+            filteredCourses = filtered;
+            renderCourses(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('courseSearch').value = '';
+            document.getElementById('classFilter').value = 'all';
+            document.getElementById('semesterFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            filterCourses();
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats() {
+            const total = currentCourses.length;
+            const assigned = currentCourses.filter(c => c.lecturers && c.lecturers.length > 0).length;
+            const unassigned = total - assigned;
+            const completion = total > 0 ? Math.round((assigned / total) * 100) : 0;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statAssigned').textContent = assigned;
+            document.getElementById('statUnassigned').textContent = unassigned;
+            document.getElementById('statCompletion').textContent = completion + '%';
+        }
+
+        // ============================================
+        // MODAL HELPERS
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(el => {
+                    el.classList.remove('active');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ============================================
+        // SIDEBAR NAV
+        // ============================================
+        document.querySelectorAll('.sidebar__link--toggle').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.dataset.target;
+                const submenu = document.getElementById(targetId);
+                const parentItem = this.closest('.sidebar__item--group');
+                if (!submenu) return;
+
+                submenu.classList.toggle('sidebar__submenu--open');
+                parentItem.classList.toggle('sidebar__item--open');
+                const isOpen = submenu.classList.contains('sidebar__submenu--open');
+                this.setAttribute('aria-expanded', isOpen);
+            });
+        });
+
+        const navLinks = document.querySelectorAll('.sidebar__link, .sidebar__sublink');
+        const pageTitle = document.getElementById('pageTitle');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') e.preventDefault();
+
+                document.querySelectorAll('.sidebar__link, .sidebar__sublink').forEach(l => l.classList.remove(
+                    'active'));
+                this.classList.add('active');
+
+                const text = this.innerText.trim();
+                const icon = this.querySelector('i')?.className || 'fa-tachometer-alt';
+                pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('sidebarOverlay').classList.remove('active');
+                }
+
+                showToast(`📂 Navigated to ${text}`, 'info');
+            });
+        });
+
+        // ============================================
+        // MOBILE SIDEBAR TOGGLE
+        // ============================================
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        hamburgerBtn.addEventListener('click', toggleMobileSidebar);
+        overlay.addEventListener('click', toggleMobileSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Open sidebar submenu
+            const teachingToggle = document.querySelector('[data-target="teaching-sub"]');
+            if (teachingToggle) {
+                const sub = document.getElementById('teaching-sub');
+                if (sub) {
+                    sub.classList.add('sidebar__submenu--open');
+                    teachingToggle.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
+                }
+            }
+            document.querySelectorAll('.sidebar__item--open .sidebar__link--toggle').forEach(el => {
+                el.setAttribute('aria-expanded', 'true');
+            });
+
+            renderCourses(currentCourses);
+        });
+    </script>
+</body>
+</html>

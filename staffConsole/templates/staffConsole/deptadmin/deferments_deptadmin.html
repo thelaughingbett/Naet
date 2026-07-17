@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Deferments · Dept Admin · UniManage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ============================================
+           RESET & VARIABLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --navy: #0a2540;
+            --navy-light: #1a3a5c;
+            --maroon: #9e2a2b;
+            --maroon-hover: #b13e3f;
+            --blue-card: #1f6392;
+            --green: #1e6f3f;
+            --gold: #fbbf24;
+            --sidebar-w: 280px;
+            --topnav-h: 64px;
+            --font: "Inter", "Segoe UI", sans-serif;
+            --text: #1e293b;
+            --text-muted: #5a6874;
+            --border: #e9edf2;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --radius: 14px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ============================================
+           SIDEBAR (same as before)
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-w);
+            background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+            color: #eef2ff;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+
+        .sidebar__brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1.2rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+            min-height: var(--topnav-h);
+        }
+        .sidebar__brand-icon { font-size: 1.6rem; flex-shrink: 0; }
+        .sidebar__brand-text {
+            font-weight: 800;
+            font-size: 1.1rem;
+            background: linear-gradient(120deg, #fff, #c0d9f0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            white-space: nowrap;
+        }
+
+        .sidebar__nav {
+            flex: 1;
+            padding: 0.6rem 0.6rem;
+            overflow-y: auto;
+        }
+        .sidebar__item { margin-bottom: 2px; }
+
+        .sidebar__link,
+        .sidebar__link--toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.78);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            text-align: left;
+        }
+        .sidebar__link:hover,
+        .sidebar__link--toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+        .sidebar__link.active,
+        .sidebar__link--toggle.active {
+            background: var(--maroon);
+            color: white;
+            box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+        }
+        .sidebar__link i,
+        .sidebar__link--toggle i { width: 20px; text-align: center; font-size: 0.95rem; flex-shrink: 0; }
+        .sidebar__chevron { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
+        .sidebar__item--open .sidebar__chevron { transform: rotate(180deg); }
+
+        .sidebar__submenu {
+            list-style: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin: 0 0.5rem 0 0.5rem;
+        }
+        .sidebar__submenu--open { max-height: 600px; }
+        .sidebar__sublink {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.76rem;
+            font-weight: 400;
+            transition: 0.2s;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .sidebar__sublink:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+        .sidebar__sublink.active { color: white; background: rgba(255, 255, 255, 0.1); }
+        .sidebar__sublink .badge {
+            margin-left: auto;
+            background: var(--maroon);
+            color: white;
+            font-size: 0.55rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        .sidebar__footer {
+            padding: 1rem 1.2rem;
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* ============================================
+           MOBILE OVERLAY
+           ============================================ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+        }
+        .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            padding: 1.8rem 2rem 2rem;
+            background: var(--bg);
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .topbar__left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .topbar__hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--navy);
+            cursor: pointer;
+            padding: 0.3rem;
+        }
+        .topbar__title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .topbar__badge {
+            background: var(--navy);
+            color: white;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .topbar__actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.35rem 1rem;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: inherit;
+        }
+        .btn-primary { background: var(--navy); color: white; }
+        .btn-primary:hover { background: var(--navy-light); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-success:hover { background: #14532d; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-sm {
+            padding: 0.2rem 0.7rem;
+            font-size: 0.65rem;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--text);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-sm:hover { background: var(--bg); border-color: #cbd5e1; }
+        .btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+        .btn-sm.primary:hover { background: var(--navy-light); }
+        .btn-sm.success { background: var(--green); color: white; border-color: var(--green); }
+        .btn-sm.success:hover { background: #14532d; }
+        .btn-sm.danger { background: #dc2626; color: white; border-color: #dc2626; }
+        .btn-sm.danger:hover { background: #b91c1c; }
+
+        /* ============================================
+           STATS CARDS
+           ============================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.2rem 1rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .stat-card__number { font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.1rem; }
+        .stat-card__label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.4px; margin-top: 0.2rem; }
+        .stat-card__sub { font-size: 0.6rem; color: var(--text-muted); margin-top: 0.15rem; }
+        .stat-card__icon { float: right; font-size: 1.6rem; color: rgba(10, 37, 64, 0.1); margin-top: -0.2rem; }
+
+        /* ============================================
+           FILTER BAR
+           ============================================ */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--white);
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            align-items: center;
+        }
+        .filter-bar__input {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+        }
+        .filter-bar__input:focus-within {
+            border-color: var(--navy);
+            box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+        }
+        .filter-bar__input i { color: var(--text-muted); }
+        .filter-bar__input input {
+            border: none;
+            background: transparent;
+            padding: 0.5rem 0;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            width: 100%;
+            outline: none;
+            color: var(--text);
+        }
+        .filter-bar__filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar__filters select {
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            font-family: var(--font);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .filter-bar__filters select:focus { border-color: var(--navy); }
+
+        /* ============================================
+           DEFERMENTS TABLE
+           ============================================ */
+        .table-wrapper {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .table-scroll { overflow-x: auto; }
+        .deferments-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .deferments-table th {
+            background: var(--bg);
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .deferments-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .deferments-table tr:last-child td { border-bottom: none; }
+        .deferments-table tr:hover td { background: #f8fafc; }
+
+        .deferments-table .student-info {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .deferments-table .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: #eef2ff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: var(--navy);
+            flex-shrink: 0;
+        }
+        .deferments-table .student-name { font-weight: 600; }
+        .deferments-table .student-id { font-size: 0.7rem; color: var(--text-muted); }
+
+        .reason-badge {
+            display: inline-block;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .reason-badge.financial { background: #fef3c7; color: #92400e; }
+        .reason-badge.medical { background: #fee2e2; color: #991b1b; }
+        .reason-badge.personal { background: #dbeafe; color: #1e40af; }
+        .reason-badge.academic { background: #e0e7ff; color: #3730a3; }
+        .reason-badge.other { background: #f0f4f8; color: var(--text-muted); }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-badge.approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-badge.rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .deferments-table .actions-cell { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .deferments-table .actions-cell .btn-sm { padding: 0.15rem 0.5rem; font-size: 0.6rem; }
+
+        /* ============================================
+           CLICKABLE DOCUMENT CHIPS
+           ============================================ */
+        .document-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 30px;
+            background: #eef2ff;
+            color: var(--navy);
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        .document-chip:hover {
+            background: #dbeafe;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(10, 37, 64, 0.1);
+        }
+        .document-chip i {
+            font-size: 0.65rem;
+        }
+        .document-chip .count-badge {
+            background: var(--navy);
+            color: white;
+            border-radius: 50%;
+            padding: 0.05rem 0.4rem;
+            font-size: 0.5rem;
+            font-weight: 700;
+            margin-left: 0.1rem;
+        }
+        .document-chip .count-badge.has-docs {
+            background: var(--maroon);
+        }
+
+        /* ============================================
+           MODALS
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-overlay.active .modal { animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            max-width: 720px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            padding: 0;
+        }
+        .modal__header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            border-radius: var(--radius) var(--radius) 0 0;
+            z-index: 2;
+        }
+        .modal__header h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; }
+        .modal__close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .modal__close:hover { background: var(--bg); color: var(--text); }
+        .modal__body { padding: 1.5rem; }
+        .modal__footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            background: var(--bg);
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row__label {
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .detail-row__value { flex: 1; color: var(--text); }
+
+        .reason-detail-box {
+            background: var(--bg);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-top: 0.3rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text);
+            border-left: 3px solid var(--gold);
+        }
+
+        .document-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.3rem;
+        }
+        .document-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            background: #eef2ff;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            color: var(--navy);
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            font-family: inherit;
+        }
+        .document-item:hover {
+            background: #dbeafe;
+            transform: translateY(-1px);
+        }
+        .document-item i { font-size: 0.8rem; }
+
+        /* Document Preview Modal */
+        .doc-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+        }
+        .doc-preview .file-icon {
+            font-size: 4rem;
+            color: var(--navy);
+            margin-bottom: 0.5rem;
+        }
+        .doc-preview .file-name {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+        }
+        .doc-preview .file-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .doc-preview .file-preview {
+            width: 100%;
+            max-height: 300px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            padding: 2rem;
+            border: 2px dashed var(--border);
+        }
+        .doc-preview .file-preview i {
+            font-size: 3rem;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           BULK ACTION BAR
+           ============================================ */
+        .bulk-action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.2rem;
+            background: #f0f4f8;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .bulk-action-bar__info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .bulk-action-bar__info strong {
+            color: var(--navy);
+        }
+        .bulk-action-bar__actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .bulk-action-bar__actions .btn {
+            font-size: 0.7rem;
+            padding: 0.3rem 1rem;
+        }
+
+        .select-all-cell {
+            text-align: center;
+        }
+        .select-all-cell input[type="checkbox"],
+        .deferments-table td input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--navy);
+            cursor: pointer;
+        }
+
+        /* ============================================
+           TOAST
+           ============================================ */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--navy);
+            color: white;
+            padding: 0.7rem 1.3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.3s;
+            z-index: 2000;
+            font-size: 0.85rem;
+            font-family: var(--font);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--green); }
+        .toast.warning { background: #92400e; }
+        .toast.info { background: var(--navy); }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .topbar__hamburger { display: block; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: var(--sidebar-w) !important; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; padding: 1rem; }
+            .topbar__title { font-size: 1.2rem; }
+            .sidebar-overlay.active { opacity: 1; visibility: visible; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+            .deferments-table th, .deferments-table td { padding: 0.5rem 0.7rem; }
+            .modal { max-width: 100%; margin: 0.5rem; }
+            .bulk-action-bar { flex-direction: column; align-items: stretch; text-align: center; }
+            .bulk-action-bar__actions { justify-content: center; }
+            .detail-row { flex-direction: column; gap: 0.2rem; }
+            .detail-row__label { width: auto; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .topbar__actions { width: 100%; }
+            .topbar__actions .btn { flex: 1; justify-content: center; }
+            .deferments-table { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+    SIDEBAR OVERLAY (Mobile)
+    ============================================ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============================================
+    SIDEBAR
+    ============================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__brand">
+            <span class="sidebar__brand-icon">🏛️</span>
+            <span class="sidebar__brand-text">UniManage</span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <ul class="sidebar__menu">
+                <!-- Dashboard -->
+                <li class="sidebar__item">
+                    <a href="#" class="sidebar__link" data-page="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Academic Structure -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="academic-sub">
+                        <i class="fas fa-university"></i>
+                        <span>Academic Structure</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="academic-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="programmes">Programmes</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="courses">Courses</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="classes">Classes</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="curriculum">Curriculum</a></li>
+                    </ul>
+                </li>
+
+                <!-- Teaching & Enrollment -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="teaching-sub">
+                        <i class="fas fa-chalkboard-teacher"></i> <span>Teaching &amp; Enrollment</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="teaching-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="assignment">Assignment</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="enrollments">Enrollments <span class="badge">18</span></a></li>
+                    </ul>
+                </li>
+
+                <!-- Assessments -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="assessment-sub">
+                        <i class="fas fa-clipboard-list"></i> <span>Assessments</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="assessment-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="results">Results <span class="badge">12</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="transcripts">Transcripts</a></li>
+                    </ul>
+                </li>
+
+                <!-- Scheduling -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="scheduling-sub">
+                        <i class="fas fa-calendar-alt"></i> <span>Scheduling</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="scheduling-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="timetable">Timetable</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="exams">Exams</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="venues">Venues</a></li>
+                    </ul>
+                </li>
+
+                <!-- Evaluations -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="eval-sub">
+                        <i class="fas fa-star-half-alt"></i> <span>Evaluations</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="eval-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="course-evaluation">Course Evaluation</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="lecturer-evaluation">Lecturer Evaluation</a></li>
+                    </ul>
+                </li>
+
+                <!-- Student Services -->
+                <li class="sidebar__item sidebar__item--group sidebar__item--open">
+                    <button class="sidebar__link--toggle active" data-target="services-sub">
+                        <i class="fas fa-hands-helping"></i> <span>Student Services</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu sidebar__submenu--open" id="services-sub">
+                        <li><a href="#" class="sidebar__sublink active" data-page="deferments">Deferments <span class="badge">3</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="complaints">Complaints</a></li>
+                    </ul>
+                </li>
+
+                <!-- Reports -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="reports-sub">
+                        <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="reports-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="analytics">Analytics</a></li>
+                    </ul>
+                </li>
+
+                <!-- Profile -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="profile-sub">
+                        <i class="fas fa-id-badge"></i> <span>My Profile</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="profile-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-details">Profile Details</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-settings">Settings</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar__footer">© 2026 UniManage · v2.0</div>
+    </aside>
+
+    <!-- ============================================
+    MAIN CONTENT
+    ============================================ -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar__left">
+                <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="topbar__title" id="pageTitle">
+                    <i class="fas fa-pause-circle"></i> Deferments
+                </h1>
+            </div>
+            <div class="topbar__actions">
+                <button class="btn btn-outline" onclick="showToast('📋 Deferment report exported', 'info')">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+                <button class="btn btn-primary" onclick="showToast('📋 New deferment form opened', 'info')">
+                    <i class="fas fa-plus"></i> Add Request
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== STATS ===== -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-clipboard-list stat-card__icon"></i>
+                <div class="stat-card__number" id="statTotal">0</div>
+                <div class="stat-card__label">Total Requests</div>
+                <div class="stat-card__sub">All deferments</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock stat-card__icon" style="color: var(--gold);"></i>
+                <div class="stat-card__number" id="statPending">0</div>
+                <div class="stat-card__label">Pending Review</div>
+                <div class="stat-card__sub">Awaiting decision</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-circle stat-card__icon" style="color: var(--green);"></i>
+                <div class="stat-card__number" id="statApproved">0</div>
+                <div class="stat-card__label">Approved</div>
+                <div class="stat-card__sub">Granted</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-times-circle stat-card__icon" style="color: var(--maroon);"></i>
+                <div class="stat-card__number" id="statRejected">0</div>
+                <div class="stat-card__label">Rejected</div>
+                <div class="stat-card__sub">Declined</div>
+            </div>
+        </div>
+
+        <!-- ===== FILTER BAR ===== -->
+        <div class="filter-bar">
+            <div class="filter-bar__input">
+                <i class="fas fa-search"></i>
+                <input type="text" id="defermentSearch" placeholder="Search by student name or reg no..." onkeyup="filterDeferments()" />
+            </div>
+            <div class="filter-bar__filters">
+                <select id="statusFilter" onchange="filterDeferments()">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <select id="reasonFilter" onchange="filterDeferments()">
+                    <option value="all">All Reasons</option>
+                    <option value="financial">Financial</option>
+                    <option value="medical">Medical</option>
+                    <option value="personal">Personal</option>
+                    <option value="academic">Academic</option>
+                    <option value="other">Other</option>
+                </select>
+                <button class="btn-sm" onclick="resetFilters()">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== DEFERMENTS TABLE ===== -->
+        <div class="table-wrapper">
+            <div class="table-scroll">
+                <table class="deferments-table" id="defermentsTable">
+                    <thead>
+                        <tr>
+                            <th class="select-all-cell">
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" />
+                            </th>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Session Deferred</th>
+                            <th>Returning Session</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Documents</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="defermentsTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ===== BULK ACTION BAR ===== -->
+            <div class="bulk-action-bar" id="bulkActionBar">
+                <div class="bulk-action-bar__info">
+                    <span id="selectedCount">0</span> requests selected
+                    <span style="margin-left:0.5rem;font-size:0.65rem;color:var(--text-muted);">
+                        (only pending can be actioned)
+                    </span>
+                </div>
+                <div class="bulk-action-bar__actions">
+                    <button class="btn btn-success" onclick="bulkApprove()">
+                        <i class="fas fa-check"></i> Approve Selected
+                    </button>
+                    <button class="btn btn-danger" onclick="bulkReject()">
+                        <i class="fas fa-times"></i> Reject Selected
+                    </button>
+                    <button class="btn btn-outline" onclick="clearAllSelections()">
+                        <i class="fas fa-undo"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================
+    VIEW DEFERMENT MODAL
+    ============================================ -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal">
+            <div class="modal__header">
+                <h2><i class="fas fa-file-alt" style="color: var(--navy);"></i> Deferment Request Details</h2>
+                <button class="modal__close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="modal__body" id="viewModalBody">
+                <!-- Filled dynamically -->
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn-outline" onclick="closeModal('viewModal')">Close</button>
+                <button class="btn btn-success" id="modalApproveBtn" onclick="approveFromModal()">
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn btn-danger" id="modalRejectBtn" onclick="rejectFromModal()">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    DOCUMENT PREVIEW MODAL
+    ============================================ -->
+    <div class="modal-overlay" id="docModal">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal__header">
+                <h2><i class="fas fa-file" style="color: var(--blue-card);"></i> Document Preview</h2>
+                <button class="modal__close" onclick="closeModal('docModal')">&times;</button>
+            </div>
+            <div class="modal__body" id="docModalBody">
+                <!-- Filled dynamically -->
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn-outline" onclick="closeModal('docModal')">Close</button>
+                <button class="btn btn-primary" onclick="downloadDocument()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    TOAST
+    ============================================ -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================
+        // DATA
+        // ============================================
+        const reasonLabels = {
+            'financial': 'Financial Difficulty',
+            'medical': 'Medical',
+            'personal': 'Personal',
+            'academic': 'Academic',
+            'other': 'Other'
+        };
+
+        const reasonClassMap = {
+            'financial': 'financial',
+            'medical': 'medical',
+            'personal': 'personal',
+            'academic': 'academic',
+            'other': 'other'
+        };
+
+        const students = [
+            { id: 101, name: 'Grace Akinyi', regNo: 'S2024001' },
+            { id: 102, name: 'James Ochieng', regNo: 'S2024002' },
+            { id: 103, name: 'Faith Wanjiru', regNo: 'S2024003' },
+            { id: 104, name: 'Peter Mwangi', regNo: 'S2024004' },
+            { id: 105, name: 'Sarah Mutua', regNo: 'S2024005' },
+            { id: 106, name: 'David Kimani', regNo: 'S2024006' },
+            { id: 107, name: 'Mary Atieno', regNo: 'S2024007' },
+            { id: 108, name: 'Robert Omondi', regNo: 'S2024008' },
+            { id: 109, name: 'Susan Njoroge', regNo: 'S2024009' },
+            { id: 110, name: 'Michael Odhiambo', regNo: 'S2024010' },
+            { id: 111, name: 'Ann Wambui', regNo: 'S2024011' },
+            { id: 112, name: 'John Ndirangu', regNo: 'S2024012' }
+        ];
+
+        const sessions = ['2025/2026 Sem I', '2024/2025 Sem II', '2025/2026 Sem II', '2024/2025 Sem I'];
+        const reasons = ['financial', 'medical', 'personal', 'academic', 'other'];
+        const requestStatuses = ['pending', 'approved', 'rejected'];
+
+        const reasonDetails = {
+            'financial': 'Unable to pay tuition fees due to family financial constraints.',
+            'medical': 'Student admitted to hospital for surgery and requires recovery time.',
+            'personal': 'Family emergency requiring the student to be away from campus.',
+            'academic': 'Student needs to improve grades and catch up on coursework.',
+            'other': 'Personal circumstances requiring temporary leave from studies.'
+        };
+
+        const documentNames = ['medical_certificate.pdf', 'fee_statement.pdf', 'supporting_letter.pdf', 'hospital_letter.pdf',
+            'financial_declaration.pdf', 'admission_letter.pdf', 'report_card.pdf'
+        ];
+
+        // Generate mock deferment requests
+        let defermentsData = [];
+        for (let i = 0; i < 15; i++) {
+            const student = students[i % students.length];
+            const reason = reasons[Math.floor(Math.random() * reasons.length)];
+            const status = requestStatuses[Math.floor(Math.random() * requestStatuses.length)];
+
+            // Generate 0-3 documents
+            const numDocs = Math.floor(Math.random() * 4);
+            const documents = [];
+            const usedNames = new Set();
+            for (let d = 0; d < numDocs; d++) {
+                let name;
+                do {
+                    name = documentNames[Math.floor(Math.random() * documentNames.length)];
+                } while (usedNames.has(name));
+                usedNames.add(name);
+                const fileSize = (Math.random() * 2 + 0.2).toFixed(1);
+                documents.push({
+                    id: i * 10 + d + 1,
+                    original_name: name,
+                    size: fileSize + ' MB',
+                    uploaded_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+                });
+            }
+
+            const sessionDeferred = sessions[Math.floor(Math.random() * sessions.length)];
+            let sessionReturning = null;
+            if (status !== 'rejected') {
+                const idx = sessions.indexOf(sessionDeferred);
+                if (idx < sessions.length - 1) {
+                    sessionReturning = sessions[Math.min(idx + 1, sessions.length - 1)];
+                } else {
+                    sessionReturning = sessions[0];
+                }
+            }
+
+            defermentsData.push({
+                id: i + 1,
+                student: student,
+                session_deferred: sessionDeferred,
+                session_returning: sessionReturning,
+                reason: reason,
+                reason_detail: reasonDetails[reason] + (Math.random() > 0.5 ? ' Additional details: Student has submitted all required documentation.' :
+                    ''),
+                request_status: status,
+                status: status === 'approved' ? 'active' : (status === 'rejected' ? 'withdrawn' : 'active'),
+                approved_by: status !== 'pending' ? 'Dr. Sarah Mwangi' : null,
+                reinstated_at: status === 'approved' ? new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000)
+                    .toISOString() : null,
+                documents: documents,
+                created_at: new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString()
+            });
+        }
+
+        // Sort by most recent first
+        defermentsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        let currentDeferments = [...defermentsData];
+        let filteredDeferments = [...currentDeferments];
+        let selectedDefermentIds = new Set();
+        let modalDefermentId = null;
+        let currentDocument = null;
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function getRequestStatusBadge(status) {
+            const map = {
+                'pending': '<span class="status-badge pending"><i class="fas fa-hourglass-half"></i> Pending</span>',
+                'approved': '<span class="status-badge approved"><i class="fas fa-check-circle"></i> Approved</span>',
+                'rejected': '<span class="status-badge rejected"><i class="fas fa-times-circle"></i> Rejected</span>'
+            };
+            return map[status] || status;
+        }
+
+        function getReasonBadge(reason) {
+            const label = reasonLabels[reason] || reason;
+            const cls = reasonClassMap[reason] || 'other';
+            return `<span class="reason-badge ${cls}">${label}</span>`;
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function getDefermentById(id) {
+            return currentDeferments.find(d => d.id === id);
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-file-pdf';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word';
+            if (['xls', 'xlsx'].includes(ext)) return 'fa-file-excel';
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'fa-file-image';
+            return 'fa-file';
+        }
+
+        // ============================================
+        // RENDER TABLE
+        // ============================================
+        function renderDeferments(list) {
+            const tbody = document.getElementById('defermentsTableBody');
+            if (!tbody) return;
+
+            const selectedIds = new Set(selectedDefermentIds);
+
+            if (list.length === 0) {
+                tbody.innerHTML =
+                    `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">No deferment requests found matching your filters.</td></tr>`;
+                document.getElementById('defermentCount').textContent = 'Showing 0 requests';
+                updateStats(list);
+                updateSelectedCount();
+                return;
+            }
+
+            let html = '';
+            list.forEach((d, index) => {
+                const initials = getInitials(d.student.name);
+                const isChecked = selectedIds.has(d.id) ? 'checked' : '';
+                const isPending = d.request_status === 'pending';
+                const docCount = d.documents ? d.documents.length : 0;
+
+                html += `
+                        <tr data-deferment-id="${d.id}">
+                            <td style="text-align:center;">
+                                <input type="checkbox" class="row-select" data-id="${d.id}" 
+                                       ${isChecked} onclick="toggleRowSelect(${d.id})" />
+                            </td>
+                            <td>${index + 1}</td>
+                            <td>
+                                <div class="student-info">
+                                    <span class="avatar">${initials}</span>
+                                    <div>
+                                        <div class="student-name">${d.student.name}</div>
+                                        <div class="student-id">${d.student.regNo}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-size:0.75rem;">${d.session_deferred}</td>
+                            <td style="font-size:0.75rem;">${d.session_returning || '—'}</td>
+                            <td>${getReasonBadge(d.reason)}</td>
+                            <td>${getRequestStatusBadge(d.request_status)}</td>
+                            <td>
+                                ${docCount > 0 ? `
+                                    <button class="document-chip" onclick="openDocumentList(${d.id})" title="Click to view ${docCount} document(s)">
+                                        <i class="fas ${getFileIcon(d.documents[0].original_name)}"></i>
+                                        ${docCount} file${docCount > 1 ? 's' : ''}
+                                        <span class="count-badge has-docs">${docCount}</span>
+                                    </button>
+                                ` : '<span style="color:var(--text-muted);font-size:0.65rem;">—</span>'}
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <button class="btn-sm primary" onclick="viewDeferment(${d.id})" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    ${isPending ? `
+                                        <button class="btn-sm success" onclick="approveDeferment(${d.id})" title="Approve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn-sm danger" onclick="rejectDeferment(${d.id})" title="Reject">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            });
+
+            tbody.innerHTML = html;
+            updateSelectAllState();
+            updateStats(list);
+            updateSelectedCount();
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats(list) {
+            const total = list.length;
+            const pending = list.filter(d => d.request_status === 'pending').length;
+            const approved = list.filter(d => d.request_status === 'approved').length;
+            const rejected = list.filter(d => d.request_status === 'rejected').length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statApproved').textContent = approved;
+            document.getElementById('statRejected').textContent = rejected;
+        }
+
+        // ============================================
+        // SELECTION HANDLING
+        // ============================================
+        function toggleRowSelect(id) {
+            if (selectedDefermentIds.has(id)) {
+                selectedDefermentIds.delete(id);
+            } else {
+                selectedDefermentIds.add(id);
+            }
+            updateSelectAllState();
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            const visibleRows = document.querySelectorAll('#defermentsTableBody tr');
+            visibleRows.forEach(row => {
+                const checkbox = row.querySelector('.row-select');
+                if (checkbox) {
+                    const id = parseInt(checkbox.dataset.id);
+                    if (checked) {
+                        selectedDefermentIds.add(id);
+                    } else {
+                        selectedDefermentIds.delete(id);
+                    }
+                    checkbox.checked = checked;
+                }
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectAllState() {
+            const checkboxes = document.querySelectorAll('.row-select');
+            const checked = document.querySelectorAll('.row-select:checked');
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                if (checkboxes.length > 0 && checked.length === checkboxes.length) {
+                    selectAll.checked = true;
+                    selectAll.indeterminate = false;
+                } else if (checked.length > 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = true;
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                }
+            }
+        }
+
+        function updateSelectedCount() {
+            const count = selectedDefermentIds.size;
+            document.getElementById('selectedCount').textContent = count;
+        }
+
+        function clearAllSelections() {
+            selectedDefermentIds.clear();
+            document.querySelectorAll('.row-select').forEach(cb => cb.checked = false);
+            document.getElementById('selectAll').checked = false;
+            document.getElementById('selectAll').indeterminate = false;
+            updateSelectedCount();
+        }
+
+        // ============================================
+        // BULK ACTIONS
+        // ============================================
+        function getPendingSelectedIds() {
+            const ids = [];
+            selectedDefermentIds.forEach(id => {
+                const deferment = getDefermentById(id);
+                if (deferment && deferment.request_status === 'pending') {
+                    ids.push(id);
+                }
+            });
+            return ids;
+        }
+
+        function bulkApprove() {
+            const pendingIds = getPendingSelectedIds();
+            if (pendingIds.length === 0) {
+                showToast('⚠️ No pending requests selected for approval.', 'warning');
+                return;
+            }
+            if (!confirm(`Approve ${pendingIds.length} selected deferment request(s)?`)) return;
+
+            pendingIds.forEach(id => {
+                const deferment = getDefermentById(id);
+                if (deferment) {
+                    deferment.request_status = 'approved';
+                    deferment.status = 'active';
+                    deferment.approved_by = 'Dr. Sarah Mwangi';
+                    deferment.reinstated_at = new Date().toISOString();
+                }
+            });
+
+            clearAllSelections();
+            filterDeferments();
+            showToast(`✅ Approved ${pendingIds.length} request(s).`, 'success');
+        }
+
+        function bulkReject() {
+            const pendingIds = getPendingSelectedIds();
+            if (pendingIds.length === 0) {
+                showToast('⚠️ No pending requests selected for rejection.', 'warning');
+                return;
+            }
+            if (!confirm(`Reject ${pendingIds.length} selected deferment request(s)?`)) return;
+
+            pendingIds.forEach(id => {
+                const deferment = getDefermentById(id);
+                if (deferment) {
+                    deferment.request_status = 'rejected';
+                    deferment.status = 'withdrawn';
+                    deferment.approved_by = 'Dr. Sarah Mwangi';
+                }
+            });
+
+            clearAllSelections();
+            filterDeferments();
+            showToast(`❌ Rejected ${pendingIds.length} request(s).`, 'warning');
+        }
+
+        // ============================================
+        // SINGLE ACTIONS
+        // ============================================
+        function viewDeferment(id) {
+            const deferment = getDefermentById(id);
+            if (!deferment) return;
+
+            modalDefermentId = id;
+            const body = document.getElementById('viewModalBody');
+
+            const docHtml = deferment.documents && deferment.documents.length > 0 ?
+                deferment.documents.map(d => `
+                            <button class="document-item" onclick="event.stopPropagation(); openDocument(${d.id}, '${d.original_name}', '${d.size}', '${d.uploaded_at}')" title="Click to view">
+                                <i class="fas ${getFileIcon(d.original_name)}"></i>
+                                ${d.original_name}
+                                <span style="font-size:0.6rem;color:var(--text-muted);">
+                                    (${d.size})
+                                </span>
+                            </button>
+                        `).join('') :
+                '<span style="color:var(--text-muted);font-style:italic;">No documents attached</span>';
+
+            body.innerHTML = `
+                    <div class="detail-row">
+                        <span class="detail-row__label">Student</span>
+                        <span class="detail-row__value"><strong>${deferment.student.name}</strong> (${deferment.student.regNo})</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Session Deferred</span>
+                        <span class="detail-row__value">${deferment.session_deferred}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Session Returning</span>
+                        <span class="detail-row__value">${deferment.session_returning || 'Not specified'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Reason</span>
+                        <span class="detail-row__value">${getReasonBadge(deferment.reason)}</span>
+                    </div>
+                    <div class="detail-row" style="flex-direction:column;align-items:stretch;border-bottom:none;">
+                        <span class="detail-row__label" style="width:auto;margin-bottom:0.3rem;">Reason Details</span>
+                        <div class="reason-detail-box">${deferment.reason_detail}</div>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Request Status</span>
+                        <span class="detail-row__value">${getRequestStatusBadge(deferment.request_status)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-row__label">Deferment Status</span>
+                        <span class="detail-row__value">${deferment.status.charAt(0).toUpperCase() + deferment.status.slice(1)}</span>
+                    </div>
+                    ${deferment.approved_by ? `
+                        <div class="detail-row">
+                            <span class="detail-row__label">Approved By</span>
+                            <span class="detail-row__value">${deferment.approved_by}</span>
+                        </div>
+                    ` : ''}
+                    ${deferment.reinstated_at ? `
+                        <div class="detail-row">
+                            <span class="detail-row__label">Reinstated At</span>
+                            <span class="detail-row__value">${new Date(deferment.reinstated_at).toLocaleDateString()}</span>
+                        </div>
+                    ` : ''}
+                    <div class="detail-row" style="flex-direction:column;align-items:stretch;border-bottom:none;">
+                        <span class="detail-row__label" style="width:auto;margin-bottom:0.3rem;">Supporting Documents</span>
+                        <div class="document-list">${docHtml}</div>
+                    </div>
+                    <div class="detail-row" style="border-bottom:none;">
+                        <span class="detail-row__label">Requested On</span>
+                        <span class="detail-row__value">${new Date(deferment.created_at).toLocaleDateString()}</span>
+                    </div>
+                `;
+
+            // Show/hide approve/reject buttons based on status
+            const approveBtn = document.getElementById('modalApproveBtn');
+            const rejectBtn = document.getElementById('modalRejectBtn');
+            if (deferment.request_status === 'pending') {
+                approveBtn.style.display = 'inline-flex';
+                rejectBtn.style.display = 'inline-flex';
+            } else {
+                approveBtn.style.display = 'none';
+                rejectBtn.style.display = 'none';
+            }
+
+            openModal('viewModal');
+        }
+
+        // ============================================
+        // DOCUMENT FUNCTIONS
+        // ============================================
+        function openDocumentList(defermentId) {
+            const deferment = getDefermentById(defermentId);
+            if (!deferment || !deferment.documents || deferment.documents.length === 0) {
+                showToast('No documents attached to this request.', 'info');
+                return;
+            }
+
+            // Show the first document
+            const firstDoc = deferment.documents[0];
+            openDocument(firstDoc.id, firstDoc.original_name, firstDoc.size, firstDoc.uploaded_at);
+        }
+
+        function openDocument(docId, fileName, fileSize, uploadedAt) {
+            currentDocument = { id: docId, name: fileName, size: fileSize, uploadedAt: uploadedAt };
+
+            const body = document.getElementById('docModalBody');
+            const icon = getFileIcon(fileName);
+            const date = new Date(uploadedAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            body.innerHTML = `
+                    <div class="doc-preview">
+                        <div class="file-icon"><i class="fas ${icon}"></i></div>
+                        <div class="file-name">${fileName}</div>
+                        <div class="file-meta">${fileSize} · Uploaded on ${date}</div>
+                        <div class="file-preview">
+                            <div style="text-align:center;">
+                                <i class="fas ${icon}" style="font-size:4rem;color:var(--text-muted);margin-bottom:0.5rem;display:block;"></i>
+                                <span style="font-size:0.8rem;color:var(--text-muted);">Click "Download" to view the full document</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            openModal('docModal');
+        }
+
+        function downloadDocument() {
+            if (currentDocument) {
+                showToast(`📄 Downloading "${currentDocument.name}"...`, 'success');
+                // Simulate download
+                setTimeout(() => {
+                    showToast(`✅ "${currentDocument.name}" downloaded successfully!`, 'success');
+                }, 1000);
+            }
+        }
+
+        function approveFromModal() {
+            if (modalDefermentId !== null) {
+                approveDeferment(modalDefermentId);
+                closeModal('viewModal');
+            }
+        }
+
+        function rejectFromModal() {
+            if (modalDefermentId !== null) {
+                rejectDeferment(modalDefermentId);
+                closeModal('viewModal');
+            }
+        }
+
+        function approveDeferment(id) {
+            const deferment = getDefermentById(id);
+            if (!deferment || deferment.request_status !== 'pending') return;
+            deferment.request_status = 'approved';
+            deferment.status = 'active';
+            deferment.approved_by = 'Dr. Sarah Mwangi';
+            deferment.reinstated_at = new Date().toISOString();
+            selectedDefermentIds.delete(id);
+            filterDeferments();
+            showToast(`✅ Deferment for ${deferment.student.name} approved!`, 'success');
+        }
+
+        function rejectDeferment(id) {
+            const deferment = getDefermentById(id);
+            if (!deferment || deferment.request_status !== 'pending') return;
+            deferment.request_status = 'rejected';
+            deferment.status = 'withdrawn';
+            deferment.approved_by = 'Dr. Sarah Mwangi';
+            selectedDefermentIds.delete(id);
+            filterDeferments();
+            showToast(`❌ Deferment for ${deferment.student.name} rejected.`, 'warning');
+        }
+
+        // ============================================
+        // FILTERS
+        // ============================================
+        function filterDeferments() {
+            const search = document.getElementById('defermentSearch').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const reason = document.getElementById('reasonFilter').value;
+
+            let filtered = currentDeferments.filter(d => {
+                const matchSearch = d.student.name.toLowerCase().includes(search) ||
+                    d.student.regNo.toLowerCase().includes(search);
+                const matchStatus = status === 'all' || d.request_status === status;
+                const matchReason = reason === 'all' || d.reason === reason;
+                return matchSearch && matchStatus && matchReason;
+            });
+
+            filteredDeferments = filtered;
+            renderDeferments(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('defermentSearch').value = '';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('reasonFilter').value = 'all';
+            filterDeferments();
+        }
+
+        // ============================================
+        // MODAL HELPERS
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(el => {
+                    el.classList.remove('active');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ============================================
+        // SIDEBAR NAV
+        // ============================================
+        document.querySelectorAll('.sidebar__link--toggle').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.dataset.target;
+                const submenu = document.getElementById(targetId);
+                const parentItem = this.closest('.sidebar__item--group');
+                if (!submenu) return;
+
+                submenu.classList.toggle('sidebar__submenu--open');
+                parentItem.classList.toggle('sidebar__item--open');
+                const isOpen = submenu.classList.contains('sidebar__submenu--open');
+                this.setAttribute('aria-expanded', isOpen);
+            });
+        });
+
+        const navLinks = document.querySelectorAll('.sidebar__link, .sidebar__sublink');
+        const pageTitle = document.getElementById('pageTitle');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') e.preventDefault();
+
+                document.querySelectorAll('.sidebar__link, .sidebar__sublink').forEach(l => l.classList.remove(
+                    'active'));
+                this.classList.add('active');
+
+                const text = this.innerText.trim();
+                const icon = this.querySelector('i')?.className || 'fa-tachometer-alt';
+                pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('sidebarOverlay').classList.remove('active');
+                }
+
+                showToast(`📂 Navigated to ${text}`, 'info');
+            });
+        });
+
+        // ============================================
+        // MOBILE SIDEBAR TOGGLE
+        // ============================================
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        hamburgerBtn.addEventListener('click', toggleMobileSidebar);
+        overlay.addEventListener('click', toggleMobileSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const servicesToggle = document.querySelector('[data-target="services-sub"]');
+            if (servicesToggle) {
+                const sub = document.getElementById('services-sub');
+                if (sub) {
+                    sub.classList.add('sidebar__submenu--open');
+                    servicesToggle.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
+                }
+            }
+            document.querySelectorAll('.sidebar__item--open .sidebar__link--toggle').forEach(el => {
+                el.setAttribute('aria-expanded', 'true');
+            });
+
+            renderDeferments(currentDeferments);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>Classes · Dept Admin · UniManage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ============================================
+           RESET & VARIABLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --navy: #0a2540;
+            --navy-light: #1a3a5c;
+            --maroon: #9e2a2b;
+            --maroon-hover: #b13e3f;
+            --blue-card: #1f6392;
+            --green: #1e6f3f;
+            --gold: #fbbf24;
+            --sidebar-w: 280px;
+            --topnav-h: 64px;
+            --font: "Inter", "Segoe UI", sans-serif;
+            --text: #1e293b;
+            --text-muted: #5a6874;
+            --border: #e9edf2;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --radius: 14px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ============================================
+           SIDEBAR
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-w);
+            background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+            color: #eef2ff;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+
+        .sidebar__brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1.2rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+            min-height: var(--topnav-h);
+        }
+        .sidebar__brand-icon { font-size: 1.6rem; flex-shrink: 0; }
+        .sidebar__brand-text {
+            font-weight: 800;
+            font-size: 1.1rem;
+            background: linear-gradient(120deg, #fff, #c0d9f0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            white-space: nowrap;
+        }
+
+        .sidebar__nav {
+            flex: 1;
+            padding: 0.6rem 0.6rem;
+            overflow-y: auto;
+        }
+        .sidebar__item { margin-bottom: 2px; }
+
+        .sidebar__link,
+        .sidebar__link--toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.78);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
+            text-align: left;
+        }
+        .sidebar__link:hover,
+        .sidebar__link--toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+        .sidebar__link.active,
+        .sidebar__link--toggle.active {
+            background: var(--maroon);
+            color: white;
+            box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+        }
+        .sidebar__link i,
+        .sidebar__link--toggle i { width: 20px; text-align: center; font-size: 0.95rem; flex-shrink: 0; }
+        .sidebar__chevron { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
+        .sidebar__item--open .sidebar__chevron { transform: rotate(180deg); }
+
+        .sidebar__submenu {
+            list-style: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin: 0 0.5rem 0 0.5rem;
+        }
+        .sidebar__submenu--open { max-height: 600px; }
+        .sidebar__sublink {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.76rem;
+            font-weight: 400;
+            transition: 0.2s;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .sidebar__sublink:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+        .sidebar__sublink.active { color: white; background: rgba(255, 255, 255, 0.1); }
+        .sidebar__sublink .badge {
+            margin-left: auto;
+            background: var(--maroon);
+            color: white;
+            font-size: 0.55rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        .sidebar__footer {
+            padding: 1rem 1.2rem;
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* ============================================
+           MOBILE OVERLAY
+           ============================================ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+        }
+        .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            padding: 1.8rem 2rem 2rem;
+            background: var(--bg);
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .topbar__left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .topbar__hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--navy);
+            cursor: pointer;
+            padding: 0.3rem;
+        }
+        .topbar__title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .topbar__badge {
+            background: var(--navy);
+            color: white;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .topbar__actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.35rem 1rem;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: inherit;
+        }
+        .btn-primary { background: var(--navy); color: white; }
+        .btn-primary:hover { background: var(--navy-light); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-success:hover { background: #14532d; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-sm {
+            padding: 0.2rem 0.7rem;
+            font-size: 0.65rem;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--text);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-sm:hover { background: var(--bg); border-color: #cbd5e1; }
+        .btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+        .btn-sm.primary:hover { background: var(--navy-light); }
+        .btn-sm.danger { background: #dc2626; color: white; border-color: #dc2626; }
+        .btn-sm.danger:hover { background: #b91c1c; }
+
+        /* ============================================
+           STATS CARDS
+           ============================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.2rem 1rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .stat-card__number { font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.1rem; }
+        .stat-card__label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.4px; margin-top: 0.2rem; }
+        .stat-card__sub { font-size: 0.6rem; color: var(--text-muted); margin-top: 0.15rem; }
+        .stat-card__icon { float: right; font-size: 1.6rem; color: rgba(10, 37, 64, 0.1); margin-top: -0.2rem; }
+
+        /* ============================================
+           FILTER BAR
+           ============================================ */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--white);
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            align-items: center;
+        }
+        .filter-bar__input {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+        }
+        .filter-bar__input:focus-within {
+            border-color: var(--navy);
+            box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+        }
+        .filter-bar__input i { color: var(--text-muted); }
+        .filter-bar__input input {
+            border: none;
+            background: transparent;
+            padding: 0.5rem 0;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            width: 100%;
+            outline: none;
+            color: var(--text);
+        }
+        .filter-bar__filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar__filters select {
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            font-family: var(--font);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .filter-bar__filters select:focus { border-color: var(--navy); }
+
+        /* ============================================
+           CLASSES TABLE
+           ============================================ */
+        .table-wrapper {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .table-scroll { overflow-x: auto; }
+        .classes-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .classes-table th {
+            background: var(--bg);
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .classes-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .classes-table tr:last-child td { border-bottom: none; }
+        .classes-table tr:hover td { background: #f8fafc; }
+
+        .classes-table .class-badge {
+            font-weight: 700;
+            color: var(--navy);
+            background: #eef2ff;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-badge.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .capacity-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .capacity-bar .track {
+            width: 60px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 30px;
+            overflow: hidden;
+        }
+        .capacity-bar .fill {
+            height: 100%;
+            border-radius: 30px;
+            background: var(--green);
+        }
+        .capacity-bar .fill.warn { background: var(--gold); }
+        .capacity-bar .fill.danger { background: var(--maroon); }
+        .capacity-bar .pct {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .classes-table .actions-cell { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+        .classes-table .actions-cell .btn-sm { padding: 0.15rem 0.5rem; font-size: 0.6rem; }
+
+        /* ============================================
+           MODAL
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-overlay.active .modal { animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            max-width: 640px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            padding: 0;
+        }
+        .modal__header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            border-radius: var(--radius) var(--radius) 0 0;
+            z-index: 2;
+        }
+        .modal__header h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; }
+        .modal__close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .modal__close:hover { background: var(--bg); color: var(--text); }
+        .modal__body { padding: 1.5rem; }
+        .modal__footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            background: var(--bg);
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.55rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: var(--font);
+            font-size: 0.85rem;
+            background: var(--white);
+            transition: 0.2s;
+            color: var(--text);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--navy);
+            box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* ============================================
+           TOAST
+           ============================================ */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--navy);
+            color: white;
+            padding: 0.7rem 1.3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.3s;
+            z-index: 2000;
+            font-size: 0.85rem;
+            font-family: var(--font);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--green); }
+        .toast.warning { background: #92400e; }
+        .toast.info { background: var(--navy); }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .topbar__hamburger { display: block; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: var(--sidebar-w) !important; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; padding: 1rem; }
+            .topbar__title { font-size: 1.2rem; }
+            .sidebar-overlay.active { opacity: 1; visibility: visible; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+            .classes-table th, .classes-table td { padding: 0.5rem 0.7rem; }
+            .modal { max-width: 100%; margin: 0.5rem; }
+            .capacity-bar .track { width: 40px; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .topbar__actions { width: 100%; }
+            .topbar__actions .btn { flex: 1; justify-content: center; }
+            .classes-table { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+    SIDEBAR OVERLAY (Mobile)
+    ============================================ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============================================
+    SIDEBAR
+    ============================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__brand">
+            <span class="sidebar__brand-icon">🏛️</span>
+            <span class="sidebar__brand-text">UniManage</span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <ul class="sidebar__menu">
+                <!-- Dashboard -->
+                <li class="sidebar__item">
+                    <a href="#" class="sidebar__link" data-page="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Academic Structure -->
+                <li class="sidebar__item sidebar__item--group sidebar__item--open">
+                    <button class="sidebar__link--toggle active" data-target="academic-sub">
+                        <i class="fas fa-university"></i>
+                        <span>Academic Structure</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu sidebar__submenu--open" id="academic-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="programmes">Programmes</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="courses">Courses</a></li>
+                        <li><a href="#" class="sidebar__sublink active" data-page="classes">Classes</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="curriculum">Curriculum</a></li>
+                    </ul>
+                </li>
+
+                <!-- Teaching & Enrollment -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="teaching-sub">
+                        <i class="fas fa-chalkboard-teacher"></i> <span>Teaching &amp; Enrollment</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="teaching-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="assignment">Assignment</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="enrollments">Enrollments <span class="badge">18</span></a></li>
+                    </ul>
+                </li>
+
+                <!-- Assessments -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="assessment-sub">
+                        <i class="fas fa-clipboard-list"></i> <span>Assessments</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="assessment-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="results">Results <span class="badge">12</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="transcripts">Transcripts</a></li>
+                    </ul>
+                </li>
+
+                <!-- Scheduling -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="scheduling-sub">
+                        <i class="fas fa-calendar-alt"></i> <span>Scheduling</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="scheduling-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="timetable">Timetable</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="exams">Exams</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="venues">Venues</a></li>
+                    </ul>
+                </li>
+
+                <!-- Evaluations -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="eval-sub">
+                        <i class="fas fa-star-half-alt"></i> <span>Evaluations</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="eval-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="course-evaluation">Course Evaluation</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="lecturer-evaluation">Lecturer Evaluation</a></li>
+                    </ul>
+                </li>
+
+                <!-- Student Services -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="services-sub">
+                        <i class="fas fa-hands-helping"></i> <span>Student Services</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="services-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="deferments">Deferments <span class="badge">3</span></a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="complaints">Complaints</a></li>
+                    </ul>
+                </li>
+
+                <!-- Reports -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="reports-sub">
+                        <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="reports-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="analytics">Analytics</a></li>
+                    </ul>
+                </li>
+
+                <!-- Profile -->
+                <li class="sidebar__item sidebar__item--group">
+                    <button class="sidebar__link--toggle" data-target="profile-sub">
+                        <i class="fas fa-id-badge"></i> <span>My Profile</span>
+                        <i class="fas fa-chevron-down sidebar__chevron"></i>
+                    </button>
+                    <ul class="sidebar__submenu" id="profile-sub">
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-details">Profile Details</a></li>
+                        <li><a href="#" class="sidebar__sublink" data-page="profile-settings">Settings</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar__footer">© 2026 UniManage · v2.0</div>
+    </aside>
+
+    <!-- ============================================
+    MAIN CONTENT
+    ============================================ -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar__left">
+                <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="topbar__title" id="pageTitle">
+                    <i class="fas fa-users"></i> Classes
+                </h1>
+            </div>
+            <div class="topbar__actions">
+                <button class="btn btn-primary" onclick="openAddClassModal()">
+                    <i class="fas fa-plus"></i> Add Class
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== STATS ===== -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users stat-card__icon"></i>
+                <div class="stat-card__number" id="statTotal">0</div>
+                <div class="stat-card__label">Total Classes</div>
+                <div class="stat-card__sub">Active &amp; Inactive</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-circle stat-card__icon" style="color: var(--green);"></i>
+                <div class="stat-card__number" id="statActive">0</div>
+                <div class="stat-card__label">Active</div>
+                <div class="stat-card__sub">Currently running</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock stat-card__icon" style="color: var(--gold);"></i>
+                <div class="stat-card__number" id="statInactive">0</div>
+                <div class="stat-card__label">Inactive</div>
+                <div class="stat-card__sub">Archived or suspended</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-chair stat-card__icon" style="color: var(--blue-card);"></i>
+                <div class="stat-card__number" id="statCapacity">0</div>
+                <div class="stat-card__label">Total Capacity</div>
+                <div class="stat-card__sub">Across all classes</div>
+            </div>
+        </div>
+
+        <!-- ===== FILTER BAR ===== -->
+        <div class="filter-bar">
+            <div class="filter-bar__input">
+                <i class="fas fa-search"></i>
+                <input type="text" id="classSearch" placeholder="Search by name, programme, or code..." onkeyup="filterClasses()" />
+            </div>
+            <div class="filter-bar__filters">
+                <select id="programmeFilter" onchange="filterClasses()">
+                    <option value="all">All Programmes</option>
+                    <option value="BSC-CS">BSC-CS</option>
+                    <option value="BSC-IT">BSC-IT</option>
+                    <option value="MSC-CS">MSC-CS</option>
+                    <option value="DIP-CS">DIP-CS</option>
+                </select>
+                <select id="semesterFilter" onchange="filterClasses()">
+                    <option value="all">All Semesters</option>
+                    <option value="2025/2026 Sem I">2025/2026 Sem I</option>
+                    <option value="2024/2025 Sem II">2024/2025 Sem II</option>
+                </select>
+                <select id="yearFilter" onchange="filterClasses()">
+                    <option value="all">All Years</option>
+                    <option value="Year 1">Year 1</option>
+                    <option value="Year 2">Year 2</option>
+                    <option value="Year 3">Year 3</option>
+                    <option value="Year 4">Year 4</option>
+                </select>
+                <select id="statusFilter" onchange="filterClasses()">
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <button class="btn-sm" onclick="resetFilters()">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== CLASSES TABLE ===== -->
+        <div class="table-wrapper">
+            <div class="table-scroll">
+                <table class="classes-table" id="classesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Class Code</th>
+                            <th>Programme</th>
+                            <th>Semester</th>
+                            <th>Year</th>
+                            <th>Capacity / Enrolled</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classesTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-footer" style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1.2rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--text-muted);flex-wrap:wrap;gap:0.5rem;">
+                <span id="classCount">Showing 0 classes</span>
+                <div class="table-footer__pagination" style="display:flex;gap:0.3rem;">
+                    <button class="active" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">1</button>
+                    <button onclick="showToast('📄 Page 2 loaded', 'info')" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">2</button>
+                    <button onclick="showToast('📄 Page 3 loaded', 'info')" style="padding:0.2rem 0.7rem;border:1px solid var(--border);border-radius:30px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:0.7rem;font-weight:500;transition:0.2s;color:var(--text);">3</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================
+    ADD/EDIT CLASS MODAL
+    ============================================ -->
+    <div class="modal-overlay" id="classModal">
+        <div class="modal">
+            <div class="modal__header">
+                <h2 id="modalTitle"><i class="fas fa-plus-circle" style="color: var(--green);"></i> Add Class</h2>
+                <button class="modal__close" onclick="closeModal('classModal')">&times;</button>
+            </div>
+            <div class="modal__body">
+                <form id="classForm" onsubmit="saveClass(event)">
+                    <input type="hidden" id="editClassId" value="" />
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="className">Class Code</label>
+                            <input type="text" id="className" placeholder="e.g. CS27, IT25, or BSC-CS-2027" required />
+                            <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.2rem;">e.g., CS27 = Computer Science class of 2027</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="classProgramme">Programme</label>
+                            <select id="classProgramme" required>
+                                <option value="">— Select Programme —</option>
+                                <option value="BSC-CS">BSC-CS - Computer Science</option>
+                                <option value="BSC-IT">BSC-IT - Information Technology</option>
+                                <option value="MSC-CS">MSC-CS - Computer Science (Masters)</option>
+                                <option value="DIP-CS">DIP-CS - Computer Science (Diploma)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="classYear">Year of Study</label>
+                            <select id="classYear" required>
+                                <option value="Year 1">Year 1</option>
+                                <option value="Year 2">Year 2</option>
+                                <option value="Year 3" selected>Year 3</option>
+                                <option value="Year 4">Year 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="classGroup">Group / Stream</label>
+                            <input type="text" id="classGroup" placeholder="e.g., A, B, or 1" value="A" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="classSemester">Semester</label>
+                            <select id="classSemester" required>
+                                <option value="2025/2026 Sem I">2025/2026 Sem I</option>
+                                <option value="2024/2025 Sem II">2024/2025 Sem II</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="classCapacity">Capacity</label>
+                            <input type="number" id="classCapacity" placeholder="e.g. 45" min="1" value="45" required />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="classEnrolled">Enrolled Students</label>
+                            <input type="number" id="classEnrolled" placeholder="e.g. 42" min="0" value="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="classStatus">Status</label>
+                            <select id="classStatus" required>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="classDescription">Description (Optional)</label>
+                        <textarea id="classDescription" placeholder="e.g., CS27 cohort – Year 3 Computer Science students taking Web Development module"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn-outline" onclick="closeModal('classModal')">Cancel</button>
+                <button class="btn btn-success" onclick="document.getElementById('classForm').requestSubmit()">
+                    <i class="fas fa-save"></i> Save Class
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    TOAST
+    ============================================ -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================
+        // DATA
+        // ============================================
+        const programmeNames = {
+            'BSC-CS': 'Bachelor of Science in Computer Science',
+            'BSC-IT': 'Bachelor of Science in Information Technology',
+            'MSC-CS': 'Master of Science in Computer Science',
+            'DIP-CS': 'Diploma in Computer Science'
+        };
+
+        let classesData = [
+            { id: 1, name: 'CS27', programme: 'BSC-CS', year: 'Year 3', group: 'A', semester: '2025/2026 Sem I',
+                capacity: 45, enrolled: 42, status: 'Active',
+                description: 'CS27 cohort – Year 3 Computer Science students taking core modules.' },
+            { id: 2, name: 'CS27-B', programme: 'BSC-CS', year: 'Year 3', group: 'B', semester: '2025/2026 Sem I',
+                capacity: 40, enrolled: 36, status: 'Active',
+                description: 'CS27-B group for specialized elective courses.' },
+            { id: 3, name: 'CS26', programme: 'BSC-CS', year: 'Year 4', group: 'A', semester: '2025/2026 Sem I',
+                capacity: 38, enrolled: 32, status: 'Active',
+                description: 'CS26 cohort – Final year Computer Science students.' },
+            { id: 4, name: 'IT26', programme: 'BSC-IT', year: 'Year 4', group: 'A', semester: '2025/2026 Sem I',
+                capacity: 35, enrolled: 28, status: 'Active',
+                description: 'IT26 cohort – Final year Information Technology students.' },
+            { id: 5, name: 'CS28', programme: 'BSC-CS', year: 'Year 2', group: 'A', semester: '2024/2025 Sem II',
+                capacity: 55, enrolled: 50, status: 'Active',
+                description: 'CS28 cohort – Year 2 Computer Science students.' },
+            { id: 6, name: 'CS28-B', programme: 'BSC-CS', year: 'Year 2', group: 'B', semester: '2025/2026 Sem I',
+                capacity: 50, enrolled: 45, status: 'Active',
+                description: 'CS28-B group for Year 2 Computer Science.' },
+            { id: 7, name: 'CS29', programme: 'BSC-CS', year: 'Year 1', group: 'A', semester: '2025/2026 Sem I',
+                capacity: 60, enrolled: 58, status: 'Active',
+                description: 'CS29 cohort – First year Computer Science students.' },
+            { id: 8, name: 'DIP24', programme: 'DIP-CS', year: 'Year 2', group: 'A', semester: '2024/2025 Sem II',
+                capacity: 30, enrolled: 18, status: 'Inactive',
+                description: 'DIP24 cohort – Diploma in Computer Science (archived).' }
+        ];
+
+        let currentClasses = [...classesData];
+        let filteredClasses = [...currentClasses];
+        let nextClassId = 9;
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function getStatusBadge(status) {
+            if (status === 'Active') {
+                return '<span class="status-badge active"><i class="fas fa-check-circle"></i> Active</span>';
+            } else {
+                return '<span class="status-badge inactive"><i class="fas fa-times-circle"></i> Inactive</span>';
+            }
+        }
+
+        function getProgrammeLabel(code) {
+            return programmeNames[code] || code;
+        }
+
+        function getCapacityBar(enrolled, capacity) {
+            const pct = Math.round((enrolled / capacity) * 100);
+            let cls = '';
+            if (pct >= 90) cls = 'danger';
+            else if (pct >= 75) cls = 'warn';
+            return `
+                    <div class="capacity-bar">
+                        <span style="font-weight:600;font-size:0.75rem;">${enrolled}/${capacity}</span>
+                        <div class="track"><div class="fill ${cls}" style="width:${Math.min(pct, 100)}%"></div></div>
+                        <span class="pct">${pct}%</span>
+                    </div>
+                `;
+        }
+
+        // ============================================
+        // RENDER TABLE
+        // ============================================
+        function renderClasses(list) {
+            const tbody = document.getElementById('classesTableBody');
+            if (!tbody) return;
+
+            if (list.length === 0) {
+                tbody.innerHTML =
+                    `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No classes found matching your criteria.</td></tr>`;
+                document.getElementById('classCount').textContent = 'Showing 0 classes';
+                updateStats();
+                return;
+            }
+
+            let html = '';
+            list.forEach((c, index) => {
+                const displayName = c.group ? `${c.name} (${c.group})` : c.name;
+                html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><span class="class-badge">${displayName}</span></td>
+                            <td>
+                                <div style="font-weight:500;font-size:0.8rem;">${c.programme}</div>
+                                <div style="font-size:0.65rem;color:var(--text-muted);">${getProgrammeLabel(c.programme)}</div>
+                            </td>
+                            <td>${c.semester}</td>
+                            <td>${c.year}</td>
+                            <td>${getCapacityBar(c.enrolled, c.capacity)}</td>
+                            <td>${getStatusBadge(c.status)}</td>
+                            <td>
+                                <div class="actions-cell">
+                                    <button class="btn-sm primary" onclick="openEditClassModal(${c.id})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-sm danger" onclick="deleteClass(${c.id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            });
+
+            tbody.innerHTML = html;
+            document.getElementById('classCount').textContent = `Showing ${list.length} classes`;
+            updateStats();
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats() {
+            const total = currentClasses.length;
+            const active = currentClasses.filter(c => c.status === 'Active').length;
+            const inactive = total - active;
+            const totalCapacity = currentClasses.reduce((sum, c) => sum + c.capacity, 0);
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statInactive').textContent = inactive;
+            document.getElementById('statCapacity').textContent = totalCapacity;
+        }
+
+        // ============================================
+        // CRUD OPERATIONS
+        // ============================================
+        function openAddClassModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--green);"></i> Add Class';
+            document.getElementById('editClassId').value = '';
+            document.getElementById('classForm').reset();
+            document.getElementById('classYear').value = 'Year 3';
+            document.getElementById('classGroup').value = 'A';
+            document.getElementById('classSemester').value = '2025/2026 Sem I';
+            document.getElementById('classCapacity').value = '45';
+            document.getElementById('classEnrolled').value = '0';
+            document.getElementById('classStatus').value = 'Active';
+            document.getElementById('classDescription').value = '';
+            openModal('classModal');
+        }
+
+        function openEditClassModal(id) {
+            const cls = currentClasses.find(c => c.id === id);
+            if (!cls) return;
+
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit" style="color: var(--gold);"></i> Edit Class';
+            document.getElementById('editClassId').value = id;
+            document.getElementById('className').value = cls.name;
+            document.getElementById('classProgramme').value = cls.programme;
+            document.getElementById('classYear').value = cls.year;
+            document.getElementById('classGroup').value = cls.group || '';
+            document.getElementById('classSemester').value = cls.semester;
+            document.getElementById('classCapacity').value = cls.capacity;
+            document.getElementById('classEnrolled').value = cls.enrolled;
+            document.getElementById('classStatus').value = cls.status;
+            document.getElementById('classDescription').value = cls.description || '';
+            openModal('classModal');
+        }
+
+        function saveClass(e) {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById('editClassId').value);
+            const name = document.getElementById('className').value.trim().toUpperCase();
+            const programme = document.getElementById('classProgramme').value;
+            const year = document.getElementById('classYear').value;
+            const group = document.getElementById('classGroup').value.trim().toUpperCase();
+            const semester = document.getElementById('classSemester').value;
+            const capacity = parseInt(document.getElementById('classCapacity').value) || 0;
+            const enrolled = parseInt(document.getElementById('classEnrolled').value) || 0;
+            const status = document.getElementById('classStatus').value;
+            const description = document.getElementById('classDescription').value.trim();
+
+            if (!name || !programme) {
+                showToast('⚠️ Please enter a class code and select a programme.', 'warning');
+                return;
+            }
+
+            if (enrolled > capacity) {
+                showToast('⚠️ Enrolled students cannot exceed capacity.', 'warning');
+                return;
+            }
+
+            if (id) {
+                // Edit mode
+                const index = currentClasses.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    currentClasses[index] = { ...currentClasses[index], name, programme, year, group, semester, capacity,
+                        enrolled, status, description };
+                    showToast(`✅ Class "${name}" updated successfully!`, 'success');
+                }
+            } else {
+                // Add mode
+                const newClass = {
+                    id: nextClassId++,
+                    name,
+                    programme,
+                    year,
+                    group: group || '',
+                    semester,
+                    capacity,
+                    enrolled,
+                    status,
+                    description
+                };
+                currentClasses.push(newClass);
+                showToast(`✅ Class "${name}" added successfully!`, 'success');
+            }
+
+            closeModal('classModal');
+            filterClasses();
+        }
+
+        function deleteClass(id) {
+            if (!confirm('Are you sure you want to delete this class? This action cannot be undone.')) return;
+            currentClasses = currentClasses.filter(c => c.id !== id);
+            filterClasses();
+            showToast('🗑️ Class deleted successfully.', 'info');
+        }
+
+        // ============================================
+        // FILTERS
+        // ============================================
+        function filterClasses() {
+            const search = document.getElementById('classSearch').value.toLowerCase();
+            const programme = document.getElementById('programmeFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            let filtered = currentClasses.filter(c => {
+                const matchSearch = c.name.toLowerCase().includes(search) ||
+                    c.programme.toLowerCase().includes(search) ||
+                    (c.group && c.group.toLowerCase().includes(search));
+                const matchProgramme = programme === 'all' || c.programme === programme;
+                const matchSemester = semester === 'all' || c.semester === semester;
+                const matchYear = year === 'all' || c.year === year;
+                const matchStatus = status === 'all' || c.status === status;
+                return matchSearch && matchProgramme && matchSemester && matchYear && matchStatus;
+            });
+
+            filteredClasses = filtered;
+            renderClasses(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('classSearch').value = '';
+            document.getElementById('programmeFilter').value = 'all';
+            document.getElementById('semesterFilter').value = 'all';
+            document.getElementById('yearFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            filterClasses();
+        }
+
+        // ============================================
+        // MODAL HELPERS
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(el => {
+                    el.classList.remove('active');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ============================================
+        // SIDEBAR NAV
+        // ============================================
+        document.querySelectorAll('.sidebar__link--toggle').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.dataset.target;
+                const submenu = document.getElementById(targetId);
+                const parentItem = this.closest('.sidebar__item--group');
+                if (!submenu) return;
+
+                submenu.classList.toggle('sidebar__submenu--open');
+                parentItem.classList.toggle('sidebar__item--open');
+                const isOpen = submenu.classList.contains('sidebar__submenu--open');
+                this.setAttribute('aria-expanded', isOpen);
+            });
+        });
+
+        const navLinks = document.querySelectorAll('.sidebar__link, .sidebar__sublink');
+        const pageTitle = document.getElementById('pageTitle');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') e.preventDefault();
+
+                document.querySelectorAll('.sidebar__link, .sidebar__sublink').forEach(l => l.classList.remove(
+                    'active'));
+                this.classList.add('active');
+
+                const text = this.innerText.trim();
+                const icon = this.querySelector('i')?.className || 'fa-tachometer-alt';
+                pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('sidebarOverlay').classList.remove('active');
+                }
+
+                showToast(`📂 Navigated to ${text}`, 'info');
+            });
+        });
+
+        // ============================================
+        // MOBILE SIDEBAR TOGGLE
+        // ============================================
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        hamburgerBtn.addEventListener('click', toggleMobileSidebar);
+        overlay.addEventListener('click', toggleMobileSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Open sidebar submenus
+            const academicToggle = document.querySelector('[data-target="academic-sub"]');
+            if (academicToggle) {
+                const sub = document.getElementById('academic-sub');
+                if (sub) {
+                    sub.classList.add('sidebar__submenu--open');
+                    academicToggle.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
+                }
+            }
+            document.querySelectorAll('.sidebar__item--open .sidebar__link--toggle').forEach(el => {
+                el.setAttribute('aria-expanded', 'true');
+            });
+
+            renderClasses(currentClasses);
+        });
+    </script>
+</body>
+</html>

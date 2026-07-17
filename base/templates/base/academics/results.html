@@ -69,17 +69,17 @@
     <tbody id="resultsBody" data-activesession="{{ session }}">
       {% for result in results %}
       <tr
-        data-session="{{ result.curricula.session }}"
-        data-coursecode="{{ result.curricula.course.course_code }}"
-        data-coursename="{{ result.curricula.course.course_name }}"
-        data-credits="{{ result.curricula.course.credits }}"
+        data-session="{{ result.enrollment.curriculum.session }}"
+        data-coursecode="{{ result.enrollment.curriculum.course.course_code }}"
+        data-coursename="{{ result.enrollment.curriculum.course.course_name }}"
+        data-credits="{{ result.enrollment.curriculum.course.credits }}"
         data-score="{{ result.score }}"
         data-type="{{ result.type }}"
         data-title="{{ result.title }}"
       >
-        <td>{{ result.curricula.course.course_code }}</td>
-        <td>{{ result.curricula.course.course_name }}</td>
-        <td>{{ result.curricula.course.credits }}</td>
+        <td>{{ result.enrollment.curriculum.course.course_code }}</td>
+        <td>{{ result.enrollment.curriculum.course.course_name }}</td>
+        <td>{{ result.enrollment.curriculum.course.credits }}</td>
         <td class="cat-score">
           {% if result.type == 'C' %}{{ result.score }}{% else %}—{% endif %}
         </td>

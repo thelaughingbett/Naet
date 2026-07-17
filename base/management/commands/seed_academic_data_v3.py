@@ -6,11 +6,11 @@ Generates deterministic (replicable) seed data:
   - 3 Schools  →  Departments  →  Courses  →  Programmes  →  Classes
   - Sessions (5, last one active: 2026/2027 Sem 1)
   - Curriculum records per class per session (same year-of-study = same courses)
-  - Lecturers assigned to curricula
+  - Lecturers assigned to curricula (via LecturerAssignment, one primary each)
   - FeeStructures (same year-of-study = same fees within a programme)
   - A couple of small hostels with a few rooms each
   - Students (skipping first-year students for results)
-  - Results for non-first-year students
+  - Results for non-first-year students (with entered_by set)
   - StudentFeeAccounts + past payments for past sessions (continuing students)
   - A small, fixed-size set of resident students with hostel allocations
   - Prints all created user credentials
@@ -23,6 +23,7 @@ import random
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 # ── adjust these import paths to match your project layout ──────────────────
 from base.models import (
@@ -33,6 +34,7 @@ from base.models import (
     Session,
     Tclass,
     Curriculum,
+    LecturerAssignment,
     Result,
     FeeStructure,
     StudentFeeAccount,
@@ -310,6 +312,13 @@ RESIDENT_SELECTION_CHANCE = 0.25
 PAST_PAYMENT_FULL_CHANCE = 0.7
 PAST_PAYMENT_PARTIAL_CHANCE = 0.9
 
+# StaffProfile.clean() requires contract_start_date/contract_end_date
+# whenever employment_type is one of the "contract" types (the model
+# default is 'contract_ft'). Seed lecturers as permanent staff so
+# StaffProfile.save()'s full_clean() doesn't reject them for missing
+# contract dates.
+LECTURER_EMPLOYMENT_TYPE = "tenured"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -338,6 +347,11 @@ class Command(BaseCommand):
         super().__init__(*args, **kwargs)
         self._credentials = []   # list of (role, email, password)
         self._resident_count = 0  # tracked across the whole run, capped
+        self._programme_code_counter = 0
+        # Fallback entered_by for Result rows when a curriculum has no
+        # primary LecturerAssignment for some reason. Set once the first
+        # lecturer exists.
+        self._default_entered_by = None
 
     # ── entry point ──────────────────────────────────────────────────────────
     def handle(self, *args, **options):
@@ -386,7 +400,6 @@ class Command(BaseCommand):
     # ── schools / departments / courses / programmes / classes / curriculum / fees ──
     def _create_schools_departments_courses_programmes(self, sessions):
         active_session = next(s for s in sessions if s.is_active)
-        lecturer_idx = 0
         schools = []
 
         for school_data in SCHOOL_DATA:
@@ -417,13 +430,26 @@ class Command(BaseCommand):
                 # ── programmes → classes → curriculum → fees ─────────────────
                 for prog_data in dept_data["programmes"]:
                     degree, prog_name, prefix, dur_years, sems_per_yr = prog_data
+
+                    # Programme.code is required + unique, and prefixes alone
+                    # aren't guaranteed unique across the whole dataset (e.g.
+                    # "MEE" is reused for both an MSc and a BEng programme),
+                    # so we derive a code from a running, deterministic counter.
+                    self._programme_code_counter += 1
+                    programme_code = f"{prefix}{self._programme_code_counter:03d}"
+
                     prog, _ = Programme.objects.get_or_create(
                         programme_name=prog_name,
                         defaults=dict(
+                            code=programme_code,
                             department=dept,
                             degree_type=degree,
                             duration_years=dur_years,
                             semesters_per_year=sems_per_yr,
+                            # kuccps_programme_code is unique but nullable —
+                            # leave it explicitly NULL rather than letting it
+                            # default to "" (which would collide across rows).
+                            kuccps_programme_code=None,
                         ),
                     )
 
@@ -491,7 +517,7 @@ class Command(BaseCommand):
                             )
 
                     self.stdout.write(
-                        f"    Programme: {prog_name}  classes={[c.class_name for c in classes]}")
+                        f"    Programme: {prog_name} ({programme_code})  classes={[c.class_name for c in classes]}")
 
             schools.append(school)
         return schools
@@ -551,7 +577,6 @@ class Command(BaseCommand):
                         last_name=last,
                         surname="",
                         gender=RNG.choice(["M", "F"]),
-                        role="staff",
                         is_staff=True,
                         is_activated=True,
                     ),
@@ -569,10 +594,18 @@ class Command(BaseCommand):
                         user=user,
                         department=dept,
                         title=RNG.choice(LECTURER_TITLES),
+                        # StaffProfile.save() runs full_clean(), and the
+                        # default employment_type ('contract_ft') requires
+                        # contract_start_date/contract_end_date. Seed
+                        # lecturers as permanent staff to avoid that.
+                        employment_type=LECTURER_EMPLOYMENT_TYPE,
                     ),
                 )
                 lecturers.append(lec)
                 lec_idx += 1
+
+        if lecturers and self._default_entered_by is None:
+            self._default_entered_by = lecturers[0].user
 
         self.stdout.write(f"\n  Created {len(lecturers)} lecturers.")
         return lecturers
@@ -596,7 +629,20 @@ class Command(BaseCommand):
             seed_val = hash(str(curr.record_id)) % (2**31)
             rng_local = random.Random(seed_val)
             picked = rng_local.sample(pool, min(2, len(pool)))
-            curr.professor.set(picked)
+
+            # Curriculum.professor is now M2M through LecturerAssignment,
+            # which has its own clean() enforcing exactly one primary
+            # instructor per slot. Create the rows explicitly instead of
+            # using .set(), so exactly the first pick is primary.
+            for idx, lec in enumerate(picked):
+                LecturerAssignment.objects.get_or_create(
+                    curriculum=curr,
+                    lecturer=lec,
+                    defaults=dict(
+                        is_primary=(idx == 0),
+                        status='Confirmed',
+                    ),
+                )
 
         self.stdout.write("  Assigned lecturers to curricula.")
 
@@ -671,6 +717,11 @@ class Command(BaseCommand):
             defaults=dict(
                 room=room,
                 move_in_date=active_session.start_date,
+                # These are genuine, confirmed seed residents — reflect
+                # that rather than leaving them at the model's PENDING
+                # default. allocated_by stays at its 'SYSTEM' default,
+                # which matches allocating_warden being left unset.
+                status='APPROVED',
             ),
         )
         self._resident_count += 1
@@ -725,16 +776,19 @@ class Command(BaseCommand):
 
     def _create_students_and_results(self, sessions, hostel_rooms_by_gender):
         """
-        Replacement for Command._create_students_and_results.
-
-        Key differences vs the previous version
-        ─────────────────────────────────────────
-        1. Creates an Enrollment (status='approved') for every student ×
-        curriculum pair before creating Result rows.
+        Key points
+        ─────────────────────────────────────
+        1. Creates an Enrollment (status='approved', with approval_method
+           and approved_at set — Enrollment.clean() now requires these
+           whenever status='approved') for every student × curriculum pair
+           before creating Result rows.
         2. Result is looked up / created via enrollment, not via
-        curricula + student directly.
-        3. bulk_create for both Enrollment and Result uses ignore_conflicts=True
-        so reruns against an already-seeded database are safe.
+           curricula + student directly.
+        3. Result.entered_by is now a required FK — populated from the
+           curriculum's primary LecturerAssignment where available, falling
+           back to the first lecturer created for the run.
+        4. bulk_create for both Enrollment and Result uses ignore_conflicts=True
+           so reruns against an already-seeded database are safe.
         """
         past_sessions = [s for s in sessions if not s.is_active]
         active_session = next(s for s in sessions if s.is_active)
@@ -770,6 +824,19 @@ class Command(BaseCommand):
                 curricula_list = []
                 past_fee_structures = []
 
+            # Map curriculum → the user who should be recorded as having
+            # entered the results for it (its primary lecturer, if one was
+            # assigned), falling back to the run's default lecturer.
+            entered_by_map = {}
+            if curricula_list:
+                curr_ids = [c.record_id for c in curricula_list]
+                primary_assignments = LecturerAssignment.objects.filter(
+                    curriculum_id__in=curr_ids, is_primary=True
+                ).select_related('lecturer__user')
+                entered_by_map = {
+                    a.curriculum_id: a.lecturer.user for a in primary_assignments
+                }
+
             with transaction.atomic():
                 class_students = []
 
@@ -790,7 +857,6 @@ class Command(BaseCommand):
                             last_name=last,
                             surname="",
                             gender=RNG.choice(["M", "F"]),
-                            role="student",
                             is_activated=True,
                         ),
                     )
@@ -820,13 +886,20 @@ class Command(BaseCommand):
                 # ── results for continuing students ──────────────────────────────
                 if yos > 1 and curricula_list:
 
-                    # 1. Ensure every student has an Enrollment for every past curriculum.
-                    #    bulk_create with ignore_conflicts is safe on reruns.
+                    # 1. Ensure every student has an Enrollment for every past
+                    #    curriculum. bulk_create with ignore_conflicts is safe
+                    #    on reruns. approval_method/approved_at are set
+                    #    explicitly since Enrollment.clean() (not run by
+                    #    bulk_create, but kept consistent for data integrity)
+                    #    requires them whenever status='approved'.
+                    now = timezone.now()
                     enrollment_objs = [
                         Enrollment(
                             student=student,
                             curriculum=curr,
                             status='approved',
+                            approval_method='system',
+                            approved_at=now,
                         )
                         for _, student in class_students
                         for curr in curricula_list
@@ -865,6 +938,15 @@ class Command(BaseCommand):
                             if not enr:
                                 continue
 
+                            entered_by_user = entered_by_map.get(
+                                curr.record_id, self._default_entered_by
+                            )
+                            if entered_by_user is None:
+                                # Shouldn't happen once lecturers exist, but
+                                # skip rather than violate the NOT NULL
+                                # constraint on entered_by.
+                                continue
+
                             rng_c = random.Random(
                                 hash(f"{sidx}-{curr.record_id}-C") % (2**31)
                             )
@@ -875,6 +957,7 @@ class Command(BaseCommand):
                             if (enr.record_id, "C") not in existing_results:
                                 to_create.append(Result(
                                     enrollment=enr,
+                                    entered_by=entered_by_user,
                                     type="C",
                                     title="CAT 1",
                                     score=decimal.Decimal(
@@ -884,6 +967,7 @@ class Command(BaseCommand):
                             if (enr.record_id, "E") not in existing_results:
                                 to_create.append(Result(
                                     enrollment=enr,
+                                    entered_by=entered_by_user,
                                     type="E",
                                     title="Final Exam",
                                     score=decimal.Decimal(

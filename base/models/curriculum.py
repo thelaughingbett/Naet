@@ -6,6 +6,7 @@
 #
 #        http://www.apache.org/licenses/LICENSE-2.0
 
+from django.conf import settings
 from django.utils import timezone
 from base.managers import CommonUnitCurriculumManager
 from .base import BaseModelMixin
@@ -21,6 +22,84 @@ ASSIGNMENT_STATUS_CHOICES = [
 ]
 
 
+class Syllabus(BaseModelMixin):
+    """
+    The catalog-level link between a Programme and a Course. Declares that
+    this course is (or is proposed to be, or was) part of this programme's
+    curriculum
+
+    `Curriculum` points here instead of directly at `Course`, so scheduling
+    can only draw from courses actually approved for that programme.
+    """
+
+    class State(models.TextChoices):
+        PROPOSED = "proposed", "Proposed"
+        UNDER_REVIEW = "under_review", "Under Review"
+        APPROVED = "approved", "Approved"    # core/required, active
+        # elective/supplementary, active but optional
+        ADJUNCT = "adjunct", "Adjunct"
+        RETIRED = "retired", "Retired"        # no longer offered under this programme
+
+    # States a Curriculum entry is actually allowed to schedule against.
+    SCHEDULABLE_STATES = (State.APPROVED, State.ADJUNCT)
+
+    programme = models.ForeignKey(
+        "Programme",
+        on_delete=models.PROTECT,
+        related_name="syllabus_entries"
+    )
+    course = models.ForeignKey(
+        "Course",
+        on_delete=models.PROTECT,
+        related_name="syllabus_entries"
+    )
+
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.PROPOSED
+    )
+
+    year_introduced = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Academic year this entry was approved/introduced into the programme",
+    )
+
+    proposed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="syllabus_proposals",
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="syllabus_approvals",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ("programme", "course")
+        verbose_name_plural = "Syllabus entries"
+
+    def clean(self):
+        super().clean()
+        if self.state == self.State.APPROVED and not self.approved_by:
+            raise ValidationError({
+                "approved_by": "An approving user is required before a syllabus "
+                "entry can move to Approved."
+            })
+
+    def __str__(self):
+        return f"{self.programme} — {self.course} [{self.get_state_display()}]"
+
+
 class Curriculum(BaseModelMixin):
     """
     Represents an active teaching slot pairing a course unit with a specific
@@ -32,9 +111,10 @@ class Curriculum(BaseModelMixin):
         on_delete=models.PROTECT
     )
 
-    course = models.ForeignKey(
-        'Course',
-        on_delete=models.PROTECT
+    syllabus = models.ForeignKey(
+        'Syllabus',
+        on_delete=models.PROTECT,
+        related_name='curriculum_entries',
     )
 
     professor = models.ManyToManyField(
@@ -60,7 +140,7 @@ class Curriculum(BaseModelMixin):
     capacity = models.PositiveIntegerField(default=60)
 
     class Meta:
-        unique_together = ('course', 'Tclass', 'session')
+        unique_together = ('syllabus', 'Tclass', 'session')
         verbose_name = "Curriculum Slot"
         verbose_name_plural = "Curriculum Slots"
 
@@ -73,39 +153,72 @@ class Curriculum(BaseModelMixin):
         ).select_related('enrollment__student')
 
     def __str__(self):
-        return f"{self.course} - {self.session}"
+        return f"{self.course} - {self.Tclass} - {self.session}"
+
+    @property
+    def course(self):
+        return self.syllabus.course
+
+    def clean(self):
+        super().clean()
+        if self.syllabus.state not in Syllabus.SCHEDULABLE_STATES:
+            raise ValidationError({
+                'syllabus': f"Cannot schedule a class into a course that is "
+                f"'{self.syllabus.get_state_display()}' — only "
+                f"Approved or Adjunct syllabus entries can be taught."
+            })
+        if self.syllabus.programme_id != self.Tclass.programme_id:
+            raise ValidationError({
+                'syllabus': f"This syllabus entry belongs to "
+                f"{self.syllabus.programme}, not {self.Tclass.programme}."
+            })
 
     @classmethod
     def clone_curriculum(cls, from_session_id, to_session_id):
         """
-        Clones all curriculum allocations from one session to another, 
+        Clones all curriculum allocations from one session to another,
         maintaining the respective lecturer assignments under a 'Draft' state.
+
+        FIXED: previously referenced `course`/`course_id`, which no longer
+        exist as real fields on Curriculum (course is now a @property
+        proxying `syllabus.course`) — this raised TypeError/AttributeError
+        on every call since the Syllabus refactor. Now uses `syllabus`/
+        `syllabus_id` throughout.
+
+        ALSO FIXED: the source queryset now excludes any Curriculum whose
+        syllabus entry is no longer in a SCHEDULABLE_STATE. bulk_create()
+        never calls clean(), so without this filter a Retired or
+        still-Proposed syllabus entry could get silently cloned into the
+        next session's timetable — exactly what Curriculum.clean() exists
+        to prevent for normal creates.
         """
         source = cls.objects.filter(
-            session_id=from_session_id
-        ).prefetch_related('professor')
+            session_id=from_session_id,
+            syllabus__state__in=Syllabus.SCHEDULABLE_STATES,
+        ).select_related('syllabus').prefetch_related('professor')
 
         professor_map = {}
         new_records = []
         for req in source:
             obj = cls(
-                course=req.course,
+                syllabus=req.syllabus,
                 Tclass=req.Tclass,
                 session_id=to_session_id,
             )
             new_records.append(obj)
-            professor_map[(req.course_id, req.Tclass_id)
+            professor_map[(req.syllabus_id, req.Tclass_id)
                           ] = list(req.professor.all())
 
         cls.objects.bulk_create(new_records, ignore_conflicts=True)
 
         created = cls.objects.filter(
             session_id=to_session_id,
-            course_id__in=[r.course_id for r in new_records],
+            syllabus_id__in=[r.syllabus_id for r in new_records],
             Tclass_id__in=[r.Tclass_id for r in new_records],
         )
         for obj in created:
-            professors = professor_map.get((obj.course_id, obj.Tclass_id), [])
+            professors = professor_map.get(
+                (obj.syllabus_id, obj.Tclass_id), [])
             if professors:
                 obj.professor.set(professors)
 
@@ -204,10 +317,16 @@ class CommonUnitCurriculum(Curriculum):
 
     @property
     def classes(self):
+        """
+        FIXED: previously filtered only on `session=self.session` +
+        `syllabus__course__course_type='CC'`, which returns every class
+        taking ANY common-unit course this session, not classes sharing
+        THIS specific common unit. Scoping to `syllabus=self.syllabus`
+        restores "all classes sharing this course + session".
+        """
         return Curriculum.objects.filter(
-            course=self.course,
             session=self.session,
-            course__course_type='CC'
+            syllabus=self.syllabus,
         ).values_list('Tclass__class_name', flat=True)
 
 
@@ -281,8 +400,20 @@ class Enrollment(BaseModelMixin):
 
     @property
     def requires_manual_approval(self) -> bool:
-        """Default behavior for new enrollments — not a hard restriction.
-        A core/common unit can still be manually approved via approve()."""
+        """
+        Default behavior for new enrollments — not a hard restriction.
+        A core/common unit can still be manually approved via approve().
+
+        NOTE — not changed here, flagging only: this still reads
+        `self.curriculum.course.course_type`, i.e. Course's single GLOBAL
+        Core/Elective/Common flag. Now that Syllabus exists specifically to
+        let a course be Core for one programme and Adjunct/elective for
+        another, this is the natural place to actually use that —
+        e.g. `self.curriculum.syllabus.state == Syllabus.State.ADJUNCT`
+        instead of (or alongside) `course_type`. Left as-is since switching
+        this changes which enrollments auto-approve — worth doing
+        deliberately rather than as a drive-by fix.
+        """
         return self.curriculum.course.course_type not in self.AUTO_APPROVE_COURSE_TYPES
 
     def clean(self):
@@ -374,6 +505,14 @@ class Result(BaseModelMixin):
         ('PR', 'Projects'),
     ]
 
+    RESULT_STATE_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted for approval'),
+        ('approved', 'Approved'),
+        ('published', 'Published'),
+        ('disputed', 'Disputed'),
+    ]
+
     enrollment = models.ForeignKey(
         Enrollment,
         on_delete=models.PROTECT,
@@ -391,6 +530,12 @@ class Result(BaseModelMixin):
         max_length=45
     )
 
+    state = models.CharField(
+        choices=RESULT_STATE_CHOICES,
+        default='draft',
+        max_length=20,
+    )
+
     score = models.DecimalField(
         decimal_places=2,
         max_digits=5
@@ -402,5 +547,18 @@ class Result(BaseModelMixin):
 
     history = HistoricalRecords()
 
+    def clean(self):
+
+        if self.type != 'E' and self.type != 'PR':
+            self.state = 'published'
+
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+
+        self.full_clean()
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.student} - {self.curricula} - {self.title}"
+        return f"{self.enrollment.student} - {self.title}"

@@ -15,9 +15,6 @@
 from .base import BaseModelMixin
 from django.db import models
 
-from django.db import modelss
-
-
 from django.conf import settings
 
 

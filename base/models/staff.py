@@ -7,6 +7,7 @@
 #        http://www.apache.org/licenses/LICENSE-2.0
 
 
+from simple_history.models import HistoricalRecords
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -19,6 +20,8 @@ from .base import (
     WithSchoolMixin,
     hasUserMixin
 )
+
+import datetime
 
 
 class StaffProfile(
@@ -82,6 +85,19 @@ class StaffProfile(
         ('library', 'Library & Information Services'),
         ('hospitality_catering', 'Hospitality, Catering, & Retail'),
     ]
+
+    STAFF_STATUS_CHOICES = [
+        ('active', 'ACTIVE'),
+        ('on-leave', 'On Leave'),
+        ('adjunct', 'Adjunct'),
+        ('inactive', 'Inactive')
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STAFF_STATUS_CHOICES,
+        default='active'
+    )
 
     staff_number = models.CharField(max_length=20, unique=True)
 
@@ -176,6 +192,13 @@ class StaffProfile(
     )
 
     @property
+    def effective_user(self):
+        """Resolves to self.user for every StaffProfile subtype except
+        AdministrativeStaff, which can alternatively resolve through a
+        linked Lecturer — see its override."""
+        return self.user
+
+    @property
     def is_contract_expired(self):
         """Returns True if the contract end date has passed."""
         if self.contract_end_date:
@@ -220,6 +243,10 @@ class StaffProfile(
         """Python-level validation for forms, APIs, and Admin Panel saves."""
         """Validates supervisor hierarchy, role constraints, and prevents dual-profiles."""
         super().clean()
+
+        if self.effective_user and not self.effective_user.is_staff:
+            self.effective_user.is_staff = True
+            self.effective_user.save()
 
         # 1. Enforce Contract Rules
         is_contract_type = self.employment_type in [
@@ -363,6 +390,35 @@ class StaffProfile(
         self._initial_supervisor_id = self.supervisor_id
 
 
+# make sure they match except for ofcourse lecturer
+APPOINTMENT_CHOICES = [
+    ('hod', 'Head of Department'),
+    ('dean', 'Dean of Faculty'),
+    ('director', 'Director of School'),
+    ('exams_coordinator', 'Departmental Exams Coordinator'),
+]
+
+ROLE_CHOICES = [
+    ('lecturer', 'Lecturer'),
+    ('hod', 'Head of Department'),
+    ('dean', 'Dean of Faculty'),
+    ('director', 'Director of School'),
+    ('exams_coordinator', 'Departmental Exams Coordinator'),
+]
+
+ADMIN_ROLE_CHOICES = [
+    ('vc', 'Vice-Chancellor / President'),
+    ('dvc', 'Deputy Vice-Chancellor'),
+    ('registrar', 'University Registrar'),
+    ('director_of_exams', 'Director of Examinations'),
+    ('hod', 'Head of Department'),
+    ('dean', 'Dean of Faculty'),
+    ('director', 'Director of School'),
+    ('executive_sec', 'Executive Secretary / Admin Assistant'),
+    ('general_staff', 'General Administrative Staff'),
+]
+
+
 class Lecturer(WithDepartmentMixin, StaffProfile):
 
     academic_titles_abbreviated = [
@@ -386,13 +442,6 @@ class Lecturer(WithDepartmentMixin, StaffProfile):
         ("Dean of Faculty",         "Dean"),
         ("Director of School",      "Director"),
         ("Chaired Professor",       "Chair Prof."),
-    ]
-
-    ROLE_CHOICES = [
-        ('lecturer', 'Lecturer'),
-        ('hod', 'Head of Department'),
-        ('dean', 'Dean of Faculty'),
-        ('director', 'Director of School'),
     ]
 
     role = models.CharField(
@@ -451,6 +500,11 @@ class Lecturer(WithDepartmentMixin, StaffProfile):
 
     years_of_experience = models.IntegerField(
         null=True,
+        blank=True
+    )
+
+    tenured = models.BooleanField(
+        default=False,
         blank=True
     )
 
@@ -516,38 +570,74 @@ class Lecturer(WithDepartmentMixin, StaffProfile):
 
 
 class AcademicAppointment(BaseModelMixin):
-    """
-    Tracks temporary administrative appointments for Lecturers.
-    """
-    APPOINTMENT_CHOICES = [
-        ('hod', 'Head of Department'),
-        ('dean', 'Dean of Faculty'),
-        ('director', 'Director of School'),
-    ]
 
     lecturer = models.ForeignKey(
         'Lecturer',
         on_delete=models.CASCADE,
         related_name='appointments'
     )
+
     appointment_type = models.CharField(
         max_length=20,
         choices=APPOINTMENT_CHOICES
     )
 
-    # Track the exact term of service
     start_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(
+        null=True,
+        blank=True
+    )
+    # TODO make false by default and only make true if appointment start date is today
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        constraints = [
-            # Ensures a department only has ONE active HOD at any single moment
-            models.UniqueConstraint(
-                fields=['appointment_type', 'is_active'],
-                name='unique_active_appointment_per_scope'
-            )
-        ]
+    # NOTE: previously enforced via a UniqueConstraint on
+    # (appointment_type, is_active) alone, which scoped "one active HOD"
+    # to the whole institution rather than per department — wrong for any
+    # department-scoped role. Moved to clean() below since Django can't
+    # express "unique per lecturer__department" as a plain field-based
+    # constraint without a denormalized FK.
+
+    def save(self, *args, **kwargs):
+        # Always run full validation cleaning before hitting the database
+        self.full_clean()
+
+        # TODO : make sure to return this to lecturer when appointment period elapses
+        # TODO :  make this update in a background job that checks start date
+        self.lecturer.role = self.appointment_type
+        self.lecturer.save()
+
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if not (self.is_active and self.lecturer_id):
+            return
+
+        if self.appointment_type in ('hod', 'exams_coordinator'):
+            scope = self.lecturer.department
+            clashing = AcademicAppointment.objects.filter(
+                appointment_type=self.appointment_type,
+                is_active=True,
+                lecturer__department=scope,
+            ).exclude(pk=self.pk)
+            if clashing.exists():
+                raise ValidationError(
+                    f"{scope} already has an active {self.get_appointment_type_display()}."
+                )
+
+        elif self.appointment_type in ('dean', 'director'):
+            scope = self.lecturer.department.school
+            clashing = AcademicAppointment.objects.filter(
+                appointment_type=self.appointment_type, is_active=True,
+                lecturer__department__school=scope,
+            ).exclude(pk=self.pk)
+            if clashing.exists():
+                raise ValidationError(
+                    f"{scope} already has an active {self.get_appointment_type_display()}."
+                )
+
+    def __str__(self):
+        return f"{self.get_appointment_type_display()} — {self.lecturer} ({self.start_date})"
 
 
 class AdministrativeStaff(StaffProfile, WithDepartmentMixin, WithSchoolMixin):
@@ -555,27 +645,35 @@ class AdministrativeStaff(StaffProfile, WithDepartmentMixin, WithSchoolMixin):
     Unified model for all academic-aligned administrative personnel 
     assisting across Departments, Schools, and central Institution structures.
     """
-    ROLE_CHOICES = [
-        ('vc', 'Vice-Chancellor / President'),
-        ('dvc', 'Deputy Vice-Chancellor'),
-        ('registrar', 'University Registrar'),
-        ('dept_admin',       'Department Administrator'),
-        ('school_admin',     'School / Faculty Administrator'),
-        ('institution_admin', 'Central Institution Administrator'),
-        ('executive_sec',    'Executive Secretary / Admin Assistant'),
-        ('general_staff',    'General Administrative Staff'),
-    ]
 
     role = models.CharField(
         max_length=30,
-        choices=ROLE_CHOICES,
+        choices=ADMIN_ROLE_CHOICES,
         default='general_staff'
+    )
+
+    # override the mixin's required field
+    user = models.OneToOneField(
+        'User',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    lecturer = models.ForeignKey(
+        'Lecturer',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE, related_name='administrative_appointments'
     )
 
     has_administrative_privileges = models.BooleanField(
         default=False,
         help_text="Designates whether this admin has system approval authority over records/workflows."
     )
+
+    @property
+    def effective_user(self):
+        return self.user or (self.lecturer.user if self.lecturer_id else None)
 
     class Meta:
         constraints = [
@@ -589,6 +687,13 @@ class AdministrativeStaff(StaffProfile, WithDepartmentMixin, WithSchoolMixin):
     def clean(self):
         """Enforces scope integrity based on the selected administrative role."""
         super().clean()
+
+        if bool(self.user_id) == bool(self.lecturer_id):
+            raise ValidationError(
+                "Set exactly one of user or lecturer — a career "
+                "administrator uses user directly; a sitting academic "
+                "taking on this role links via lecturer instead."
+            )
 
         # ── Scope Enforcement Logic ─────────────────────────────────
         if self.role == 'dept_admin':
@@ -623,6 +728,69 @@ class AdministrativeStaff(StaffProfile, WithDepartmentMixin, WithSchoolMixin):
             scope = f" ({self.school.code})"
 
         return f"{self.staff_number} — {self.user.get_full_name()} [{self.get_role_display()}{scope}]"
+
+
+class GeneralStaff(StaffProfile, ):
+    """
+    Employment-category staff with no specialized domain and no
+    office/authority — department secretaries, office assistants, clerks,
+    drivers, groundskeepers. Ordinary, permanent employment (same shape
+    as LabTechnicalStaff/MedicalStaff/LibraryStaff), NOT an appointment —
+    nobody rotates into this from being a Lecturer, and it carries no
+    has_administrative_privileges flag the way AdministrativeStaff does.
+
+    Posted to either a Department or a School, not both — unlike
+    LabTechnicalStaff (department-only) or LibraryStaff (school/central).
+    """
+
+    ROLE_CHOICES = [
+        ('secretary',       'Departmental / School Secretary'),
+        ('office_assistant', 'Office Assistant'),
+        ('clerk',            'Clerk'),
+        ('driver',            'Driver'),
+        ('groundskeeper',    'Groundskeeper / Facilities'),
+        ('other',            'Other General Staff'),
+    ]
+
+    role = models.CharField(
+        max_length=30,
+        choices=ROLE_CHOICES,
+        default='other'
+    )
+
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='%(class)s_set'
+    )
+
+    school = models.ForeignKey(
+        'School',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='%(class)s_set'
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "General Staff"
+        verbose_name_plural = "General Staff"
+
+    def clean(self):
+        super().clean()
+        if bool(self.department_id) == bool(self.school_id):
+            raise ValidationError(
+                "Set exactly one of department or school — general staff "
+                "are posted to one or the other, not both."
+            )
+
+    def __str__(self):
+        scope = self.department or self.school
+        return f"{self.staff_number} — {self.user.get_full_name()} [{self.get_role_display()}] ({scope})"
 
 
 class HostelWarden(StaffProfile):

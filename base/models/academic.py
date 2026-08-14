@@ -262,6 +262,11 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
     # approved_cue_capacity ,TODO : should be based on accredition or some form of strategy
     capacity = models.IntegerField(default=70)
 
+    # curricula = models.ManyToManyField(
+    #     'Course',
+    #     through='curricula'
+    # )  # an easy way to define curricula for programme and is to be used to define per session curriculum for classes to be defined at creation of programme
+
     unesco_isced = models.CharField(
         max_length=123,
         null=True,
@@ -292,15 +297,31 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
 class Tclass(BaseModelMixin):
     class_name = models.CharField(max_length=78)
 
-    programme = models.ForeignKey('Programme', on_delete=models.PROTECT)
+    programme = models.ForeignKey(
+        'Programme',
+        on_delete=models.PROTECT
+    )
 
-    courses = models.ManyToManyField('Course', through='Curriculum')
+    courses = models.ManyToManyField(
+        'Syllabus',
+        through='Curriculum'
+    )  # change field to  curriculum ,this is going to be a problem maybe make a property for backwards compatability
 
-    year_of_study = models.IntegerField(default=1, null=True, blank=True)
+    year_of_study = models.IntegerField(
+        default=1,
+        blank=True
+    )
 
     graduated = models.DateField(
         null=True,
         blank=True
+    )  # TODO :  change to convocation link ,actually this is irrelevant as it is catered for by graduation ,or keep the reference to convocation
+
+    liason = models.ForeignKey(
+        'Lecturer',
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING
     )
 
     def __str__(self):
@@ -316,10 +337,13 @@ class Session(BaseModelMixin):
 
     academic_year = models.CharField(max_length=9)  # e.g. "2024/2025"
     semester = models.CharField(max_length=1, choices=SEMESTER_CHOICES)
+
     start_date = models.DateField()
     end_date = models.DateField(null=True)
+
     registration_start = models.DateField(null=True, blank=True)
     registration_end = models.DateField(null=True, blank=True)
+
     # is this redundant given that active session is set in school ? 👇🏿
     is_active = models.BooleanField(default=False)
 
@@ -439,7 +463,7 @@ class Course(BaseModelMixin):
     lecture_hours_per_week = models.PositiveIntegerField(default=3)
     practical_hours_per_week = models.PositiveIntegerField(
         default=0,
-        help_text="Required if course_type is P (Practical/Lab)."
+        help_text="Required if course_type is (Practical/Lab)."
     )
 
     # 4. Industrial Attachment & Field Experiential Metrics
@@ -447,6 +471,7 @@ class Course(BaseModelMixin):
         default=0,
         help_text="Mandatory weeks for industrial attach/practicums. Usually 8-12 weeks under CUE guidelines."
     )
+
     is_externally_assessed = models.BooleanField(
         default=False,
         help_text="Requires an appointed external university assessor/supervisor field-visit grade signoff."
@@ -457,6 +482,7 @@ class Course(BaseModelMixin):
         default=False,
         help_text="Hard lock variable preventing undergraduate students from registering into this code."
     )
+
     requires_defense_panel = models.BooleanField(
         default=False,
         help_text="Mandatory for Thesis/Dissertation options. Triggers Senate Board of Examiners appointment workflows."

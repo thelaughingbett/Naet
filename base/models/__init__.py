@@ -18,8 +18,15 @@ from .hostel import *  # noqa: F401, E402
 from .staff import *  # noqa: F401, E402
 from .timetables import *  # noqa: F401, E402
 from .users import *  # noqa : F401,E402
+from .clubs import *  # noqa : F401,E402
 from .security import *  # noqa : F401,E402
+from .student_council import *  # noqa : F401,E402
 from .regulatory import *  # noqa : F401,E402
+from .admissions import *  # noqa : F401,E402
+from .announcements import *  # noqa : F401,E402
+from .leave import *  # noqa : F401,E402
+from .student_risk_score_model import *  # noqa : F401,E402
+from .performance_appraisal import *
 
 from .socials import *  # noqa : F401,E402
 from .erp import *  # noqa : F401,E402

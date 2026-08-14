@@ -156,6 +156,7 @@ class DailyClassExecution(BaseModelMixin):
         blank=True,
         help_text="The Class Representative or student who signs off/vouchers that the class took place."
     )
+
     student_confirmed_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -247,6 +248,8 @@ class DailyClassExecution(BaseModelMixin):
     def __str__(self):
         return f"{self.calendar_date} : {self.timetable_slot.curriculum.course.course_code} -> [{self.get_status_display()}]"
 
+# TODO : make sure when curriculum is set an exam session is defined but date kept empty and any strategy takes this into consideration
+
 
 class ExamSession(BaseModelMixin):
     """A single exam sitting."""
@@ -272,16 +275,17 @@ class ExamSession(BaseModelMixin):
         'Curriculum',
         on_delete=models.PROTECT,
         related_name='exam_sessions'
-    )  # when generating timetable common unit should be a concern here
+    )  # when generating timetable common unit should be a concern here ,should be unique or not consider supp or unique together with type
 
     exam_type = models.CharField(
         max_length=10,
         choices=TYPE_CHOICES
     )
-    date = models.DateField()
+    date = models.DateField(null=True)
     time_slot = models.CharField(
         max_length=11,
-        choices=TIME_SLOTS
+        choices=TIME_SLOTS,
+        null=True
     )
 
     class Meta:
@@ -407,6 +411,7 @@ class ExamInvigilatorAssignment(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name='invigilator_assignments'
     )
+
     lecturer = models.ForeignKey(
         'Lecturer',
         on_delete=models.PROTECT,
@@ -486,6 +491,7 @@ class ExamInvigilatorAssignment(BaseModelMixin):
 class ExamClash(BaseModelMixin):
     """Records detected exam clashes for a student."""
 
+    # consider this when checking for student retakes and how to deal with that
     student = models.ForeignKey(
         'Student',
         on_delete=models.PROTECT,
@@ -510,7 +516,6 @@ class ExamClash(BaseModelMixin):
         return f"Clash for {self.student} — {self.session_a} vs {self.session_b}"
 
 
-# TODO : create field for exam venue viability
 class Building(BaseModelMixin):
     """
     Represents a physical block or structure on the university campus.
@@ -541,7 +546,8 @@ class Building(BaseModelMixin):
         help_text="Verifies wheelchair entry points into the physical block."
     )
 
-    # is_exam_venue = models.BooleanField(default=True)
+    is_exam_venue = models.BooleanField(default=True)
+
     def __str__(self):
         return f"{self.building_name} ({self.building_code})"
 

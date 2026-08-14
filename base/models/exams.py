@@ -15,18 +15,6 @@
 from .base import BaseModelMixin
 from django.db import models
 
-
-from base.models import (
-    ExamSession,
-    Course,
-    Student,
-    Session,
-    Result
-)
-
-from django.db import modelss
-
-
 from django.conf import settings
 
 
@@ -41,7 +29,7 @@ class QuestionPaper(BaseModelMixin):
     ]
 
     exam = models.OneToOneField(
-        ExamSession,
+        "ExamSession",
         on_delete=models.CASCADE,
         related_name="question_paper"
     )
@@ -52,7 +40,9 @@ class QuestionPaper(BaseModelMixin):
         null=True, related_name="question_papers_set"
     )
 
-    file = models.FileField(upload_to="exams/question_papers/")
+    file = models.FileField(
+        upload_to="exams/question_papers/"
+    )
 
     version = models.PositiveSmallIntegerField(default=1)
 
@@ -65,7 +55,7 @@ class QuestionPaper(BaseModelMixin):
 
 class QuestionPaperModeration(BaseModelMixin):
     question_paper = models.ForeignKey(
-        QuestionPaper,
+        'QuestionPaper',
         on_delete=models.CASCADE,
         related_name="moderations"
     )
@@ -87,7 +77,7 @@ class QuestionBankItem(BaseModelMixin):
         HARD = "hard", "Hard"
 
     course = models.ForeignKey(
-        Course,
+        "Course",
         on_delete=models.CASCADE,
         related_name="question_bank_items"
     )
@@ -121,7 +111,7 @@ class ExamAttendance(BaseModelMixin):
         MALPRACTICE = "malpractice", "Malpractice Reported"
 
     exam_session = models.OneToOneField(
-        ExamSession,
+        "ExamSession",
         on_delete=models.CASCADE,
         related_name="attendance"
     )
@@ -184,9 +174,9 @@ class GradeScale(BaseModelMixin):
 class GradeCard(BaseModelMixin):
     """Consolidated term result summary for a student."""
     student = models.ForeignKey(
-        Student, on_delete=models.CASCADE, related_name="grade_cards")
+        "Student", on_delete=models.CASCADE, related_name="grade_cards")
     term = models.ForeignKey(
-        Session,
+        "Session",
         on_delete=models.CASCADE,
         related_name="grade_cards"
     )
@@ -224,12 +214,12 @@ class RevaluationRequest(BaseModelMixin):
         MARKS_UNCHANGED = "marks_unchanged", "Marks Unchanged"
 
     result = models.ForeignKey(
-        Result,
+        "Result",
         on_delete=models.CASCADE,
         related_name="revaluation_requests"
     )
     student = models.ForeignKey(
-        Student,
+        "Student",
         on_delete=models.CASCADE,
         related_name="revaluation_requests"
     )
@@ -256,23 +246,27 @@ class RevaluationRequest(BaseModelMixin):
 
 class BacklogRegistration(BaseModelMixin):
     """Supplementary/backlog exam registration for a previously failed course."""
+
     student = models.ForeignKey(
-        Student,
+        "Student",
         on_delete=models.CASCADE,
         related_name="backlog_registrations"
     )
+
     original_result = models.ForeignKey(
-        Result,
+        "Result",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="backlog_attempts"
     )
+
     exam = models.ForeignKey(
-        ExamSession,
+        "ExamSession",
         on_delete=models.CASCADE,
         related_name="backlog_registrations"
     )
+
     attempt_number = models.PositiveSmallIntegerField(default=2)
     fee_paid = models.BooleanField(default=False)
 
@@ -284,21 +278,32 @@ class TranscriptRequest(BaseModelMixin):
         ISSUED = "issued", "Issued"
         REJECTED = "rejected", "Rejected"
 
+    DELIVERY_METHOD_CHOICES = [
+        ('digital', "Digital / Portal"),
+        ('mail', "Email"),
+        ('pickup', "Department pickup / Physically issued")
+    ]
+
     student = models.ForeignKey(
         'Student',
         on_delete=models.CASCADE,
         related_name="transcript_requests"
     )
+
     purpose = models.CharField(max_length=255, blank=True)
+
     delivery_method = models.CharField(
         max_length=50,
-        default="digital"
+        default="digital",
+        choices=DELIVERY_METHOD_CHOICES
     )  # digital, mail, pickup -> make enum
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.REQUESTED
     )
+
     issued_file = models.FileField(
         upload_to="registrar/transcripts/",
         blank=True,
@@ -320,18 +325,24 @@ class Certificate(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="certificates"
     )
-    cert_type = models.CharField(max_length=30, choices=CertType.choices)
+    cert_type = models.CharField(
+        max_length=30,
+        choices=CertType.choices
+    )
+
     issued_on = models.DateField(auto_now_add=True)
     issued_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True
     )
+
     file = models.FileField(
         upload_to="registrar/certificates/",
         blank=True,
         null=True
     )
+
     verification_code = models.CharField(
         max_length=50,
         unique=True,

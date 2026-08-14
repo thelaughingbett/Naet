@@ -166,9 +166,21 @@ class Student(BaseModelMixin, hasUserMixin):
         help_text="e.g., B-plus, C-plain"
     )
 
-    class_entered = models.ForeignKey('Tclass', on_delete=models.PROTECT)
+    class_entered = models.ForeignKey(
+        'Tclass',
+        on_delete=models.PROTECT,
+        related_name='class_list'
+    )
 
-    disabled = models.BooleanField(default=False)
+    current_class = models.ForeignKey(
+        'Tclass',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True
+    )  # TODO  : make class entered on create
+    # tracks deffered students and for analytics purposes,and graduation purposes
+
+    disabled = models.BooleanField(default=False)  # physical disability
 
     disability_status = models.CharField(
         max_length=100,
@@ -196,7 +208,11 @@ class Student(BaseModelMixin, hasUserMixin):
     )
 
     def __str__(self):
-        return self.registration_number
+        return f"{self.user.half_name} ({self.registration_number})"
+
+    @property
+    def name(self):
+        return f"{self.user.half_name} ({self.registration_number})"
 
     @property
     def expected_graduation_session(self):
@@ -327,16 +343,28 @@ class GraduatedStudent(Student):
         verbose_name_plural = 'Graduated Students'
 
 
-# add document or
 class IDCard(BaseModelMixin):
     student = models.OneToOneField(
-        Student, on_delete=models.CASCADE, related_name="id_card")
+        'Student',
+        on_delete=models.CASCADE,
+        related_name="id_card"
+    )
     card_number = models.CharField(max_length=30, unique=True)
     issued_date = models.DateField(auto_now_add=True)
     expiry_date = models.DateField()
     is_active = models.BooleanField(default=True)
     photo = models.ImageField(
-        upload_to="registrar/id_photos/", blank=True, null=True)
+        upload_to="registrar/id_photos/",
+        blank=True,
+        null=True
+    )
+
+    # an easily printable copy of the physical id issued to the student
+    file = models.FileField(
+        upload_to="registrar/id_file",
+        blank=True,
+        null=True
+    )  # TODO :  in clean make this file named to students name,reg_no and date issued ,also make sure image exist's
 
 
 # --- MEDICAL ENUMS ---
@@ -378,18 +406,31 @@ class StudentMedicalProfile(models.Model):
         primary_key=True,
         related_name='medical_profile'
     )
+
     blood_group = models.CharField(
-        max_length=10, choices=BLOOD_GROUP_CHOICES, default='Unknown')
+        max_length=10,
+        choices=BLOOD_GROUP_CHOICES,
+        default='Unknown'
+    )
+
     known_allergies = models.TextField(
-        blank=True, default="None Registered", help_text="Food, drug, or environmental allergens")
+        blank=True,
+        default="None Registered",
+        help_text="Food, drug, or environmental allergens"
+    )
+
     chronic_conditions = models.TextField(
-        blank=True, default="None", help_text="e.g., Asthma, Diabetes, Epilepsy")
+        blank=True,
+        default="None",
+        help_text="e.g., Asthma, Diabetes, Epilepsy"
+    )
 
     # CUE Statutory Reporting Flags
     requires_special_accommodation = models.BooleanField(
         default=False,
         help_text="Flag for CUE disability audit requirements (e.g., ground floor hostel access, exam time extensions)"
     )
+
     accommodation_notes = models.TextField(blank=True, null=True)
 
     # ODPC Data Protection Framework Verification
@@ -432,14 +473,20 @@ class ClinicEncounter(models.Model):
     )
     date_of_visit = models.DateTimeField(auto_now_add=True)
     encounter_type = models.CharField(
-        max_length=30, choices=ENCOUNTER_TYPE_CHOICES, default='Outpatient')
+        max_length=30,
+        choices=ENCOUNTER_TYPE_CHOICES,
+        default='Outpatient'
+    )
 
     # Clinical Observations
     symptoms_reported = models.TextField()
     diagnosis = models.CharField(
-        max_length=255, help_text="Standard medical diagnosis string")
+        max_length=255,
+        help_text="Standard medical diagnosis string"
+    )
     treatment_plan = models.TextField(
-        help_text="Prescribed drugs, rest orders, or hospital referral details")
+        help_text="Prescribed drugs, rest orders, or hospital referral details"
+    )
 
     # Sick Leave Tracking (Feeds into Exam Clearance Exemptions)
     recommended_sick_leave_days = models.PositiveIntegerField(

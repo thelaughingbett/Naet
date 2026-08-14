@@ -64,6 +64,7 @@ class Deferment(BaseModelMixin):
     ]
 
     STATUS_CHOICES = [
+        ('requested', 'Requested'),
         ('active',      'Active'),
         ('reinstated',  'Reinstated'),
         ('withdrawn',   'Withdrawn'),
@@ -108,7 +109,7 @@ class Deferment(BaseModelMixin):
     status = models.CharField(
         max_length=15,
         choices=STATUS_CHOICES,
-        default='active'
+        default='requested'
     )
     request_status = models.CharField(
         max_length=10,
@@ -124,6 +125,18 @@ class Deferment(BaseModelMixin):
     )
     reinstated_at = models.DateTimeField(null=True, blank=True)
     history = HistoricalRecords()
+
+    def approve(self):
+        pass
+
+    def reject(self):
+        pass
+
+    def reinstate(self):
+        pass
+
+    def withdraw(self):
+        pass
 
     class Meta:
         unique_together = ('student', 'session_deferred')
@@ -553,6 +566,7 @@ class Graduation(BaseModelMixin):
         ("approved", "Approved"),
         ("conferred", "Conferred")
     ]
+
     student = models.OneToOneField(
         'Student',
         on_delete=models.PROTECT,
@@ -677,14 +691,17 @@ class DegreeAudit(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="degree_audit"
     )
+
     credits_completed = models.PositiveIntegerField(default=0)
     credits_remaining = models.PositiveIntegerField(default=0)
+
     gpa = models.DecimalField(
         max_digits=4,
         decimal_places=2,
         null=True,
         blank=True
     )
+
     result = models.CharField(
         max_length=20,
         choices=Result.choices,
@@ -713,7 +730,10 @@ class Diploma(BaseModelMixin):
 class Convocation(BaseModelMixin):
     name = models.CharField(max_length=150)  # e.g. "42nd Convocation"
     date = models.DateField()
-    venue = models.CharField(max_length=255, blank=True)
+    venue = models.CharField(
+        max_length=255,
+        blank=True
+    )
     candidates = models.ManyToManyField(
         'Graduation',
         related_name="convocations",

@@ -1,0 +1,942 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/deptadmin/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>Faculty Directory · HOD</title>
+<style>
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn-sm.success:hover {
+    background: #14532d;
+  }
+  .btn-sm.danger {
+    background: #b91c1c;
+    color: white;
+    border-color: #b91c1c;
+  }
+  .btn-sm.danger:hover {
+    background: #991b1b;
+  }
+
+  /* ===== FILTERS ===== */
+  .filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .filters-bar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .filters-bar label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .filters-bar select,
+  .filters-bar input {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    background: var(--white);
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .filters-bar select:focus,
+  .filters-bar input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .filters-bar .search-input {
+    min-width: 200px;
+    padding-left: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .faculty-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 900px;
+  }
+  .faculty-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .faculty-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .faculty-table tr:last-child td {
+    border-bottom: none;
+  }
+  .faculty-table tr:hover td {
+    background: #fafcff;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    text-transform: capitalize;
+  }
+  .status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status-badge.on-leave {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-badge.adjunct {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-badge.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pagination .page-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: var(--font);
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .pagination .page-btn:hover:not(.active) {
+    background: var(--bg);
+  }
+  .pagination .page-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .pagination .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pagination .page-info {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 0.5rem;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 580px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+  .modal .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .modal .modal__close:hover {
+    color: var(--text);
+  }
+  .modal .modal__body {
+    margin-bottom: 1rem;
+  }
+  .modal .modal__body .detail-row {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .modal .modal__body .detail-row .label {
+    font-weight: 600;
+    min-width: 120px;
+    color: var(--text-muted);
+  }
+  .modal .modal__body .detail-row .value {
+    color: var(--text);
+  }
+
+  /* Form styles inside modal */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+
+  .modal .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 1024px) {
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters-bar .filter-group {
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .faculty-table {
+      font-size: 0.7rem;
+      min-width: 750px;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .faculty-table {
+      font-size: 0.6rem;
+      min-width: 650px;
+    }
+    .faculty-table th,
+    .faculty-table td {
+      padding: 0.3rem 0.5rem;
+    }
+  }
+</style>
+
+{% endblock %} {% block content %}
+<!-- ===== MAIN CONTENT ===== -->
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-user-check"></i> Faculty Directory
+    </h1>
+  </div>
+  <div class="topbar__actions">
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📊 Faculty report exported', 'info')"
+    >
+      <i class="fas fa-download"></i> Export
+    </button>
+  </div>
+</div>
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label><i class="fas fa-user-tag"></i> Designation</label>
+    <select id="filterDesignation" onchange="applyFilters()">
+      <option value="all">All Designations</option>
+      <option value="Professor">Professor</option>
+      <option value="Associate Professor">Associate Professor</option>
+      <option value="Assistant Professor">Assistant Professor</option>
+      <option value="Full Professor">Full Professor</option>
+      <option value="Chaired Professor">Chaired Professor</option>
+      <option value="Distinguished Professor">Distinguished Professor</option>
+      <option value="Emeritus Professor">Emeritus Professor</option>
+      <option value="Senior Lecturer">Senior Lecturer</option>
+      <option value="Assistant Lecturer">Assistant Lecturer</option>
+      <option value="Junior Lecturer">Junior Lecturer</option>
+      <option value="Adjunct Lecturer">Adjunct Lecturer</option>
+      <option value="Visiting Lecturer">Visiting Lecturer</option>
+      <option value="Guest Lecturer">Guest Lecturer</option>
+      <option value="Part-Time Lecturer">Part-Time Lecturer</option>
+      <option value="Lecturer">Lecturer</option>
+      <option value="Adjunct Faculty">Adjunct Faculty</option>
+      <option value="Graduate Assistant">Graduate Assistant</option>
+      <option value="Teaching Assistant">Teaching Assistant</option>
+      <option value="Tutorial Fellow">Tutorial Fellow</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label><i class="fas fa-circle"></i> Status</label>
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="Active">Active</option>
+      <option value="On Leave">On Leave</option>
+      <option value="Adjunct">Adjunct</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <input
+      type="text"
+      class="search-input"
+      id="facultySearch"
+      placeholder="Search faculty..."
+      oninput="applyFilters()"
+    />
+  </div>
+  <button class="btn btn-outline" onclick="resetFilters()">
+    <i class="fas fa-undo"></i> Reset
+  </button>
+  <span
+    style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted)"
+    id="facultyCount"
+    >Showing 0 entries</span
+  >
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="table-wrap">
+  <table class="faculty-table">
+    <thead>
+      <tr>
+        <th style="width: 30px">#</th>
+        <th style="min-width: 160px">Name</th>
+        <th style="min-width: 140px">Designation</th>
+
+        <th style="min-width: 100px">Status</th>
+        <th style="min-width: 140px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="facultyTableBody">
+      {% for member in faculty %}
+      <tr
+        data-index="{{forloop.counter}}"
+        data-name="{{member.name}}"
+        data-designation="{{member.title}}"
+        data-id="{{member.record_id}}"
+        data-department="{{member.department}}"
+        data-email="{{member.school_email}}"
+      >
+        <td>{{forloop.counter}}</td>
+        <td>
+          <span style="font-weight: 500; font-size: 0.8rem"
+            >{{member.name}}</span
+          >
+        </td>
+        <td><span style="font-size: 0.75rem">{{member.title}}</span></td>
+
+        <td><span class="status-badge active">Active</span></td>
+        <td>
+          <button class="btn-sm primary" onclick="viewFaculty(1)">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== PAGINATION ===== -->
+<div class="pagination" id="facultyPagination"></div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- VIEW FACULTY MODAL -->
+<div class="modal-overlay" id="viewFacultyModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-user-circle" style="color: var(--blue-card)"></i>
+        Faculty Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewFacultyModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewFacultyBody">
+      <!-- populated by JS -->
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewFacultyModal')">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // FACULTY DATA
+  // ============================================================
+  let facultyData = [
+    {
+      id: 1,
+      name: "Prof. Charles Omondi",
+      designation: "Professor",
+      department: "Computer Science",
+      status: "Active",
+      email: "charles.omondi@university.edu",
+      phone: "+254 712 345 678",
+    },
+    {
+      id: 2,
+      name: "Dr. Sarah Wanjiru",
+      designation: "Associate Professor",
+      department: "Computer Science",
+      status: "Active",
+      email: "sarah.wanjiru@university.edu",
+      phone: "+254 723 456 789",
+    },
+    {
+      id: 3,
+      name: "Dr. Michael Ochieng",
+      designation: "Senior Lecturer",
+      department: "Electrical Engineering",
+      status: "Active",
+      email: "michael.ochieng@university.edu",
+      phone: "+254 734 567 890",
+    },
+    {
+      id: 4,
+      name: "Prof. Elizabeth Muthoni",
+      designation: "Professor",
+      department: "Mechanical Engineering",
+      status: "On Leave",
+      email: "elizabeth.muthoni@university.edu",
+      phone: "+254 745 678 901",
+    },
+    {
+      id: 5,
+      name: "Dr. Peter Omondi",
+      designation: "Assistant Professor",
+      department: "Computer Science",
+      status: "Active",
+      email: "peter.omondi@university.edu",
+      phone: "+254 756 789 012",
+    },
+    {
+      id: 6,
+      name: "Prof. Ruth Odhiambo",
+      designation: "Associate Professor",
+      department: "Mathematics",
+      status: "Active",
+      email: "ruth.odhiambo@university.edu",
+      phone: "+254 767 890 123",
+    },
+    {
+      id: 7,
+      name: "Dr. Samuel Kiplagat",
+      designation: "Senior Lecturer",
+      department: "Physics",
+      status: "On Leave",
+      email: "samuel.kiplagat@university.edu",
+      phone: "+254 778 901 234",
+    },
+    {
+      id: 8,
+      name: "Prof. Leonard Akinyi",
+      designation: "Professor",
+      department: "Chemistry",
+      status: "Active",
+      email: "leonard.akinyi@university.edu",
+      phone: "+254 789 012 345",
+    },
+    {
+      id: 9,
+      name: "Dr. Grace Mwangi",
+      designation: "Assistant Professor",
+      department: "Business Administration",
+      status: "Active",
+      email: "grace.mwangi@university.edu",
+      phone: "+254 790 123 456",
+    },
+    {
+      id: 10,
+      name: "Prof. David Kiprop",
+      designation: "Professor",
+      department: "Computer Science",
+      status: "Adjunct",
+      email: "david.kiprop@university.edu",
+      phone: "+254 701 234 567",
+    },
+    {
+      id: 11,
+      name: "Dr. Faith Chepkorir",
+      designation: "Lecturer",
+      department: "Electrical Engineering",
+      status: "Active",
+      email: "faith.chepkorir@university.edu",
+      phone: "+254 712 345 678",
+    },
+    {
+      id: 12,
+      name: "Dr. Victor Okoth",
+      designation: "Senior Lecturer",
+      department: "Mechanical Engineering",
+      status: "Active",
+      email: "victor.okoth@university.edu",
+      phone: "+254 723 456 789",
+    },
+    {
+      id: 13,
+      name: "Prof. Ann Njeri",
+      designation: "Associate Professor",
+      department: "Mathematics",
+      status: "Inactive",
+      email: "ann.njeri@university.edu",
+      phone: "+254 734 567 890",
+    },
+    {
+      id: 14,
+      name: "Dr. James Kariuki",
+      designation: "Lecturer",
+      department: "Computer Science",
+      status: "Active",
+      email: "james.kariuki@university.edu",
+      phone: "+254 745 678 901",
+    },
+    {
+      id: 15,
+      name: "Prof. Susan Waweru",
+      designation: "Professor",
+      department: "Physics",
+      status: "Active",
+      email: "susan.waweru@university.edu",
+      phone: "+254 756 789 012",
+    },
+  ];
+
+  let nextId = 16;
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach((el) => {
+    el.addEventListener("click", function (e) {
+      if (e.target === this) {
+        this.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach((el) => {
+        el.classList.remove("active");
+        document.body.style.overflow = "";
+      });
+    }
+  });
+
+  // ============================================================
+  // VIEW FACULTY
+  // ============================================================
+  function viewFaculty(id) {
+    const faculty = facultyData.find((f) => f.id === id);
+    if (!faculty) return;
+    const body = document.getElementById("viewFacultyBody");
+    const statusClass =
+      faculty.status === "Active"
+        ? "active"
+        : faculty.status === "On Leave"
+          ? "on-leave"
+          : faculty.status === "Adjunct"
+            ? "adjunct"
+            : "inactive";
+
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Name</span><span class="value"><strong>${faculty.name}</strong></span></div>
+      <div class="detail-row"><span class="label">Designation</span><span class="value">${faculty.designation}</span></div>
+      <div class="detail-row"><span class="label">Department</span><span class="value">${faculty.department}</span></div>
+      <div class="detail-row"><span class="label">Status</span><span class="value"><span class="status-badge ${statusClass}">${faculty.status}</span></span></div>
+      ${faculty.email ? `<div class="detail-row"><span class="label">Email</span><span class="value">${faculty.email}</span></div>` : ""}
+      ${faculty.phone ? `<div class="detail-row"><span class="label">Phone</span><span class="value">${faculty.phone}</span></div>` : ""}
+    `;
+    openModal("viewFacultyModal");
+  }
+
+  // ============================================================
+  // FILTERS & PAGINATION
+  // ============================================================
+  let currentPage = 1;
+  const perPage = 10;
+  let filteredData = [];
+
+  function applyFilters() {
+    const designation = document.getElementById("filterDesignation").value;
+    const status = document.getElementById("filterStatus").value;
+    const search = document
+      .getElementById("facultySearch")
+      .value.toLowerCase()
+      .trim();
+
+    filteredData = facultyData.filter((f) => {
+      if (designation !== "all" && f.designation !== designation) return false;
+      if (status !== "all" && f.status !== status) return false;
+      if (search) {
+        const match =
+          f.name.toLowerCase().includes(search) ||
+          f.department.toLowerCase().includes(search) ||
+          f.designation.toLowerCase().includes(search);
+        if (!match) return false;
+      }
+      return true;
+    });
+    currentPage = 1;
+    renderTable(filteredData);
+  }
+
+  function resetFilters() {
+    document.getElementById("filterDesignation").value = "all";
+    document.getElementById("filterStatus").value = "all";
+    document.getElementById("facultySearch").value = "";
+    applyFilters();
+    showToast("🔄 Filters reset", "info");
+  }
+
+  function renderTable(filteredData) {
+    const tbody = document.getElementById("facultyTableBody");
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const pageItems = filteredData.slice(start, end);
+
+    document.getElementById("facultyCount").textContent =
+      `Showing ${total} entries`;
+
+    if (pageItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="no-results"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No faculty members found</td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems
+        .map((item, idx) => {
+          const globalIdx = filteredData.indexOf(item) + 1;
+          const statusClass =
+            item.status === "Active"
+              ? "active"
+              : item.status === "On Leave"
+                ? "on-leave"
+                : item.status === "Adjunct"
+                  ? "adjunct"
+                  : "inactive";
+          return `
+          <tr>
+            <td style="text-align:center;font-size:0.7rem;color:var(--text-muted);">${item.id}</td>
+            <td><span style="font-weight:500;font-size:0.8rem;">${item.name}</span></td>
+            <td><span style="font-size:0.75rem;">${item.designation}</span></td>
+            <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+            <td>
+              <button class="btn-sm primary" onclick="viewFaculty('${item.id}')"><i class="fas fa-eye"></i></button>
+              
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+    }
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages, filteredData) {
+    const div = document.getElementById("facultyPagination");
+    if (totalPages <= 1) {
+      div.innerHTML = "";
+      return;
+    }
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1},${filteredData})" ${currentPage <= 1 ? "disabled" : ""}><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i},${filteredData})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    div.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const total = filteredData.length;
+    const pages = Math.ceil(total / perPage);
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderTable(filteredData);
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener("DOMContentLoaded", function () {
+    filteredData = [];
+    const tbody = document.getElementById("facultyTableBody");
+
+    facultyData = [];
+    if (tbody.children.length > 0) {
+      for (i = 0; i < tbody.children.length; i++) {
+        facultyData.push({
+          id: tbody.children[i].dataset.index,
+          name: tbody.children[i].dataset.name,
+          index: tbody.children[i].dataset.id,
+          designation: tbody.children[i].dataset.designation,
+          status: "Active",
+          department: tbody.children[i].dataset.department,
+          email: tbody.children[i].dataset.email,
+        });
+      }
+    }
+
+    filteredData = [...facultyData];
+    // console.log(filteredData);
+
+    renderTable(filteredData);
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Department Budget · HOD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    /* ===== RESET & VARIABLES ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a2540;
+      --navy-light: #1a3a5c;
+      --maroon: #9e2a2b;
+      --maroon-hover: #b13e3f;
+      --blue-card: #1f6392;
+      --green: #1e6f3f;
+      --gold: #fbbf24;
+      --sidebar-w: 280px;
+      --topnav-h: 64px;
+      --font: "Inter", "Segoe UI", sans-serif;
+      --text: #1e293b;
+      --text-muted: #5a6874;
+      --border: #e9edf2;
+      --bg: #f1f5f9;
+      --white: #ffffff;
+      --radius: 14px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.06);
+      --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-w);
+      background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+      color: #eef2ff; display: flex; flex-direction: column; z-index: 100;
+      transition: transform 0.3s ease; overflow-x: hidden; overflow-y: auto;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+    .sidebar__brand {
+      display: flex; align-items: center; gap: 12px; padding: 1.2rem 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; min-height: var(--topnav-h);
+    }
+    .sidebar__brand-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar__brand-text {
+      font-weight: 800; font-size: 1.1rem;
+      background: linear-gradient(120deg, #fff, #c0d9f0);
+      background-clip: text; -webkit-background-clip: text; color: transparent;
+      white-space: nowrap;
+    }
+    .sidebar__nav { flex: 1; padding: 0.6rem 0.6rem; overflow-y: auto; }
+    .sidebar__item { margin-bottom: 2px; }
+
+    .sidebar__link, .sidebar__link--toggle {
+      display: flex; align-items: center; gap: 12px; padding: 0.5rem 0.9rem;
+      border-radius: 10px; color: rgba(255,255,255,0.78); text-decoration: none;
+      font-size: 0.82rem; font-weight: 500; transition: all 0.2s; cursor: pointer;
+      white-space: nowrap; border: none; background: transparent; width: 100%;
+      font-family: inherit; text-align: left;
+    }
+    .sidebar__link:hover, .sidebar__link--toggle:hover {
+      background: rgba(255,255,255,0.08); color: white;
+    }
+    .sidebar__link.active, .sidebar__link--toggle.active {
+      background: var(--maroon); color: white; box-shadow: 0 4px 12px rgba(158,42,43,0.25);
+    }
+    .sidebar__link i, .sidebar__link--toggle i { width: 20px; text-align: center; font-size: 0.95rem; flex-shrink: 0; }
+    .sidebar__chevron { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
+    .sidebar__item--open .sidebar__chevron { transform: rotate(180deg); }
+
+    .sidebar__submenu {
+      list-style: none; max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      background: rgba(0,0,0,0.2); border-radius: 8px; margin: 0 0.5rem 0 0.5rem;
+    }
+    .sidebar__submenu--open { max-height: 600px; }
+    .sidebar__sublink {
+      display: flex; align-items: center; gap: 12px; padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+      color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.76rem;
+      font-weight: 400; transition: 0.2s; border-radius: 6px; cursor: pointer;
+      background: transparent; border: none; width: 100%; text-align: left; font-family: inherit;
+    }
+    .sidebar__sublink:hover { background: rgba(255,255,255,0.06); color: white; }
+    .sidebar__sublink.active { color: white; background: rgba(255,255,255,0.1); }
+    .sidebar__sublink .badge { margin-left: auto; background: var(--maroon); color: white; font-size: 0.55rem; padding: 0.1rem 0.5rem; border-radius: 30px; font-weight: 600; }
+
+    .sidebar__footer { padding: 1rem 1.2rem; font-size: 0.62rem; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.06); text-align: center; flex-shrink: 0; }
+
+    .sidebar-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 90; opacity: 0; visibility: hidden; transition: 0.2s;
+    }
+    .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; transition: margin-left 0.3s ease; padding: 1.8rem 2rem 2rem; background: var(--bg); }
+
+    /* ===== TOPBAR ===== */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .topbar__left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .topbar__hamburger { display: none; background: none; border: none; font-size: 1.4rem; color: var(--navy); cursor: pointer; padding: 0.3rem; }
+    .topbar__title { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; }
+    .topbar__badge { background: var(--navy); color: white; padding: 0.2rem 0.9rem; border-radius: 40px; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; }
+    .topbar__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    .btn { padding: 0.35rem 1rem; border: none; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; font-family: inherit; }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-primary:hover { background: var(--navy-light); }
+    .btn-success { background: var(--green); color: white; }
+    .btn-success:hover { background: #14532d; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-danger { background: #b91c1c; color: white; }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-sm { padding: 0.2rem 0.7rem; font-size: 0.65rem; border-radius: 30px; border: 1px solid var(--border); background: var(--white); cursor: pointer; transition: 0.2s; font-family: inherit; font-weight: 500; color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+    .btn-sm.primary:hover { background: var(--navy-light); }
+    .btn-sm.success { background: var(--green); color: white; border-color: var(--green); }
+    .btn-sm.success:hover { background: #14532d; }
+    .btn-sm.danger { background: #b91c1c; color: white; border-color: #b91c1c; }
+    .btn-sm.danger:hover { background: #991b1b; }
+    .btn-sm.warning { background: #d97706; color: white; border-color: #d97706; }
+    .btn-sm.warning:hover { background: #b45309; }
+
+    /* ===== FILTERS ===== */
+    .filters-bar {
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+      background: var(--white); padding: 0.8rem 1.2rem; border-radius: var(--radius);
+      border: 1px solid var(--border); margin-bottom: 1.5rem; box-shadow: var(--shadow);
+    }
+    .filters-bar .filter-group {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .filters-bar label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .filters-bar select, .filters-bar input {
+      padding: 0.3rem 0.8rem; border: 1px solid var(--border); border-radius: 40px;
+      font-size: 0.75rem; background: var(--white); font-family: var(--font);
+      color: var(--text); outline: none; transition: 0.2s;
+    }
+    .filters-bar select:focus, .filters-bar input:focus {
+      border-color: var(--navy); box-shadow: 0 0 0 2px rgba(10,37,64,0.1);
+    }
+    .filters-bar .search-input {
+      min-width: 200px; padding-left: 2rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 12px center;
+    }
+
+    /* ===== STATS ===== */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 1.2rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--white); border-radius: var(--radius); padding: 1.2rem 1.2rem 1rem;
+      border: 1px solid var(--border); box-shadow: var(--shadow); transition: 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .stat-card__number { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+    .stat-card__label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.4px; margin-top: 0.2rem; }
+    .stat-card__icon { float: right; font-size: 1.6rem; color: rgba(10,37,64,0.08); margin-top: -0.2rem; }
+
+    /* ===== BUDGET TABLE ===== */
+    .table-wrap {
+      background: var(--white); border-radius: var(--radius); border: 1px solid var(--border);
+      overflow-x: auto; box-shadow: var(--shadow);
+    }
+    .budget-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 1000px;
+    }
+    .budget-table th {
+      background: #f8fafc; text-align: left; padding: 0.6rem 0.8rem;
+      font-weight: 600; color: var(--text-muted); font-size: 0.6rem;
+      text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid var(--border);
+      position: sticky; top: 0; z-index: 5;
+      white-space: nowrap;
+    }
+    .budget-table td {
+      padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .budget-table tr:last-child td { border-bottom: none; }
+    .budget-table tr:hover td { background: #fafcff; }
+
+    .status-badge {
+      display: inline-block; font-size: 0.55rem; font-weight: 700; padding: 0.1rem 0.5rem;
+      border-radius: 20px;
+    }
+    .status-badge.on-track { background: #d1fae5; color: #065f46; }
+    .status-badge.warning { background: #fef3c7; color: #92400e; }
+    .status-badge.over { background: #fee2e2; color: #991b1b; }
+    .status-badge.under { background: #dbeafe; color: #1e40af; }
+
+    .progress-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .progress-bar .bar {
+      width: 80px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar .bar .fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .progress-bar .bar .fill.on-track { background: var(--green); }
+    .progress-bar .bar .fill.warning { background: var(--gold); }
+    .progress-bar .bar .fill.over { background: #b91c1c; }
+    .progress-bar .bar .fill.under { background: var(--blue-card); }
+
+    .no-results { text-align: center; padding: 2rem; color: var(--text-muted); }
+
+    /* ===== PAGINATION ===== */
+    .pagination {
+      display: flex; justify-content: center; align-items: center;
+      gap: 0.4rem; margin-top: 1.5rem; flex-wrap: wrap;
+    }
+    .pagination .page-btn {
+      padding: 0.3rem 0.8rem; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--white); cursor: pointer;
+      font-size: 0.7rem; font-family: var(--font); color: var(--text);
+      transition: 0.2s;
+    }
+    .pagination .page-btn:hover:not(.active) { background: var(--bg); }
+    .pagination .page-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+    .pagination .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .page-info { font-size: 0.7rem; color: var(--text-muted); padding: 0 0.5rem; }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.25s ease;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-overlay .modal {
+      background: var(--white);
+      border-radius: var(--radius);
+      max-width: 720px;
+      width: 92%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      transform: scale(0.96) translateY(10px);
+      transition: 0.25s ease;
+    }
+    .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+    .modal .modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal .modal__header h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .modal .modal__close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: 0.2s;
+    }
+    .modal .modal__close:hover { color: var(--text); }
+    .modal .modal__body { margin-bottom: 1rem; }
+    .modal .modal__body .detail-row {
+      display: flex;
+      margin-bottom: 0.4rem;
+      font-size: 0.82rem;
+      padding: 0.2rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .modal .modal__body .detail-row:last-child { border-bottom: none; }
+    .modal .modal__body .detail-row .label {
+      font-weight: 600;
+      min-width: 140px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .modal .modal__body .detail-row .value { color: var(--text); }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.2rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.5rem 0.8rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 0.8rem; font-family: var(--font);
+      color: var(--text); outline: none; transition: 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--navy); box-shadow: 0 0 0 2px rgba(10,37,64,0.1);
+    }
+    .form-group textarea { min-height: 60px; resize: vertical; }
+
+    .modal .modal__footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--navy);
+      color: white;
+      padding: 0.7rem 1.3rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: 0.3s;
+      z-index: 2000;
+      font-size: 0.85rem;
+      font-family: var(--font);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--green); }
+    .toast.warning { background: #92400e; }
+    .toast.info { background: var(--navy); }
+
+    @media (max-width: 1024px) {
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .filters-bar .filter-group { flex-wrap: wrap; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 768px) {
+      .topbar__hamburger { display: block; }
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: var(--sidebar-w) !important; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0 !important; padding: 1rem; }
+      .topbar__title { font-size: 1.2rem; }
+      .sidebar-overlay.active { opacity: 1; visibility: visible; }
+      .budget-table { font-size: 0.65rem; min-width: 850px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+      .progress-bar .bar { width: 50px; }
+    }
+    @media (max-width: 480px) {
+      .topbar__actions .btn { flex: 1; justify-content: center; }
+      .budget-table { font-size: 0.55rem; min-width: 750px; }
+      .budget-table th, .budget-table td { padding: 0.2rem 0.4rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .modal .modal__body .detail-row { flex-direction: column; }
+      .modal .modal__body .detail-row .label { min-width: auto; }
+      .progress-bar .bar { width: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===== SIDEBAR (HOD) ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__brand">
+    <span class="sidebar__brand-icon">🏛️</span>
+    <span class="sidebar__brand-text">UniManage · HOD</span>
+  </div>
+  <nav class="sidebar__nav">
+    <ul class="sidebar__menu">
+      <li class="sidebar__item">
+        <a href="#" class="sidebar__link" data-page="dashboard">
+          <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+        </a>
+      </li>
+      <!-- Faculty Management -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="faculty-sub">
+          <i class="fas fa-user-check"></i>
+          <span>Faculty Management</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="faculty-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="faculty-directory">Faculty Directory</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="workload-allocation">Teaching Load Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="leave-approvals">Leave Approvals <span class="badge">3</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="appraisals">Performance Appraisals</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="substitute-arrangement">Substitute/Duty Arrangement</a></li>
+        </ul>
+      </li>
+      <!-- Curriculum & Courses -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="curriculum-sub">
+          <i class="fas fa-book-open"></i>
+          <span>Curriculum & Courses</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="curriculum-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="course-catalog">Course Catalog</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="syllabus-management">Syllabus Management</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="elective-offerings">Elective Offerings</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="course-allocation">Course-Faculty Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="curriculum-revision">Curriculum Revision Proposals</a></li>
+        </ul>
+      </li>
+      <!-- Timetable & Scheduling -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="timetable-sub">
+          <i class="fas fa-calendar-days"></i>
+          <span>Timetable & Scheduling</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="timetable-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="class-timetable">Class Timetable</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="lab-schedule">Lab Schedule</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="room-allocation">Room Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="exam-duty-roster">Exam Duty Roster</a></li>
+        </ul>
+      </li>
+      <!-- Student Affairs -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="students-sub">
+          <i class="fas fa-graduation-cap"></i>
+          <span>Student Affairs</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="students-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="student-list">Student List/Roster</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="attendance-overview">Attendance Overview</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="academic-performance">Academic Performance</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="at-risk-students">At-Risk / Backlog Students <span class="badge">12</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="mentor-allocation">Faculty-Student Mentor Mapping</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="grievances">Student Grievances <span class="badge">2</span></a></li>
+        </ul>
+      </li>
+      <!-- Exams & Results -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="exams-sub">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Exams & Results</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="exams-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="internal-exams">Internal Assessments</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="question-paper-review">Question Paper Review <span class="badge">5</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="results-review">Results Review & Approval</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="moderation">Grade Moderation</a></li>
+        </ul>
+      </li>
+      <!-- Research & Development -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="research-sub">
+          <i class="fas fa-flask-conical"></i>
+          <span>Research & Development</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="research-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="dept-projects">Department Projects</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="publications">Faculty Publications</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="grants">Grants & Funding</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="consultancy">Consultancy Work</a></li>
+        </ul>
+      </li>
+      <!-- Labs & Infrastructure (open by default) -->
+      <li class="sidebar__item sidebar__item--group sidebar__item--open">
+        <button class="sidebar__link--toggle active" data-target="infra-sub">
+          <i class="fas fa-warehouse"></i>
+          <span>Labs & Infrastructure</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu sidebar__submenu--open" id="infra-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="lab-inventory">Lab Inventory & Equipment</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="maintenance-requests">Maintenance Requests <span class="badge">4</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="procurement">Procurement Requests</a></li>
+          <li><a href="#" class="sidebar__sublink active" data-page="budget">Department Budget</a></li>
+        </ul>
+      </li>
+      <!-- Industry & Placements -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="industry-sub">
+          <i class="fas fa-briefcase"></i>
+          <span>Industry & Placements</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="industry-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="internships">Internship Coordination</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="placement-stats">Placement Statistics</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="industry-visits">Industry Visits/Talks</a></li>
+        </ul>
+      </li>
+      <!-- Reports & Analytics -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="reports-sub">
+          <i class="fas fa-bar-chart-3"></i>
+          <span>Reports & Analytics</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="reports-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="dept-performance">Department Performance</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="faculty-load-report">Faculty Load Report</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="accreditation-data">Accreditation Data (NBA/NAAC)</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="audit-logs">Audit Logs</a></li>
+        </ul>
+      </li>
+      <li class="sidebar__item">
+        <a href="#" class="sidebar__link" data-page="notifications">
+          <i class="fas fa-bell"></i> <span>Notifications <span class="badge" style="margin-left:auto;">3</span></span>
+        </a>
+      </li>
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="settings-sub">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="settings-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="roles">Roles & Permissions</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="dept-calendar">Department Calendar</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar__footer">© 2026 UniManage · HOD Portal</div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="mainContent">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar__left">
+      <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="topbar__title" id="pageTitle">
+        <i class="fas fa-wallet"></i> Department Budget
+      </h1>
+      <span class="topbar__badge"><i class="fas fa-coins"></i> <span id="totalBadge">0</span> categories</span>
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn-success" onclick="showToast('📊 Budget report generated', 'info')">
+        <i class="fas fa-file-pdf"></i> Generate Report
+      </button>
+      <button class="btn btn-outline" onclick="showToast('📋 Budget data exported', 'info')">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== STATS ===== -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <i class="fas fa-money-bill-wave stat-card__icon" style="color:var(--green);"></i>
+      <div class="stat-card__number" id="statTotalBudget">0</div>
+      <div class="stat-card__label">Total Budget</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-arrow-up stat-card__icon" style="color:var(--blue-card);"></i>
+      <div class="stat-card__number" id="statTotalExpenditure">0</div>
+      <div class="stat-card__label">Total Expenditure</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-check-circle stat-card__icon" style="color:var(--gold);"></i>
+      <div class="stat-card__number" id="statRemaining">0</div>
+      <div class="stat-card__label">Remaining Budget</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-chart-line stat-card__icon" style="color:#6a1b9a;"></i>
+      <div class="stat-card__number" id="statUtilization">0%</div>
+      <div class="stat-card__label">Utilization Rate</div>
+    </div>
+  </div>
+
+  <!-- ===== FILTERS ===== -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label><i class="fas fa-calendar-alt"></i> Fiscal Year</label>
+      <select id="filterYear" onchange="applyFilters()">
+        <option value="2024/2025">2024/2025</option>
+        <option value="2025/2026" selected>2025/2026</option>
+        <option value="2026/2027">2026/2027</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label><i class="fas fa-tag"></i> Category</label>
+      <select id="filterCategory" onchange="applyFilters()">
+        <option value="all">All Categories</option>
+        <option value="Personnel">Personnel</option>
+        <option value="Equipment">Equipment</option>
+        <option value="Supplies">Supplies</option>
+        <option value="Research">Research</option>
+        <option value="Infrastructure">Infrastructure</option>
+        <option value="Training">Training</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label><i class="fas fa-circle"></i> Status</label>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="all">All Status</option>
+        <option value="on-track">On Track</option>
+        <option value="warning">Warning</option>
+        <option value="over">Over Budget</option>
+        <option value="under">Under Budget</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <input type="text" class="search-input" id="budgetSearch" placeholder="Search categories..." oninput="applyFilters()" />
+    </div>
+    <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-undo"></i> Reset</button>
+    <span style="margin-left:auto; font-size:0.7rem; color:var(--text-muted);" id="budgetCount">Showing 0 entries</span>
+  </div>
+
+  <!-- ===== TABLE ===== -->
+  <div class="table-wrap">
+    <table class="budget-table">
+      <thead>
+        <tr>
+          <th style="width:25px;">#</th>
+          <th style="min-width:180px;">Category</th>
+          <th style="min-width:120px;">Allocated (KES)</th>
+          <th style="min-width:120px;">Expended (KES)</th>
+          <th style="min-width:120px;">Remaining (KES)</th>
+          <th style="min-width:100px;">Utilization</th>
+          <th style="min-width:90px;">Status</th>
+          <th style="min-width:140px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="budgetTableBody">
+        <!-- Rendered by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== PAGINATION ===== -->
+  <div class="pagination" id="budgetPagination"></div>
+</main>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- VIEW BUDGET MODAL -->
+<div class="modal-overlay" id="viewBudgetModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2><i class="fas fa-eye" style="color:var(--blue-card);"></i> Budget Details</h2>
+      <button class="modal__close" onclick="closeModal('viewBudgetModal')">&times;</button>
+    </div>
+    <div class="modal__body" id="viewBudgetBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewBudgetModal')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('viewBudgetModal'); showToast('✏️ Edit budget opened', 'info')"><i class="fas fa-edit"></i> Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT BUDGET MODAL -->
+<div class="modal-overlay" id="addBudgetModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2><i class="fas fa-plus-circle" style="color:var(--green);"></i> Add Budget Category</h2>
+      <button class="modal__close" onclick="closeModal('addBudgetModal')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <form id="addBudgetForm" onsubmit="addBudget(event)">
+        <div class="form-group">
+          <label for="addCategory">Category *</label>
+          <input type="text" id="addCategory" placeholder="e.g. Laboratory Equipment" required />
+        </div>
+        <div class="form-group">
+          <label for="addAllocated">Allocated Amount (KES) *</label>
+          <input type="number" id="addAllocated" placeholder="e.g. 2000000" min="0" step="1000" required />
+        </div>
+        <div class="form-group">
+          <label for="addExpended">Expended Amount (KES) *</label>
+          <input type="number" id="addExpended" placeholder="e.g. 500000" min="0" step="1000" required />
+        </div>
+        <div class="form-group">
+          <label for="addFiscalYear">Fiscal Year</label>
+          <select id="addFiscalYear">
+            <option value="2024/2025">2024/2025</option>
+            <option value="2025/2026" selected>2025/2026</option>
+            <option value="2026/2027">2026/2027</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addNotes">Notes</label>
+          <textarea id="addNotes" placeholder="Any additional notes..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('addBudgetModal')">Cancel</button>
+      <button class="btn btn-success" onclick="document.getElementById('addBudgetForm').requestSubmit()">
+        <i class="fas fa-save"></i> Add Category
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE BUDGET MODAL -->
+<div class="modal-overlay" id="updateBudgetModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2><i class="fas fa-edit" style="color:var(--gold);"></i> Update Budget Category</h2>
+      <button class="modal__close" onclick="closeModal('updateBudgetModal')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <form id="updateBudgetForm" onsubmit="submitBudgetUpdate(event)">
+        <input type="hidden" id="updateBudgetId" />
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="updateCategory" disabled style="background:#f1f5f9;font-weight:600;" />
+        </div>
+        <div class="form-group">
+          <label for="updateAllocated">Allocated Amount (KES) *</label>
+          <input type="number" id="updateAllocated" min="0" step="1000" required />
+        </div>
+        <div class="form-group">
+          <label for="updateExpended">Expended Amount (KES) *</label>
+          <input type="number" id="updateExpended" min="0" step="1000" required />
+        </div>
+        <div class="form-group">
+          <label for="updateNotes">Notes</label>
+          <textarea id="updateNotes" placeholder="Any additional notes..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('updateBudgetModal')">Cancel</button>
+      <button class="btn btn-success" onclick="document.getElementById('updateBudgetForm').requestSubmit()">
+        <i class="fas fa-save"></i> Update Budget
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============================================================
+  // BUDGET DATA
+  // ============================================================
+  let budgetData = [
+    {
+      id: 1,
+      category: 'Personnel - Faculty Salaries',
+      allocated: 15000000,
+      expended: 13500000,
+      fiscal_year: '2025/2026',
+      notes: 'Includes salaries for 15 faculty members'
+    },
+    {
+      id: 2,
+      category: 'Personnel - Staff Salaries',
+      allocated: 5000000,
+      expended: 4200000,
+      fiscal_year: '2025/2026',
+      notes: 'Includes technical and administrative staff'
+    },
+    {
+      id: 3,
+      category: 'Laboratory Equipment',
+      allocated: 8000000,
+      expended: 3200000,
+      fiscal_year: '2025/2026',
+      notes: 'Equipment purchases for all labs'
+    },
+    {
+      id: 4,
+      category: 'Research Grants',
+      allocated: 6000000,
+      expended: 4800000,
+      fiscal_year: '2025/2026',
+      notes: 'Funding for faculty research projects'
+    },
+    {
+      id: 5,
+      category: 'Lab Supplies & Consumables',
+      allocated: 2500000,
+      expended: 2100000,
+      fiscal_year: '2025/2026',
+      notes: 'Chemicals, reagents, and lab consumables'
+    },
+    {
+      id: 6,
+      category: 'Infrastructure Maintenance',
+      allocated: 3000000,
+      expended: 1800000,
+      fiscal_year: '2025/2026',
+      notes: 'Building and facility maintenance'
+    },
+    {
+      id: 7,
+      category: 'Faculty Training & Development',
+      allocated: 1500000,
+      expended: 600000,
+      fiscal_year: '2025/2026',
+      notes: 'Workshops, conferences, and training programs'
+    },
+    {
+      id: 8,
+      category: 'IT Infrastructure',
+      allocated: 4000000,
+      expended: 3500000,
+      fiscal_year: '2025/2026',
+      notes: 'Computers, servers, and network upgrades'
+    },
+    {
+      id: 9,
+      category: 'Utility Bills',
+      allocated: 2000000,
+      expended: 1800000,
+      fiscal_year: '2025/2026',
+      notes: 'Electricity, water, and internet'
+    },
+    {
+      id: 10,
+      category: 'Student Support',
+      allocated: 1000000,
+      expended: 800000,
+      fiscal_year: '2025/2026',
+      notes: 'Student assistance and support programs'
+    },
+    {
+      id: 11,
+      category: 'Consultancy Services',
+      allocated: 2000000,
+      expended: 1500000,
+      fiscal_year: '2025/2026',
+      notes: 'External consultancy and professional services'
+    },
+    {
+      id: 12,
+      category: 'Contingency Fund',
+      allocated: 1500000,
+      expended: 0,
+      fiscal_year: '2025/2026',
+      notes: 'Emergency and unforeseen expenses'
+    }
+  ];
+
+  let nextId = 13;
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  function formatCurrency(amount) {
+    return amount.toLocaleString('en-US');
+  }
+
+  function getUtilization(allocated, expended) {
+    if (allocated === 0) return 0;
+    return Math.round((expended / allocated) * 100);
+  }
+
+  function getStatus(utilization) {
+    if (utilization > 100) return { label: 'Over Budget', class: 'over' };
+    if (utilization > 85) return { label: 'Warning', class: 'warning' };
+    if (utilization < 30) return { label: 'Under Budget', class: 'under' };
+    return { label: 'On Track', class: 'on-track' };
+  }
+
+  function getStatusIcon(utilization) {
+    if (utilization > 100) return '🔴';
+    if (utilization > 85) return '🟡';
+    if (utilization < 30) return '🔵';
+    return '🟢';
+  }
+
+  // ============================================================
+  // SIDEBAR NAV
+  // ============================================================
+  document.querySelectorAll('.sidebar__link--toggle').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.dataset.target;
+      const submenu = document.getElementById(targetId);
+      const parentItem = this.closest('.sidebar__item--group');
+      if (!submenu) return;
+      submenu.classList.toggle('sidebar__submenu--open');
+      parentItem.classList.toggle('sidebar__item--open');
+      const isOpen = submenu.classList.contains('sidebar__submenu--open');
+      this.setAttribute('aria-expanded', isOpen);
+    });
+  });
+
+  const navLinks = document.querySelectorAll('.sidebar__link, .sidebar__sublink');
+  const pageTitle = document.getElementById('pageTitle');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      if (this.getAttribute('href') === '#') e.preventDefault();
+      document.querySelectorAll('.sidebar__link, .sidebar__sublink').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+      const text = this.innerText.trim();
+      const icon = this.querySelector('i')?.className || 'fa-tachometer-alt';
+      pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('active');
+      }
+      showToast(`📂 Navigated to ${text}`, 'info');
+    });
+  });
+
+  // ===== MOBILE TOGGLE =====
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function toggleMobileSidebar() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  }
+  hamburgerBtn.addEventListener('click', toggleMobileSidebar);
+  overlay.addEventListener('click', toggleMobileSidebar);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    }
+  });
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(el => {
+        el.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    }
+  });
+
+  // ============================================================
+  // VIEW BUDGET
+  // ============================================================
+  function viewBudget(id) {
+    const item = budgetData.find(b => b.id === id);
+    if (!item) return;
+    const body = document.getElementById('viewBudgetBody');
+    const utilization = getUtilization(item.allocated, item.expended);
+    const status = getStatus(utilization);
+    
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Category</span><span class="value"><strong>${item.category}</strong></span></div>
+      <div class="detail-row"><span class="label">Fiscal Year</span><span class="value">${item.fiscal_year}</span></div>
+      <div class="detail-row"><span class="label">Allocated Amount</span><span class="value"><strong>KES ${formatCurrency(item.allocated)}</strong></span></div>
+      <div class="detail-row"><span class="label">Expended Amount</span><span class="value">KES ${formatCurrency(item.expended)}</span></div>
+      <div class="detail-row"><span class="label">Remaining Amount</span><span class="value"><strong>KES ${formatCurrency(item.allocated - item.expended)}</strong></span></div>
+      <div class="detail-row"><span class="label">Utilization</span><span class="value">${utilization}%</span></div>
+      <div class="detail-row"><span class="label">Status</span><span class="value"><span class="status-badge ${status.class}">${status.label}</span></span></div>
+      ${item.notes ? `<div class="detail-row"><span class="label">Notes</span><span class="value">${item.notes}</span></div>` : ''}
+    `;
+    openModal('viewBudgetModal');
+  }
+
+  // ============================================================
+  // UPDATE BUDGET
+  // ============================================================
+  function openUpdateBudget(id) {
+    const item = budgetData.find(b => b.id === id);
+    if (!item) return;
+    document.getElementById('updateBudgetId').value = id;
+    document.getElementById('updateCategory').value = item.category;
+    document.getElementById('updateAllocated').value = item.allocated;
+    document.getElementById('updateExpended').value = item.expended;
+    document.getElementById('updateNotes').value = item.notes || '';
+    openModal('updateBudgetModal');
+  }
+
+  function submitBudgetUpdate(e) {
+    e.preventDefault();
+    const id = parseInt(document.getElementById('updateBudgetId').value);
+    const allocated = parseInt(document.getElementById('updateAllocated').value);
+    const expended = parseInt(document.getElementById('updateExpended').value);
+    const notes = document.getElementById('updateNotes').value.trim();
+
+    if (isNaN(allocated) || isNaN(expended) || allocated < 0 || expended < 0) {
+      showToast('⚠️ Please enter valid amounts', 'warning');
+      return;
+    }
+
+    const item = budgetData.find(b => b.id === id);
+    if (!item) return;
+
+    item.allocated = allocated;
+    item.expended = expended;
+    if (notes) item.notes = notes;
+
+    closeModal('updateBudgetModal');
+    showToast(`✅ Budget updated for ${item.category}`, 'success');
+    applyFilters();
+  }
+
+  // ============================================================
+  // ADD BUDGET
+  // ============================================================
+  function addBudget(e) {
+    e.preventDefault();
+    const category = document.getElementById('addCategory').value.trim();
+    const allocated = parseInt(document.getElementById('addAllocated').value);
+    const expended = parseInt(document.getElementById('addExpended').value);
+    const fiscal_year = document.getElementById('addFiscalYear').value;
+    const notes = document.getElementById('addNotes').value.trim();
+
+    if (!category || isNaN(allocated) || isNaN(expended) || allocated < 0 || expended < 0) {
+      showToast('⚠️ Please fill in all required fields', 'warning');
+      return;
+    }
+
+    if (expended > allocated) {
+      showToast('⚠️ Expended amount cannot exceed allocated amount', 'warning');
+      return;
+    }
+
+    const newItem = {
+      id: nextId++,
+      category,
+      allocated,
+      expended,
+      fiscal_year,
+      notes: notes || ''
+    };
+
+    budgetData.push(newItem);
+    closeModal('addBudgetModal');
+    document.getElementById('addBudgetForm').reset();
+    showToast(`✅ Budget category "${category}" added`, 'success');
+    applyFilters();
+  }
+
+  // ============================================================
+  // DELETE BUDGET
+  // ============================================================
+  function deleteBudget(id) {
+    const item = budgetData.find(b => b.id === id);
+    if (!item) return;
+    if (confirm(`Are you sure you want to delete "${item.category}"?`)) {
+      budgetData = budgetData.filter(b => b.id !== id);
+      showToast(`🗑️ Budget category deleted`, 'warning');
+      applyFilters();
+    }
+  }
+
+  // ============================================================
+  // FILTERS & PAGINATION
+  // ============================================================
+  let currentPage = 1;
+  const perPage = 10;
+  let filteredData = [];
+
+  function applyFilters() {
+    const fiscalYear = document.getElementById('filterYear').value;
+    const category = document.getElementById('filterCategory').value;
+    const status = document.getElementById('filterStatus').value;
+    const search = document.getElementById('budgetSearch').value.toLowerCase().trim();
+
+    filteredData = budgetData.filter(b => {
+      if (fiscalYear !== 'all' && b.fiscal_year !== fiscalYear) return false;
+      if (category !== 'all' && !b.category.includes(category)) return false;
+      if (search && !b.category.toLowerCase().includes(search)) return false;
+      
+      const utilization = getUtilization(b.allocated, b.expended);
+      const statusObj = getStatus(utilization);
+      
+      if (status !== 'all' && statusObj.class !== status) return false;
+      return true;
+    });
+    currentPage = 1;
+    renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById('filterYear').value = '2025/2026';
+    document.getElementById('filterCategory').value = 'all';
+    document.getElementById('filterStatus').value = 'all';
+    document.getElementById('budgetSearch').value = '';
+    applyFilters();
+    showToast('🔄 Filters reset', 'info');
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('budgetTableBody');
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const pageItems = filteredData.slice(start, end);
+
+    // Update stats
+    const totalBudget = budgetData.reduce((sum, b) => sum + b.allocated, 0);
+    const totalExpended = budgetData.reduce((sum, b) => sum + b.expended, 0);
+    const totalRemaining = totalBudget - totalExpended;
+    const overallUtilization = totalBudget > 0 ? Math.round((totalExpended / totalBudget) * 100) : 0;
+    
+    document.getElementById('statTotalBudget').textContent = 'KES ' + formatCurrency(totalBudget);
+    document.getElementById('statTotalExpenditure').textContent = 'KES ' + formatCurrency(totalExpended);
+    document.getElementById('statRemaining').textContent = 'KES ' + formatCurrency(totalRemaining);
+    document.getElementById('statUtilization').textContent = overallUtilization + '%';
+    document.getElementById('totalBadge').textContent = budgetData.length;
+    document.getElementById('budgetCount').textContent = `Showing ${total} entries`;
+
+    if (pageItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="no-results"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No budget categories found</td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems.map((item, idx) => {
+        const globalIdx = filteredData.indexOf(item) + 1;
+        const utilization = getUtilization(item.allocated, item.expended);
+        const status = getStatus(utilization);
+        const remaining = item.allocated - item.expended;
+        const barClass = status.class;
+        const statusIcon = getStatusIcon(utilization);
+        return `
+          <tr>
+            <td style="text-align:center;font-size:0.65rem;color:var(--text-muted);">${globalIdx}</td>
+            <td><span style="font-weight:500;font-size:0.75rem;">${item.category}</span></td>
+            <td><span style="font-weight:600;">${formatCurrency(item.allocated)}</span></td>
+            <td><span style="font-weight:600;">${formatCurrency(item.expended)}</span></td>
+            <td><span style="font-weight:600;color:${remaining < 0 ? '#b91c1c' : 'var(--green)'};">${formatCurrency(remaining)}</span></td>
+            <td>
+              <div class="progress-bar">
+                <span style="font-weight:600;font-size:0.7rem;">${utilization}%</span>
+                <div class="bar">
+                  <div class="fill ${barClass}" style="width:${Math.min(utilization, 100)}%;"></div>
+                </div>
+              </div>
+            </td>
+            <td><span class="status-badge ${status.class}">${statusIcon} ${status.label}</span></td>
+            <td>
+              <button class="btn-sm primary" onclick="viewBudget(${item.id})"><i class="fas fa-eye"></i></button>
+              <button class="btn-sm warning" onclick="openUpdateBudget(${item.id})" title="Update"><i class="fas fa-edit"></i></button>
+              <button class="btn-sm danger" onclick="deleteBudget(${item.id})"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const div = document.getElementById('budgetPagination');
+    if (totalPages <= 1) { div.innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    div.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const total = filteredData.length;
+    const pages = Math.ceil(total / perPage);
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderTable();
+  }
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', function() {
+    filteredData = [...budgetData];
+    renderTable();
+  });
+</script>
+</body>
+</html>

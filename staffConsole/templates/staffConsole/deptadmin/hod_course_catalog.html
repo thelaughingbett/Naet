@@ -1,0 +1,1166 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/deptadmin/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>Course Catalog · HOD</title>
+<style>
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn-sm.success:hover {
+    background: #14532d;
+  }
+  .btn-sm.danger {
+    background: #b91c1c;
+    color: white;
+    border-color: #b91c1c;
+  }
+  .btn-sm.danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm.warning {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+  }
+  .btn-sm.warning:hover {
+    background: #b45309;
+  }
+
+  /* ===== FILTERS ===== */
+  .filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .filters-bar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .filters-bar label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .filters-bar select,
+  .filters-bar input {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    background: var(--white);
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .filters-bar select:focus,
+  .filters-bar input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .filters-bar .search-input {
+    min-width: 200px;
+    padding-left: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .course-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    min-width: 1200px;
+  }
+  .course-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    white-space: nowrap;
+  }
+  .course-table td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .course-table tr:last-child td {
+    border-bottom: none;
+  }
+  .course-table tr:hover td {
+    background: #fafcff;
+  }
+
+  .type-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .type-badge.C {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .type-badge.E {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .type-badge.CC {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .type-badge.P {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .type-badge.IA {
+    background: #fce4ec;
+    color: #b71c1c;
+  }
+  .type-badge.TP {
+    background: #f3e5f5;
+    color: #6a1b9a;
+  }
+  .type-badge.PR {
+    background: #e8eaf6;
+    color: #283593;
+  }
+  .type-badge.ST {
+    background: #e0f7fa;
+    color: #00695c;
+  }
+
+  .flag-icon {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+  }
+  .flag-icon.active {
+    color: var(--green);
+  }
+  .flag-icon.warning {
+    color: var(--gold);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pagination .page-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: var(--font);
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .pagination .page-btn:hover:not(.active) {
+    background: var(--bg);
+  }
+  .pagination .page-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .pagination .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pagination .page-info {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 0.5rem;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 720px;
+    width: 94%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+  .modal .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .modal .modal__close:hover {
+    color: var(--text);
+  }
+  .modal .modal__body {
+    margin-bottom: 1rem;
+  }
+  .modal .modal__body .detail-row {
+    display: flex;
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .modal .modal__body .detail-row:last-child {
+    border-bottom: none;
+  }
+  .modal .modal__body .detail-row .label {
+    font-weight: 600;
+    min-width: 160px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .modal .modal__body .detail-row .value {
+    color: var(--text);
+  }
+  .modal .modal__body .detail-row .value .badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
+
+  .modal .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== TOAST ===== */
+
+  @media (max-width: 1024px) {
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters-bar .filter-group {
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .course-table {
+      font-size: 0.65rem;
+      min-width: 900px;
+    }
+    .modal .modal__body .detail-row .label {
+      min-width: 120px;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .course-table {
+      font-size: 0.55rem;
+      min-width: 800px;
+    }
+    .course-table th,
+    .course-table td {
+      padding: 0.2rem 0.4rem;
+    }
+    .modal .modal__body .detail-row {
+      flex-direction: column;
+    }
+    .modal .modal__body .detail-row .label {
+      min-width: auto;
+    }
+  }
+</style>
+
+{% endblock %} {% block content %}
+<!-- ===== MAIN CONTENT ===== -->
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-book"></i> Course Catalog
+    </h1>
+    <span class="topbar__badge"
+      ><i class="fas fa-list"></i> <span id="totalBadge">0</span> courses</span
+    >
+  </div>
+  <div class="topbar__actions">
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📊 Course catalog exported', 'info')"
+    >
+      <i class="fas fa-download"></i> Export
+    </button>
+  </div>
+</div>
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label><i class="fas fa-tag"></i> Type</label>
+    <select id="filterType" onchange="applyFilters()">
+      <option value="all">All Types</option>
+      <option value="C">Core</option>
+      <option value="E">Elective</option>
+      <option value="CC">Common Unit</option>
+      <option value="P">Practical/Lab</option>
+      <option value="IA">Industrial Attachment</option>
+      <option value="TP">Teaching Practice</option>
+      <option value="PR">Postgraduate Research</option>
+      <option value="ST">Specialised Seminar</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label><i class="fas fa-graduation-cap"></i> Level</label>
+    <select id="filterLevel" onchange="applyFilters()">
+      <option value="all">All Levels</option>
+      <option value="ug">Undergraduate</option>
+      <option value="pg">Postgraduate</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <input
+      type="text"
+      class="search-input"
+      id="courseSearch"
+      placeholder="Search courses..."
+      oninput="applyFilters()"
+    />
+  </div>
+  <button class="btn btn-outline" onclick="resetFilters()">
+    <i class="fas fa-undo"></i> Reset
+  </button>
+  <span
+    style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted)"
+    id="courseCount"
+    >Showing 0 entries</span
+  >
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="table-wrap">
+  <table class="course-table">
+    <thead>
+      <tr>
+        <th style="width: 25px">#</th>
+        <th style="min-width: 100px">Code</th>
+        <th style="min-width: 180px">Course Name</th>
+        <th style="min-width: 70px">Type</th>
+        <th style="min-width: 50px">Cr</th>
+        <th style="min-width: 60px">Lec</th>
+        <th style="min-width: 60px">Prac</th>
+        <th style="min-width: 70px">Offered</th>
+        <th style="min-width: 60px">Flags</th>
+        <th style="min-width: 100px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="courseTableBody">
+      <!-- Rendered by JavaScript -->
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== PAGINATION ===== -->
+<div class="pagination" id="coursePagination"></div>
+
+{{course_catalog|json_script:'courseCatalog'}}
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- VIEW COURSE MODAL -->
+<div class="modal-overlay" id="viewCourseModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-eye" style="color: var(--blue-card)"></i> Course
+        Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewCourseModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewCourseBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewCourseModal')">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // COURSE DATA (mapped from the Django model)
+  // ============================================================
+  let courseData = [
+    {
+      id: 1,
+      course_code: "CCS 401",
+      course_name: "Advanced Database Systems",
+      department: "Computer Science",
+      course_type: "C",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 4,
+      expected_competencies: [
+        "SQL Mastery",
+        "Query Optimization",
+        "NoSQL Design",
+      ],
+      prerequisites: ["CCS 301"],
+      unesco_isced: "0613",
+    },
+    {
+      id: 2,
+      course_code: "BIL 810",
+      course_name: "Research Methodology in Computing",
+      department: "Computer Science",
+      course_type: "PR",
+      credits: 12,
+      lecture_hours_per_week: 0,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: true,
+      is_postgraduate_only: true,
+      requires_defense_panel: true,
+      offered: 1,
+      expected_competencies: [
+        "Research Design",
+        "Data Analysis",
+        "Academic Writing",
+      ],
+      prerequisites: [],
+      unesco_isced: "0613",
+    },
+    {
+      id: 3,
+      course_code: "ELE 201",
+      course_name: "Circuit Theory",
+      department: "Electrical Engineering",
+      course_type: "C",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 2,
+      expected_competencies: [
+        "Circuit Analysis",
+        "Ohm's Law",
+        "Kirchhoff's Laws",
+      ],
+      prerequisites: ["PHY 101"],
+      unesco_isced: "0714",
+    },
+    {
+      id: 4,
+      course_code: "ELE 302",
+      course_name: "Power Systems Laboratory",
+      department: "Electrical Engineering",
+      course_type: "P",
+      credits: 3,
+      lecture_hours_per_week: 1,
+      practical_hours_per_week: 3,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 3,
+      expected_competencies: [
+        "Lab Safety",
+        "Power Measurement",
+        "Fault Analysis",
+      ],
+      prerequisites: ["ELE 201"],
+      unesco_isced: "0714",
+    },
+    {
+      id: 5,
+      course_code: "MEC 101",
+      course_name: "Engineering Mechanics",
+      department: "Mechanical Engineering",
+      course_type: "C",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 1,
+      expected_competencies: ["Statics", "Dynamics", "Friction Analysis"],
+      prerequisites: [],
+      unesco_isced: "0716",
+    },
+    {
+      id: 6,
+      course_code: "MEC 490",
+      course_name: "Industrial Attachment",
+      department: "Mechanical Engineering",
+      course_type: "IA",
+      credits: 6,
+      lecture_hours_per_week: 0,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 12,
+      is_externally_assessed: true,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 4,
+      expected_competencies: [
+        "Industry Experience",
+        "Report Writing",
+        "Professional Conduct",
+      ],
+      prerequisites: ["MEC 304"],
+      unesco_isced: "0716",
+    },
+    {
+      id: 7,
+      course_code: "BUS 302",
+      course_name: "Marketing Management",
+      department: "Business Administration",
+      course_type: "E",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 3,
+      expected_competencies: [
+        "Market Research",
+        "Brand Strategy",
+        "Consumer Behavior",
+      ],
+      prerequisites: ["BUS 101"],
+      unesco_isced: "0414",
+    },
+    {
+      id: 8,
+      course_code: "MATH 303",
+      course_name: "Probability & Statistics",
+      department: "Mathematics",
+      course_type: "CC",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 3,
+      expected_competencies: [
+        "Data Analysis",
+        "Inferential Statistics",
+        "Hypothesis Testing",
+      ],
+      prerequisites: ["MATH 201"],
+      unesco_isced: "0541",
+    },
+    {
+      id: 9,
+      course_code: "PHY 403",
+      course_name: "Astrophysics",
+      department: "Physics",
+      course_type: "E",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 4,
+      expected_competencies: ["Stellar Evolution", "Cosmology", "Spectroscopy"],
+      prerequisites: ["PHY 301"],
+      unesco_isced: "0533",
+    },
+    {
+      id: 10,
+      course_code: "CHE 203",
+      course_name: "Organic Chemistry",
+      department: "Chemistry",
+      course_type: "C",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 2,
+      expected_competencies: [
+        "Organic Synthesis",
+        "Reaction Mechanisms",
+        "Spectroscopy",
+      ],
+      prerequisites: ["CHE 101"],
+      unesco_isced: "0531",
+    },
+    {
+      id: 11,
+      course_code: "EDU 401",
+      course_name: "Teaching Practice",
+      department: "Business Administration",
+      course_type: "TP",
+      credits: 6,
+      lecture_hours_per_week: 0,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 8,
+      is_externally_assessed: true,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 4,
+      expected_competencies: [
+        "Lesson Planning",
+        "Classroom Management",
+        "Assessment Design",
+      ],
+      prerequisites: ["EDU 301"],
+      unesco_isced: "0111",
+    },
+    {
+      id: 12,
+      course_code: "CCS 910",
+      course_name: "PhD Thesis: Computer Science",
+      department: "Computer Science",
+      course_type: "PR",
+      credits: 24,
+      lecture_hours_per_week: 0,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: true,
+      is_postgraduate_only: true,
+      requires_defense_panel: true,
+      offered: 1,
+      expected_competencies: [
+        "Original Research",
+        "Contribution to Knowledge",
+        "Defense Readiness",
+      ],
+      prerequisites: ["CCS 810"],
+      unesco_isced: "0613",
+    },
+    {
+      id: 13,
+      course_code: "CCS 450",
+      course_name: "Advanced Machine Learning",
+      department: "Computer Science",
+      course_type: "E",
+      credits: 4,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 2,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 4,
+      expected_competencies: [
+        "ML Algorithms",
+        "Deep Learning",
+        "Model Evaluation",
+      ],
+      prerequisites: ["CCS 401"],
+      unesco_isced: "0613",
+    },
+    {
+      id: 14,
+      course_code: "MEC 303",
+      course_name: "Thermodynamics",
+      department: "Mechanical Engineering",
+      course_type: "C",
+      credits: 3,
+      lecture_hours_per_week: 3,
+      practical_hours_per_week: 0,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 3,
+      expected_competencies: [
+        "Energy Systems",
+        "Heat Transfer",
+        "Entropy Analysis",
+      ],
+      prerequisites: ["MEC 202"],
+      unesco_isced: "0716",
+    },
+    {
+      id: 15,
+      course_code: "CCS 350",
+      course_name: "Agile Software Development",
+      department: "Computer Science",
+      course_type: "P",
+      credits: 3,
+      lecture_hours_per_week: 2,
+      practical_hours_per_week: 3,
+      attachment_duration_weeks: 0,
+      is_externally_assessed: false,
+      is_postgraduate_only: false,
+      requires_defense_panel: false,
+      offered: 3,
+      expected_competencies: ["Scrum", "Kanban", "DevOps Practices"],
+      prerequisites: ["CCS 305"],
+      unesco_isced: "0613",
+    },
+  ];
+
+  // ============================================================
+  // TYPE LABELS
+  // ============================================================
+  const typeLabels = {
+    C: "Core",
+    E: "Elective",
+    CC: "Common Unit",
+    P: "Practical/Lab",
+    IA: "Industrial Attachment",
+    TP: "Teaching Practice",
+    PR: "Postgraduate Research",
+    ST: "Specialised Seminar",
+  };
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach((el) => {
+    el.addEventListener("click", function (e) {
+      if (e.target === this) {
+        this.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach((el) => {
+        el.classList.remove("active");
+        document.body.style.overflow = "";
+      });
+    }
+  });
+
+  // ============================================================
+  // VIEW COURSE
+  // ============================================================
+  function viewCourse(id) {
+    const course = courseData.find((c) => c.id === id);
+    if (!course) return;
+    const body = document.getElementById("viewCourseBody");
+    const typeLabel = typeLabels[course.course_type] || course.course_type;
+    const typeClass = course.course_type;
+    const flags = [];
+    if (course.is_postgraduate_only) flags.push("📘 Postgraduate Only");
+    if (course.requires_defense_panel) flags.push("🎤 Defense Required");
+    if (course.is_externally_assessed) flags.push("🔍 External Assessment");
+    if (course.attachment_duration_weeks > 0)
+      flags.push(`📅 ${course.attachment_duration_weeks} weeks Attachment`);
+
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Course Code</span><span class="value"><strong>${course.course_code}</strong></span></div>
+      <div class="detail-row"><span class="label">Course Name</span><span class="value">${course.course_name}</span></div>
+      
+      <div class="detail-row"><span class="label">Type</span><span class="value"><span class="type-badge ${typeClass}">${typeLabel}</span></span></div>
+      <div class="detail-row"><span class="label">Credits</span><span class="value">${course.credits}</span></div>
+      <div class="detail-row"><span class="label">Lecture Hours/Week</span><span class="value">${course.lecture_hours_per_week}</span></div>
+      <div class="detail-row"><span class="label">Practical Hours/Week</span><span class="value">${course.practical_hours_per_week}</span></div>
+      ${course.attachment_duration_weeks > 0 ? `<div class="detail-row"><span class="label">Attachment Duration</span><span class="value">${course.attachment_duration_weeks} weeks</span></div>` : ""}
+      <div class="detail-row"><span class="label">Offered in Year</span><span class="value">${course.offered}</span></div>
+      ${course.prerequisites && course.prerequisites.length > 0 ? `<div class="detail-row"><span class="label">Prerequisites</span><span class="value">${course.prerequisites.join(", ")}</span></div>` : ""}
+      ${course.expected_competencies && course.expected_competencies.length > 0 ? `<div class="detail-row"><span class="label">Competencies</span><span class="value"><div class="badge-list">${course.expected_competencies.map((c) => `<span class="type-badge CC" style="font-size:0.6rem;padding:0.1rem 0.5rem;">${c}</span>`).join("")}</div></span></div>` : ""}
+      ${course.unesco_isced ? `<div class="detail-row"><span class="label">UNESCO ISCED</span><span class="value">${course.unesco_isced}</span></div>` : ""}
+      ${flags.length > 0 ? `<div class="detail-row"><span class="label">Flags</span><span class="value">${flags.join(" · ")}</span></div>` : ""}
+    `;
+    openModal("viewCourseModal");
+  }
+
+  // ============================================================
+  // FILTERS & PAGINATION
+  // ============================================================
+  let currentPage = 1;
+  const perPage = 10;
+  let filteredData = [];
+
+  function applyFilters() {
+    const type = document.getElementById("filterType").value;
+
+    const level = document.getElementById("filterLevel").value;
+    const search = document
+      .getElementById("courseSearch")
+      .value.toLowerCase()
+      .trim();
+
+    filteredData = courseData.filter((c) => {
+      if (type !== "all" && c.course_type !== type) return false;
+
+      if (level === "ug" && c.is_postgraduate_only) return false;
+      if (level === "pg" && !c.is_postgraduate_only) return false;
+      if (search) {
+        const match =
+          c.course_code.toLowerCase().includes(search) ||
+          c.course_name.toLowerCase().includes(search);
+
+        if (!match) return false;
+      }
+      return true;
+    });
+    currentPage = 1;
+    renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById("filterType").value = "all";
+
+    document.getElementById("filterLevel").value = "all";
+    document.getElementById("courseSearch").value = "";
+    applyFilters();
+    showToast("🔄 Filters reset", "info");
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("courseTableBody");
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const pageItems = filteredData.slice(start, end);
+
+    document.getElementById("totalBadge").textContent = courseData.length;
+    document.getElementById("courseCount").textContent =
+      `Showing ${total} entries`;
+
+    if (pageItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11" class="no-results"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No courses found</td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems
+        .map((item, idx) => {
+          const globalIdx = filteredData.indexOf(item) + 1;
+          const typeLabel = typeLabels[item.course_type] || item.course_type;
+          const typeClass = item.course_type;
+          const flags = [];
+          if (item.is_postgraduate_only)
+            flags.push(
+              '<i class="fas fa-graduation-cap flag-icon active" title="Postgraduate Only"></i>',
+            );
+          if (item.requires_defense_panel)
+            flags.push(
+              '<i class="fas fa-gavel flag-icon warning" title="Defense Required"></i>',
+            );
+          if (item.is_externally_assessed)
+            flags.push(
+              '<i class="fas fa-check-circle flag-icon active" title="External Assessment"></i>',
+            );
+          if (item.attachment_duration_weeks > 0)
+            flags.push(
+              '<i class="fas fa-briefcase flag-icon" title="Attachment"></i>',
+            );
+          const flagsHtml = flags.length > 0 ? flags.join(" ") : "—";
+          return `
+          <tr>
+            <td style="text-align:center;font-size:0.65rem;color:var(--text-muted);">${globalIdx}</td>
+            <td><span style="font-weight:600;font-size:0.75rem;">${item.course_code}</span></td>
+            <td><span style="font-size:0.75rem;">${item.course_name}</span></td>
+            
+            <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+            <td style="text-align:center;font-weight:600;">${item.credits}</td>
+            <td style="text-align:center;">${item.lecture_hours_per_week}</td>
+            <td style="text-align:center;">${item.practical_hours_per_week}</td>
+            <td style="text-align:center;">${item.offered}</td>
+            <td style="text-align:center;font-size:0.85rem;">${flagsHtml}</td>
+            <td>
+              <button class="btn-sm primary" onclick="viewCourse(${item.id})"><i class="fas fa-eye"></i></button>
+             <!-- <button class="btn-sm success" onclick="showToast('✏️ Edit course: ${item.course_code}', 'info')"><i class="fas fa-edit"></i></button> -->
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+    }
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const div = document.getElementById("coursePagination");
+    if (totalPages <= 1) {
+      div.innerHTML = "";
+      return;
+    }
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    div.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const total = filteredData.length;
+    const pages = Math.ceil(total / perPage);
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderTable();
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener("DOMContentLoaded", function () {
+    const mappedData = JSON.parse(
+      document.getElementById("courseCatalog").textContent,
+    );
+    courseData = mappedData;
+    filteredData = [...courseData];
+    renderTable();
+  });
+</script>
+{% endblock %}

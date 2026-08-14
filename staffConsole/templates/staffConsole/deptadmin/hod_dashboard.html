@@ -1,0 +1,726 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/deptadmin/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>HOD Dashboard</title>
+
+<style>
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* ===== STATS CARDS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: 0.2s;
+    position: relative;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.1rem;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__sub {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.1);
+    margin-top: -0.2rem;
+  }
+
+  /* ===== DASHBOARD GRID ===== */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.2rem;
+  }
+  .card__header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .card__header a {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--blue-card);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .card__body {
+    padding: 0.2rem 0;
+  }
+
+  /* ===== HOD SPECIFIC ITEMS ===== */
+  .hod-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .hod-item:last-child {
+    border-bottom: none;
+  }
+  .hod-item:hover {
+    background: #f8fafc;
+  }
+  .hod-item .info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .hod-item .status {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.6rem;
+    border-radius: 30px;
+    text-transform: uppercase;
+  }
+  .status.approved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status.review {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status.draft {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .status.active {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.8rem 1.2rem 1.2rem;
+  }
+  .quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+  }
+  .quick-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .quick-action-btn i {
+    width: 20px;
+    color: var(--navy);
+  }
+
+  @media (max-width: 1024px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dash-grid {
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+</style>
+
+{% endblock %} {% block content %}
+
+<!-- ===== MAIN CONTENT ===== -->
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-tachometer-alt"></i> Department Dashboard
+    </h1>
+    <span class="topbar__badge">
+      <i class="fas fa-user-tie"></i> {{department}}
+    </span>
+  </div>
+  <div class="topbar__actions">
+    <!-- <button
+            class="btn btn-outline"
+            onclick="showToast('📊 Department report generated', 'info')"
+          >
+            <i class="fas fa-file-pdf"></i> Report
+          </button>
+          <button
+            class="btn btn-success"
+            onclick="showToast('📅 Timetable generation started', 'success')"
+          >
+            <i class="fas fa-clock"></i> Timetable
+          </button> -->
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-users stat-card__icon"></i>
+    <div class="stat-card__number">{{lecturer_count}}</div>
+    <div class="stat-card__label">Faculty Members</div>
+    <div class="stat-card__sub">Active: 38 | On Leave: 4</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-user-graduate stat-card__icon"
+      style="color: var(--blue-card)"
+    ></i>
+    <div class="stat-card__number">{{student_count}}</div>
+    <div class="stat-card__label">Students</div>
+    <div class="stat-card__sub">UG: {{ug}} | PG: {{pg}}</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-book stat-card__icon" style="color: var(--gold)"></i>
+    <div class="stat-card__number">{{course_count}}</div>
+    <div class="stat-card__label">Courses</div>
+    <div class="stat-card__sub">
+      Active: {{course_count}} | Electives: {{elective_count}}
+    </div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-chart-line stat-card__icon"
+      style="color: var(--green)"
+    ></i>
+    <div class="stat-card__number">88%</div>
+    <div class="stat-card__label">Pass Rate (2025)</div>
+    <div class="stat-card__sub">↑ 2% vs previous</div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD GRID ===== -->
+<div class="dash-grid">
+  <!-- Left Column -->
+  <!-- TODO : add a disappearing results needed for approval here -->
+  <div>
+    <!-- Results Approvals -->
+    {% if pending_result_approvals %}
+    <div class="card">
+      <div class="card__header">
+        <span>
+          <i
+            class="fas fa-chart-simple"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Pending Results Approval
+        </span>
+        <a onclick="showToast('📋 Full workload report opened', 'info')">
+          View all →
+        </a>
+      </div>
+      <div class="card__body">
+        {% for result in pending_result_approvals %}
+        <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> {{result.enrollment.student.name}} →
+            <!-- prettier-ignore -->
+            {{result.enrollment.curriculum.course.course_code}} - {{result.title | upper}}
+          </div>
+          <span class="status pending">⚠️ pending </span>
+        </div>
+        {% endfor%}
+      </div>
+    </div>
+    {% endif %}
+    <!-- Faculty Workload -->
+    <div class="card">
+      <div class="card__header">
+        <span>
+          <i
+            class="fas fa-chart-simple"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Faculty Workload ({{session}})
+        </span>
+        <a href="{% url 'hod-teaching-load' %}"> View all → </a>
+      </div>
+      <div class="card__body">
+        {% for work in faculty_workload%}
+        <div class="hod-item">
+          <div class="info"><i class="fas fa-user"></i> {{work.lec}}</div>
+          <span style="font-size: 0.7rem; color: var(--text-muted)"
+            >{{work.credits}} credits</span
+          >
+        </div>
+        {% endfor%}
+      </div>
+    </div>
+
+    <!-- Student Performance / At-Risk -->
+    <div class="card">
+      <div class="card__header">
+        <span>
+          <i
+            class="fas fa-exclamation-triangle"
+            style="color: var(--gold); margin-right: 0.4rem"
+          ></i>
+          At-Risk Students
+        </span>
+        <a onclick="showToast('⚠️ At-risk student list opened', 'info')">
+          View all →
+        </a>
+      </div>
+      <div class="card__body">
+        {% if dept_risk_scores %} {% for risk_score in dept_risk_scores %}
+        <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> {{risk_score.student.name}}
+          </div>
+          <span class="status pending"
+            >⚠️ {{risk_score.primary_risk_factor}}</span
+          >
+        </div>
+        {% endfor %} {% else %}
+        <div style="text-align: center; padding: 32px 20px; opacity: 0.5">
+          <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
+          <div style="font-size: 0.85rem">All Clear</div>
+        </div>
+        {% endif %}
+
+        <!-- <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> John Mwangi (CS101)
+          </div>
+          <span class="status pending">⚠️ Backlog</span>
+        </div>
+        <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> Aisha Hassan (CS202)
+          </div>
+          <span class="status pending">⚠️ Low Attendance</span>
+        </div>
+        <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> Peter Odhiambo (CS303)
+          </div>
+          <span class="status draft">🔴 Probation</span>
+        </div>
+        <div class="hod-item" style="border-bottom: none">
+          <div class="info">
+            <i class="fas fa-user"></i> Mercy Kiprop (CS104)
+          </div>
+          <span class="status draft">🔴 Academic Warning</span>
+        </div> -->
+      </div>
+    </div>
+
+    <!-- Leave Approvals -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-calendar-check"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Pending Leave Requests</span
+        >
+        <a href="{% url 'hod-leave-approvals' %}">View all →</a>
+      </div>
+      <div class="card__body">
+        {% if leave_requests %} {% for request in leave_requests %}
+        <div class="hod-item">
+          <div class="info"><i class="fas fa-user"></i> {{request.name}}</div>
+          <span class="status pending">⏳ Pending</span>
+        </div>
+        {% endfor %} {% else %}
+        <div style="text-align: center; padding: 32px 20px; opacity: 0.5">
+          <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
+          <div style="font-size: 0.85rem">
+            No pending leave requests at the moment
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Deferments -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-calendar-check"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Pending Deferment Requests</span
+        >
+        <a onclick="showToast('📋 Deferment panel opened', 'info')"
+          >View all →</a
+        >
+      </div>
+      <div class="card__body">
+        {% if pending_deferments %} {% for request in pending_deferments %}
+        <div class="hod-item">
+          <div class="info">
+            <i class="fas fa-user"></i> {{request.student.name}}
+          </div>
+          <span class="status pending">⏳ Pending</span>
+        </div>
+        {% endfor %} {% else %}
+        <div style="text-align: center; padding: 32px 20px; opacity: 0.5">
+          <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
+          <div style="font-size: 0.85rem">
+            No pending Deferment requests at the moment
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div>
+    <!-- Quick Actions -->
+    <div class="card" style="margin-bottom: 1.2rem">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-bolt"
+            style="color: var(--gold); margin-right: 0.4rem"
+          ></i>
+          Quick Actions</span
+        >
+      </div>
+      <div class="quick-actions">
+        <button
+          class="quick-action-btn"
+          onclick="navigate(`{% url 'hod-leave-approvals' %}`)"
+        >
+          <i class="fas fa-calendar-check"></i> Approve Leave
+        </button>
+        <button
+          class="quick-action-btn"
+          onclick="
+            showToast('📊 Performance appraisal dashboard opened', 'info')
+          "
+        >
+          <i class="fas fa-star"></i> Start Appraisal
+        </button>
+        <button
+          class="quick-action-btn"
+          onclick="showToast('📚 Course allocation wizard opened', 'info')"
+        >
+          <i class="fas fa-book-open"></i> Allocate Courses
+        </button>
+
+        <button
+          class="quick-action-btn"
+          onclick="
+            showToast('📊 Department performance report generated', 'info')
+          "
+        >
+          <i class="fas fa-chart-pie"></i> Performance Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Department Info -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-info-circle"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Department Overview</span
+        >
+      </div>
+      <div class="card__body" style="padding: 1.2rem">
+        <div style="display: flex; flex-direction: column; gap: 0.3rem">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Head of Department</span>
+            <span style="font-weight: 600">{{admin.name}}</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Department</span>
+            <span style="font-weight: 600">{{department}}</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Faculty Strength</span>
+            <span style="font-weight: 600">{{lecturer_count}}</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Academic Year</span>
+            <span style="font-weight: 600">{{session.academic_year}}</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Current Semester</span>
+            <span style="font-weight: 600"
+              >{{session.get_semester_display}}</span
+            >
+          </div>
+          <!-- <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              border-bottom: 1px solid var(--border);
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Student Ratio</span>
+            <span style="font-weight: 600; color: var(--green)">20:1</span>
+          </div> -->
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0.3rem 0;
+              font-size: 0.8rem;
+            "
+          >
+            <span style="color: var(--text-muted)">Accreditation</span>
+            <span style="font-weight: 600; color: var(--gold)"
+              >CUE Accredited</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function navigate(path) {
+    window.location.pathname = String(path);
+  }
+</script>
+
+{% endblock %}

@@ -1217,9 +1217,10 @@
       <span><i class="far fa-calendar-alt"></i> {{ selected.session }}</span>
       {% if selected_slot %}
       <span>
+        <i class="fas fa-clock"></i>
         <!-- prettier-ignore -->
-        <i class="fas fa-clock"></i> {{ selected_slot.get_day_display }} · {{
-        selected_slot.time_slot }}</span
+        {{ selected_slot.get_day_display }} · 
+        {{ selected_slot.time_slot }}</span
       >
       <span
         ><i class="fas fa-map-pin"></i> {{ selected_slot.venue.venue_name }} ·

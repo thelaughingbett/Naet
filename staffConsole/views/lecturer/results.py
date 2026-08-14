@@ -29,8 +29,8 @@ def _build_unit_list(lecturer, session):
     units = (
         Curriculum.objects
         .filter(professor=lecturer, session=session)
-        .select_related('course', 'Tclass')
-        .order_by('course__course_code')
+        .select_related('syllabus__course', 'Tclass')
+        .order_by('syllabus__course__course_code')
     )
     return [
         {
@@ -143,7 +143,7 @@ class EnterResultsView(RoleRequiredMixin, View):
 
         if session and selected_id:
             try:
-                selected = Curriculum.objects.select_related('course', 'Tclass').get(
+                selected = Curriculum.objects.select_related('syllabus__course', 'Tclass').get(
                     record_id=selected_id,
                     professor=lecturer,
                     session=session,
@@ -153,7 +153,7 @@ class EnterResultsView(RoleRequiredMixin, View):
 
         if session and not selected and unit_list:
             try:
-                selected = Curriculum.objects.select_related('course', 'Tclass').get(
+                selected = Curriculum.objects.select_related('syllabus__course', 'Tclass').get(
                     record_id=unit_list[0]['curriculum_id']
                 )
             except Curriculum.DoesNotExist:
@@ -364,7 +364,8 @@ class AddAssessmentAjaxView(RoleRequiredMixin, View):
         # Check for duplicate
         enrollment_ids = list(
             Enrollment.objects.filter(
-                curriculum=curriculum, status='approved'
+                curriculum=curriculum,
+                status='approved'
             ).values_list('record_id', flat=True)
         )
         if Result.objects.filter(

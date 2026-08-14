@@ -1,0 +1,1776 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/deptadmin/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>Syllabus Management · HOD</title>
+<
+<style>
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn-sm.success:hover {
+    background: #14532d;
+  }
+  .btn-sm.danger {
+    background: #b91c1c;
+    color: white;
+    border-color: #b91c1c;
+  }
+  .btn-sm.danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm.warning {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+  }
+  .btn-sm.warning:hover {
+    background: #b45309;
+  }
+
+  /* ===== FILTERS ===== */
+  .filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .filters-bar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .filters-bar label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .filters-bar select,
+  .filters-bar input {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    background: var(--white);
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .filters-bar select:focus,
+  .filters-bar input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .filters-bar .search-input {
+    min-width: 200px;
+    padding-left: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.08);
+    margin-top: -0.2rem;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .syllabus-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    min-width: 1100px;
+  }
+  .syllabus-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    white-space: nowrap;
+  }
+  .syllabus-table td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .syllabus-table tr:last-child td {
+    border-bottom: none;
+  }
+  .syllabus-table tr:hover td {
+    background: #fafcff;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    text-transform: capitalize;
+  }
+  .status-badge.Draft {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-badge.Assigned {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-badge.Confirmed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status-badge.Substituted {
+    background: #fce4ec;
+    color: #b71c1c;
+  }
+
+  .type-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .type-badge.C {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .type-badge.E {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .type-badge.CC {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .type-badge.P {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .type-badge.IA {
+    background: #fce4ec;
+    color: #b71c1c;
+  }
+  .type-badge.TP {
+    background: #f3e5f5;
+    color: #6a1b9a;
+  }
+  .type-badge.PR {
+    background: #e8eaf6;
+    color: #283593;
+  }
+  .type-badge.ST {
+    background: #e0f7fa;
+    color: #00695c;
+  }
+
+  .enrollment-status {
+    display: inline-block;
+    font-size: 0.5rem;
+    font-weight: 600;
+    padding: 0.05rem 0.4rem;
+    border-radius: 12px;
+  }
+  .enrollment-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .enrollment-status.approved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .enrollment-status.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .enrollment-status.dropped {
+    background: #f3e5f5;
+    color: #6a1b9a;
+  }
+  .enrollment-status.completed {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pagination .page-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: var(--font);
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .pagination .page-btn:hover:not(.active) {
+    background: var(--bg);
+  }
+  .pagination .page-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .pagination .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pagination .page-info {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 0.5rem;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 780px;
+    width: 94%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+  .modal .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .modal .modal__close:hover {
+    color: var(--text);
+  }
+  .modal .modal__body {
+    margin-bottom: 1rem;
+  }
+  .modal .modal__body .detail-row {
+    display: flex;
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .modal .modal__body .detail-row:last-child {
+    border-bottom: none;
+  }
+  .modal .modal__body .detail-row .label {
+    font-weight: 600;
+    min-width: 150px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .modal .modal__body .detail-row .value {
+    color: var(--text);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .form-group textarea {
+    min-height: 60px;
+    resize: vertical;
+  }
+
+  .modal .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Sub-table inside modal */
+  .sub-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+  }
+  .sub-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 0.3rem 0.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .sub-table td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sub-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  @media (max-width: 1024px) {
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters-bar .filter-group {
+      flex-wrap: wrap;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .syllabus-table {
+      font-size: 0.65rem;
+      min-width: 850px;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .syllabus-table {
+      font-size: 0.55rem;
+      min-width: 750px;
+    }
+    .syllabus-table th,
+    .syllabus-table td {
+      padding: 0.2rem 0.4rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .modal .modal__body .detail-row {
+      flex-direction: column;
+    }
+    .modal .modal__body .detail-row .label {
+      min-width: auto;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+
+<!-- ===== MAIN CONTENT ===== -->
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-file-alt"></i> Syllabus Management
+    </h1>
+    <span class="topbar__badge"
+      ><i class="fas fa-list"></i> <span id="totalBadge">0</span> slots</span
+    >
+  </div>
+  <div class="topbar__actions">
+    <button class="btn btn-success" onclick="openModal('addSlotModal')">
+      <i class="fas fa-plus"></i> Add Slot
+    </button>
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📊 Syllabus report exported', 'info')"
+    >
+      <i class="fas fa-download"></i> Export
+    </button>
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-clock stat-card__icon" style="color: var(--gold)"></i>
+    <div class="stat-card__number" id="statDraft">0</div>
+    <div class="stat-card__label">Draft</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-hourglass-half stat-card__icon"
+      style="color: var(--blue-card)"
+    ></i>
+    <div class="stat-card__number" id="statAssigned">0</div>
+    <div class="stat-card__label">Assigned</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-check-circle stat-card__icon"
+      style="color: var(--green)"
+    ></i>
+    <div class="stat-card__number" id="statConfirmed">0</div>
+    <div class="stat-card__label">Confirmed</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-exchange-alt stat-card__icon" style="color: #b91c1c"></i>
+    <div class="stat-card__number" id="statSubstituted">0</div>
+    <div class="stat-card__label">Substituted</div>
+  </div>
+</div>
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label><i class="fas fa-tag"></i> Status</label>
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="Draft">Draft</option>
+      <option value="Assigned">Assigned</option>
+      <option value="Confirmed">Confirmed</option>
+      <option value="Substituted">Substituted</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label><i class="fas fa-calendar-alt"></i> Session</label>
+    <select id="filterSession" onchange="applyFilters()">
+      <option value="all">All Sessions</option>
+      {% for session in sessions %}
+      <option value="{{session}}">{{session}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-group">
+    <input
+      type="text"
+      class="search-input"
+      id="syllabusSearch"
+      placeholder="Search..."
+      oninput="applyFilters()"
+    />
+  </div>
+  <button class="btn btn-outline" onclick="resetFilters()">
+    <i class="fas fa-undo"></i> Reset
+  </button>
+  <span
+    style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted)"
+    id="syllabusCount"
+    >Showing 0 entries</span
+  >
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="table-wrap">
+  <table class="syllabus-table">
+    <thead>
+      <tr>
+        <th style="width: 25px">#</th>
+        <th style="min-width: 100px">Course</th>
+        <th style="min-width: 120px">Class</th>
+        <th style="min-width: 120px">Session</th>
+        <th style="min-width: 140px">Lecturer(s)</th>
+        <th style="min-width: 60px">Type</th>
+        <th style="min-width: 60px">Slots</th>
+        <th style="min-width: 60px">Capacity</th>
+        <th style="min-width: 60px">Enrolled</th>
+        <th style="min-width: 100px">Status</th>
+        <th style="min-width: 140px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="syllabusTableBody">
+      <!-- Rendered by JavaScript -->
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== PAGINATION ===== -->
+<div class="pagination" id="syllabusPagination"></div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- VIEW SLOT MODAL -->
+<div class="modal-overlay" id="viewSlotModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-eye" style="color: var(--blue-card)"></i> Curriculum
+        Slot Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewSlotModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewSlotBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewSlotModal')">
+        Close
+      </button>
+      <button
+        class="btn btn-primary"
+        onclick="
+          closeModal('viewSlotModal');
+          showToast('✏️ Edit mode opened', 'info');
+        "
+      >
+        <i class="fas fa-edit"></i> Edit
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SLOT MODAL -->
+<div class="modal-overlay" id="addSlotModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-plus-circle" style="color: var(--green)"></i> Add
+        Curriculum Slot
+      </h2>
+      <button class="modal__close" onclick="closeModal('addSlotModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="addSlotForm" onsubmit="addSlot(event)">
+        <div class="form-group">
+          <label for="addCourse">Course *</label>
+          <select id="addCourse" required>
+            <option value="">Select Course</option>
+            <option value="CCS 401">CCS 401 - Advanced Database Systems</option>
+            <option value="BIL 810">BIL 810 - Research Methodology</option>
+            <option value="ELE 201">ELE 201 - Circuit Theory</option>
+            <option value="MEC 101">MEC 101 - Engineering Mechanics</option>
+            <option value="BUS 302">BUS 302 - Marketing Management</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addClass">Class *</label>
+          <input type="text" id="addClass" placeholder="e.g. CS 4A" required />
+        </div>
+        <div class="form-group">
+          <label for="addSession">Session *</label>
+          <select id="addSession" required>
+            <option value="">Select Session</option>
+            <option value="2024/2025">2024/2025</option>
+            <option value="2025/2026">2025/2026</option>
+            <option value="2026/2027">2026/2027</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addLecturers">Lecturers</label>
+          <input
+            type="text"
+            id="addLecturers"
+            placeholder="e.g. Prof. Charles Omondi (Primary), Dr. Sarah Wanjiru (Assistant)"
+          />
+        </div>
+        <div class="form-group">
+          <label for="addSlots">Weekly Slots *</label>
+          <input
+            type="number"
+            id="addSlots"
+            value="3"
+            min="0"
+            max="6"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="addCapacity">Capacity *</label>
+          <input
+            type="number"
+            id="addCapacity"
+            value="60"
+            min="1"
+            max="200"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="addStatus">Status</label>
+          <select id="addStatus">
+            <option value="Draft">Draft</option>
+            <option value="Assigned" selected>Assigned</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Substituted">Substituted</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('addSlotModal')">
+        Cancel
+      </button>
+      <button
+        class="btn btn-success"
+        onclick="document.getElementById('addSlotForm').requestSubmit()"
+      >
+        <i class="fas fa-save"></i> Create Slot
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SLOT MODAL -->
+<div class="modal-overlay" id="editSlotModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-edit" style="color: var(--gold)"></i> Edit Curriculum
+        Slot
+      </h2>
+      <button class="modal__close" onclick="closeModal('editSlotModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="editSlotForm" onsubmit="updateSlot(event)">
+        <input type="hidden" id="editSlotId" />
+        <div class="form-group">
+          <label for="editCourse">Course *</label>
+          <input id="editCourse" type="text" required readonly />
+        </div>
+        <div class="form-group">
+          <label for="editClass">Class *</label>
+          <input type="text" id="editClass" required readonly />
+        </div>
+        <div class="form-group">
+          <label for="editSession">Session *</label>
+          <input type="text" readonly id="editSession" required />
+        </div>
+        <div class="form-group">
+          <label for="editLecturers">Lecturers</label>
+          <input
+            type="text"
+            id="editLecturers"
+            placeholder="e.g. Prof. Charles Omondi (Primary)"
+          />
+        </div>
+        <div class="form-group">
+          <label for="editSlots">Weekly Slots *</label>
+          <input type="number" id="editSlots" min="0" max="6" required />
+        </div>
+        <div class="form-group">
+          <label for="editCapacity">Capacity *</label>
+          <input type="number" id="editCapacity" min="1" max="200" required />
+        </div>
+        <div class="form-group">
+          <label for="editStatus">Status</label>
+          <select id="editStatus">
+            <option value="Draft">Draft</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Substituted">Substituted</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('editSlotModal')">
+        Cancel
+      </button>
+      <button
+        class="btn btn-success"
+        onclick="document.getElementById('editSlotForm').requestSubmit()"
+      >
+        <i class="fas fa-save"></i> Update Slot
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE ENROLLMENTS MODAL -->
+<div class="modal-overlay" id="manageEnrollmentsModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-users" style="color: var(--blue-card)"></i> Manage
+        Enrollments
+      </h2>
+      <button
+        class="modal__close"
+        onclick="closeModal('manageEnrollmentsModal')"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="enrollmentsBody"></div>
+    <div class="modal__footer">
+      <button
+        class="btn btn-outline"
+        onclick="closeModal('manageEnrollmentsModal')"
+      >
+        Close
+      </button>
+      <button
+        class="btn btn-success"
+        onclick="
+          showToast('✅ Enrollment changes saved', 'success');
+          closeModal('manageEnrollmentsModal');
+        "
+      >
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE RESULTS MODAL -->
+<div class="modal-overlay" id="manageResultsModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-clipboard-list" style="color: var(--gold)"></i> Manage
+        Results
+      </h2>
+      <button class="modal__close" onclick="closeModal('manageResultsModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="resultsBody"></div>
+    <div class="modal__footer">
+      <button
+        class="btn btn-outline"
+        onclick="closeModal('manageResultsModal')"
+      >
+        Close
+      </button>
+      <button
+        class="btn btn-success"
+        onclick="
+          showToast('✅ Results saved', 'success');
+          closeModal('manageResultsModal');
+        "
+      >
+        <i class="fas fa-save"></i> Save Results
+      </button>
+    </div>
+  </div>
+</div>
+
+{{syllabus_data|json_script:'syllabusData'}}
+<script>
+  // ============================================================
+  // SYLLABUS DATA
+  // ============================================================
+  let syllabusData = [
+    {
+      id: 1,
+      course_code: "CCS 401",
+      course_name: "Advanced Database Systems",
+      course_type: "C",
+      class_name: "CS 4A",
+      session: "2025/2026",
+      lecturers: [
+        "Prof. Charles Omondi (Primary)",
+        "Dr. Sarah Wanjiru (Assistant)",
+      ],
+      weekly_slots: 3,
+      capacity: 60,
+      enrolled: 54,
+      status: "Confirmed",
+    },
+    {
+      id: 2,
+      course_code: "BIL 810",
+      course_name: "Research Methodology in Computing",
+      course_type: "PR",
+      class_name: "PG 1A",
+      session: "2025/2026",
+      lecturers: ["Dr. Sarah Wanjiru (Primary)"],
+      weekly_slots: 2,
+      capacity: 25,
+      enrolled: 18,
+      status: "Assigned",
+    },
+    {
+      id: 3,
+      course_code: "ELE 201",
+      course_name: "Circuit Theory",
+      course_type: "C",
+      class_name: "EE 2A",
+      session: "2025/2026",
+      lecturers: ["Dr. Michael Ochieng (Primary)"],
+      weekly_slots: 3,
+      capacity: 60,
+      enrolled: 58,
+      status: "Confirmed",
+    },
+    {
+      id: 4,
+      course_code: "ELE 302",
+      course_name: "Power Systems Laboratory",
+      course_type: "P",
+      class_name: "EE 3A",
+      session: "2025/2026",
+      lecturers: [
+        "Dr. Michael Ochieng (Primary)",
+        "Dr. Faith Chepkorir (Assistant)",
+      ],
+      weekly_slots: 4,
+      capacity: 30,
+      enrolled: 26,
+      status: "Assigned",
+    },
+    {
+      id: 5,
+      course_code: "MEC 101",
+      course_name: "Engineering Mechanics",
+      course_type: "C",
+      class_name: "ME 1A",
+      session: "2025/2026",
+      lecturers: ["Prof. Elizabeth Muthoni (Primary)"],
+      weekly_slots: 3,
+      capacity: 60,
+      enrolled: 45,
+      status: "Confirmed",
+    },
+    {
+      id: 6,
+      course_code: "MEC 490",
+      course_name: "Industrial Attachment",
+      course_type: "IA",
+      class_name: "ME 4A",
+      session: "2025/2026",
+      lecturers: ["Dr. Victor Okoth (Primary)"],
+      weekly_slots: 0,
+      capacity: 50,
+      enrolled: 38,
+      status: "Draft",
+    },
+    {
+      id: 7,
+      course_code: "BUS 302",
+      course_name: "Marketing Management",
+      course_type: "E",
+      class_name: "BA 3A",
+      session: "2025/2026",
+      lecturers: ["Dr. Grace Mwangi (Primary)"],
+      weekly_slots: 3,
+      capacity: 50,
+      enrolled: 42,
+      status: "Confirmed",
+    },
+    {
+      id: 8,
+      course_code: "MATH 303",
+      course_name: "Probability & Statistics",
+      course_type: "CC",
+      class_name: "CS 3A",
+      session: "2025/2026",
+      lecturers: ["Prof. Ruth Odhiambo (Primary)"],
+      weekly_slots: 3,
+      capacity: 60,
+      enrolled: 60,
+      status: "Confirmed",
+    },
+    {
+      id: 9,
+      course_code: "PHY 403",
+      course_name: "Astrophysics",
+      course_type: "E",
+      class_name: "PHY 4A",
+      session: "2025/2026",
+      lecturers: ["Prof. Susan Waweru (Primary)"],
+      weekly_slots: 3,
+      capacity: 40,
+      enrolled: 32,
+      status: "Assigned",
+    },
+    {
+      id: 10,
+      course_code: "CHE 203",
+      course_name: "Organic Chemistry",
+      course_type: "C",
+      class_name: "CH 2A",
+      session: "2024/2025",
+      lecturers: ["Prof. Leonard Akinyi (Primary)"],
+      weekly_slots: 3,
+      capacity: 55,
+      enrolled: 50,
+      status: "Confirmed",
+    },
+    {
+      id: 11,
+      course_code: "EDU 401",
+      course_name: "Teaching Practice",
+      course_type: "TP",
+      class_name: "BA 4A",
+      session: "2025/2026",
+      lecturers: [
+        "Dr. Grace Mwangi (Primary)",
+        "Prof. Elizabeth Muthoni (Assistant)",
+      ],
+      weekly_slots: 0,
+      capacity: 30,
+      enrolled: 22,
+      status: "Draft",
+    },
+    {
+      id: 12,
+      course_code: "CCS 910",
+      course_name: "PhD Thesis: Computer Science",
+      course_type: "PR",
+      class_name: "PhD 1A",
+      session: "2025/2026",
+      lecturers: ["Prof. Charles Omondi (Primary)"],
+      weekly_slots: 1,
+      capacity: 10,
+      enrolled: 6,
+      status: "Assigned",
+    },
+    {
+      id: 13,
+      course_code: "CCS 450",
+      course_name: "Advanced Machine Learning",
+      course_type: "E",
+      class_name: "CS 4A",
+      session: "2025/2026",
+      lecturers: ["Dr. Peter Omondi (Primary)"],
+      weekly_slots: 4,
+      capacity: 40,
+      enrolled: 35,
+      status: "Substituted",
+    },
+    {
+      id: 14,
+      course_code: "MEC 303",
+      course_name: "Thermodynamics",
+      course_type: "C",
+      class_name: "ME 3A",
+      session: "2025/2026",
+      lecturers: ["Dr. Victor Okoth (Primary)"],
+      weekly_slots: 3,
+      capacity: 55,
+      enrolled: 48,
+      status: "Confirmed",
+    },
+    {
+      id: 15,
+      course_code: "CCS 350",
+      course_name: "Agile Software Development",
+      course_type: "P",
+      class_name: "CS 3A",
+      session: "2025/2026",
+      lecturers: ["Dr. James Kariuki (Primary)"],
+      weekly_slots: 4,
+      capacity: 35,
+      enrolled: 30,
+      status: "Assigned",
+    },
+  ];
+
+  let nextId = 16;
+
+  // Mock enrollment data
+  const mockEnrollments = [
+    {
+      student: "John Mwangi",
+      reg_no: "CS/001/2023",
+      status: "approved",
+      approval_method: "system",
+    },
+    {
+      student: "Aisha Hassan",
+      reg_no: "CS/002/2023",
+      status: "approved",
+      approval_method: "manual",
+    },
+    {
+      student: "Peter Odhiambo",
+      reg_no: "CS/003/2023",
+      status: "pending",
+      approval_method: null,
+    },
+    {
+      student: "Mercy Kiprop",
+      reg_no: "CS/004/2023",
+      status: "approved",
+      approval_method: "system",
+    },
+    {
+      student: "James Ochieng",
+      reg_no: "CS/005/2023",
+      status: "dropped",
+      approval_method: null,
+    },
+    {
+      student: "Grace Akinyi",
+      reg_no: "CS/006/2023",
+      status: "approved",
+      approval_method: "system",
+    },
+    {
+      student: "Samuel Kiplagat",
+      reg_no: "CS/007/2023",
+      status: "pending",
+      approval_method: null,
+    },
+  ];
+
+  // Mock results data
+  const mockResults = [
+    { student: "John Mwangi", type: "C", score: 78.5, title: "Cat 1" },
+    { student: "John Mwangi", type: "C", score: 82.0, title: "Cat 2" },
+    { student: "Aisha Hassan", type: "C", score: 65.0, title: "Cat 1" },
+    { student: "Mercy Kiprop", type: "E", score: 72.5, title: "Final Exam" },
+    {
+      student: "Grace Akinyi",
+      type: "A",
+      score: 88.0,
+      title: "Group Assignment",
+    },
+  ];
+
+  // ============================================================
+  // TYPE LABELS
+  // ============================================================
+  const typeLabels = {
+    C: "Core",
+    E: "Elective",
+    CC: "Common Unit",
+    P: "Practical/Lab",
+    IA: "Industrial Attachment",
+    TP: "Teaching Practice",
+    PR: "Postgraduate Research",
+    ST: "Specialised Seminar",
+  };
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach((el) => {
+    el.addEventListener("click", function (e) {
+      if (e.target === this) {
+        this.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach((el) => {
+        el.classList.remove("active");
+        document.body.style.overflow = "";
+      });
+    }
+  });
+
+  // ============================================================
+  // VIEW SLOT
+  // ============================================================
+  function viewSlot(id) {
+    const slot = syllabusData.find((s) => s.id === id);
+    if (!slot) return;
+    const body = document.getElementById("viewSlotBody");
+    const typeLabel = typeLabels[slot.course_type] || slot.course_type;
+    const typeClass = slot.course_type;
+    const statusLabel = slot.status;
+    const enrollPercent = Math.round((slot.enrolled / slot.capacity) * 100);
+
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Course</span><span class="value"><strong>${slot.course_code}</strong> — ${slot.course_name}</span></div>
+      <div class="detail-row"><span class="label">Class</span><span class="value">${slot.class_name}</span></div>
+      <div class="detail-row"><span class="label">Session</span><span class="value">${slot.session}</span></div>
+      <div class="detail-row"><span class="label">Course Type</span><span class="value"><span class="type-badge ${typeClass}">${typeLabel}</span></span></div>
+      <div class="detail-row"><span class="label">Lecturer(s)</span><span class="value">${slot.lecturers.join("<br>")}</span></div>
+      <div class="detail-row"><span class="label">Weekly Slots</span><span class="value">${slot.weekly_slots}</span></div>
+      <div class="detail-row"><span class="label">Capacity</span><span class="value">${slot.capacity}</span></div>
+      <div class="detail-row"><span class="label">Enrolled</span><span class="value">${slot.enrolled} / ${slot.capacity} (${enrollPercent}%)</span></div>
+      <div class="detail-row"><span class="label">Status</span><span class="value"><span class="status-badge ${slot.status}">${statusLabel}</span></span></div>
+      <div class="detail-row" style="margin-top:0.5rem;border-top:2px solid var(--border);padding-top:0.5rem;">
+        <span class="label">Quick Actions</span>
+        <span class="value">
+          <button class="btn-sm primary" onclick="closeModal('viewSlotModal'); editSlot('${slot.id}')"><i class="fas fa-edit"></i> Edit</button>
+          <button class="btn-sm success" onclick="closeModal('viewSlotModal'); manageEnrollments('${slot.id}')"><i class="fas fa-users"></i> Enrollments</button>
+          <button class="btn-sm warning" onclick="closeModal('viewSlotModal'); manageResults('${slot.id}')"><i class="fas fa-clipboard-list"></i> Results</button>
+        </span>
+      </div>
+    `;
+    openModal("viewSlotModal");
+  }
+
+  // ============================================================
+  // ADD SLOT
+  // ============================================================
+  function addSlot(e) {
+    e.preventDefault();
+    const course = document.getElementById("addCourse").value;
+    const className = document.getElementById("addClass").value.trim();
+    const session = document.getElementById("addSession").value;
+    const lecturers = document.getElementById("addLecturers").value.trim();
+    const slots = parseInt(document.getElementById("addSlots").value);
+    const capacity = parseInt(document.getElementById("addCapacity").value);
+    const status = document.getElementById("addStatus").value;
+
+    if (!course || !className || !session) {
+      showToast("⚠️ Please fill in all required fields", "warning");
+      return;
+    }
+
+    const newSlot = {
+      id: nextId++,
+      course_code: course.split(" - ")[0],
+      course_name: course.split(" - ")[1] || course,
+      course_type: "C",
+      class_name: className,
+      session: session,
+      lecturers: lecturers
+        ? lecturers.split(",").map((l) => l.trim())
+        : ["Unassigned"],
+      weekly_slots: slots,
+      capacity: capacity,
+      enrolled: 0,
+      status: status,
+    };
+
+    syllabusData.push(newSlot);
+    closeModal("addSlotModal");
+    document.getElementById("addSlotForm").reset();
+    showToast(
+      `✅ Slot created: ${newSlot.course_code} - ${newSlot.class_name}`,
+      "success",
+    );
+    applyFilters();
+  }
+
+  // ============================================================
+  // EDIT SLOT
+  // ============================================================
+  function editSlot(id) {
+    const slot = syllabusData.find((s) => s.id === id);
+    if (!slot) return;
+
+    document.getElementById("editSlotId").value = slot.id;
+    document.getElementById("editCourse").value = slot.course_code;
+    document.getElementById("editClass").value = slot.class_name;
+    document.getElementById("editSession").value = slot.session;
+    document.getElementById("editLecturers").value = slot.lecturers.join(", ");
+    document.getElementById("editSlots").value = slot.weekly_slots;
+    document.getElementById("editCapacity").value = slot.capacity;
+    document.getElementById("editStatus").value = slot.status;
+
+    openModal("editSlotModal");
+  }
+
+  function updateSlot(e) {
+    e.preventDefault();
+    const id = parseInt(document.getElementById("editSlotId").value);
+    const slot = syllabusData.find((s) => s.id === id);
+    if (!slot) return;
+
+    slot.class_name = document.getElementById("editClass").value.trim();
+    slot.session = document.getElementById("editSession").value;
+    slot.lecturers = document
+      .getElementById("editLecturers")
+      .value.trim()
+      .split(",")
+      .map((l) => l.trim()) || ["Unassigned"];
+    slot.weekly_slots = parseInt(document.getElementById("editSlots").value);
+    slot.capacity = parseInt(document.getElementById("editCapacity").value);
+    slot.status = document.getElementById("editStatus").value;
+
+    closeModal("editSlotModal");
+    showToast(
+      `✅ Slot updated: ${slot.course_code} - ${slot.class_name}`,
+      "success",
+    );
+    applyFilters();
+  }
+
+  // ============================================================
+  // MANAGE ENROLLMENTS
+  // ============================================================
+  function manageEnrollments(id) {
+    const slot = syllabusData.find((s) => s.id === id);
+    if (!slot) return;
+
+    const body = document.getElementById("enrollmentsBody");
+    const statusLabels = {
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      dropped: "Dropped",
+      completed: "Completed",
+    };
+
+    let html = `
+      <div style="margin-bottom:1rem;padding:0.5rem;background:#f8fafc;border-radius:8px;">
+        <strong>${slot.course_code}</strong> — ${slot.class_name} (${slot.session})
+        <span style="margin-left:1rem;font-size:0.8rem;">Enrolled: ${slot.enrolled} / ${slot.capacity}</span>
+      </div>
+      <table class="sub-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Reg. No</th>
+            <th>Status</th>
+            <th>Approval Method</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    // Use mock data or generate based on enrolled count
+    const enrollments = mockEnrollments.slice(
+      0,
+      Math.min(slot.enrolled || 5, mockEnrollments.length),
+    );
+    if (enrollments.length === 0) {
+      html += `<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text-muted);">No enrollments yet</td></tr>`;
+    } else {
+      enrollments.forEach((e, idx) => {
+        const statusClass = e.status;
+        const statusLabel = statusLabels[e.status] || e.status;
+        html += `
+          <tr>
+            <td>${e.student}</td>
+            <td>${e.reg_no}</td>
+            <td><span class="enrollment-status ${statusClass}">${statusLabel}</span></td>
+            <td style="font-size:0.65rem;color:var(--text-muted);">${e.approval_method || "—"}</td>
+            <td>
+              <select class="enrollment-status-select" style="padding:0.15rem 0.4rem;font-size:0.6rem;border:1px solid var(--border);border-radius:4px;">
+                <option value="pending" ${e.status === "pending" ? "selected" : ""}>Pending</option>
+                <option value="approved" ${e.status === "approved" ? "selected" : ""}>Approve</option>
+                <option value="rejected" ${e.status === "rejected" ? "selected" : ""}>Reject</option>
+                <option value="dropped" ${e.status === "dropped" ? "selected" : ""}>Drop</option>
+                <option value="completed" ${e.status === "completed" ? "selected" : ""}>Complete</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    html += `
+        </tbody>
+      </table>
+      <div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
+        <button class="btn-sm primary" onclick="showToast('➕ Add enrollment form opened', 'info')"><i class="fas fa-user-plus"></i> Add Student</button>
+        <button class="btn-sm success" onclick="showToast('📋 Bulk enrollment imported', 'success')"><i class="fas fa-upload"></i> Bulk Import</button>
+      </div>
+    `;
+
+    body.innerHTML = html;
+    openModal("manageEnrollmentsModal");
+  }
+
+  // ============================================================
+  // MANAGE RESULTS
+  // ============================================================
+  function manageResults(id) {
+    const slot = syllabusData.find((s) => s.id === id);
+    if (!slot) return;
+
+    const body = document.getElementById("resultsBody");
+    const typeLabels = {
+      C: "Cat",
+      E: "Exams",
+      P: "Practicals",
+      A: "Assignments",
+      Q: "Quizzes",
+      PR: "Projects",
+    };
+
+    // Filter mock results for this course (simulate by using first few)
+    const results = mockResults.slice(0, 4);
+
+    let html = `
+      <div style="margin-bottom:1rem;padding:0.5rem;background:#f8fafc;border-radius:8px;">
+        <strong>${slot.course_code}</strong> — ${slot.class_name} (${slot.session})
+        <span style="margin-left:1rem;font-size:0.8rem;">${results.length} results recorded</span>
+      </div>
+      <table class="sub-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Type</th>
+            <th>Title</th>
+            <th>Score</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    if (results.length === 0) {
+      html += `<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text-muted);">No results recorded yet</td></tr>`;
+    } else {
+      results.forEach((r, idx) => {
+        html += `
+          <tr>
+            <td>${r.student}</td>
+            <td><span class="type-badge ${r.type}" style="font-size:0.5rem;">${typeLabels[r.type] || r.type}</span></td>
+            <td>${r.title}</td>
+            <td><span style="font-weight:600;">${r.score}</span></td>
+            <td>
+              <button class="btn-sm primary" onclick="showToast('✏️ Edit result for ${r.student}', 'info')"><i class="fas fa-edit"></i></button>
+              <button class="btn-sm danger" onclick="showToast('🗑️ Result deleted', 'warning')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    html += `
+        </tbody>
+      </table>
+      <div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
+        <button class="btn-sm success" onclick="showToast('➕ Add result form opened', 'info')"><i class="fas fa-plus"></i> Add Result</button>
+        <button class="btn-sm primary" onclick="showToast('📊 Results report generated', 'info')"><i class="fas fa-file-pdf"></i> Generate Report</button>
+      </div>
+    `;
+
+    body.innerHTML = html;
+    openModal("manageResultsModal");
+  }
+
+  // ============================================================
+  // FILTERS & PAGINATION
+  // ============================================================
+  let currentPage = 1;
+  const perPage = 10;
+  let filteredData = [];
+
+  function applyFilters() {
+    const status = document.getElementById("filterStatus").value;
+
+    const session = document.getElementById("filterSession").value;
+    const search = document
+      .getElementById("syllabusSearch")
+      .value.toLowerCase()
+      .trim();
+
+    filteredData = syllabusData.filter((s) => {
+      if (status !== "all" && s.status !== status) return false;
+      if (session !== "all" && s.session !== session) return false;
+      if (search) {
+        const match =
+          s.course_code.toLowerCase().includes(search) ||
+          s.course_name.toLowerCase().includes(search) ||
+          s.class_name.toLowerCase().includes(search) ||
+          s.lecturers.some((l) => l.toLowerCase().includes(search));
+        if (!match) return false;
+      }
+      return true;
+    });
+    currentPage = 1;
+    renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById("filterStatus").value = "all";
+    document.getElementById("filterSession").value = "all";
+    document.getElementById("syllabusSearch").value = "";
+    applyFilters();
+    showToast("🔄 Filters reset", "info");
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("syllabusTableBody");
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const pageItems = filteredData.slice(start, end);
+
+    const draft = syllabusData.filter((s) => s.status === "Draft").length;
+    const assigned = syllabusData.filter((s) => s.status === "Assigned").length;
+    const confirmed = syllabusData.filter(
+      (s) => s.status === "Confirmed",
+    ).length;
+    const substituted = syllabusData.filter(
+      (s) => s.status === "Substituted",
+    ).length;
+
+    document.getElementById("statDraft").textContent = draft;
+    document.getElementById("statAssigned").textContent = assigned;
+    document.getElementById("statConfirmed").textContent = confirmed;
+    document.getElementById("statSubstituted").textContent = substituted;
+    document.getElementById("totalBadge").textContent = syllabusData.length;
+    document.getElementById("syllabusCount").textContent =
+      `Showing ${total} entries`;
+
+    if (pageItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11" class="no-results"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No curriculum slots found</td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems
+        .map((item, idx) => {
+          const globalIdx = filteredData.indexOf(item) + 1;
+          const typeLabel = typeLabels[item.course_type] || item.course_type;
+          const typeClass = item.course_type;
+          const statusLabel = item.status;
+          const lecturersDisplay =
+            item.lecturers.length > 1
+              ? item.lecturers[0].split(" (")[0] +
+                ` +${item.lecturers.length - 1}`
+              : item.lecturers[0].split(" (")[0];
+          const enrollPercent = Math.round(
+            (item.enrolled / item.capacity) * 100,
+          );
+          return `
+          <tr>
+            <td style="text-align:center;font-size:0.65rem;color:var(--text-muted);">${globalIdx}</td>
+            <td><span style="font-weight:600;font-size:0.75rem;">${item.course_code}</span><br><span style="font-size:0.6rem;color:var(--text-muted);">${item.course_name}</span></td>
+            <td><span style="font-size:0.75rem;">${item.class_name}</span></td>
+            <td><span style="font-size:0.7rem;">${item.session}</span></td>
+            <td><span style="font-size:0.7rem;">${lecturersDisplay}</span></td>
+            <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+            <td style="text-align:center;">${item.weekly_slots}</td>
+            <td style="text-align:center;">${item.capacity}</td>
+            <td style="text-align:center;">
+              <span style="font-weight:600;">${item.enrolled}</span>
+              <span style="font-size:0.6rem;color:var(--text-muted);">(${enrollPercent}%)</span>
+            </td>
+            <td><span class="status-badge ${item.status}">${statusLabel}</span></td>
+            <td>
+              <button class="btn-sm primary" onclick="viewSlot('${item.id}')"><i class="fas fa-eye"></i></button>
+              <button class="btn-sm success" onclick="editSlot('${item.id}')"><i class="fas fa-edit"></i></button>
+              <button class="btn-sm warning" onclick="manageEnrollments('${item.id}')"><i class="fas fa-users"></i></button>
+              <button class="btn-sm" style="background:#e0e7ff;border-color:#c7d2fe;color:#3730a3;" onclick="manageResults('${item.id}')"><i class="fas fa-clipboard-list"></i></button>
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+    }
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const div = document.getElementById("syllabusPagination");
+    if (totalPages <= 1) {
+      div.innerHTML = "";
+      return;
+    }
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    div.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const total = filteredData.length;
+    const pages = Math.ceil(total / perPage);
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderTable();
+  }
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.className = "toast " + type;
+    toast.classList.add("show");
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener("DOMContentLoaded", function () {
+    const passedData = JSON.parse(
+      document.getElementById("syllabusData").textContent,
+    );
+    syllabusData = passedData;
+    filteredData = [...syllabusData];
+    renderTable();
+  });
+</script>
+{% endblock %}

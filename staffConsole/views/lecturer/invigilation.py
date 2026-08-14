@@ -89,7 +89,7 @@ class InvigilationDutiesView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__course',
+                'exam_venue__exam_session__curriculum__syllabus__course',
                 'exam_venue__exam_session__curriculum__Tclass',
                 'exam_venue__venue',
             )

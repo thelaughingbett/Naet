@@ -1,0 +1,1196 @@
+<!-- prettier-ignore -->
+{% extends 'staffConsole/deptadmin/shell.html' %}
+{% load static %}
+
+{% block head %}
+<title>Leave Approvals · HOD</title>
+<style>
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn-sm.success:hover {
+    background: #14532d;
+  }
+  .btn-sm.danger {
+    background: #b91c1c;
+    color: white;
+    border-color: #b91c1c;
+  }
+  .btn-sm.danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm.warning {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+  }
+  .btn-sm.warning:hover {
+    background: #b45309;
+  }
+
+  /* ===== FILTERS ===== */
+  .filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: var(--white);
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .filters-bar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .filters-bar label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .filters-bar select,
+  .filters-bar input {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    background: var(--white);
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .filters-bar select:focus,
+  .filters-bar input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+  .filters-bar .search-input {
+    min-width: 200px;
+    padding-left: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.08);
+    margin-top: -0.2rem;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .leave-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 1000px;
+  }
+  .leave-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .leave-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .leave-table tr:last-child td {
+    border-bottom: none;
+  }
+  .leave-table tr:hover td {
+    background: #fafcff;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    text-transform: capitalize;
+  }
+  .status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-badge.approved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pagination .page-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: var(--font);
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .pagination .page-btn:hover:not(.active) {
+    background: var(--bg);
+  }
+  .pagination .page-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .pagination .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pagination .page-info {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 0.5rem;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 580px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+  .modal .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .modal .modal__close:hover {
+    color: var(--text);
+  }
+  .modal .modal__body {
+    margin-bottom: 1rem;
+  }
+  .modal .modal__body .detail-row {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .modal .modal__body .detail-row .label {
+    font-weight: 600;
+    min-width: 120px;
+    color: var(--text-muted);
+  }
+  .modal .modal__body .detail-row .value {
+    color: var(--text);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+  }
+  .form-group textarea {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+    resize: vertical;
+    min-height: 80px;
+  }
+  .form-group textarea:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
+  }
+
+  .modal .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 1024px) {
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters-bar .filter-group {
+      flex-wrap: wrap;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      width: var(--sidebar-w) !important;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .leave-table {
+      font-size: 0.7rem;
+      min-width: 800px;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .leave-table {
+      font-size: 0.6rem;
+      min-width: 700px;
+    }
+    .leave-table th,
+    .leave-table td {
+      padding: 0.3rem 0.5rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+{% endblock %} {% block content %}
+<!-- ===== MAIN CONTENT ===== -->
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-calendar-check"></i> Leave Approvals
+    </h1>
+    <span class="topbar__badge"
+      ><i class="fas fa-clock"></i>
+      <span id="pendingBadge">0</span> pending</span
+    >
+  </div>
+  <div class="topbar__actions">
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📊 Leave report exported', 'info')"
+    >
+      <i class="fas fa-download"></i> Export
+    </button>
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <i class="fas fa-clock stat-card__icon" style="color: var(--gold)"></i>
+    <div class="stat-card__number" id="statPending">0</div>
+    <div class="stat-card__label">Pending</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-check-circle stat-card__icon"
+      style="color: var(--green)"
+    ></i>
+    <div class="stat-card__number" id="statApproved">0</div>
+    <div class="stat-card__label">Approved</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-times-circle stat-card__icon" style="color: #b91c1c"></i>
+    <div class="stat-card__number" id="statRejected">0</div>
+    <div class="stat-card__label">Rejected</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-users stat-card__icon" style="color: var(--blue-card)"></i>
+    <div class="stat-card__number" id="statTotal">0</div>
+    <div class="stat-card__label">Total Requests</div>
+  </div>
+</div>
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label><i class="fas fa-tag"></i> Status</label>
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label><i class="fas fa-user"></i> Faculty</label>
+    <select id="filterFaculty" onchange="applyFilters()">
+      <option value="all">All Faculty</option>
+      {% for member in faculty %}
+      <option value="{{member.name}}">{{member.name}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-group">
+    <label><i class="fas fa-calendar-alt"></i> From</label>
+    <input
+      type="date"
+      id="filterDateFrom"
+      style="width: 130px"
+      onchange="applyFilters()"
+    />
+    <span style="color: var(--text-muted); font-size: 0.7rem">to</span>
+    <input
+      type="date"
+      id="filterDateTo"
+      style="width: 130px"
+      onchange="applyFilters()"
+    />
+  </div>
+  <div class="filter-group">
+    <input
+      type="text"
+      class="search-input"
+      id="leaveSearch"
+      placeholder="Search..."
+      oninput="applyFilters()"
+    />
+  </div>
+  <button class="btn btn-outline" onclick="resetFilters()">
+    <i class="fas fa-undo"></i> Reset
+  </button>
+  <span
+    style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted)"
+    id="leaveCount"
+    >Showing 0 entries</span
+  >
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="table-wrap">
+  <table class="leave-table">
+    <thead>
+      <tr>
+        <th style="width: 30px">#</th>
+        <th style="min-width: 150px">Faculty</th>
+        <th style="min-width: 120px">Leave Type</th>
+        <th style="min-width: 160px">Date Range</th>
+        <th style="min-width: 100px">Days</th>
+        <th style="min-width: 100px">Status</th>
+        <th style="min-width: 160px">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="leaveTableBody">
+      <!-- Rendered by JavaScript -->
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== PAGINATION ===== -->
+<div class="pagination" id="leavePagination"></div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- VIEW LEAVE MODAL -->
+<div class="modal-overlay" id="viewLeaveModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>
+        <i class="fas fa-eye" style="color: var(--blue-card)"></i> Leave Request
+        Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('viewLeaveModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="viewLeaveBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewLeaveModal')">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVE/REJECT MODAL -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 id="actionModalTitle">
+        <i class="fas fa-check-circle" style="color: var(--green)"></i> Approve
+        Leave
+      </h2>
+      <button class="modal__close" onclick="closeModal('actionModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="actionForm" onsubmit="submitAction(event)">
+        <input type="hidden" id="actionLeaveId" />
+        <input type="hidden" id="actionType" />
+        <div class="form-group">
+          <label for="actionFacultyName">Faculty</label>
+          <input
+            type="text"
+            id="actionFacultyName"
+            disabled
+            style="background: #f1f5f9; font-weight: 600"
+          />
+        </div>
+        <div class="form-group">
+          <label for="actionLeaveDetails">Leave Details</label>
+          <input
+            type="text"
+            id="actionLeaveDetails"
+            disabled
+            style="background: #f1f5f9"
+          />
+        </div>
+        <div class="form-group">
+          <label for="actionNotes">Comments/Notes</label>
+          <textarea
+            id="actionNotes"
+            placeholder="Add any comments or notes..."
+          ></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('actionModal')">
+        Cancel
+      </button>
+      <button
+        class="btn btn-success"
+        id="actionConfirmBtn"
+        onclick="document.getElementById('actionForm').requestSubmit()"
+      >
+        <i class="fas fa-check"></i> Confirm
+      </button>
+    </div>
+  </div>
+</div>
+{{data|json_script:'leaveData'}}
+
+<script>
+  // ============================================================
+  // LEAVE DATA
+  // ============================================================
+  let leaveRequests = [
+    {
+      id: 1,
+      faculty: "Dr. Michael Ochieng",
+      department: "Electrical Engineering",
+      type: "Annual Leave",
+      from: "2026-07-15",
+      to: "2026-07-19",
+      days: 5,
+      reason: "Family vacation",
+      status: "pending",
+    },
+    {
+      id: 2,
+      faculty: "Dr. Samuel Kiplagat",
+      department: "Physics",
+      type: "Sick Leave",
+      from: "2026-07-10",
+      to: "2026-07-12",
+      days: 3,
+      reason: "Medical appointment",
+      status: "pending",
+    },
+    {
+      id: 3,
+      faculty: "Dr. Grace Mwangi",
+      department: "Business Administration",
+      type: "Annual Leave",
+      from: "2026-08-01",
+      to: "2026-08-10",
+      days: 10,
+      reason: "International conference",
+      status: "pending",
+    },
+    {
+      id: 4,
+      faculty: "Prof. Elizabeth Muthoni",
+      department: "Mechanical Engineering",
+      type: "Sick Leave",
+      from: "2026-07-05",
+      to: "2026-07-07",
+      days: 3,
+      reason: "Flu symptoms",
+      status: "approved",
+    },
+    {
+      id: 5,
+      faculty: "Dr. Peter Omondi",
+      department: "Computer Science",
+      type: "Annual Leave",
+      from: "2026-06-20",
+      to: "2026-06-25",
+      days: 6,
+      reason: "Personal travel",
+      status: "approved",
+    },
+    {
+      id: 6,
+      faculty: "Prof. Ruth Odhiambo",
+      department: "Mathematics",
+      type: "Study Leave",
+      from: "2026-09-01",
+      to: "2026-12-15",
+      days: 106,
+      reason: "Research fellowship abroad",
+      status: "pending",
+    },
+    {
+      id: 7,
+      faculty: "Dr. James Kariuki",
+      department: "Computer Science",
+      type: "Sick Leave",
+      from: "2026-07-08",
+      to: "2026-07-09",
+      days: 2,
+      reason: "Dental surgery",
+      status: "rejected",
+    },
+    {
+      id: 8,
+      faculty: "Prof. Leonard Akinyi",
+      department: "Chemistry",
+      type: "Annual Leave",
+      from: "2026-08-15",
+      to: "2026-08-20",
+      days: 6,
+      reason: "Family reunion",
+      status: "approved",
+    },
+    {
+      id: 9,
+      faculty: "Dr. Sarah Wanjiru",
+      department: "Computer Science",
+      type: "Conference Leave",
+      from: "2026-07-22",
+      to: "2026-07-25",
+      days: 4,
+      reason: "IEEE Conference paper presentation",
+      status: "pending",
+    },
+    {
+      id: 10,
+      faculty: "Dr. Victor Okoth",
+      department: "Mechanical Engineering",
+      type: "Annual Leave",
+      from: "2026-07-28",
+      to: "2026-08-02",
+      days: 6,
+      reason: "Holiday with family",
+      status: "pending",
+    },
+    {
+      id: 11,
+      faculty: "Prof. Susan Waweru",
+      department: "Physics",
+      type: "Study Leave",
+      from: "2026-10-01",
+      to: "2026-12-31",
+      days: 92,
+      reason: "PhD supervision abroad",
+      status: "approved",
+    },
+    {
+      id: 12,
+      faculty: "Dr. Faith Chepkorir",
+      department: "Electrical Engineering",
+      type: "Sick Leave",
+      from: "2026-07-14",
+      to: "2026-07-16",
+      days: 3,
+      reason: "Migraine",
+      status: "pending",
+    },
+    {
+      id: 13,
+      faculty: "Prof. Charles Omondi",
+      department: "Computer Science",
+      type: "Annual Leave",
+      from: "2026-07-20",
+      to: "2026-07-24",
+      days: 5,
+      reason: "Vacation",
+      status: "approved",
+    },
+    {
+      id: 14,
+      faculty: "Dr. Ann Njeri",
+      department: "Mathematics",
+      type: "Conference Leave",
+      from: "2026-08-05",
+      to: "2026-08-08",
+      days: 4,
+      reason: "Math conference in Nairobi",
+      status: "rejected",
+    },
+    {
+      id: 15,
+      faculty: "Dr. David Kiprop",
+      department: "Computer Science",
+      type: "Sick Leave",
+      from: "2026-07-18",
+      to: "2026-07-19",
+      days: 2,
+      reason: "Food poisoning",
+      status: "pending",
+    },
+  ];
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach((el) => {
+    el.addEventListener("click", function (e) {
+      if (e.target === this) {
+        this.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach((el) => {
+        el.classList.remove("active");
+        document.body.style.overflow = "";
+      });
+    }
+  });
+
+  // ============================================================
+  // POPULATE FACULTY FILTER
+  // ============================================================
+
+  // ============================================================
+  // VIEW LEAVE
+  // ============================================================
+  function viewLeave(id) {
+    const leave = leaveRequests.find((l) => l.name === id);
+    if (!leave) return;
+    const body = document.getElementById("viewLeaveBody");
+    const statusClass = leave.status;
+    const statusLabel =
+      leave.status.charAt(0).toUpperCase() + leave.status.slice(1);
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Faculty</span><span class="value"><strong>${leave.name}</strong></span></div>
+      
+      <div class="detail-row"><span class="label">Leave Type</span><span class="value">${leave.leave_name}</span></div>
+      <div class="detail-row"><span class="label">Date Range</span><span class="value">${formatDate(leave.start_date)} - ${formatDate(leave.end_date)}</span></div>
+      <div class="detail-row"><span class="label">Days</span><span class="value">${leave.days}</span></div>
+      <div class="detail-row"><span class="label">Status</span><span class="value"><span class="status-badge ${leave.status}">${statusLabel}</span></span></div>
+      <div class="detail-row"><span class="label">Reason</span><span class="value">${leave.reason || "Not specified"}</span></div>
+    `;
+    openModal("viewLeaveModal");
+  }
+
+  // ============================================================
+  // APPROVE / REJECT
+  // ============================================================
+  function openActionModal(id, action) {
+    const leave = leaveRequests.find((l) => l.name === id);
+    if (!leave) return;
+    document.getElementById("actionLeaveId").value = id;
+    document.getElementById("actionType").value = action;
+    document.getElementById("actionFacultyName").value = leave.name;
+    document.getElementById("actionLeaveDetails").value =
+      `${leave.leave_name}: ${formatDate(leave.start_date)} - ${formatDate(leave.end_date)} (${leave.days} days)`;
+    document.getElementById("actionNotes").value = "";
+
+    const title = document.getElementById("actionModalTitle");
+    const btn = document.getElementById("actionConfirmBtn");
+    if (action === "approve") {
+      title.innerHTML =
+        '<i class="fas fa-check-circle" style="color:var(--green);"></i> Approve Leave';
+      btn.className = "btn btn-success";
+      btn.innerHTML = '<i class="fas fa-check"></i> Approve';
+    } else {
+      title.innerHTML =
+        '<i class="fas fa-times-circle" style="color:#b91c1c;"></i> Reject Leave';
+      btn.className = "btn btn-danger";
+      btn.innerHTML = '<i class="fas fa-times"></i> Reject';
+    }
+    openModal("actionModal");
+  }
+
+  function submitAction(e) {
+    e.preventDefault();
+    const id = document.getElementById("actionLeaveId").value;
+    const action = document.getElementById("actionType").value;
+    const notes = document.getElementById("actionNotes").value.trim();
+
+    const leave = leaveRequests.find((l) => l.name === id);
+    if (!leave) return;
+
+    leave.status = action === "approve" ? "approved" : "rejected";
+    if (notes) leave.notes = notes;
+
+    closeModal("actionModal");
+    const actionLabel = action === "approve" ? "Approved" : "Rejected";
+    showToast(
+      `✅ Leave ${actionLabel} for ${leave.name}`,
+      action === "approve" ? "success" : "warning",
+    );
+
+    console.log(leave);
+    applyFilters();
+  }
+
+  // ============================================================
+  // FILTERS & PAGINATION
+  // ============================================================
+  let currentPage = 1;
+  const perPage = 8;
+  let filteredData = [];
+
+  function applyFilters() {
+    const status = document.getElementById("filterStatus").value;
+    const faculty = document.getElementById("filterFaculty").value;
+    const dateFrom = document.getElementById("filterDateFrom").value;
+    const dateTo = document.getElementById("filterDateTo").value;
+    const search = document
+      .getElementById("leaveSearch")
+      .value.toLowerCase()
+      .trim();
+
+    filteredData = leaveRequests.filter((l) => {
+      if (status !== "all" && l.status !== status) return false;
+      if (faculty !== "all" && l.name !== faculty) return false;
+      if (dateFrom && l.start_date < dateFrom) return false;
+      if (dateTo && l.end_date > dateTo) return false;
+      if (search) {
+        const match =
+          l.name.toLowerCase().includes(search) ||
+          l.leave_name.toLowerCase().includes(search);
+
+        if (!match) return false;
+      }
+      return true;
+    });
+    currentPage = 1;
+    renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById("filterStatus").value = "all";
+    document.getElementById("filterFaculty").value = "all";
+    document.getElementById("filterDateFrom").value = "";
+    document.getElementById("filterDateTo").value = "";
+    document.getElementById("leaveSearch").value = "";
+    applyFilters();
+    showToast("🔄 Filters reset", "info");
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("leaveTableBody");
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const pageItems = filteredData.slice(start, end);
+
+    // Update stats
+    const pending = leaveRequests.filter((l) => l.status === "pending").length;
+    const approved = leaveRequests.filter(
+      (l) => l.status === "approved",
+    ).length;
+    const rejected = leaveRequests.filter(
+      (l) => l.status === "rejected",
+    ).length;
+    document.getElementById("statPending").textContent = pending;
+    document.getElementById("statApproved").textContent = approved;
+    document.getElementById("statRejected").textContent = rejected;
+    document.getElementById("statTotal").textContent = leaveRequests.length;
+    document.getElementById("pendingBadge").textContent = pending;
+    document.getElementById("leaveCount").textContent =
+      `Showing ${total} entries`;
+
+    if (pageItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="no-results"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>No leave requests found</td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems
+        .map((item, idx) => {
+          const globalIdx = filteredData.indexOf(item) + 1;
+          const statusLabel =
+            item.status.charAt(0).toUpperCase() + item.status.slice(1);
+          const isPending = item.status === "pending";
+          return `
+          <tr>
+            <td style="text-align:center;font-size:0.7rem;color:var(--text-muted);">${globalIdx}</td>
+            <td><span style="font-weight:500;font-size:0.8rem;">${item.name}</span></td>
+            <td><span style="font-size:0.75rem;">${item.leave_name}</span></td>
+            <td><span style="font-size:0.7rem;">${formatDate(item.start_date)} - ${formatDate(item.start_date)}</span></td>
+            <td><span style="font-weight:600;">${item.days}</span></td>
+            <td><span class="status-badge ${item.status}">${statusLabel}</span></td>
+            <td>
+              <button class="btn-sm primary" onclick="viewLeave('${item.name}')"><i class="fas fa-eye"></i></button>
+              ${
+                isPending
+                  ? `
+                <button class="btn-sm success" onclick="openActionModal('${item.name}', 'approve')"><i class="fas fa-check"></i></button>
+                <button class="btn-sm danger" onclick="openActionModal('${item.name}', 'reject')"><i class="fas fa-times"></i></button>
+              `
+                  : ""
+              }
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+    }
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const div = document.getElementById("leavePagination");
+    if (totalPages <= 1) {
+      div.innerHTML = "";
+      return;
+    }
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    div.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const total = filteredData.length;
+    const pages = Math.ceil(total / perPage);
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderTable();
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener("DOMContentLoaded", function () {
+    // Set default date range (last 30 days)
+    const leaveRequest = JSON.parse(
+      document.getElementById("leaveData").textContent,
+    );
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    document.getElementById("filterDateFrom").value = thirtyDaysAgo
+      .toISOString()
+      .split("T")[0];
+    document.getElementById("filterDateTo").value = today
+      .toISOString()
+      .split("T")[0];
+
+    leaveRequests = leaveRequest;
+    filteredData = [...leaveRequests];
+    renderTable();
+  });
+</script>
+{% endblock %}

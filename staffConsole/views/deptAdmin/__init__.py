@@ -1,0 +1,6 @@
+from .faculty_directory import DeptAdminFAcultyDirectoryView
+from .dashboard import DeptAdminDashboardView
+from .teaching_load import DeptAdminTeachingLoadView
+from .leave_approvals import LeaveApprovalView
+from .course_catalog import CourseCatalogView
+from .syllabus_management import SyllabusManagementView

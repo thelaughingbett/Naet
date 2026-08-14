@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
+from base.models import AcademicAppointment
 
 
 class RoleRequiredMixin(LoginRequiredMixin):
@@ -23,7 +24,9 @@ class RoleRequiredMixin(LoginRequiredMixin):
 
         if self.required_role:
             profile_attr = f"{self.required_role}_profile"
+
             if not hasattr(request.user, profile_attr):
+
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -50,6 +53,8 @@ def get_staff_dashboard_url(user):
     if hasattr(user, 'deptadmin_profile'):
         return '/staff/dept-admin/dashboard/'
     if hasattr(user, 'lecturer_profile'):
-        return '/staff/lecturer/dashboard/'
+        lecturer = user.lecturer_profile
+        # TODO : this is checked against role which should have a background job to keep this in track
+        return f'/staff/{lecturer.role}/dashboard/'
 
-    return '/'
+    return '/'  # TODO : return bad request here

@@ -773,8 +773,9 @@
           <span class="timetable-row__tag">Lecture</span>
         </div>
         <!-- prettier-ignore -->
-        {% endfor %} {% for invig in invigilation %}
-         {% if invig.exam_session.date == today_date %}
+        {% endfor %} 
+        {% for invig in invigilation %}
+        {% if invig.exam_session.date == today_date %}
         <div class="timetable-row">
           <div class="timetable-row__time">
             {{ invig.exam_session.time_slot|cut:"-"|slice:":5" }}<br />

@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Class Timetable · HOD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    /* ===== RESET & VARIABLES ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a2540;
+      --navy-light: #1a3a5c;
+      --maroon: #9e2a2b;
+      --maroon-hover: #b13e3f;
+      --blue-card: #1f6392;
+      --green: #1e6f3f;
+      --gold: #fbbf24;
+      --sidebar-w: 280px;
+      --topnav-h: 64px;
+      --font: "Inter", "Segoe UI", sans-serif;
+      --text: #1e293b;
+      --text-muted: #5a6874;
+      --border: #e9edf2;
+      --bg: #f1f5f9;
+      --white: #ffffff;
+      --radius: 14px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.06);
+      --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-w);
+      background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+      color: #eef2ff; display: flex; flex-direction: column; z-index: 100;
+      transition: transform 0.3s ease; overflow-x: hidden; overflow-y: auto;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+    .sidebar__brand {
+      display: flex; align-items: center; gap: 12px; padding: 1.2rem 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; min-height: var(--topnav-h);
+    }
+    .sidebar__brand-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar__brand-text {
+      font-weight: 800; font-size: 1.1rem;
+      background: linear-gradient(120deg, #fff, #c0d9f0);
+      background-clip: text; -webkit-background-clip: text; color: transparent;
+      white-space: nowrap;
+    }
+    .sidebar__nav { flex: 1; padding: 0.6rem 0.6rem; overflow-y: auto; }
+    .sidebar__item { margin-bottom: 2px; }
+
+    .sidebar__link, .sidebar__link--toggle {
+      display: flex; align-items: center; gap: 12px; padding: 0.5rem 0.9rem;
+      border-radius: 10px; color: rgba(255,255,255,0.78); text-decoration: none;
+      font-size: 0.82rem; font-weight: 500; transition: all 0.2s; cursor: pointer;
+      white-space: nowrap; border: none; background: transparent; width: 100%;
+      font-family: inherit; text-align: left;
+    }
+    .sidebar__link:hover, .sidebar__link--toggle:hover {
+      background: rgba(255,255,255,0.08); color: white;
+    }
+    .sidebar__link.active, .sidebar__link--toggle.active {
+      background: var(--maroon); color: white; box-shadow: 0 4px 12px rgba(158,42,43,0.25);
+    }
+    .sidebar__link i, .sidebar__link--toggle i { width: 20px; text-align: center; font-size: 0.95rem; flex-shrink: 0; }
+    .sidebar__chevron { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
+    .sidebar__item--open .sidebar__chevron { transform: rotate(180deg); }
+
+    .sidebar__submenu {
+      list-style: none; max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      background: rgba(0,0,0,0.2); border-radius: 8px; margin: 0 0.5rem 0 0.5rem;
+    }
+    .sidebar__submenu--open { max-height: 600px; }
+    .sidebar__sublink {
+      display: flex; align-items: center; gap: 12px; padding: 0.4rem 0.9rem 0.4rem 2.8rem;
+      color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.76rem;
+      font-weight: 400; transition: 0.2s; border-radius: 6px; cursor: pointer;
+      background: transparent; border: none; width: 100%; text-align: left; font-family: inherit;
+    }
+    .sidebar__sublink:hover { background: rgba(255,255,255,0.06); color: white; }
+    .sidebar__sublink.active { color: white; background: rgba(255,255,255,0.1); }
+    .sidebar__sublink .badge { margin-left: auto; background: var(--maroon); color: white; font-size: 0.55rem; padding: 0.1rem 0.5rem; border-radius: 30px; font-weight: 600; }
+
+    .sidebar__footer { padding: 1rem 1.2rem; font-size: 0.62rem; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.06); text-align: center; flex-shrink: 0; }
+
+    .sidebar-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 90; opacity: 0; visibility: hidden; transition: 0.2s;
+    }
+    .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; transition: margin-left 0.3s ease; padding: 1.8rem 2rem 2rem; background: var(--bg); }
+
+    /* ===== TOPBAR ===== */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .topbar__left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .topbar__hamburger { display: none; background: none; border: none; font-size: 1.4rem; color: var(--navy); cursor: pointer; padding: 0.3rem; }
+    .topbar__title { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; }
+    .topbar__badge { background: var(--navy); color: white; padding: 0.2rem 0.9rem; border-radius: 40px; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; }
+    .topbar__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    .btn { padding: 0.35rem 1rem; border: none; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; font-family: inherit; }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-primary:hover { background: var(--navy-light); }
+    .btn-success { background: var(--green); color: white; }
+    .btn-success:hover { background: #14532d; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-danger { background: #b91c1c; color: white; }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-sm { padding: 0.2rem 0.7rem; font-size: 0.65rem; border-radius: 30px; border: 1px solid var(--border); background: var(--white); cursor: pointer; transition: 0.2s; font-family: inherit; font-weight: 500; color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+    .btn-sm.primary:hover { background: var(--navy-light); }
+    .btn-sm.success { background: var(--green); color: white; border-color: var(--green); }
+    .btn-sm.success:hover { background: #14532d; }
+    .btn-sm.danger { background: #b91c1c; color: white; border-color: #b91c1c; }
+    .btn-sm.danger:hover { background: #991b1b; }
+    .btn-sm.warning { background: #d97706; color: white; border-color: #d97706; }
+    .btn-sm.warning:hover { background: #b45309; }
+
+    /* ===== FILTERS ===== */
+    .filters-bar {
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+      background: var(--white); padding: 0.8rem 1.2rem; border-radius: var(--radius);
+      border: 1px solid var(--border); margin-bottom: 1.5rem; box-shadow: var(--shadow);
+    }
+    .filters-bar .filter-group {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .filters-bar label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .filters-bar select, .filters-bar input {
+      padding: 0.3rem 0.8rem; border: 1px solid var(--border); border-radius: 40px;
+      font-size: 0.75rem; background: var(--white); font-family: var(--font);
+      color: var(--text); outline: none; transition: 0.2s;
+    }
+    .filters-bar select:focus, .filters-bar input:focus {
+      border-color: var(--navy); box-shadow: 0 0 0 2px rgba(10,37,64,0.1);
+    }
+    .filters-bar .search-input {
+      min-width: 200px; padding-left: 2rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 12px center;
+    }
+
+    /* ===== TIMETABLE GRID ===== */
+    .timetable-container {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      box-shadow: var(--shadow);
+    }
+    .timetable-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      min-width: 900px;
+    }
+    .timetable-grid th {
+      background: #f8fafc;
+      text-align: center;
+      padding: 0.6rem 0.4rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      min-width: 80px;
+    }
+    .timetable-grid td {
+      padding: 0.4rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+      min-height: 80px;
+      height: 100px;
+      width: 14.28%;
+    }
+    .timetable-grid .time-col {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-align: center;
+      vertical-align: middle;
+      color: var(--text-muted);
+      width: 60px;
+      min-width: 60px;
+    }
+    .timetable-grid .time-col .time-slot {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .timetable-grid .time-col .time-slot span {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
+    .class-slot {
+      background: #f0f4ff;
+      border-radius: 6px;
+      padding: 0.3rem 0.4rem;
+      margin-bottom: 0.2rem;
+      border-left: 3px solid var(--blue-card);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.2s;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .class-slot:hover {
+      background: #e3eaff;
+      transform: scale(1.02);
+      box-shadow: var(--shadow-md);
+    }
+    .class-slot .course-code {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--navy);
+    }
+    .class-slot .course-name {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .class-slot .lecturer {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+    }
+    .class-slot .room {
+      font-size: 0.55rem;
+      color: var(--green);
+      font-weight: 600;
+    }
+    .class-slot .type-badge {
+      font-size: 0.45rem;
+      padding: 0.05rem 0.3rem;
+      border-radius: 10px;
+      background: var(--blue-card);
+      color: white;
+      display: inline-block;
+      margin-top: 0.1rem;
+      width: fit-content;
+    }
+    .class-slot .type-badge.practical { background: #6a1b9a; }
+    .class-slot .type-badge.lab { background: #b91c1c; }
+    .class-slot .type-badge.lecture { background: var(--blue-card); }
+
+    .empty-slot {
+      height: 100%;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.6rem;
+    }
+
+    /* ===== FULL VIEW MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.25s ease;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-overlay .modal {
+      background: var(--white);
+      border-radius: var(--radius);
+      max-width: 95vw;
+      width: 95%;
+      max-height: 92vh;
+      height: 92vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      transform: scale(0.96) translateY(10px);
+      transition: 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+    .modal .modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal .modal__header h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .modal .modal__close {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: 0.2s;
+      padding: 0 0.5rem;
+    }
+    .modal .modal__close:hover { color: var(--text); }
+    .modal .modal__body {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 0;
+      padding: 0;
+    }
+    .modal .modal__footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal .timetable-grid {
+      font-size: 0.7rem;
+      min-width: 800px;
+    }
+    .modal .timetable-grid th {
+      font-size: 0.65rem;
+      padding: 0.4rem 0.3rem;
+    }
+    .modal .timetable-grid td {
+      padding: 0.3rem;
+      height: 80px;
+      min-height: 70px;
+    }
+    .modal .class-slot {
+      padding: 0.2rem 0.3rem;
+      font-size: 0.65rem;
+    }
+    .modal .class-slot .course-code {
+      font-size: 0.7rem;
+    }
+    .modal .class-slot .course-name {
+      font-size: 0.55rem;
+    }
+    .modal .class-slot .lecturer {
+      font-size: 0.5rem;
+    }
+    .modal .class-slot .room {
+      font-size: 0.5rem;
+    }
+
+    /* ===== VIEW SLOT MODAL ===== */
+    .modal-overlay .slot-modal {
+      max-width: 580px;
+      width: 92%;
+      max-height: 90vh;
+      height: auto;
+      padding: 1.5rem;
+    }
+    .modal-overlay .slot-modal .modal__body {
+      flex: none;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    .modal .modal__body .detail-row {
+      display: flex;
+      margin-bottom: 0.4rem;
+      font-size: 0.82rem;
+      padding: 0.2rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .modal .modal__body .detail-row:last-child { border-bottom: none; }
+    .modal .modal__body .detail-row .label {
+      font-weight: 600;
+      min-width: 120px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .modal .modal__body .detail-row .value { color: var(--text); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--navy);
+      color: white;
+      padding: 0.7rem 1.3rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: 0.3s;
+      z-index: 2000;
+      font-size: 0.85rem;
+      font-family: var(--font);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--green); }
+    .toast.warning { background: #92400e; }
+    .toast.info { background: var(--navy); }
+
+    @media (max-width: 1024px) {
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .filters-bar .filter-group { flex-wrap: wrap; }
+    }
+    @media (max-width: 768px) {
+      .topbar__hamburger { display: block; }
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: var(--sidebar-w) !important; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0 !important; padding: 1rem; }
+      .topbar__title { font-size: 1.2rem; }
+      .sidebar-overlay.active { opacity: 1; visibility: visible; }
+      .timetable-grid { font-size: 0.65rem; min-width: 700px; }
+      .timetable-grid td { height: 70px; min-height: 70px; padding: 0.2rem; }
+      .class-slot .course-name { display: none; }
+      .modal .timetable-grid td { height: 60px; min-height: 55px; }
+      .modal .class-slot .course-name { display: block; font-size: 0.5rem; }
+    }
+    @media (max-width: 480px) {
+      .topbar__actions .btn { flex: 1; justify-content: center; }
+      .timetable-grid { font-size: 0.55rem; min-width: 600px; }
+      .timetable-grid td { height: 60px; min-height: 60px; padding: 0.15rem; }
+      .class-slot .lecturer { display: none; }
+      .class-slot .room { display: none; }
+      .modal .timetable-grid td { height: 50px; min-height: 45px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===== SIDEBAR (HOD) ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__brand">
+    <span class="sidebar__brand-icon">🏛️</span>
+    <span class="sidebar__brand-text">UniManage · HOD</span>
+  </div>
+  <nav class="sidebar__nav">
+    <ul class="sidebar__menu">
+      <li class="sidebar__item">
+        <a href="#" class="sidebar__link" data-page="dashboard">
+          <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+        </a>
+      </li>
+      <!-- Faculty Management -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="faculty-sub">
+          <i class="fas fa-user-check"></i>
+          <span>Faculty Management</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="faculty-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="faculty-directory">Faculty Directory</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="workload-allocation">Teaching Load Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="leave-approvals">Leave Approvals <span class="badge">3</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="appraisals">Performance Appraisals</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="substitute-arrangement">Substitute/Duty Arrangement</a></li>
+        </ul>
+      </li>
+      <!-- Curriculum & Courses -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="curriculum-sub">
+          <i class="fas fa-book-open"></i>
+          <span>Curriculum & Courses</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="curriculum-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="course-catalog">Course Catalog</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="syllabus-management">Syllabus Management</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="elective-offerings">Elective Offerings</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="course-allocation">Course-Faculty Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="curriculum-revision">Curriculum Revision Proposals</a></li>
+        </ul>
+      </li>
+      <!-- Timetable & Scheduling (open by default) -->
+      <li class="sidebar__item sidebar__item--group sidebar__item--open">
+        <button class="sidebar__link--toggle active" data-target="timetable-sub">
+          <i class="fas fa-calendar-days"></i>
+          <span>Timetable & Scheduling</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu sidebar__submenu--open" id="timetable-sub">
+          <li><a href="#" class="sidebar__sublink active" data-page="class-timetable">Class Timetable</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="lab-schedule">Lab Schedule</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="room-allocation">Room Allocation</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="exam-duty-roster">Exam Duty Roster</a></li>
+        </ul>
+      </li>
+      <!-- Student Affairs -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="students-sub">
+          <i class="fas fa-graduation-cap"></i>
+          <span>Student Affairs</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="students-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="student-list">Student List/Roster</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="attendance-overview">Attendance Overview</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="academic-performance">Academic Performance</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="at-risk-students">At-Risk / Backlog Students <span class="badge">12</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="mentor-allocation">Faculty-Student Mentor Mapping</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="grievances">Student Grievances <span class="badge">2</span></a></li>
+        </ul>
+      </li>
+      <!-- Exams & Results -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="exams-sub">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Exams & Results</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="exams-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="internal-exams">Internal Assessments</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="question-paper-review">Question Paper Review <span class="badge">5</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="results-review">Results Review & Approval</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="moderation">Grade Moderation</a></li>
+        </ul>
+      </li>
+      <!-- Research & Development -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="research-sub">
+          <i class="fas fa-flask-conical"></i>
+          <span>Research & Development</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="research-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="dept-projects">Department Projects</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="publications">Faculty Publications</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="grants">Grants & Funding</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="consultancy">Consultancy Work</a></li>
+        </ul>
+      </li>
+      <!-- Labs & Infrastructure -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="infra-sub">
+          <i class="fas fa-warehouse"></i>
+          <span>Labs & Infrastructure</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="infra-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="lab-inventory">Lab Inventory & Equipment</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="maintenance-requests">Maintenance Requests <span class="badge">4</span></a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="procurement">Procurement Requests</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="budget">Department Budget</a></li>
+        </ul>
+      </li>
+      <!-- Reports & Analytics -->
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="reports-sub">
+          <i class="fas fa-bar-chart-3"></i>
+          <span>Reports & Analytics</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="reports-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="dept-performance">Department Performance</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="faculty-load-report">Faculty Load Report</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="accreditation-data">Accreditation Data (NBA/NAAC)</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="audit-logs">Audit Logs</a></li>
+        </ul>
+      </li>
+      <li class="sidebar__item">
+        <a href="#" class="sidebar__link" data-page="notifications">
+          <i class="fas fa-bell"></i> <span>Notifications <span class="badge" style="margin-left:auto;">3</span></span>
+        </a>
+      </li>
+      <li class="sidebar__item sidebar__item--group">
+        <button class="sidebar__link--toggle" data-target="settings-sub">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+          <i class="fas fa-chevron-down sidebar__chevron"></i>
+        </button>
+        <ul class="sidebar__submenu" id="settings-sub">
+          <li><a href="#" class="sidebar__sublink" data-page="roles">Roles & Permissions</a></li>
+          <li><a href="#" class="sidebar__sublink" data-page="dept-calendar">Department Calendar</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar__footer">© 2026 UniManage · HOD Portal</div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="mainContent">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar__left">
+      <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="topbar__title" id="pageTitle">
+        <i class="fas fa-calendar-days"></i> Class Timetable
+      </h1>
+      <span class="topbar__badge"><i class="fas fa-clock"></i> <span id="sessionBadge">2025/2026</span></span>
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn-success" onclick="showToast('📅 Timetable generation started', 'success')">
+        <i class="fas fa-sync-alt"></i> Regenerate
+      </button>
+      <button class="btn btn-outline" onclick="openFullView()">
+        <i class="fas fa-expand"></i> Full View
+      </button>
+      <button class="btn btn-outline" onclick="showToast('📊 Timetable exported', 'info')">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== FILTERS ===== -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label><i class="fas fa-users"></i> Class</label>
+      <select id="filterClass" onchange="renderTimetable()">
+        <option value="CS 4A">CS 4A</option>
+        <option value="CS 3A">CS 3A</option>
+        <option value="EE 2A">EE 2A</option>
+        <option value="ME 1A">ME 1A</option>
+        <option value="BA 3A">BA 3A</option>
+        <option value="PG 1A">PG 1A</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label><i class="fas fa-calendar-alt"></i> Session</label>
+      <select id="filterSession" onchange="renderTimetable()">
+        <option value="2024/2025">2024/2025</option>
+        <option value="2025/2026" selected>2025/2026</option>
+        <option value="2026/2027">2026/2027</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ===== TIMETABLE GRID ===== -->
+  <div class="timetable-container">
+    <table class="timetable-grid" id="timetableGrid">
+      <thead>
+        <tr>
+          <th style="width:60px;min-width:60px;">Time</th>
+          <th>Monday</th>
+          <th>Tuesday</th>
+          <th>Wednesday</th>
+          <th>Thursday</th>
+          <th>Friday</th>
+          <th>Saturday</th>
+        </tr>
+      </thead>
+      <tbody id="timetableBody">
+        <!-- Rendered by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- FULL VIEW MODAL -->
+<div class="modal-overlay" id="fullViewModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2><i class="fas fa-calendar-days" style="color:var(--blue-card);"></i> Full Timetable View</h2>
+      <button class="modal__close" onclick="closeModal('fullViewModal')">&times;</button>
+    </div>
+    <div class="modal__body" id="fullViewBody">
+      <!-- Timetable will be rendered here -->
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('fullViewModal')">Close</button>
+      <button class="btn btn-success" onclick="showToast('📊 Timetable exported', 'info'); closeModal('fullViewModal')">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW SLOT MODAL -->
+<div class="modal-overlay" id="viewSlotModal">
+  <div class="modal slot-modal">
+    <div class="modal__header">
+      <h2><i class="fas fa-eye" style="color:var(--blue-card);"></i> Class Session Details</h2>
+      <button class="modal__close" onclick="closeModal('viewSlotModal')">&times;</button>
+    </div>
+    <div class="modal__body" id="viewSlotBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('viewSlotModal')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('viewSlotModal'); showToast('✏️ Edit session opened', 'info')"><i class="fas fa-edit"></i> Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============================================================
+  // TIMETABLE DATA
+  // ============================================================
+  const timetableData = {
+    'CS 4A': {
+      '2025/2026': {
+        'Monday': {
+          '8:00-10:00': { course: 'CCS 401', name: 'Advanced Database Systems', lecturer: 'Prof. Charles Omondi', room: 'LT 101', type: 'lecture' },
+          '10:00-12:00': { course: 'CCS 450', name: 'Advanced Machine Learning', lecturer: 'Dr. Peter Omondi', room: 'Lab 3', type: 'practical' },
+          '2:00-4:00': { course: 'CCS 460', name: 'Blockchain Technology', lecturer: 'Prof. Charles Omondi', room: 'LT 201', type: 'lecture' }
+        },
+        'Tuesday': {
+          '10:00-12:00': { course: 'MATH 303', name: 'Probability & Statistics', lecturer: 'Prof. Ruth Odhiambo', room: 'LT 102', type: 'lecture' },
+          '2:00-4:00': { course: 'CCS 401', name: 'Advanced Database Systems', lecturer: 'Dr. Sarah Wanjiru', room: 'Lab 2', type: 'practical' }
+        },
+        'Wednesday': {
+          '8:00-10:00': { course: 'CCS 450', name: 'Advanced Machine Learning', lecturer: 'Dr. Peter Omondi', room: 'LT 101', type: 'lecture' },
+          '12:00-2:00': { course: 'CCS 460', name: 'Blockchain Technology', lecturer: 'Dr. Sarah Wanjiru', room: 'Lab 3', type: 'practical' }
+        },
+        'Thursday': {
+          '10:00-12:00': { course: 'MATH 303', name: 'Probability & Statistics', lecturer: 'Prof. Ruth Odhiambo', room: 'LT 102', type: 'lecture' },
+          '2:00-4:00': { course: 'CCS 401', name: 'Advanced Database Systems', lecturer: 'Prof. Charles Omondi', room: 'LT 101', type: 'lecture' }
+        },
+        'Friday': {
+          '8:00-10:00': { course: 'CCS 450', name: 'Advanced Machine Learning', lecturer: 'Dr. Peter Omondi', room: 'LT 201', type: 'lecture' },
+          '10:00-12:00': { course: 'CCS 460', name: 'Blockchain Technology', lecturer: 'Prof. Charles Omondi', room: 'LT 101', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    },
+    'CS 3A': {
+      '2025/2026': {
+        'Monday': {
+          '8:00-10:00': { course: 'CCS 350', name: 'Agile Software Development', lecturer: 'Dr. James Kariuki', room: 'LT 101', type: 'practical' },
+          '10:00-12:00': { course: 'MATH 303', name: 'Probability & Statistics', lecturer: 'Prof. Ruth Odhiambo', room: 'LT 102', type: 'lecture' }
+        },
+        'Tuesday': {
+          '8:00-10:00': { course: 'CCS 350', name: 'Agile Software Development', lecturer: 'Dr. James Kariuki', room: 'LT 101', type: 'lecture' },
+          '2:00-4:00': { course: 'MATH 303', name: 'Probability & Statistics', lecturer: 'Prof. Ruth Odhiambo', room: 'LT 102', type: 'lecture' }
+        },
+        'Wednesday': {
+          '10:00-12:00': { course: 'CCS 350', name: 'Agile Software Development', lecturer: 'Dr. James Kariuki', room: 'Lab 3', type: 'practical' }
+        },
+        'Thursday': {
+          '8:00-10:00': { course: 'MATH 303', name: 'Probability & Statistics', lecturer: 'Prof. Ruth Odhiambo', room: 'LT 102', type: 'lecture' }
+        },
+        'Friday': {
+          '10:00-12:00': { course: 'CCS 350', name: 'Agile Software Development', lecturer: 'Dr. James Kariuki', room: 'LT 101', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    },
+    'EE 2A': {
+      '2025/2026': {
+        'Monday': {
+          '8:00-10:00': { course: 'ELE 201', name: 'Circuit Theory', lecturer: 'Dr. Michael Ochieng', room: 'LT 201', type: 'lecture' },
+          '2:00-4:00': { course: 'ELE 302', name: 'Power Systems Lab', lecturer: 'Dr. Michael Ochieng', room: 'Lab 1', type: 'lab' }
+        },
+        'Tuesday': {
+          '10:00-12:00': { course: 'ELE 201', name: 'Circuit Theory', lecturer: 'Dr. Michael Ochieng', room: 'LT 201', type: 'lecture' }
+        },
+        'Wednesday': {
+          '8:00-10:00': { course: 'ELE 302', name: 'Power Systems Lab', lecturer: 'Dr. Faith Chepkorir', room: 'Lab 1', type: 'lab' },
+          '2:00-4:00': { course: 'ELE 201', name: 'Circuit Theory', lecturer: 'Dr. Michael Ochieng', room: 'LT 201', type: 'lecture' }
+        },
+        'Thursday': {
+          '10:00-12:00': { course: 'ELE 302', name: 'Power Systems Lab', lecturer: 'Dr. Faith Chepkorir', room: 'Lab 1', type: 'lab' }
+        },
+        'Friday': {
+          '8:00-10:00': { course: 'ELE 201', name: 'Circuit Theory', lecturer: 'Dr. Michael Ochieng', room: 'LT 201', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    },
+    'ME 1A': {
+      '2025/2026': {
+        'Monday': {
+          '10:00-12:00': { course: 'MEC 101', name: 'Engineering Mechanics', lecturer: 'Prof. Elizabeth Muthoni', room: 'LT 301', type: 'lecture' }
+        },
+        'Tuesday': {
+          '8:00-10:00': { course: 'MEC 101', name: 'Engineering Mechanics', lecturer: 'Prof. Elizabeth Muthoni', room: 'LT 301', type: 'lecture' },
+          '2:00-4:00': { course: 'MATH 201', name: 'Linear Algebra', lecturer: 'Prof. Ann Njeri', room: 'LT 102', type: 'lecture' }
+        },
+        'Wednesday': {
+          '10:00-12:00': { course: 'MEC 101', name: 'Engineering Mechanics', lecturer: 'Prof. Elizabeth Muthoni', room: 'LT 301', type: 'lecture' }
+        },
+        'Thursday': {
+          '8:00-10:00': { course: 'MATH 201', name: 'Linear Algebra', lecturer: 'Prof. Ann Njeri', room: 'LT 102', type: 'lecture' }
+        },
+        'Friday': {
+          '10:00-12:00': { course: 'MEC 101', name: 'Engineering Mechanics', lecturer: 'Prof. Elizabeth Muthoni', room: 'LT 301', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    },
+    'BA 3A': {
+      '2025/2026': {
+        'Monday': {
+          '8:00-10:00': { course: 'BUS 302', name: 'Marketing Management', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' },
+          '2:00-4:00': { course: 'BUS 410', name: 'Entrepreneurship', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' }
+        },
+        'Tuesday': {
+          '10:00-12:00': { course: 'BUS 302', name: 'Marketing Management', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' }
+        },
+        'Wednesday': {
+          '8:00-10:00': { course: 'BUS 410', name: 'Entrepreneurship', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' }
+        },
+        'Thursday': {
+          '10:00-12:00': { course: 'BUS 302', name: 'Marketing Management', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' },
+          '2:00-4:00': { course: 'BUS 410', name: 'Entrepreneurship', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' }
+        },
+        'Friday': {
+          '8:00-10:00': { course: 'BUS 302', name: 'Marketing Management', lecturer: 'Dr. Grace Mwangi', room: 'LT 401', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    },
+    'PG 1A': {
+      '2025/2026': {
+        'Monday': {
+          '10:00-12:00': { course: 'BIL 810', name: 'Research Methodology', lecturer: 'Dr. Sarah Wanjiru', room: 'PG LT 1', type: 'lecture' }
+        },
+        'Tuesday': {
+          '2:00-4:00': { course: 'BIL 810', name: 'Research Methodology', lecturer: 'Dr. Sarah Wanjiru', room: 'PG LT 1', type: 'lecture' }
+        },
+        'Wednesday': {
+          '10:00-12:00': { course: 'CCS 910', name: 'PhD Thesis Supervision', lecturer: 'Prof. Charles Omondi', room: 'PG Office 1', type: 'lecture' }
+        },
+        'Thursday': {
+          '10:00-12:00': { course: 'BIL 810', name: 'Research Methodology', lecturer: 'Dr. Sarah Wanjiru', room: 'PG LT 1', type: 'lecture' }
+        },
+        'Friday': {
+          '10:00-12:00': { course: 'CCS 910', name: 'PhD Thesis Supervision', lecturer: 'Prof. Charles Omondi', room: 'PG Office 1', type: 'lecture' }
+        },
+        'Saturday': {}
+      }
+    }
+  };
+
+  // Time slots for the timetable
+  const timeSlots = [
+    '8:00-10:00',
+    '10:00-12:00',
+    '12:00-2:00',
+    '2:00-4:00',
+    '4:00-6:00'
+  ];
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  // ============================================================
+  // SIDEBAR NAV
+  // ============================================================
+  document.querySelectorAll('.sidebar__link--toggle').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.dataset.target;
+      const submenu = document.getElementById(targetId);
+      const parentItem = this.closest('.sidebar__item--group');
+      if (!submenu) return;
+      submenu.classList.toggle('sidebar__submenu--open');
+      parentItem.classList.toggle('sidebar__item--open');
+      const isOpen = submenu.classList.contains('sidebar__submenu--open');
+      this.setAttribute('aria-expanded', isOpen);
+    });
+  });
+
+  const navLinks = document.querySelectorAll('.sidebar__link, .sidebar__sublink');
+  const pageTitle = document.getElementById('pageTitle');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      if (this.getAttribute('href') === '#') e.preventDefault();
+      document.querySelectorAll('.sidebar__link, .sidebar__sublink').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+      const text = this.innerText.trim();
+      const icon = this.querySelector('i')?.className || 'fa-tachometer-alt';
+      pageTitle.innerHTML = `<i class="${icon}"></i> ${text}`;
+
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('active');
+      }
+      showToast(`📂 Navigated to ${text}`, 'info');
+    });
+  });
+
+  // ===== MOBILE TOGGLE =====
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function toggleMobileSidebar() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  }
+  hamburgerBtn.addEventListener('click', toggleMobileSidebar);
+  overlay.addEventListener('click', toggleMobileSidebar);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    }
+  });
+
+  // ============================================================
+  // MODAL CONTROLS
+  // ============================================================
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(el => {
+        el.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    }
+  });
+
+  // ============================================================
+  // FULL VIEW
+  // ============================================================
+  function openFullView() {
+    const className = document.getElementById('filterClass').value;
+    const session = document.getElementById('filterSession').value;
+    const container = document.getElementById('fullViewBody');
+    
+    const classData = timetableData[className]?.[session];
+    if (!classData) {
+      container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <i class="fas fa-calendar-times" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+        No timetable available for ${className} (${session})
+      </div>`;
+      openModal('fullViewModal');
+      return;
+    }
+
+    let html = `
+      <div style="margin-bottom:0.8rem;font-weight:600;font-size:0.9rem;color:var(--navy);">
+        ${className} — ${session}
+      </div>
+      <table class="timetable-grid">
+        <thead>
+          <tr>
+            <th style="width:60px;min-width:60px;">Time</th>
+            <th>Monday</th>
+            <th>Tuesday</th>
+            <th>Wednesday</th>
+            <th>Thursday</th>
+            <th>Friday</th>
+            <th>Saturday</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    timeSlots.forEach(time => {
+      html += `<tr>`;
+      html += `<td class="time-col"><div class="time-slot"><span>${time}</span></div></td>`;
+      days.forEach(day => {
+        const slot = classData[day]?.[time];
+        if (slot) {
+          const typeClass = slot.type === 'practical' ? 'practical' : slot.type === 'lab' ? 'lab' : 'lecture';
+          const typeLabel = slot.type.charAt(0).toUpperCase() + slot.type.slice(1);
+          html += `
+            <td>
+              <div class="class-slot" onclick="closeModal('fullViewModal'); viewSlot('${slot.course}', '${slot.name}', '${slot.lecturer}', '${slot.room}', '${slot.type}', '${day}', '${time}')">
+                <div class="course-code">${slot.course}</div>
+                <div class="course-name">${slot.name}</div>
+                <div class="lecturer">👤 ${slot.lecturer}</div>
+                <div class="room">📍 ${slot.room}</div>
+                <span class="type-badge ${typeClass}">${typeLabel}</span>
+              </div>
+            </td>
+          `;
+        } else {
+          html += `<td><div class="empty-slot">—</div></td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    container.innerHTML = html;
+    openModal('fullViewModal');
+  }
+
+  // ============================================================
+  // VIEW SLOT
+  // ============================================================
+  function viewSlot(course, name, lecturer, room, type, day, time) {
+    const body = document.getElementById('viewSlotBody');
+    const typeLabels = {
+      'lecture': 'Lecture',
+      'practical': 'Practical',
+      'lab': 'Lab Session'
+    };
+    const typeClass = type === 'practical' ? 'practical' : type === 'lab' ? 'lab' : 'lecture';
+    body.innerHTML = `
+      <div class="detail-row"><span class="label">Course</span><span class="value"><strong>${course}</strong> — ${name}</span></div>
+      <div class="detail-row"><span class="label">Day</span><span class="value">${day}</span></div>
+      <div class="detail-row"><span class="label">Time</span><span class="value">${time}</span></div>
+      <div class="detail-row"><span class="label">Lecturer</span><span class="value">${lecturer}</span></div>
+      <div class="detail-row"><span class="label">Room</span><span class="value">${room}</span></div>
+      <div class="detail-row"><span class="label">Type</span><span class="value"><span class="type-badge ${typeClass}">${typeLabels[type] || type}</span></span></div>
+    `;
+    openModal('viewSlotModal');
+  }
+
+  // ============================================================
+  // RENDER TIMETABLE
+  // ============================================================
+  function renderTimetable() {
+    const className = document.getElementById('filterClass').value;
+    const session = document.getElementById('filterSession').value;
+    const tbody = document.getElementById('timetableBody');
+    document.getElementById('sessionBadge').textContent = session;
+
+    const classData = timetableData[className]?.[session];
+    if (!classData) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <i class="fas fa-calendar-times" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+        No timetable available for ${className} (${session})
+      </td></tr>`;
+      return;
+    }
+
+    let html = '';
+    timeSlots.forEach(time => {
+      html += `<tr>`;
+      html += `<td class="time-col"><div class="time-slot"><span>${time}</span></div></td>`;
+      days.forEach(day => {
+        const slot = classData[day]?.[time];
+        if (slot) {
+          const typeClass = slot.type === 'practical' ? 'practical' : slot.type === 'lab' ? 'lab' : 'lecture';
+          const typeLabel = slot.type.charAt(0).toUpperCase() + slot.type.slice(1);
+          html += `
+            <td>
+              <div class="class-slot" onclick="viewSlot('${slot.course}', '${slot.name}', '${slot.lecturer}', '${slot.room}', '${slot.type}', '${day}', '${time}')">
+                <div class="course-code">${slot.course}</div>
+                <div class="course-name">${slot.name}</div>
+                <div class="lecturer">👤 ${slot.lecturer}</div>
+                <div class="room">📍 ${slot.room}</div>
+                <span class="type-badge ${typeClass}">${typeLabel}</span>
+              </div>
+            </td>
+          `;
+        } else {
+          html += `<td><div class="empty-slot">—</div></td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', function() {
+    renderTimetable();
+  });
+</script>
+</body>
+</html>

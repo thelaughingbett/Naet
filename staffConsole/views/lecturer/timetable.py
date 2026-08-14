@@ -47,7 +47,7 @@ class MyTimetableView(RoleRequiredMixin, View):
                 curriculum__session=session,
             )
             .select_related(
-                'curriculum__course',
+                'curriculum__syllabus__course',
                 'curriculum__Tclass',
                 'venue',
             )
@@ -63,7 +63,7 @@ class MyTimetableView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__course',
+                'exam_venue__exam_session__curriculum__syllabus__course',
                 'exam_venue__exam_session__curriculum__Tclass',
                 'exam_venue__venue',
                 'exam_venue__exam_session',

@@ -33,7 +33,7 @@ class MyCourseView(RoleRequiredMixin, View):
         units = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .select_related('course', 'Tclass', 'session')
+            .select_related('syllabus__course', 'Tclass', 'session')
             .prefetch_related('professor')
             if session else []
         )
@@ -41,7 +41,7 @@ class MyCourseView(RoleRequiredMixin, View):
         distinct_course_count = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .values('course')
+            .values('syllabus__course')
             .distinct()
             .count()
             if session else 0
@@ -90,7 +90,7 @@ class MyCourseView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__course',
+                'exam_venue__exam_session__curriculum__syllabus__course',
                 'exam_venue__exam_session',
                 'exam_venue__venue',
             )

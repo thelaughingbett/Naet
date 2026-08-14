@@ -4,7 +4,6 @@ from django.db.models import Count, Q
 
 from base.models import (
     Curriculum,
-    ExamVenue,
     Session,
     Timetable,
     ExamInvigilatorAssignment
@@ -27,8 +26,11 @@ class LecturerDashboardView(RoleRequiredMixin, View):
         units = (
             Curriculum.objects
             # check if this works for through tables
-            .filter(professor=lecturer, session=session)
-            .select_related('course', 'Tclass')
+            .filter(
+                professor=lecturer,
+                session=session
+            )
+            .select_related('syllabus__course', 'Tclass')
             .prefetch_related('professor')
             .annotate(
                 approved_count=Count(
@@ -54,8 +56,11 @@ class LecturerDashboardView(RoleRequiredMixin, View):
         # counts one row per (course, class, session) curriculum entry.
         distinct_course_count = (
             Curriculum.objects
-            .filter(professor=lecturer, session=session)
-            .values('course')
+            .filter(
+                professor=lecturer,
+                session=session
+            )
+            .values('syllabus')
             .distinct()
             .count()
             if session else 0
@@ -81,7 +86,7 @@ class LecturerDashboardView(RoleRequiredMixin, View):
                 curriculum__session=session,
                 day=today_code,
             )
-            .select_related('curriculum__course', 'curriculum__Tclass', 'venue')
+            .select_related('curriculum__syllabus__course', 'curriculum__Tclass', 'venue')
             .order_by('time_slot')
             if (session and today_code) else []
         )
@@ -93,7 +98,7 @@ class LecturerDashboardView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__course',
+                'exam_venue__exam_session__curriculum__syllabus__course',
                 'exam_venue__exam_session',
                 'exam_venue__venue',
             )

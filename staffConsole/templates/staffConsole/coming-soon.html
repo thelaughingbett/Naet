@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>Under Construction</title>
+    <!-- Font Awesome 6 (free) for clean icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --navy: #0a2540;
+        --navy-light: #1a3a5c;
+        --maroon: #9e2a2b;
+        --maroon-hover: #b13e3f;
+        --blue-card: #1f6392;
+        --green: #1e6f3f;
+        --gold: #fbbf24;
+        --sidebar-w: 280px;
+        --topnav-h: 64px;
+        --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --text: #1e293b;
+        --text-muted: #5a6874;
+        --border: #e9edf2;
+        --bg: #f1f5f9;
+        --white: #ffffff;
+        --radius: 20px;
+        --shadow: 0 8px 30px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03);
+        --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
+        --transition: 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      }
+
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100dvh;
+        width: 100dvw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        margin: 0;
+        background-image:
+          radial-gradient(
+            circle at 10% 20%,
+            rgba(31, 99, 146, 0.03) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(158, 42, 43, 0.03) 0%,
+            transparent 50%
+          );
+      }
+
+      .card {
+        max-width: 680px;
+        width: 100%;
+        background: var(--white);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition:
+          box-shadow var(--transition),
+          transform var(--transition);
+        backdrop-filter: blur(2px);
+      }
+
+      .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+      }
+
+      .card__header {
+        padding: 1.2rem 1.8rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: -0.01em;
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(4px);
+      }
+
+      .card__header span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text);
+      }
+
+      .card__header span i {
+        color: var(--blue-card);
+        font-size: 1.1rem;
+      }
+
+      .card__header a {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--blue-card);
+        text-decoration: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 40px;
+        background: rgba(31, 99, 146, 0.06);
+        transition:
+          background 0.2s,
+          color 0.2s,
+          transform 0.15s;
+        border: 1px solid transparent;
+      }
+
+      .card__header a i {
+        font-size: 0.7rem;
+        transition: transform 0.2s;
+      }
+
+      .card__header a:hover {
+        background: rgba(31, 99, 146, 0.12);
+        color: var(--navy);
+        border-color: rgba(31, 99, 146, 0.15);
+      }
+
+      .card__header a:hover i {
+        transform: translateX(2px);
+      }
+
+      .card__body {
+        padding: 2.5rem 2rem 3rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .construction-icon {
+        font-size: 4.2rem;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
+        filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.04));
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(0px) scale(1);
+        }
+        50% {
+          transform: translateY(-6px) scale(1.02);
+        }
+        100% {
+          transform: translateY(0px) scale(1);
+        }
+      }
+
+      .card__body h2 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        margin: 0.25rem 0 0.15rem;
+        background: linear-gradient(135deg, var(--navy), var(--blue-card));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .card__body .sub {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        max-width: 340px;
+        margin: 0.4rem auto 1.8rem;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(30, 111, 63, 0.07);
+        border: 1px solid rgba(30, 111, 63, 0.15);
+        padding: 0.3rem 1.2rem 0.3rem 1rem;
+        border-radius: 40px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--green);
+        margin-bottom: 2rem;
+      }
+
+      .status-pill i {
+        font-size: 0.5rem;
+        color: var(--green);
+        animation: pulse-dot 1.8s ease-in-out infinite;
+      }
+
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 0.4;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.2);
+        }
+      }
+
+      .progress-track {
+        width: 100%;
+        max-width: 280px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 8px;
+        margin: 0.5rem 0 1.2rem;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .progress-track .bar {
+        height: 100%;
+        width: 42%;
+        background: linear-gradient(90deg, var(--blue-card), var(--gold));
+        border-radius: 8px;
+        box-shadow: 0 0 8px rgba(31, 99, 146, 0.2);
+        transition: width 1s ease;
+      }
+
+      .card__body .note {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        opacity: 0.7;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        letter-spacing: 0.01em;
+      }
+
+      .card__body .note i {
+        font-size: 0.6rem;
+        opacity: 0.6;
+      }
+
+      /* subtle divider */
+      .divider {
+        width: 40px;
+        height: 2px;
+        background: var(--border);
+        border-radius: 4px;
+        margin: 0.8rem auto 0.2rem;
+      }
+
+      /* responsiveness */
+      @media (max-width: 480px) {
+        .card__header {
+          padding: 0.9rem 1.2rem;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        .card__body {
+          padding: 2rem 1.2rem 2.2rem;
+        }
+        .construction-icon {
+          font-size: 3.2rem;
+        }
+        .card__body h2 {
+          font-size: 1.3rem;
+        }
+        .card__body .sub {
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="main" aria-label="Under construction notice">
+      <div class="card__header">
+        <span>
+          <i class="fas fa-code" aria-hidden="true"></i>
+          Under Construction
+        </span>
+        <a onclick="history.back()" aria-label="Go back to previous page">
+          <span>Go Back</span>
+          <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+      <div class="card__body">
+        <div class="construction-icon" aria-hidden="true">🛠️</div>
+        <h2>We're building something great</h2>
+        <p class="sub">
+          This page is currently under development. <br />
+          We appreciate your patience.
+        </p>
+
+        <div class="status-pill">
+          <i class="fas fa-circle" aria-hidden="true"></i>
+          <span>In progress</span>
+        </div>
+
+        <div class="progress-track" aria-hidden="true">
+          <div class="bar" style="width: 42%"></div>
+        </div>
+
+        <div class="divider" aria-hidden="true"></div>
+
+        <div class="note">
+          <i class="fas fa-clock" aria-hidden="true"></i>
+          <span>Estimated launch · Remains to be seen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- subtle script to animate progress bar on load (optional) -->
+    <script>
+      (function () {
+        // small enhancement: progress bar grows slightly on load for a "live" feel
+        const bar = document.querySelector(".bar");
+        if (bar) {
+          // store original width, then animate a tiny bump
+          const currentWidth = bar.style.width || "42%";
+          // set to a slightly lower value then animate to original
+          bar.style.transition = "width 1.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)";
+          bar.style.width = "38%";
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              bar.style.width = currentWidth;
+            });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

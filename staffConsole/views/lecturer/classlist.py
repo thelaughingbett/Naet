@@ -87,8 +87,8 @@ class ClassListView(RoleRequiredMixin, View):
         all_units = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .select_related('course', 'Tclass', 'session')
-            .order_by('course__course_code')
+            .select_related('syllabus__course', 'Tclass', 'session')
+            .order_by('syllabus__course__course_code')
             if session else []
         )
 

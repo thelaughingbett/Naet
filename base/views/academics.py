@@ -54,7 +54,7 @@ class CurriculumView(
         if student and session:
             curriculum = Curriculum.objects.filter(
                 Tclass=student.class_entered
-            ).select_related('course', 'session').prefetch_related('professor')
+            ).select_related('syllabus__course', 'session').prefetch_related('professor')
 
         target_class = student.class_entered
 
@@ -105,16 +105,16 @@ class UnitRegistrationView(
             available = Curriculum.objects.filter(
                 Tclass=student.class_entered,
                 session=session,
-                course__course_type='E',
+                syllabus__course__course_type='E',
             ).exclude(
                 record_id__in=enrolled_ids
-            ).select_related('course')
+            ).select_related('syllabus__course')
 
         context = {
             'available': available,
             'enrolled': student.enrollments.filter(
                 session=session
-            ).select_related('course') if student and session else [],
+            ).select_related('syllabus__course') if student and session else [],
             'student': student,
             'session': session,
             'min_credits': self.min_credits,
@@ -137,10 +137,10 @@ class UnitRegistrationView(
             record_id__in=curriculum_ids,
             Tclass=student.class_entered,
             session=session,
-            course__course_type='E',
+            syllabus__course__course_type='E',
         ).exclude(
             record_id__in=enrolled_ids
-        ).select_related('course')
+        ).select_related('syllabus__course')
 
         if not curricula.exists():
             return JsonResponse({'success': False, 'message': 'No matching units found.'}, status=404)
@@ -161,7 +161,9 @@ class UnitRegistrationView(
 
         with transaction.atomic():
             student.enrollments.add(
-                *curricula, through_defaults={'status': 'pending'})
+                *curricula,
+                through_defaults={'status': 'pending'}
+            )
 
         return JsonResponse({
             'success': True,
@@ -201,7 +203,7 @@ class ResultsView(
                 ).order_by('start_date')
                 results = Result.objects.filter(
                     enrollment__student=student
-                ).select_related('enrollment__curriculum__course').order_by('-created_at')
+                ).select_related('enrollment__curriculum__syllabus__course').order_by('-created_at')
 
         context = {
             'results': results,

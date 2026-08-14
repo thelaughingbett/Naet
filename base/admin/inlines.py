@@ -36,23 +36,23 @@ class FeeStructureInline(admin.StackedInline):
     fields = ['session', 'breakdown']
 
 
-class CurriculumProfessorInline(admin.TabularInline):
-    model = Curriculum
-    fields = ['Tclass', 'session', ]
-    readonly_fields = ['Tclass', 'session']
-    extra = 0
-    can_delete = False
+# class CurriculumProfessorInline(admin.TabularInline):
+#     model = Curriculum
+#     fields = ['Tclass', 'session', ]
+#     readonly_fields = ['Tclass', 'session']
+#     extra = 0
+#     can_delete = False
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        try:
-            active_session = Session.objects.get(is_active=True)
-            return qs.filter(session=active_session)
-        except Session.DoesNotExist:
-            return qs.none()
+#     def get_queryset(self, request):
+#         qs = super().get_queryset(request)
+#         try:
+#             active_session = Session.objects.get(is_active=True)
+#             return qs.filter(session=active_session)
+#         except Session.DoesNotExist:
+#             return qs.none()
 
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == 'professor':
-            kwargs['queryset'] = Lecturer.objects.select_related(
-                'user', 'department')
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+#     def formfield_for_manytomany(self, db_field, request, **kwargs):
+#         if db_field.name == 'professor':
+#             kwargs['queryset'] = Lecturer.objects.select_related(
+#                 'user', 'department')
+#         return super().formfield_for_manytomany(db_field, request, **kwargs)

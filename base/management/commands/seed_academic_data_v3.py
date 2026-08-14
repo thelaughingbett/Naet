@@ -27,24 +27,9 @@ from django.utils import timezone
 
 # ── adjust these import paths to match your project layout ──────────────────
 from base.models import (
-    Course,
-    Department,
-    Programme,
-    School,
-    Session,
-    Tclass,
-    Curriculum,
-    LecturerAssignment,
-    Result,
-    FeeStructure,
-    StudentFeeAccount,
-    Payment,
-    Hostel,
-    Room,
-    HostelAllocation,
-    Lecturer,
-    Student,
-    Enrollment
+    Course,  Department, Programme, School, Session,  Tclass,
+    Curriculum, LecturerAssignment, Result, FeeStructure, StudentFeeAccount, Payment,
+    Hostel, Room, HostelAllocation, Lecturer, Student, Enrollment
 )
 
 User = get_user_model()
@@ -279,20 +264,26 @@ SESSION_DATA = [
     ("2026/2027", "1", datetime.date(2026, 9,  1), datetime.date(2027, 1, 31), True),
 ]
 
-FIRST_NAMES = ["James", "Mary", "Robert", "Patricia", "John", "Jennifer",
-               "Michael", "Linda", "David", "Barbara", "Amara", "Fatuma",
-               "Kevin", "Grace", "Brian", "Esther", "Felix", "Winnie",
-               "Samuel", "Carol", "Daniel", "Ruth", "Peter", "Mercy",
-               "Joseph", "Alice", "George", "Rose", "Charles", "Janet"]
+FIRST_NAMES = [
+    "James", "Mary", "Robert", "Patricia", "John", "Jennifer",
+    "Michael", "Linda", "David", "Barbara", "Amara", "Fatuma",
+    "Kevin", "Grace", "Brian", "Esther", "Felix", "Winnie",
+    "Samuel", "Carol", "Daniel", "Ruth", "Peter", "Mercy",
+    "Joseph", "Alice", "George", "Rose", "Charles", "Janet"
+]
 
-LAST_NAMES = ["Kamau", "Odhiambo", "Wanjiku", "Mwangi", "Omondi", "Njoroge",
-              "Otieno", "Kimani", "Mutua", "Achieng", "Wafula", "Gathoni",
-              "Korir", "Chebet", "Mugo", "Ndungu", "Onyango", "Waweru",
-              "Kiptoo", "Njeru", "Maina", "Auma", "Kirui", "Nyambura",
-              "Saitoti", "Cherop", "Barasa", "Mulwa", "Simiyu", "Nafula"]
+LAST_NAMES = [
+    "Kamau", "Odhiambo", "Wanjiku", "Mwangi", "Omondi", "Njoroge",
+    "Otieno", "Kimani", "Mutua", "Achieng", "Wafula", "Gathoni",
+    "Korir", "Chebet", "Mugo", "Ndungu", "Onyango", "Waweru",
+    "Kiptoo", "Njeru", "Maina", "Auma", "Kirui", "Nyambura",
+    "Saitoti", "Cherop", "Barasa", "Mulwa", "Simiyu", "Nafula"
+]
 
-LECTURER_TITLES = ["Lecturer", "Senior Lecturer", "Associate Professor",
-                   "Assistant Lecturer", "Tutorial Fellow"]
+LECTURER_TITLES = [
+    "Lecturer", "Senior Lecturer", "Associate Professor",
+    "Assistant Lecturer", "Tutorial Fellow"
+]
 
 # A couple of small, gender-matched hostels — just enough capacity for the
 # capped number of resident students seeded below.

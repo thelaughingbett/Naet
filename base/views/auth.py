@@ -58,6 +58,7 @@ def _resolve_post_login_url(request, user) -> str:
             return staff_url
 
     # Students and any unrecognised role → student portal landing page.
+    # TODO : check for student profile and end this function with bad_request if role not defined
     return reverse('base-index')
 
 
@@ -133,6 +134,7 @@ def _resolve_login_identifier(input_login: str) -> str | None:
     for staff_model in (Lecturer, ItStaff):
         match = (
             staff_model.objects
+            # TODO : check email also
             .filter(staff_number__iexact=input_login)
             .select_related('user')
             .first()

@@ -12,22 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from base.models import Payment
-from django.views.decorators.cache import never_cache
-from django.contrib import messages
-
-from http import HTTPStatus
-import logging
-
 from decouple import config
 
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import (
-    get_object_or_404,
     render,
-    redirect
 )
-from django.urls import reverse
 from django.views import View
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
@@ -67,7 +56,7 @@ class WeeklyScheduleView(
                 curriculum__Tclass=student.class_entered,
                 curriculum__session=session,
             ).select_related(
-                'curriculum__course',
+                'curriculum__syllabus__course',
                 'curriculum__Tclass',
                 'venue',
             ).prefetch_related(
@@ -120,7 +109,7 @@ class ExamTimetableView(
             curriculum__Tclass=student.class_entered,
             curriculum__session=session,
         ).select_related(
-            'curriculum__course',
+            'curriculum__syllabus__course',
             'curriculum__session',
         ).prefetch_related(
             'venues__venue',

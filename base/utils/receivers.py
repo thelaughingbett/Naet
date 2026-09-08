@@ -535,3 +535,41 @@ def auto_track_database_mutations(sender, instance, **kwargs):
             record_id=str(instance.pk),
             action_summary=f"Automated signal intercept: Row payload mutation executed successfully via database ORM layers."
         )
+
+
+@receiver(post_save, sender='base.Result')
+def update_degree_audit_on_result_publish(sender, instance, **kwargs):
+    """
+    Fires on every Result save (create or update). Only actually
+    recomputes when the result is published — a draft/submitted result
+    shouldn't move anyone's credit count or GPA.
+    """
+    if instance.state != 'published':
+        return
+
+    from base.models import DegreeAudit
+
+    student = instance.enrollment.student
+    audit, _ = DegreeAudit.objects.get_or_create(student=student)
+    audit.recompute()
+
+
+@receiver(post_save, sender='base.Result')
+def finalize_enrollment_grade_on_result_publish(sender, instance, **kwargs):
+    """
+    Unlike the E/PR-only version from before, ANY published Result now
+    attempts finalize_grade() — a CAT publishing alone might be exactly
+    what a scheme like {CAT: 100%} needs to finalize immediately, while
+    a scheme like {CAT: 30%, Exam: 70%} will keep returning None from
+    _current_score() until the Exam result also publishes. The scheme
+    decides completeness, not a hardcoded type list.
+    """
+    if instance.state != 'published':
+        return
+
+    enrollment = instance.enrollment
+    if enrollment.finalize_grade():
+        from base.models import DegreeAudit
+        audit, _ = DegreeAudit.objects.get_or_create(
+            student=enrollment.student)
+        audit.recompute()

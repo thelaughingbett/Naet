@@ -89,30 +89,69 @@ flowchart TD
 The same ladder as above, generalized — this is what
 `ComplaintEscalationHistory` actually encodes.
 
+### 3.1 Complaint Routing
+
 ```mermaid
+flowchart TB
+    A[Student files complaint]
+    A --> B{Category?}
+
+    B -->|Academic| C[HOD / Lecturer<br/>Department level]
+    B -->|Harassment| D[Dean of Students<br/>direct — priority forced Critical]
+    B -->|Facilities / Administrative /<br/>Catering / Other| E[School Student Rep]
+
+    E --> F[Rep routes to facility head<br/>e.g. hostel warden, librarian]
+
+```
+
+### 3.2 Complaint Escalation Ladder
+
+```mermaid
+
 flowchart LR
-    classDef step fill:#e0e0e0,stroke:#888,color:#000
-    classDef decision fill:#fff3b0,stroke:#c9a300,color:#000
+    subgraph Academic["Academic track"]
+        A1[Department:<br/>HOD / Lecturer]
+        A2[School: Dean]
+        A3[Dean of Students]
+        A4[Registrar]
+        A5[Senate]
+        A1 -->|SLA breached| A2 -->|SLA breached| A3 -->|SLA breached| A4 -->|SLA breached| A5
+    end
 
-    A["Complaint filed\nby Student"]:::step
-    B["Department\n(HOD)"]:::step
-    C{"Resolved?"}:::decision
-    D["School\n(Dean)"]:::step
-    E{"Resolved?"}:::decision
-    F["Division\n(Registrar)"]:::step
-    G{"Resolved?"}:::decision
-    H["Senate /\nExternal (VC/DVC)"]:::step
+    subgraph Ops["Facilities / Administrative /<br/>Catering / Other track"]
+        B1[School Student Rep]
+        B2[Facility head<br/>warden, librarian, etc.]
+        B3[Dean of Students]
+        B4[Senate]
+        B1 --> B2
+        B2 -->|not acted on| B3 -->|SLA breached| B4
+    end
 
-    A --> B --> C
-    C -- no --> D
-    C -- yes --> Z["Complaint.status='Resolved'"]
-    D --> E
-    E -- no --> F
-    E -- yes --> Z
-    F --> G
-    G -- no --> H
-    G -- yes --> Z
-    H --> Z
+    subgraph Harassment["Harassment track"]
+        C1[Dean of Students<br/>direct entry]
+        C2[Senate]
+        C1 -->|not acted on| C2
+    end
+
+```
+
+### 3.3 Complaint Escalation Trigger
+
+```mermaid
+flowchart TB
+    A[Complaint sitting at<br/>current level]
+    A --> B{Resolved within this<br/>category's SLA window?}
+
+    B -->|Yes| C[Marked Resolved<br/>resolution_remarks required]
+
+    B -->|No, SLA expired| D[System auto-escalates<br/>to next level]
+    D --> E[Priority auto-raised<br/>one tier]
+
+    A --> F{Handler manually<br/>escalates early?}
+    F -->|Yes| G[Escalating user<br/>sets the priority]
+
+    E --> H[Moves to next level<br/>in that category's ladder]
+    G --> H
 ```
 
 ---
@@ -260,6 +299,210 @@ flowchart TD
     A --> B
     B -- no --> D
     B -- yes --> C --> E --> F --> G
+```
+
+---
+
+## 13. Enrollment
+
+```mermaid
+
+flowchart TB
+    subgraph Student["🧑 Student"]
+        A[Reports to school<br/>for the session]
+        D[Sees electives<br/>offered for programme]
+        E[Registers for<br/>an elective]
+    end
+
+    subgraph System["⚙️ System"]
+        B[Auto-enrolls into Core /<br/>Common units for their year<br/>— reads Syllabus]
+        C[Publishes elective list<br/>for programme + year]
+        F[Creates enrollment<br/>status = pending]
+    end
+
+    subgraph Reviewer["🎓 HOD / Course Lecturer"]
+        G[Reviews elective<br/>registration request]
+        H{Approve?}
+        I[Enrollment approved<br/>approval_method = manual]
+        J[Enrollment rejected]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H -->|Yes| I
+    H -->|No| J
+
+```
+
+---
+
+## 14. Results
+
+```mermaid
+flowchart TB
+    subgraph Lecturer["👨‍🏫 Lecturer"]
+        A[Enters CAT / Assignment /<br/>Quiz score]
+        B[Enters Practical /<br/>Exam score]
+        Q[Reviews disputed result<br/>re-submits score]
+    end
+
+    subgraph ExamDept["🏢 Exam Department"]
+        C[Enters exam score<br/>via exam portal]
+    end
+
+    subgraph System["⚙️ System"]
+        D[Auto-publishes result<br/>state = published]
+        Emod[Routes result to<br/>moderation queue]
+        F[Notifies student<br/>result available / updated]
+    end
+
+    subgraph Approver["🎓 Dean / HOD / Exam Dept"]
+        G[Reviews & moderates<br/>score]
+        H{Approve?}
+        I[Marks result<br/>state = published]
+        J[Sends back to lecturer<br/>state = disputed]
+        M[Receives student's<br/>dispute]
+        N{Resolve directly?}
+        O[Resolves dispute &<br/>updates result]
+        P[Forwards dispute to<br/>lecturer for review]
+    end
+
+    subgraph Student["🧑 Student"]
+        K[Views published result]
+        L[Disputes result]
+    end
+
+    A --> D --> F
+    B --> Emod
+    C --> Emod
+    Emod --> G --> H
+    H -->|Yes| I --> F
+    H -->|No| J --> B
+
+    F --> K --> L --> M
+    M --> N
+    N -->|Yes, resolves it| O --> F
+    N -->|No, needs lecturer input| P --> Q --> Emod
+```
+
+---
+
+## 15. Graduation Track
+
+```mermaid
+flowchart TB
+subgraph System["⚙️ System"]
+A[Result published<br/>state = published]
+B[Recalculates DegreeAudit:<br/>credits_completed, gpa]
+C{credits_completed ≥<br/>programme's total_credits_required?}
+D[DegreeAudit.result stays<br/>on_track / deficient]
+E[DegreeAudit.result = eligible]
+F[Creates / updates Graduation<br/>status = nominated]
+end
+
+    subgraph HOD["🎓 Dean / HOD"]
+        G[Reviews nomination]
+        H{Verify?}
+        I[Graduation.status = verified]
+        J[Returns nomination<br/>for correction]
+    end
+
+    subgraph Registrar["🏛️ Registrar"]
+        K[Reviews verified nomination]
+        L{Approve?}
+        M[Graduation.status = approved]
+        N[Sends back to HOD<br/>with remarks]
+    end
+
+    A --> B --> C
+    C -->|No| D
+    C -->|Yes| E --> F --> G
+    G --> H
+    H -->|Yes| I --> K
+    H -->|No| J --> F
+    K --> L
+    L -->|Yes| M
+    L -->|No| N --> G
+
+```
+
+### 16 Exam
+
+```mermaid
+flowchart TB
+    subgraph PaperSetting["📝 Lecturer / Examiner"]
+        A[QuestionPaper created<br/>status = draft]
+        B[Submits paper<br/>status = submitted]
+    end
+
+    subgraph Moderation["🔍 Moderator"]
+        C[QuestionPaperModeration<br/>reviews & comments]
+        D{Approved?}
+        E[Paper status = moderated]
+        F[Paper status = rejected<br/>returned to setter]
+    end
+
+    subgraph ExamDay["🏫 Exam Day — Invigilator"]
+        G[Student sits ExamSession]
+        H[ExamAttendance recorded]
+        I{Status}
+        J[Present]
+        K[Absent]
+        L[Malpractice reported]
+    end
+
+    subgraph Grading["📊 Grading — Lecturer / System"]
+        M[Result entered per type<br/>CAT / Exam / Assignment...]
+        N[Result.state = published]
+        O[Enrollment.finalize_grade<br/>freezes graded_score, is_passed]
+    end
+
+    subgraph Reval["⚖️ Revaluation — Student / Exam Dept"]
+        P[Student files<br/>RevaluationRequest]
+        Q[status = under_review]
+        R{Marks changed?}
+        S[status = marks_changed<br/>Enrollment.regrade]
+        T[status = marks_unchanged]
+    end
+
+    subgraph Backlog["🔁 Backlog — Student"]
+        U{Enrollment.is_passed?}
+        V[BacklogRegistration<br/>attempt_number += 1]
+    end
+
+    subgraph Registrar["🏛️ Registrar"]
+        W[GradeCard generated<br/>sgpa / cgpa]
+        X[TranscriptRequest<br/>requested → processing → issued]
+        Y[Certificate issued<br/>bonafide / provisional / ...]
+    end
+
+    A --> B --> C --> D
+    D -->|Yes| E
+    D -->|No| F --> A
+    E --> G
+
+    G --> H --> I
+    I --> J --> M
+    I --> K
+    I --> L
+
+    M --> N --> O
+    O --> U
+    U -->|No| V --> G
+    U -->|Yes| W
+
+    N --> P
+    P --> Q --> R
+    R -->|Yes| S --> O
+    R -->|No| T
+
+    W --> X
+    W --> Y
 ```
 
 ---

@@ -103,14 +103,24 @@ STATICFILES_DIRS = [
     ('staff', BASE_DIR / 'staffConsole/static'),
 ]
 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 MEDIA_ROOT = BASE_DIR / 'user-upload/'
 MEDIA_URL = 'media/'
 
 AUTH_USER_MODEL = 'base.User'
 
-
-# Ensure this only runs in local development
-DEBUG = True
 
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -254,16 +264,3 @@ RESULTS_MODULE_CONFIG = {
 }
 
 MESSAGEPIT_WEBHOOK_URL = 'http://localhost:8300'
-
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}

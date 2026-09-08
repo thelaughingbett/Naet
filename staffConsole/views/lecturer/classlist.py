@@ -214,7 +214,7 @@ class StudentDetailAjaxView(RoleRequiredMixin, View):
         try:
             enrollment = (
                 Enrollment.objects
-                .select_related('student__user', 'curriculum__course')
+                .select_related('student__user', 'curriculum__syllabus__course')
                 .get(record_id=enrollment_id)
             )
         except Enrollment.DoesNotExist:

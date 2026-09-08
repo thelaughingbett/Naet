@@ -967,7 +967,11 @@ class Command(BaseCommand):
                         student_idx, FIRST_NAMES, LAST_NAMES)
                     suffix = f".s{student_idx}"
                     email = make_email(
-                        first, last, "students.university.ac.ke", suffix)
+                        first,
+                        last,
+                        "students.university.ac.ke",
+                        suffix
+                    )
                     passwd = make_password(first, last)
                     reg_no = f"{tclass.class_name.replace('/', '')}/{student_idx+1:04d}"
 

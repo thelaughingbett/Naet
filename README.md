@@ -221,7 +221,7 @@ Role-based access is enforced automatically:
 
 - [ ] 📅 Attendance tracking (per timetable slot)
 - [x] 📝 Exam scheduling and invigilation assignment
-- [x] 📱 SMS notifications via Africa's Talking API
+- [x] 📱 SMS notifications
 - [ ] 🌐 REST API (Django REST Framework)
 - [ ] 🌾 IoT sensor integration for smart campus monitoring
 

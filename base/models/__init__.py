@@ -10,9 +10,7 @@ from .student import *  # noqa: F401, E402
 from .academic import *  # noqa: F401, E402
 from .adminstration import *  # noqa: F401, E402
 from .base import *  # noqa: F401, E402
-from .contacts import *  # noqa: F401, E402
 from .curriculum import *  # noqa: F401, E402
-from .evaluations import *  # noqa: F401, E402
 from .finance import *  # noqa: F401, E402
 from .hostel import *  # noqa: F401, E402
 from .staff import *  # noqa: F401, E402
@@ -22,7 +20,6 @@ from .clubs import *  # noqa : F401,E402
 from .security import *  # noqa : F401,E402
 from .student_council import *  # noqa : F401,E402
 from .regulatory import *  # noqa : F401,E402
-from .admissions import *  # noqa : F401,E402
 from .announcements import *  # noqa : F401,E402
 from .leave import *  # noqa : F401,E402
 from .student_risk_score_model import *  # noqa : F401,E402

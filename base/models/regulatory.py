@@ -10,7 +10,6 @@ from django.db import models, transaction
 
 from .base import (
     BaseModelMixin,
-    ValidatedFileMixin
 )
 
 

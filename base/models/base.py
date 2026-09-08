@@ -29,6 +29,7 @@ id_type_choices = [
 class TimeStampedMixin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True)
 
     class Meta:
         abstract = True
@@ -40,6 +41,8 @@ class BaseModelMixin(TimeStampedMixin):
         default=uuid.uuid4,
         editable=False
     )
+
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         abstract = True

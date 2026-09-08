@@ -6,13 +6,27 @@
 #
 #        http://www.apache.org/licenses/LICENSE-2.0
 
+"""
+Curriculum / scheduling domain.
+
+Owns the question "what is being taught, by whom, to which class, in
+which session" — from catalog-level approval (Syllabus) down to the
+actual teaching slot (Curriculum) and its staffing (LecturerAssignment).
+
+Grading policy (WeightingScheme) and student outcomes (Enrollment,
+Result) live in sibling modules; this module only exposes
+`get_weighting_scheme()` as a resolution helper for those modules to
+call into.
+"""
+
 from django.conf import settings
-from django.utils import timezone
-from base.managers import CommonUnitCurriculumManager
-from .base import BaseModelMixin
-from simple_history.models import HistoricalRecords
 from django.db import models
 from django.core.exceptions import ValidationError
+from simple_history.models import HistoricalRecords
+
+from base.managers import CommonUnitCurriculumManager
+from ..base import BaseModelMixin
+
 
 ASSIGNMENT_STATUS_CHOICES = [
     ('Draft', 'Draft Assignment'),
@@ -58,6 +72,11 @@ class Syllabus(BaseModelMixin):
         max_length=20,
         choices=State.choices,
         default=State.PROPOSED
+    )
+
+    offered = models.IntegerField(
+        default=1,
+        help_text="Year of study this unit is typically scheduled."
     )
 
     year_introduced = models.PositiveSmallIntegerField(
@@ -139,6 +158,19 @@ class Curriculum(BaseModelMixin):
 
     capacity = models.PositiveIntegerField(default=60)
 
+    weighting_scheme_override = models.ForeignKey(
+        'WeightingScheme',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='curricula_overriding',
+        help_text="Lets whoever teaches THIS class this session use a "
+        "different weighting than the course default — e.g. "
+        "one lecturer runs 40% CAT / 60% Exam for their section "
+        "while the course default is 30/70. Leave blank to "
+        "inherit the course's scheme."
+    )
+
     class Meta:
         unique_together = ('syllabus', 'Tclass', 'session')
         verbose_name = "Curriculum Slot"
@@ -147,7 +179,7 @@ class Curriculum(BaseModelMixin):
     @property
     def results(self):
         """All Result rows for students enrolled in this curriculum slot."""
-        from base.models import Result
+        from .enrollment import Result
         return Result.objects.filter(
             enrollment__curriculum=self
         ).select_related('enrollment__student')
@@ -192,6 +224,8 @@ class Curriculum(BaseModelMixin):
         next session's timetable — exactly what Curriculum.clean() exists
         to prevent for normal creates.
         """
+
+        # NOTE : irrelevant with syllabus model probably change to transfer assigned lecturers
         source = cls.objects.filter(
             session_id=from_session_id,
             syllabus__state__in=Syllabus.SCHEDULABLE_STATES,
@@ -223,6 +257,22 @@ class Curriculum(BaseModelMixin):
                 obj.professor.set(professors)
 
         return created.count()
+
+    def get_weighting_scheme(self):
+        """
+        Resolution order: this specific class offering's override,
+        then the course's default, then the institution default (via
+        Course.get_weighting_scheme()'s own fallback).
+
+        NOTE: nothing here enforces that only the primary lecturer
+        (LecturerAssignment.is_primary=True) can set this override —
+        that's a permission/view-layer concern, not a model constraint.
+        If two co-lecturers disagree, whoever has edit access to this
+        field wins; consider gating the admin/API field to primary only.
+        """
+        if self.weighting_scheme_override_id:
+            return self.weighting_scheme_override
+        return self.syllabus.course.get_weighting_scheme()
 
 
 class LecturerAssignment(BaseModelMixin):
@@ -328,237 +378,3 @@ class CommonUnitCurriculum(Curriculum):
             session=self.session,
             syllabus=self.syllabus,
         ).values_list('Tclass__class_name', flat=True)
-
-
-class Enrollment(BaseModelMixin):
-    STATUS_CHOICES = [
-        ('pending',  'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ("dropped", "Dropped"),
-        # write a signal or method to update this once moved to next academic year [most likely a celery job should suffice here else heavy workload] 👇🏿
-        ("completed", "Completed")
-    ]
-
-    APPROVAL_METHOD_CHOICES = [
-        ('system', 'System auto-approved'),
-        ('manual', 'Manually approved'),
-    ]
-
-    # Core, Common Unit — default behavior only now
-    AUTO_APPROVE_COURSE_TYPES = ('C', 'CC')
-
-    student = models.ForeignKey(
-        'Student',
-        on_delete=models.PROTECT,
-        related_name='enrollment_records'
-    )
-    curriculum = models.ForeignKey(
-        'Curriculum',
-        on_delete=models.PROTECT,
-        related_name='enrollment_records'
-    )
-
-    status = models.CharField(
-        max_length=25,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
-
-    approval_method = models.CharField(
-        max_length=10,
-        choices=APPROVAL_METHOD_CHOICES,
-        null=True,
-        blank=True,
-        default='system',
-        help_text="Set only when status='approved'. Distinguishes a system "
-        "auto-approval from a human overriding/confirming it — "
-        "core units can go either way, so this can't be inferred "
-        "from approved_by alone."
-    )
-
-    approved_by = models.ForeignKey(
-        'User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='approved_enrollments',
-        help_text="Null when approval_method='system'. Set to the reviewer "
-        "when approval_method='manual'."
-    )
-
-    # TODO : make sure save updates this
-    approved_at = models.DateTimeField(null=True, blank=True)
-
-    history = HistoricalRecords()
-
-    class Meta:
-        unique_together = ('student', 'curriculum')
-
-    def __str__(self):
-        return f"{self.student} → {self.curriculum} [{self.status}]"
-
-    @property
-    def requires_manual_approval(self) -> bool:
-        """
-        Default behavior for new enrollments — not a hard restriction.
-        A core/common unit can still be manually approved via approve().
-
-        NOTE — not changed here, flagging only: this still reads
-        `self.curriculum.course.course_type`, i.e. Course's single GLOBAL
-        Core/Elective/Common flag. Now that Syllabus exists specifically to
-        let a course be Core for one programme and Adjunct/elective for
-        another, this is the natural place to actually use that —
-        e.g. `self.curriculum.syllabus.state == Syllabus.State.ADJUNCT`
-        instead of (or alongside) `course_type`. Left as-is since switching
-        this changes which enrollments auto-approve — worth doing
-        deliberately rather than as a drive-by fix.
-        """
-        return self.curriculum.course.course_type not in self.AUTO_APPROVE_COURSE_TYPES
-
-    def clean(self):
-        super().clean()
-
-        from base.models import RegistrationWindow
-        from django.core.exceptions import ValidationError
-        window = (
-            RegistrationWindow.objects.filter(
-                term=self.curriculum.session,
-                window_type=RegistrationWindow.WindowType.COURSE_REGISTRATION,  # check for errors here
-            )
-            # possible BUG
-            .filter(models.Q(programme=self.student.class_entered.programme) | models.Q(programme__isnull=True))
-            # prefer a program-specific window over an institution-wide one
-            .order_by("programme")
-            .first()
-        )
-
-        if window is None:
-            raise ValidationError(
-                "No course registration window has been configured for this term.")
-        if not window.is_open:
-            raise ValidationError(
-                "Course registration is closed for this term.")
-
-        if self.status == 'approved':
-            if not self.approved_at:
-                raise ValidationError({
-                    'approved_at': "approved_at is required when status is 'approved'."
-                })
-            if not self.approval_method:
-                raise ValidationError({
-                    'approval_method': "approval_method is required when status is 'approved'."
-                })
-            if self.approval_method == 'system' and self.approved_by_id:
-                raise ValidationError({
-                    'approved_by': "A system-approved enrollment shouldn't carry a human approver. "
-                    "Use approval_method='manual' if a reviewer signed off."
-                })
-            if self.approval_method == 'manual' and not self.approved_by_id:
-                raise ValidationError({
-                    'approved_by': "Manual approval requires the reviewing user."
-                })
-        else:
-            if self.approved_by_id or self.approved_at or self.approval_method:
-                raise ValidationError({
-                    'status': "approval_method/approved_by/approved_at should only be set "
-                              "when status is 'approved'."
-                })
-
-    def save(self, *args, **kwargs):
-        # default auto-approval on first save — only kicks in if nothing
-        # has already set status/approval_method (i.e. approve() wasn't
-        # called explicitly first)
-        if self._state.adding and self.status == 'pending' and not self.requires_manual_approval:
-            self.status = 'approved'
-            self.approval_method = 'system'
-            self.approved_by = None
-            self.approved_at = timezone.now()
-
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-    def approve(self, by_user):
-        """Manual approval — for electives by default, but also usable to
-        have a human confirm/override a core or common unit enrollment."""
-        self.status = 'approved'
-        self.approval_method = 'manual'
-        self.approved_by = by_user
-        self.approved_at = timezone.now()
-        self.save()
-
-    def reject(self, by_user, reason=""):
-        self.status = 'rejected'
-        self.approved_by = by_user
-        self.approved_at = timezone.now()
-        self.approval_method = None
-        self.save()
-
-
-class Result(BaseModelMixin):
-    type_result = [
-        ('C', 'Cat'),
-        ('E', 'Exams'),
-        ('P', 'Practicals'),
-        ('A', 'Assignments'),
-        ('Q', 'Quizzes'),
-        ('PR', 'Projects'),
-    ]
-
-    RESULT_STATE_CHOICES = [
-        ('draft', 'Draft'),
-        ('submitted', 'Submitted for approval'),
-        ('approved', 'Approved'),
-        ('published', 'Published'),
-        ('disputed', 'Disputed'),
-    ]
-
-    enrollment = models.ForeignKey(
-        Enrollment,
-        on_delete=models.PROTECT,
-        related_name='results'
-    )
-
-    entered_by = models.ForeignKey(
-        'User',
-        on_delete=models.DO_NOTHING
-    )  # non-repudiation field to track who touched record tracked by historical records
-
-    type = models.CharField(
-        choices=type_result,
-        default='C',
-        max_length=45
-    )
-
-    state = models.CharField(
-        choices=RESULT_STATE_CHOICES,
-        default='draft',
-        max_length=20,
-    )
-
-    score = models.DecimalField(
-        decimal_places=2,
-        max_digits=5
-    )
-
-    title = models.CharField(
-        max_length=124
-    )
-
-    history = HistoricalRecords()
-
-    def clean(self):
-
-        if self.type != 'E' and self.type != 'PR':
-            self.state = 'published'
-
-        return super().clean()
-
-    def save(self, *args, **kwargs):
-
-        self.full_clean()
-
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.enrollment.student} - {self.title}"

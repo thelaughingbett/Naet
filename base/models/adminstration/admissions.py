@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .base import BaseModelMixin
+from ..base import BaseModelMixin
 from django.db import models
 
 from django.conf import settings

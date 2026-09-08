@@ -14,7 +14,7 @@
 
 from django.db import models
 
-from .base import (
+from ..base import (
     BaseModelMixin,
     id_type_choices,
 )
@@ -41,20 +41,21 @@ class ParentGuardian(BaseModelMixin):
 
 class EmergencyContact(BaseModelMixin):
     RELATIONSHIP_CHOICES = [
-        ('father',        'Father'),
-        ('mother',        'Mother'),
+        # ('father',        'Father'),
+        # ('mother',        'Mother'),
+        ('parent', 'Parent'),
         ('guardian',      'Guardian'),
         ('spouse',        'Spouse'),
         ('child',         'Child'),
-        ('sibling',       'Sibling'),
-        ('grandparent',   'Grandparent'),
-        ('grandchild',    'Grandchild'),
+        # ('sibling',       'Sibling'),
+        # ('grandparent',   'Grandparent'),
+        # ('grandchild',    'Grandchild'),
         ('relative',      'Relative'),
-        ('coworker',      'Coworker'),
-        ('neighbor',      'Neighbor'),
-        ('caregiver',     'Caregiver'),
-        ('family-friend', 'Family Friend'),
-        ('friend',        'Friend'),
+        # ('coworker',      'Coworker'),
+        # ('neighbor',      'Neighbor'),
+        # ('caregiver',     'Caregiver'),
+        # ('family-friend', 'Family Friend'),
+        # ('friend',        'Friend'),
         ('other',         'Other'),
     ]
 

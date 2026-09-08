@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .base import BaseModelMixin
+from ..base import BaseModelMixin
 from django.db import models
 
 _RATING_CHOICES = [(i, i) for i in range(1, 6)]
 
 
 # TODO : implement  clean methods to make sure that students are touching what they are supposed to be touching
+
 class CourseEvaluation(BaseModelMixin):
     enrollment = models.OneToOneField(
         "Enrollment",

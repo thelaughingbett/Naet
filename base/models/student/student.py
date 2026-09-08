@@ -17,18 +17,18 @@ import datetime
 
 from django.db import models
 
-from .base import (
+from ..base import (
     BaseModelMixin,
     hasUserMixin,
     id_type_choices,
 )
-from ..managers import (
+from ...managers import (
     DeferredStudentManager,
     GraduatedStudentManager,
     ResidentStudentManager,
 )
 
-from .academic import Session
+from ..academic import Session
 
 KENYAN_COUNTIES = [
     ('001', 'Mombasa'),
@@ -392,8 +392,6 @@ CLASSIFICATION_CHOICES = [
     ('Restricted', 'Highly Sensitive / Dean of Students Review Only'),
 ]
 
-
-# --- MODELS ---
 
 class StudentMedicalProfile(models.Model):
     """

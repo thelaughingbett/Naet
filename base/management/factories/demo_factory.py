@@ -17,11 +17,11 @@ from factory.django import DjangoModelFactory
 
 from base.models import (
     Department,
-    DeptAdmin,
+
     Lecturer,
     Programme,
     School,
-    SchoolAdmin,
+
     Session,
     Student,
     Tclass,
@@ -51,18 +51,6 @@ class SchoolFactory(DjangoModelFactory):
         'School of Health Sciences',
         'School of Law & Social Sciences',
         'School of Pure & Applied Sciences',
-    ])
-
-
-class SchoolFactory(DjangoModelFactory):
-    class Meta:
-        model = School
-
-    name = factory.Iterator([
-        'School of Engineering & Architecture',
-        'School of Computing & Informatics',
-        'School of Business & Economics',
-        'School of Health Sciences',
     ])
 
 
@@ -309,22 +297,6 @@ class StudentFactory(DjangoModelFactory):
 class LecturerFactory(DjangoModelFactory):
     class Meta:
         model = Lecturer
-
-    user = factory.SubFactory(UserFactory)
-    department = factory.SubFactory(DepartmentFactory)
-
-
-class SchoolAdminFactory(DjangoModelFactory):
-    class Meta:
-        model = SchoolAdmin
-
-    user = factory.SubFactory(UserFactory)
-    school = factory.SubFactory(SchoolFactory)
-
-
-class DeptAdminFactory(DjangoModelFactory):
-    class Meta:
-        model = DeptAdmin
 
     user = factory.SubFactory(UserFactory)
     department = factory.SubFactory(DepartmentFactory)

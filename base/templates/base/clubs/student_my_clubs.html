@@ -1,0 +1,896 @@
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block head %}
+<title>My Memberships</title>
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
+<style>
+  /* ===== RESET & VARIABLES ===== */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --sidebar-w: 280px;
+    --topnav-h: 64px;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* ===== MEMBERSHIPS SPECIFIC ===== */
+  .membership-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .membership-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+  }
+  .membership-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+  .membership-card__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .membership-card__icon {
+    font-size: 2rem;
+    width: 48px;
+    height: 48px;
+    background: var(--navy);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .membership-card__name {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .membership-card__role {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .membership-card__role .role-badge {
+    font-size: 0.55rem;
+    font-weight: 600;
+    padding: 0.1rem 0.6rem;
+    border-radius: 30px;
+    text-transform: uppercase;
+  }
+  .role-badge.member {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .role-badge.leader {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .role-badge.head {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .role-badge.admin {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .membership-card__body {
+    padding: 1rem 1.2rem 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .membership-card__desc {
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 0.6rem;
+  }
+  .membership-card__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .membership-card__meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .membership-card__actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .membership-card__actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+  .empty-state i {
+    font-size: 3rem;
+    opacity: 0.3;
+    display: block;
+    margin-bottom: 0.8rem;
+  }
+  .empty-state h3 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.3s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: translateY(0) scale(1);
+  }
+  .modal__header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafcfc;
+    border-radius: var(--radius) var(--radius) 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--white);
+  }
+  .modal__header .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    line-height: 1;
+  }
+  .modal__header .close-btn:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal__body {
+    padding: 1.5rem;
+  }
+
+  .modal-club-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .modal-club-hero__icon {
+    font-size: 2.8rem;
+    background: linear-gradient(135deg, #0a2b3e 0%, #1a3a5c 100%);
+    color: white;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .modal-club-hero__info h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+  .modal-club-hero__info .category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .modal-club-hero__info .stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .modal-club-hero__info .stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .modal-description {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-leader-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 1.2rem;
+  }
+  .modal-leader-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .modal-leader-list li:last-child {
+    border-bottom: none;
+  }
+  .modal-leader-list .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .modal-leader-list .role {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+
+  .modal-schedule-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .modal-schedule-item:last-child {
+    border-bottom: none;
+  }
+  .modal-schedule-item .date {
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
+  .modal-schedule-item .time {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .modal-actions .btn {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .membership-grid {
+      grid-template-columns: 1fr;
+    }
+    .modal {
+      max-width: 95%;
+      margin: 0.5rem;
+    }
+    .modal-club-hero {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .modal-club-hero__icon {
+      width: 50px;
+      height: 50px;
+      font-size: 2rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions {
+      width: 100%;
+    }
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %} {% block body %}
+
+<div class="topbar">
+  <div class="topbar__left">
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-star"></i> My Memberships
+    </h1>
+    <span class="topbar__badge"
+      ><i class="fas fa-users"></i>
+      <span id="membershipCount">0</span> clubs</span
+    >
+  </div>
+  <div class="topbar__actions">
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📋 Memberships exported', 'info')"
+    >
+      <i class="fas fa-file-export"></i> Export
+    </button>
+    <a href="{% url 'base-club-directory' %}" class="btn btn-success">
+      <i class="fas fa-plus"></i> Explore More Clubs
+    </a>
+  </div>
+</div>
+
+<div class="membership-grid" id="membershipGrid"></div>
+
+<!-- ===== DETAILS MODAL ===== -->
+<div class="modal-overlay" id="detailsModal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal-club-hero" id="modalHero"></div>
+      <button class="close-btn" onclick="closeDetailsModal()">&times;</button>
+    </div>
+    <div class="modal__body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ===== EVENTS MODAL ===== -->
+<div class="modal-overlay" id="eventsModal">
+  <div class="modal">
+    <div class="modal__header">
+      <span style="font-weight: 700; font-size: 1.1rem"
+        ><i
+          class="fas fa-calendar-alt"
+          style="margin-right: 0.5rem; color: var(--navy)"
+        ></i>
+        <span id="eventsModalTitle">Events</span></span
+      >
+      <button class="close-btn" onclick="closeEventsModal()">&times;</button>
+    </div>
+    <div class="modal__body" id="eventsModalBody"></div>
+  </div>
+</div>
+
+{{ memberships_data|json_script:"membershipsData" }}
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}" />
+
+<script>
+  const MEMBERSHIPS = JSON.parse(
+    document.getElementById("membershipsData").textContent,
+  );
+  const CSRF_TOKEN = document.getElementById("csrfToken").value;
+  const LEAVE_URL = "{% url 'base-my-club-memberships' %}";
+
+  const CATEGORY_ICONS = {
+    academic: "🎓",
+    sports: "🏆",
+    cultural: "🎨",
+    religious: "🙏",
+    performing_arts: "🎭",
+    media: "📰",
+    community: "🤝",
+    environment: "🌿",
+    entrepreneurship: "💡",
+    political: "⚖️",
+    special_interest: "🏛️",
+  };
+
+  const ROLE_BADGE_CLASSES = {
+    member: "member",
+    leader: "leader",
+    head: "head",
+  };
+
+  const STATUS_LABELS_MUTED = {
+    pending: "⏳ Awaiting approval",
+    suspended: "⛔ Suspended",
+    inactive: "💤 Inactive",
+    alumni: "🎓 Alumni",
+  };
+
+  let currentModalMembership = null;
+
+  // ===== RENDER =====
+  function renderMemberships() {
+    const grid = document.getElementById("membershipGrid");
+    const countEl = document.getElementById("membershipCount");
+
+    countEl.textContent = MEMBERSHIPS.length;
+
+    if (MEMBERSHIPS.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-star"></i>
+          <h3>No memberships yet</h3>
+          <p style="color:var(--text-muted);">You haven't joined any clubs. Explore the directory to find your people!</p>
+          <a class="btn btn-primary" style="margin-top:1rem;" href="{% url 'base-club-directory' %}">
+            <i class="fas fa-compass"></i> Explore Clubs
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = MEMBERSHIPS.map((m) => {
+      const icon = CATEGORY_ICONS[m.category] || "🏛️";
+      const roleBadgeClass = ROLE_BADGE_CLASSES[m.role_type] || "member";
+      const statusNote = STATUS_LABELS_MUTED[m.status]
+        ? `<span>${STATUS_LABELS_MUTED[m.status]}</span>`
+        : "";
+      const canLeave = ["active", "pending", "inactive"].includes(m.status);
+
+      return `
+        <div class="membership-card">
+          <div class="membership-card__header">
+            <div class="membership-card__icon">${icon}</div>
+            <div style="flex:1; min-width:0;">
+              <div class="membership-card__name">${m.club_name}</div>
+              <div class="membership-card__role">
+                <span>${m.category_label}</span>
+                <span class="role-badge ${roleBadgeClass}">${m.role_label}</span>
+              </div>
+            </div>
+          </div>
+          <div class="membership-card__body">
+            <div class="membership-card__desc">${m.description}</div>
+            <div class="membership-card__meta">
+              <span><i class="fas fa-user"></i> ${m.member_count} members</span>
+              <span><i class="fas fa-calendar-alt"></i> ${m.events.length} upcoming</span>
+              <span><i class="fas fa-calendar-check"></i> Joined ${m.date_joined}</span>
+              ${statusNote}
+            </div>
+            <div class="membership-card__actions">
+              <button class="btn btn-primary btn-sm" onclick="openDetailsModal('${m.membership_id}')">
+                <i class="fas fa-info-circle"></i> Details
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="openEventsModal('${m.membership_id}')">
+                <i class="fas fa-calendar-alt"></i> Events
+              </button>
+              ${
+                canLeave
+                  ? `
+                <button class="btn btn-danger btn-sm" onclick="leaveClub('${m.membership_id}', '${m.club_name}')">
+                  <i class="fas fa-sign-out-alt"></i> Leave
+                </button>
+              `
+                  : ""
+              }
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // ===== DETAILS MODAL =====
+  function openDetailsModal(membershipId) {
+    const m = MEMBERSHIPS.find((x) => x.membership_id === membershipId);
+    if (!m) return;
+    currentModalMembership = m;
+
+    const icon = CATEGORY_ICONS[m.category] || "🏛️";
+
+    document.getElementById("modalHero").innerHTML = `
+      <div class="modal-club-hero__icon">${icon}</div>
+      <div class="modal-club-hero__info">
+        <h3>${m.club_name}</h3>
+        <div class="category">${m.category_label}</div>
+        <div class="stats">
+          <span><i class="fas fa-user"></i> ${m.member_count} members</span>
+          <span><i class="fas fa-calendar-alt"></i> ${m.events.length} events</span>
+          <span><i class="fas fa-check-circle" style="color:var(--green);"></i> ${m.status_label}</span>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("modalBody").innerHTML = `
+      <div class="modal-description">${m.description}</div>
+
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.6rem;"><i class="fas fa-crown" style="color:var(--gold); margin-right:0.4rem;"></i> Leaders</div>
+      <ul class="modal-leader-list">
+        ${
+          m.leaders.length === 0
+            ? '<li style="color:var(--text-muted); font-size:0.8rem;">No leadership on record yet.</li>'
+            : m.leaders
+                .map(
+                  (l) => `
+                <li>
+                  <span class="avatar">${l.name.charAt(0)}</span>
+                  <span>${l.name}</span>
+                  <span class="role">${l.role}</span>
+                </li>
+              `,
+                )
+                .join("")
+        }
+      </ul>
+
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.6rem;"><i class="fas fa-calendar-alt" style="color:var(--navy); margin-right:0.4rem;"></i> Upcoming Schedule</div>
+      ${
+        m.events.length === 0
+          ? '<p style="color:var(--text-muted); font-size:0.8rem;">No approved upcoming events.</p>'
+          : m.events
+              .slice(0, 3)
+              .map(
+                (e) => `
+              <div class="modal-schedule-item">
+                <span><strong>${e.title}</strong></span>
+                <span class="date">${e.date} <span class="time">· ${e.time}</span></span>
+              </div>
+            `,
+              )
+              .join("")
+      }
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeDetailsModal(); openEventsModal('${m.membership_id}')"><i class="fas fa-calendar-alt"></i> View All Events</button>
+        <button class="btn btn-outline" onclick="showToast('📤 Club information shared', 'info')"><i class="fas fa-share-alt"></i> Share</button>
+      </div>
+    `;
+
+    document.getElementById("detailsModal").classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDetailsModal() {
+    document.getElementById("detailsModal").classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  // ===== EVENTS MODAL =====
+  function openEventsModal(membershipId) {
+    const m = MEMBERSHIPS.find((x) => x.membership_id === membershipId);
+    if (!m) return;
+
+    document.getElementById("eventsModalTitle").textContent =
+      `${m.club_name} · Events`;
+
+    const body = document.getElementById("eventsModalBody");
+    body.innerHTML =
+      m.events.length === 0
+        ? '<p style="color:var(--text-muted); text-align:center; padding:1rem 0;">No approved upcoming events.</p>'
+        : m.events
+            .map(
+              (e) => `
+          <div class="modal-schedule-item">
+            <span><strong>${e.title}</strong></span>
+            <span class="date">${e.date} <span class="time">· ${e.time}</span></span>
+          </div>
+        `,
+            )
+            .join("");
+
+    document.getElementById("eventsModal").classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeEventsModal() {
+    document.getElementById("eventsModal").classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document
+    .getElementById("detailsModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) closeDetailsModal();
+    });
+  document
+    .getElementById("eventsModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) closeEventsModal();
+    });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeDetailsModal();
+      closeEventsModal();
+    }
+  });
+
+  // ===== LEAVE CLUB (real submission) =====
+  async function leaveClub(membershipId, name) {
+    if (!confirm(`Are you sure you want to leave "${name}"?`)) return;
+
+    const formData = new FormData();
+    formData.append("membership_id", membershipId);
+
+    try {
+      const res = await fetch(LEAVE_URL, {
+        method: "POST",
+        headers: { "X-CSRFToken": CSRF_TOKEN },
+        body: formData,
+      });
+      const data = await res.json();
+
+      showToast(
+        data.success ? `👋 ${data.message}` : `⚠️ ${data.message}`,
+        data.success ? "info" : "warning",
+      );
+
+      if (data.success) {
+        window.location.reload();
+      }
+    } catch (err) {
+      showToast("⚠️ Something went wrong. Please try again.", "warning");
+    }
+  }
+
+  // ===== TOAST =====
+  function showToast(message, type = "info") {
+    let toast = document.getElementById("appToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "appToast";
+      toast.className = "toast";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => toast.classList.remove("show"), 3000);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderMemberships();
+    document
+      .querySelector('.sidebar__link--toggle[data-target="clubs-sub"]')
+      ?.classList.add("active");
+  });
+
+  window.leaveClub = leaveClub;
+  window.showToast = showToast;
+  window.openDetailsModal = openDetailsModal;
+  window.closeDetailsModal = closeDetailsModal;
+  window.openEventsModal = openEventsModal;
+  window.closeEventsModal = closeEventsModal;
+</script>
+{% endblock body %}

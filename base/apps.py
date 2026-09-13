@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.conf import settings
 
+
 from base.modules.erp.tasks.examples.implementations import (
     DefermentNotificationTask,
     FeeAccountCreatedTask,

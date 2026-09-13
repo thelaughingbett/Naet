@@ -12,15 +12,16 @@ from base.views import ping
 
 urlpatterns = [
     path('ping/', ping, name='ping'),
-
-    path('',          include('base.urls.auth')),
-    path('',          include('base.urls.dashboard')),
+    path('', include('base.urls.auth')),
+    path('', include('base.urls.dashboard')),
     path('socials/',  include('base.urls.socials')),
     path('academics/', include('base.urls.academics')),
     path('admissions/', include('base.urls.admissions')),
     path('financials/', include('base.urls.financials')),
     path('timetable/', include('base.urls.timetable')),
     path('evaluations/', include('base.urls.evaluations')),
+    path('support/', include('base.urls.support')),
+    path('clubs-socities/', include('base.urls.clubs')),
 
     # 404-not-found
     # path('<path:unmatched_path>', views.catch_all_view, name='catch_all'),

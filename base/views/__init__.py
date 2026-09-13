@@ -18,3 +18,6 @@ from .misc import *  # noqa : F401,E402
 from .registration import *  # noqa : F401,E402
 from .socials import *  # noqa : F401,E402
 from .timetable import *  # noqa : F401,E402
+from .ticket import TicketView
+from .club_directory import ClubDirectoryView
+from .club_membership import MyMembershipsView

@@ -6,6 +6,112 @@
   href="{% static 'base/styles/academics/results/index.css' %}"
 />
 <title>Results & Transcript</title>
+<style>
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: #fff;
+    border-radius: 10px;
+    max-width: 420px;
+    width: 90%;
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    opacity: 0.6;
+  }
+  .modal-close:hover {
+    opacity: 1;
+  }
+  .modal-header h3 {
+    margin: 0 0 2px;
+  }
+  .modal-subtitle {
+    opacity: 0.6;
+    font-size: 0.85rem;
+  }
+  .modal-stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 16px 0;
+    text-align: center;
+  }
+  .modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .modal-action-btn {
+    text-align: left;
+  }
+  .modal-action-panel {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .modal-action-panel textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    resize: vertical;
+  }
+  .grade-table tbody tr.synthetic:not(.no-click) {
+    cursor: pointer;
+  }
+  .grade-table tbody tr.synthetic:not(.no-click):hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  .modal-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+  .modal-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+  .modal-file-item .remove-file {
+    cursor: pointer;
+    opacity: 0.6;
+    border: none;
+    background: none;
+    font-size: 1rem;
+  }
+  .modal-file-item .remove-file:hover {
+    opacity: 1;
+  }
+  .modal-file-error {
+    color: #c0392b;
+    font-size: 0.82rem;
+  }
+</style>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📊 Results &amp; Transcript</h1>
@@ -129,215 +235,465 @@
   </div>
 </div>
 
+<!-- Result Action Modal -->
+<div class="modal-overlay" id="resultModalOverlay">
+  <div class="modal-box" id="resultModalBox">
+    <button class="modal-close" id="resultModalClose">&times;</button>
+
+    <div class="modal-header">
+      <h3 id="modalUnitName">Unit Name</h3>
+      <span id="modalUnitCode" class="modal-subtitle"></span>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-stat-row">
+        <div>
+          <span class="info-label">CAT</span>
+          <div id="modalCat">—</div>
+        </div>
+        <div>
+          <span class="info-label">Exam</span>
+          <div id="modalExam">—</div>
+        </div>
+        <div>
+          <span class="info-label">Total</span>
+          <div id="modalTotal">—</div>
+        </div>
+        <div>
+          <span class="info-label">Grade</span>
+          <div id="modalGrade">—</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary modal-action-btn btn" id="challengeBtn">
+          ⚠️ Challenge This Result
+        </button>
+        <button class="btn-secondary modal-action-btn btn" id="resitBtn">
+          🔁 Request Resit / Supplementary
+        </button>
+      </div>
+
+      <!-- Placeholder panel, shown when an action is chosen -->
+      <div
+        id="modalActionPanel"
+        class="modal-action-panel"
+        style="display: none"
+      >
+        <label id="modalActionLabel" class="info-label"></label>
+        <textarea
+          id="modalActionReason"
+          rows="3"
+          placeholder="Briefly explain your reason..."
+        ></textarea>
+
+        <label class="info-label" style="margin-top: 6px">
+          Supporting documents <span style="opacity: 0.6">(optional)</span>
+        </label>
+        <input
+          type="file"
+          id="modalActionFiles"
+          multiple
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.doc,.docx"
+        />
+        <div id="modalFileList" class="modal-file-list"></div>
+        <div
+          id="modalFileError"
+          class="modal-file-error"
+          style="display: none"
+        ></div>
+
+        <button class="btn-secondary btn" id="modalActionSubmit">
+          Submit Request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-  // ── grade helpers ─────────────────────────────────────────────────────────────
-  function letterGrade(total) {
-    if (total >= 70) return "A";
-    if (total >= 60) return "B";
-    if (total >= 50) return "C";
-    if (total >= 40) return "D";
-    return "F";
-  }
-  function gradePoint(total) {
-    if (total >= 70) return 4.0;
-    if (total >= 60) return 3.0;
-    if (total >= 50) return 2.0;
-    if (total >= 40) return 1.0;
-    return 0.0;
-  }
-
-  // ── build data structure from rendered rows ───────────────────────────────────
-  // Groups raw <tr> rows by session key, then merges CAT+Exam per course.
-  // semesterData = { "2022/2023 - Sem 1": { merged: [...], rows: [...] }, ... }
-  let semesterData = {};
-
-  function buildSemesterData() {
-    const allRows = [...document.querySelectorAll("#resultsBody tr")];
-    const grouped = {}; // { session: { courseCode: { cat, exam, credits, row } } }
-
-    allRows.forEach((row) => {
-      const ses = row.dataset.session;
-      const code = row.dataset.coursecode;
-      const credits = parseInt(row.dataset.credits) || 0;
-      const score = parseFloat(row.dataset.score) || 0;
-      const type = row.dataset.type; // 'C' = CAT, 'E' = Exam
-
-      if (!grouped[ses]) grouped[ses] = {};
-      if (!grouped[ses][code]) {
-        grouped[ses][code] = {
-          cat: null,
-          exam: null,
-          credits,
-          name: row.dataset.coursename,
-          catRow: null,
-          examRow: null,
-        };
+      // ── grade helpers ─────────────────────────────────────────────────────────────
+      function letterGrade(total) {
+        if (total >= 70) return "A";
+        if (total >= 60) return "B";
+        if (total >= 50) return "C";
+        if (total >= 40) return "D";
+        return "F";
       }
-      if (type === "C") {
-        grouped[ses][code].cat = score;
-        grouped[ses][code].catRow = row;
+      function gradePoint(total) {
+        if (total >= 70) return 4.0;
+        if (total >= 60) return 3.0;
+        if (total >= 50) return 2.0;
+        if (total >= 40) return 1.0;
+        return 0.0;
       }
-      if (type === "E") {
-        grouped[ses][code].exam = score;
-        grouped[ses][code].examRow = row;
-      }
-    });
 
-    // Build merged virtual rows per session
-    semesterData = {};
-    for (const [ses, courses] of Object.entries(grouped)) {
-      const merged = [];
-      for (const [code, data] of Object.entries(courses)) {
-        const cat = data.cat ?? 0;
-        const exam = data.exam ?? 0;
-        const total = cat + exam;
-        merged.push({
-          code,
-          name: data.name,
-          credits: data.credits,
-          cat,
-          exam,
-          total,
+      // ── build data structure from rendered rows ───────────────────────────────────
+      // Groups raw <tr> rows by session key, then merges CAT+Exam per course.
+      // semesterData = { "2022/2023 - Sem 1": { merged: [...], rows: [...] }, ... }
+      let semesterData = {};
+
+      function buildSemesterData() {
+        const allRows = [...document.querySelectorAll("#resultsBody tr")];
+        const grouped = {}; // { session: { courseCode: { cat, exam, credits, row } } }
+
+        allRows.forEach((row) => {
+          const ses = row.dataset.session;
+          const code = row.dataset.coursecode;
+          const credits = parseInt(row.dataset.credits) || 0;
+          const score = parseFloat(row.dataset.score) || 0;
+          const type = row.dataset.type; // 'C' = CAT, 'E' = Exam
+
+          if (!grouped[ses]) grouped[ses] = {};
+          if (!grouped[ses][code]) {
+            grouped[ses][code] = {
+              cat: null,
+              exam: null,
+              credits,
+              name: row.dataset.coursename,
+              catRow: null,
+              examRow: null,
+            };
+          }
+          if (type === "C") {
+            grouped[ses][code].cat = score;
+            grouped[ses][code].catRow = row;
+          }
+          if (type === "E") {
+            grouped[ses][code].exam = score;
+            grouped[ses][code].examRow = row;
+          }
+        });
+
+        // Build merged virtual rows per session
+        semesterData = {};
+        for (const [ses, courses] of Object.entries(grouped)) {
+          const merged = [];
+          for (const [code, data] of Object.entries(courses)) {
+            const cat = data.cat ?? 0;
+            const exam = data.exam ?? 0;
+            const total = cat + exam;
+            merged.push({
+              code,
+              name: data.name,
+              credits: data.credits,
+              cat,
+              exam,
+              total,
+            });
+          }
+          semesterData[ses] = { merged };
+        }
+
+        // Hide all raw rows — we render synthesised rows instead
+        allRows.forEach((r) => (r.style.display = "none"));
+      }
+
+      // ── render one semester (or all) ──────────────────────────────────────────────
+      function renderSemester(semKey) {
+        const tbody = document.getElementById("resultsBody");
+        tbody.querySelectorAll("tr.synthetic").forEach((r) => r.remove());
+
+        let coursesToShow = [];
+        if (semKey === "all") {
+          for (const { merged } of Object.values(semesterData)) {
+            coursesToShow.push(...merged);
+          }
+        } else {
+          coursesToShow = semesterData[semKey]?.merged ?? [];
+        }
+
+        if (!coursesToShow.length) {
+          tbody.insertAdjacentHTML(
+            "beforeend",
+            `<tr class="synthetic no-click">
+                 <td colspan="7" style="text-align:center; padding:24px; opacity:0.5">
+                   No results for this semester.
+                 </td>
+               </tr>`,
+          );
+          renderGPA([]);
+          return;
+        }
+
+        // Reset the lookup map each render
+        window.currentRowData = {};
+
+        coursesToShow.forEach((c, i) => {
+          const grade = letterGrade(c.total);
+          window.currentRowData[i] = { ...c, grade };
+          tbody.insertAdjacentHTML(
+            "beforeend",
+            `
+              <tr class="synthetic" data-row-index="${i}">
+                <td>${c.code}</td>
+                <td>${c.name}</td>
+                <td>${c.credits}</td>
+                <td>${c.cat.toFixed(1)}</td>
+                <td>${c.exam.toFixed(1)}</td>
+                <td>${c.total.toFixed(1)}</td>
+                <td>${grade}</td>
+              </tr>
+            `,
+          );
+        });
+
+        renderGPA(coursesToShow);
+
+        // Attach click listeners to the freshly-rendered rows
+        tbody.querySelectorAll("tr.synthetic:not(.no-click)").forEach((row) => {
+          row.addEventListener("click", () => {
+            const idx = row.dataset.rowIndex;
+            openResultModal(window.currentRowData[idx]);
+          });
         });
       }
-      semesterData[ses] = { merged };
-    }
+      // ── GPA for the currently displayed set ──────────────────────────────────────
+      function renderGPA(courses) {
+        const credits = courses.reduce((s, c) => s + c.credits, 0);
+        const points = courses.reduce(
+          (s, c) => s + gradePoint(c.total) * c.credits,
+          0,
+        );
+        const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
 
-    // Hide all raw rows — we render synthesised rows instead
-    allRows.forEach((r) => (r.style.display = "none"));
-  }
-
-  // ── render one semester (or all) ──────────────────────────────────────────────
-  function renderSemester(semKey) {
-    const tbody = document.getElementById("resultsBody");
-    // Remove any previously injected synthetic rows
-    tbody.querySelectorAll("tr.synthetic").forEach((r) => r.remove());
-
-    let coursesToShow = [];
-    if (semKey === "all") {
-      for (const { merged } of Object.values(semesterData)) {
-        coursesToShow.push(...merged);
+        document.getElementById("gpaSummary").innerHTML = `
+            <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
+            <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
+          `;
       }
-    } else {
-      coursesToShow = semesterData[semKey]?.merged ?? [];
-    }
 
-    if (!coursesToShow.length) {
-      tbody.insertAdjacentHTML(
-        "beforeend",
-        `<tr class="synthetic">
-         <td colspan="7" style="text-align:center; padding:24px; opacity:0.5">
-           No results for this semester.
-         </td>
-       </tr>`,
-      );
-      renderGPA([]);
-      return;
-    }
+      // ── cumulative across ALL semesters ──────────────────────────────────────────
+      function calculateCumulative() {
+        const seen = {};
+        let totalCredits = 0,
+          totalPoints = 0;
 
-    coursesToShow.forEach((c) => {
-      const grade = letterGrade(c.total);
-      tbody.insertAdjacentHTML(
-        "beforeend",
-        `
-      <tr class="synthetic">
-        <td>${c.code}</td>
-        <td>${c.name}</td>
-        <td>${c.credits}</td>
-        <td>${c.cat.toFixed(1)}</td>
-        <td>${c.exam.toFixed(1)}</td>
-        <td>${c.total.toFixed(1)}</td>
-        <td>${grade}</td>
-      </tr>
-    `,
-      );
-    });
-
-    renderGPA(coursesToShow);
-  }
-
-  // ── GPA for the currently displayed set ──────────────────────────────────────
-  function renderGPA(courses) {
-    const credits = courses.reduce((s, c) => s + c.credits, 0);
-    const points = courses.reduce(
-      (s, c) => s + gradePoint(c.total) * c.credits,
-      0,
-    );
-    const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
-
-    document.getElementById("gpaSummary").innerHTML = `
-    <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
-    <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
-  `;
-  }
-
-  // ── cumulative across ALL semesters ──────────────────────────────────────────
-  function calculateCumulative() {
-    const seen = {};
-    let totalCredits = 0,
-      totalPoints = 0;
-
-    for (const { merged } of Object.values(semesterData)) {
-      merged.forEach((c) => {
-        if (!seen[c.code]) {
-          seen[c.code] = true;
-          totalCredits += c.credits;
-          totalPoints += gradePoint(c.total) * c.credits;
+        for (const { merged } of Object.values(semesterData)) {
+          merged.forEach((c) => {
+            if (!seen[c.code]) {
+              seen[c.code] = true;
+              totalCredits += c.credits;
+              totalPoints += gradePoint(c.total) * c.credits;
+            }
+          });
         }
-      });
-    }
 
-    const cgpa =
-      totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-    const n = parseFloat(cgpa);
-    const cls =
-      n >= 3.6
-        ? "First Class Honours"
-        : n >= 3.0
-          ? "Second Class Honours (Upper)"
-          : n >= 2.5
-            ? "Second Class Honours (Lower)"
-            : n >= 2.0
-              ? "Pass"
-              : "Probation";
+        const cgpa =
+          totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+        const n = parseFloat(cgpa);
+        const cls =
+          n >= 3.6
+            ? "First Class Honours"
+            : n >= 3.0
+              ? "Second Class Honours (Upper)"
+              : n >= 2.5
+                ? "Second Class Honours (Lower)"
+                : n >= 2.0
+                  ? "Pass"
+                  : "Probation";
 
-    document.getElementById("totalCredits").innerText = totalCredits;
-    document.getElementById("totalPoints").innerText = totalPoints.toFixed(2);
-    document.getElementById("cgpa").innerText = cgpa;
-    document.getElementById("classification").innerText = cls;
+        document.getElementById("totalCredits").innerText = totalCredits;
+        document.getElementById("totalPoints").innerText = totalPoints.toFixed(2);
+        document.getElementById("cgpa").innerText = cgpa;
+        document.getElementById("classification").innerText = cls;
+      }
+
+      let activeResultRow = null; // holds the course data currently open in the modal
+
+      function openResultModal(course) {
+        activeResultRow = course;
+
+        document.getElementById("modalUnitName").textContent = course.name;
+        document.getElementById("modalUnitCode").textContent = course.code;
+        document.getElementById("modalCat").textContent = course.cat.toFixed(1);
+        document.getElementById("modalExam").textContent = course.exam.toFixed(1);
+        document.getElementById("modalTotal").textContent = course.total.toFixed(1);
+        document.getElementById("modalGrade").textContent = course.grade;
+
+        document.getElementById("modalActionPanel").style.display = "none";
+        document.getElementById("modalActionReason").value = "";
+
+        document.getElementById("resultModalOverlay").classList.add("active");
+      }
+
+      function closeResultModal() {
+    document.getElementById("resultModalOverlay").classList.remove("active");
+    activeResultRow = null;
+    pendingFiles = [];
   }
 
-  // ── init ──────────────────────────────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", () => {
-    buildSemesterData();
-    calculateCumulative();
+      document
+        .getElementById("resultModalClose")
+        .addEventListener("click", closeResultModal);
+      document
+        .getElementById("resultModalOverlay")
+        .addEventListener("click", (e) => {
+          if (e.target.id === "resultModalOverlay") closeResultModal();
+        });
 
-    const activeSession =
-      document.getElementById("resultsBody").dataset.activesession;
-    const select = document.getElementById("semesterSelect");
+      // Mirrors ComplaintDocument.clean()'s allowed_extensions — keep these two in sync.
+      const ALLOWED_DOC_EXTENSIONS = [
+        ".pdf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".heic",
+        ".doc",
+        ".docx",
+      ];
+      const MAX_FILE_SIZE_MB = 25; // matches the "limit size e.g 25mbs" note in ComplaintDocument.clean()
 
-    // Pre-select the active session if it exists in the dropdown
-    const match = [...select.options].find((o) => o.value === activeSession);
-    if (match) {
-      select.value = activeSession;
-    } else {
-      select.value = "all";
-    }
+      let pendingFiles = []; // File objects staged for the currently open modal action
 
-    renderSemester(select.value);
+      function extOf(filename) {
+        const i = filename.lastIndexOf(".");
+        return i === -1 ? "" : filename.slice(i).toLowerCase();
+      }
 
-    select.addEventListener("change", (e) => renderSemester(e.target.value));
-  });
+      function renderFileList() {
+        const list = document.getElementById("modalFileList");
+        list.innerHTML = "";
+        pendingFiles.forEach((file, idx) => {
+          list.insertAdjacentHTML(
+            "beforeend",
+            `<div class="modal-file-item">
+                 <span>📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                 <button type="button" class="remove-file" data-idx="${idx}">&times;</button>
+               </div>`,
+          );
+        });
+        list.querySelectorAll(".remove-file").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            pendingFiles.splice(Number(btn.dataset.idx), 1);
+            renderFileList();
+          });
+        });
+      }
 
-  document
-    .getElementById("printBtn")
-    .addEventListener("click", () =>
-      alert("📄 PDF transcript download coming soon."),
-    );
-  document.getElementById("refreshBtn").addEventListener("click", () => {
-    buildSemesterData();
-    calculateCumulative();
-    renderSemester(document.getElementById("semesterSelect").value);
-  });
+      document
+        .getElementById("modalActionFiles")
+        .addEventListener("change", (e) => {
+          const errorBox = document.getElementById("modalFileError");
+          errorBox.style.display = "none";
+
+          const incoming = Array.from(e.target.files);
+          const rejected = [];
+
+          incoming.forEach((file) => {
+            const ext = extOf(file.name);
+            if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
+              rejected.push(`${file.name} (unsupported type)`);
+              return;
+            }
+            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+              rejected.push(`${file.name} (over ${MAX_FILE_SIZE_MB}MB)`);
+              return;
+            }
+            pendingFiles.push(file);
+          });
+
+          if (rejected.length) {
+            errorBox.textContent = `Skipped: ${rejected.join(", ")}. Allowed: ${ALLOWED_DOC_EXTENSIONS.join(", ")}.`;
+            errorBox.style.display = "block";
+          }
+
+          e.target.value = ""; // allow re-selecting the same file if removed then re-added
+          renderFileList();
+        });
+
+      function showActionPanel(kind) {
+        const panel = document.getElementById("modalActionPanel");
+        const label = document.getElementById("modalActionLabel");
+        panel.dataset.actionKind = kind;
+        label.textContent =
+          kind === "challenge"
+            ? "Reason for challenging this result:"
+            : "Reason for requesting a resit/supplementary:";
+        panel.style.display = "flex";
+
+        pendingFiles = [];
+        document.getElementById("modalFileError").style.display = "none";
+        renderFileList();
+      }
+
+      document
+        .getElementById("challengeBtn")
+        .addEventListener("click", () => showActionPanel("challenge"));
+
+      document
+        .getElementById("resitBtn")
+        .addEventListener("click", () => showActionPanel("resit"));
+
+      document.getElementById("modalActionSubmit").addEventListener("click", () => {
+        const kind = document.getElementById("modalActionPanel").dataset.actionKind;
+        const reason = document.getElementById("modalActionReason").value.trim();
+
+        if (!reason) {
+          alert("Please provide a reason before submitting.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("course_code", activeResultRow.code);
+        formData.append("action", kind); // 'challenge' | 'resit'
+        formData.append("reason", reason);
+        pendingFiles.forEach((file) => formData.append("documents", file));
+
+    {% comment "Optional Note: Disabled this section during debugging" %}
+      // TODO: replace with real POST once backend endpoint exists, e.g.:
+        // fetch("{% url 'results:submit_result_action' %}", {
+        //   method: "POST",
+        //   headers: { "X-CSRFToken": getCookie("csrftoken") }, // no Content-Type — browser sets multipart boundary
+        //   body: formData,
+        // }).then(...)
+    {% endcomment %}
+
+
+
+
+        console.log("Result action submitted:", {
+          course_code: activeResultRow.code,
+          action: kind,
+          reason,
+          files: pendingFiles.map((f) => f.name),
+        });
+
+        alert("✅ Your request has been recorded (backend wiring pending).");
+        closeResultModal();
+      });
+      // ── init ──────────────────────────────────────────────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        buildSemesterData();
+        calculateCumulative();
+
+        const activeSession =
+          document.getElementById("resultsBody").dataset.activesession;
+        const select = document.getElementById("semesterSelect");
+
+        // Pre-select the active session if it exists in the dropdown
+        const match = [...select.options].find((o) => o.value === activeSession);
+        if (match) {
+          select.value = activeSession;
+        } else {
+          select.value = "all";
+        }
+
+        renderSemester(select.value);
+
+        select.addEventListener("change", (e) => renderSemester(e.target.value));
+      });
+
+      document
+        .getElementById("printBtn")
+        .addEventListener("click", () =>
+          alert("📄 PDF transcript download coming soon."),
+        );
+      document.getElementById("refreshBtn").addEventListener("click", () => {
+        buildSemesterData();
+        calculateCumulative();
+        renderSemester(document.getElementById("semesterSelect").value);
+      });
 </script>
 {% endblock %}

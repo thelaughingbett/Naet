@@ -1,0 +1,1430 @@
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block head %}
+<!-- <link rel="stylesheet" href="{% static 'base/styles/support/tickets.css' %}" /> -->
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
+<style>
+  :root {
+    --navy: #0a2540;
+    --navy-light: #1a3a5c;
+    --maroon: #9e2a2b;
+    --maroon-hover: #b13e3f;
+    --blue-card: #1f6392;
+    --green: #1e6f3f;
+    --gold: #fbbf24;
+    --sidebar-w: 280px;
+    --topnav-h: 64px;
+    --font: "Inter", "Segoe UI", sans-serif;
+    --text: #1e293b;
+    --text-muted: #5a6874;
+    --border: #e9edf2;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .topbar__hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--navy);
+    cursor: pointer;
+    padding: 0.3rem;
+  }
+  .topbar__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .topbar__badge {
+    background: var(--navy);
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .topbar__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover {
+    background: #14532d;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: var(--bg);
+  }
+  .btn-danger {
+    background: #b91c1c;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.65rem;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .btn-sm.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .btn-sm.primary:hover {
+    background: var(--navy-light);
+  }
+  .btn-sm.success {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn-sm.success:hover {
+    background: #14532d;
+  }
+  .btn-sm.danger {
+    background: #b91c1c;
+    color: white;
+    border-color: #b91c1c;
+  }
+  .btn-sm.danger:hover {
+    background: #991b1b;
+  }
+  .btn-sm.warning {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+  }
+  .btn-sm.warning:hover {
+    background: #b45309;
+  }
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.2rem 1rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .stat-card__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin-top: 0.2rem;
+  }
+  .stat-card__icon {
+    float: right;
+    font-size: 1.6rem;
+    color: rgba(10, 37, 64, 0.08);
+    margin-top: -0.2rem;
+  }
+
+  /* ===== TICKET GRID — full width per request, no side column ===== */
+  .ticket-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .ticket-side-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ===== TICKET LIST ROWS ===== */
+  .ticket-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.2rem;
+    border-bottom: 1px solid var(--border, #e9edf2);
+    font-size: 0.85rem;
+    gap: 0.6rem;
+  }
+  .ticket-item:last-child {
+    border-bottom: none;
+  }
+  .ticket-item:hover {
+    background: #f8fafc;
+  }
+  .ticket-item .info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .ticket-meta {
+    font-size: 0.68rem;
+    color: var(--text-muted, #5a6874);
+  }
+  .ticket-item .actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  /* Status values come straight from Complaint.STATUS_CHOICES:
+   Open, In_Progress, Escalated, Resolved — lowercased in the template
+   with |lower, so 'In_Progress' becomes 'in_progress' (underscore
+   preserved, NOT converted to a hyphen). */
+  .status-badge {
+    font-size: 0.58rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 30px;
+    text-transform: uppercase;
+  }
+  .status-open {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-in_progress {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-escalated {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .status-resolved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  /* Priority values come from Complaint.PRIORITY_CHOICES:
+   Low, Medium, High, Critical (NOT the mockup's Low/Normal/High/Urgent). */
+  .priority-badge {
+    font-size: 0.58rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    background: #f1f5f9;
+  }
+  .priority-low {
+    color: #5a6874;
+  }
+  .priority-medium {
+    color: #92400e;
+  }
+  .priority-high {
+    color: #1e40af;
+  }
+  .priority-critical {
+    color: #991b1b;
+    background: #fee2e2;
+  }
+
+  .document-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 30px;
+    background: #dbeafe;
+    color: #1e40af;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+  }
+  .empty-state__icon {
+    font-size: 2.4rem;
+    opacity: 0.35;
+    margin-bottom: 0.6rem;
+  }
+  .empty-state__title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .empty-state__body {
+    color: var(--text-muted, #5a6874);
+    font-size: 0.82rem;
+    max-width: 380px;
+    margin: 0 auto 1.2rem;
+    line-height: 1.6;
+  }
+
+  /* ===== QUICK ACTIONS ===== */
+  .quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.8rem 1.2rem 1.2rem;
+  }
+  .quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border, #e9edf2);
+    background: var(--white, #fff);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+  }
+  .quick-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  /* ===== CATEGORY BREAKDOWN ===== */
+  .category-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.8rem 1.2rem 1.2rem;
+  }
+  .category-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border, #e9edf2);
+    font-size: 0.78rem;
+  }
+  .category-item:last-child {
+    border-bottom: none;
+  }
+  .category-item .cat-count {
+    font-weight: 600;
+    color: var(--navy, #0a2540);
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 1.2rem;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border, #e9edf2);
+    border-radius: 8px;
+    background: var(--white, #fff);
+    font-size: 0.7rem;
+    text-decoration: none;
+    color: var(--text, #1e293b);
+  }
+  .page-btn.active {
+    background: var(--navy, #0a2540);
+    color: white;
+    border-color: var(--navy, #0a2540);
+  }
+  .page-btn[aria-disabled="true"] {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .page-info {
+    font-size: 0.7rem;
+    color: var(--text-muted, #5a6874);
+    padding: 0 0.5rem;
+  }
+
+  /* ===== MODALS — included in case portal.css doesn't define these ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white, #fff);
+    border-radius: var(--radius, 14px);
+    max-width: 620px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border, #e9edf2);
+  }
+  .modal__header h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted, #5a6874);
+  }
+  .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border, #e9edf2);
+  }
+
+  .detail-row {
+    display: flex;
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row .label {
+    font-weight: 600;
+    min-width: 130px;
+    color: var(--text-muted, #5a6874);
+    flex-shrink: 0;
+  }
+  .detail-row--block {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .detail-row--block .label {
+    margin-bottom: 0.2rem;
+  }
+  .detail-row--block .value {
+    line-height: 1.6;
+  }
+
+  .doc-section {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border, #e9edf2);
+  }
+  .doc-title {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted, #5a6874);
+    margin-bottom: 0.4rem;
+  }
+  .doc-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .doc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.7rem;
+    background: #f1f5f9;
+    border-radius: 30px;
+    font-size: 0.72rem;
+    border: 1px solid var(--border, #e9edf2);
+    text-decoration: none;
+    color: var(--text, #1e293b);
+  }
+
+  .escalation-step {
+    font-size: 0.78rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .escalation-step:last-child {
+    border-bottom: none;
+  }
+
+  /* File upload picker list — file-upload-area itself assumed to come
+   from portal.css (per document 24's usage), this bit (the selected-
+   file pills) is new to this page. */
+  .file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+  .file-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    background: #f1f5f9;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border, #e9edf2);
+  }
+
+  .btn-sm {
+    padding: 0.2rem 0.7rem;
+    font-size: 0.68rem;
+    border-radius: 30px;
+    border: 1px solid var(--border, #e9edf2);
+    background: var(--white, #fff);
+    cursor: pointer;
+  }
+  .btn-sm:hover {
+    background: var(--bg, #f1f5f9);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-overlay .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 620px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: 0.25s ease;
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+  .modal .modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+  .modal .modal__close:hover {
+    color: var(--text);
+  }
+  .modal .modal__body {
+    margin-bottom: 1rem;
+  }
+  .modal .modal__body .detail-row {
+    display: flex;
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .modal .modal__body .detail-row:last-child {
+    border-bottom: none;
+  }
+  .modal .modal__body .detail-row .label {
+    font-weight: 600;
+    min-width: 140px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .modal .modal__body .detail-row .value {
+    color: var(--text);
+  }
+  .modal .modal__body .doc-section {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .modal .modal__body .doc-section .doc-title {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .modal .modal__body .doc-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .modal .modal__body .doc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    background: #f1f5f9;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .modal .modal__body .doc-pill i {
+    font-size: 0.6rem;
+  }
+
+  .modal .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: var(--white);
+    transition: 0.2s;
+    color: var(--text);
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+  .form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .form-row .form-group {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* File upload */
+  .file-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #fafcfc;
+  }
+  .file-upload-area:hover {
+    border-color: var(--navy);
+    background: #f1f5f9;
+  }
+  .file-upload-area i {
+    font-size: 1.4rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+  .file-upload-area .file-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .file-upload-area .file-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-top: 0.1rem;
+  }
+  .file-upload-area input[type="file"] {
+    display: none;
+  }
+
+  .file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+  .file-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    background: #f1f5f9;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border);
+  }
+  .file-pill i {
+    font-size: 0.6rem;
+  }
+  .file-pill .remove-file {
+    cursor: pointer;
+    color: #991b1b;
+    margin-left: 0.2rem;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: var(--green);
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+  .toast.info {
+    background: var(--navy);
+  }
+
+  /* ===== TOAST — content comes from Django messages, see script block ===== */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy, #0a2540);
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+    z-index: 2000;
+    font-size: 0.85rem;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.success {
+    background: #1e6f3f;
+  }
+  .toast.warning {
+    background: #92400e;
+  }
+
+  /* Hidden marker elements the script reads Django messages off of —
+   never actually shown, .server-message stays display:none always. */
+  .server-message {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .detail-row {
+      flex-direction: column;
+    }
+    .detail-row .label {
+      min-width: auto;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 1024px) {
+    .ticket-grid {
+      grid-template-columns: 1fr;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .topbar__hamburger {
+      display: block;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+    .topbar__title {
+      font-size: 1.2rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .topbar__actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-row {
+      flex-direction: column;
+    }
+    .modal .modal__body .detail-row {
+      flex-direction: column;
+    }
+    .modal .modal__body .detail-row .label {
+      min-width: auto;
+    }
+  }
+</style>
+<title>Raise a Ticket</title>
+{% endblock %} {% block body %}
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar__left">
+    <h1 class="topbar__title" id="pageTitle">
+      <i class="fas fa-ticket-alt"></i> Raise a Ticket
+    </h1>
+    <span class="topbar__badge"
+      ><i class="fas fa-clock"></i>
+      <span id="pendingCount">{{ stats.open|add:stats.in_progress }}</span>
+      open</span
+    >
+  </div>
+  <div class="topbar__actions">
+    <button
+      class="btn btn-outline"
+      onclick="showToast('📊 Ticket report exported', 'info')"
+    >
+      <i class="fas fa-download"></i> Export
+    </button>
+    <button class="btn btn-success" onclick="openModal('createModal')">
+      <i class="fas fa-plus"></i> New Ticket
+    </button>
+  </div>
+</div>
+
+{% if messages %} {% for message in messages %}
+<div class="server-message {{ message.tags }}" data-toast="{{ message }}"></div>
+{% endfor %} {% endif %}
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <i
+      class="fas fa-ticket-alt stat-card__icon"
+      style="color: var(--blue-card)"
+    ></i>
+    <div class="stat-card__number" id="statTotal">{{ stats.total }}</div>
+    <div class="stat-card__label">Total Tickets</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-clock stat-card__icon" style="color: var(--gold)"></i>
+    <div class="stat-card__number">{{ stats.open }}</div>
+    <div class="stat-card__label">Open</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-spinner stat-card__icon"
+      style="color: var(--blue-card)"
+    ></i>
+    <div class="stat-card__number">{{ stats.in_progress }}</div>
+    <div class="stat-card__label">In Progress</div>
+  </div>
+  <div class="stat-card">
+    <i
+      class="fas fa-check-circle stat-card__icon"
+      style="color: var(--green)"
+    ></i>
+    <div class="stat-card__number">{{ stats.resolved }}</div>
+    <div class="stat-card__label">Resolved</div>
+  </div>
+</div>
+
+<!-- ===== TICKET LIST — full width ===== -->
+<div class="ticket-grid">
+  <!-- Left: Ticket List -->
+  <div class="card">
+    <div class="card__header">
+      <span
+        ><i
+          class="fas fa-list"
+          style="color: var(--text-muted); margin-right: 0.4rem"
+        ></i>
+        My Tickets</span
+      >
+      <span
+        style="font-size: 0.65rem; color: var(--text-muted)"
+        id="ticketCount"
+      >
+        {{ stats.total }} entr{{ stats.total|pluralize:"y,ies" }}</span
+      >
+    </div>
+    <div class="card__body" id="ticketList">
+      {% if page_obj.object_list %} {% for complaint in page_obj %}
+      <div class="ticket-item">
+        <div class="info">
+          <strong>{{ complaint.subject }}</strong>
+          <span class="ticket-meta">{{ complaint.get_category_display }}</span>
+          <span class="priority-badge priority-{{ complaint.priority|lower }}">
+            {{ complaint.get_priority_display }}
+          </span>
+          <span class="status-badge status-{{ complaint.status|lower }}">
+            {{ complaint.get_status_display }}
+          </span>
+          {% if complaint.documents.count %}
+          <span
+            class="document-tag"
+            onclick="openModal('viewModal-{{ complaint.record_id }}')"
+          >
+            📎 {{ complaint.documents.count }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="actions">
+          <button
+            class="btn-sm"
+            type="button"
+            onclick="openModal('viewModal-{{ complaint.record_id }}')"
+          >
+            👁️ View
+          </button>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <!-- ===== EMPTY STATE ===== -->
+      <div class="empty-state">
+        <div class="empty-state__icon">🎫</div>
+        <div class="empty-state__title">No tickets raised yet</div>
+        <p class="empty-state__body">
+          Facing an issue with academics, hostel, finance, or anything else on
+          campus? Raise a ticket and the right office will pick it up.
+        </p>
+        <button
+          class="btn btn-primary"
+          type="button"
+          onclick="openModal('createModal')"
+        >
+          ➕ Raise your first ticket
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    <!-- Pagination inside card -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div
+      class="pagination"
+      id="ticketPagination"
+      style="padding: 0.5rem 1.2rem 0.8rem; margin-top: 0"
+    >
+      {% if page_obj.has_previous %}
+      <a class="page-btn" href="?page={{ page_obj.previous_page_number }}">‹</a>
+      {% else %}
+      <span class="page-btn" aria-disabled="true">‹</span>
+      {% endif %} {% for num in page_obj.paginator.page_range %}
+      <a
+        class="page-btn {% if num == page_obj.number %}active{% endif %}"
+        href="?page={{ num }}"
+        >{{ num }}</a
+      >
+      {% endfor %} {% if page_obj.has_next %}
+      <a class="page-btn" href="?page={{ page_obj.next_page_number }}">›</a>
+      {% else %}
+      <span class="page-btn" aria-disabled="true">›</span>
+      {% endif %}
+
+      <span class="page-info"
+        >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
+      >
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Quick Actions & Categories -->
+  <div>
+    <div class="card" style="margin-bottom: 1.2rem">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-bolt"
+            style="color: var(--gold); margin-right: 0.4rem"
+          ></i>
+          Quick Actions</span
+        >
+      </div>
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="openModal('createModal')">
+          <i class="fas fa-plus-circle"></i> Raise New Ticket
+        </button>
+        <button
+          class="quick-action-btn"
+          onclick="showToast('📋 Ticket policy opened', 'info')"
+        >
+          <i class="fas fa-file-alt"></i> View Ticket Policy
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="card">
+      <div class="card__header">
+        <span
+          ><i
+            class="fas fa-chart-simple"
+            style="color: var(--text-muted); margin-right: 0.4rem"
+          ></i>
+          Category Breakdown</span
+        >
+      </div>
+      <div class="category-breakdown" id="categoryBreakdown">
+        {% for row in category_breakdown %}
+        <div class="category-item">
+          <span class="cat-name">{{ row.label }}</span>
+          <span class="cat-count">{{ row.count }} ({{ row.percent }}%)</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CREATE TICKET MODAL -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>🎫 Raise a Ticket</h2>
+      <button
+        class="modal__close"
+        type="button"
+        onclick="closeModal('createModal')"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <form
+        method="post"
+        action="{% url 'base-ticket' %}"
+        enctype="multipart/form-data"
+      >
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label>Subject</label>
+          <input
+            type="text"
+            name="subject"
+            placeholder="Brief summary of your issue"
+            required
+            maxlength="255"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category</label>
+            <select name="category" required>
+              {% for value, label in category_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select name="priority">
+              {% for value, label in priority_choices %}
+              <!-- prettier-ignore -->
+              <option value="{{ value }}" {% if value == 'Medium' %}selected{% endif %}>
+              {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea
+            name="description"
+            placeholder="Describe your issue in detail..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Attach Supporting Documents</label>
+          <div
+            class="file-upload-area"
+            onclick="document.getElementById('fileInput').click()"
+          >
+            <div class="file-text">
+              Click to upload or drag &amp; drop files
+            </div>
+            <div class="file-name" id="fileDisplay">No files selected</div>
+            <input
+              type="file"
+              id="fileInput"
+              name="documents"
+              multiple
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.doc,.docx"
+            />
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <div class="modal__footer" style="border-top: none; padding-top: 0">
+          <button
+            type="submit"
+            class="btn-success btn"
+            style="flex: 1; justify-content: center"
+          >
+            📨 Submit Ticket
+          </button>
+          <button
+            type="button"
+            class="btn-outline btn"
+            style="flex: 1; justify-content: center"
+            onclick="closeModal('createModal')"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VIEW TICKET MODALS — one per ticket, server-rendered -->
+<!-- ============================================================ -->
+{% for complaint in page_obj %}
+<div class="modal-overlay" id="viewModal-{{ complaint.record_id }}">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>👁️ {{ complaint.subject }}</h2>
+      <button
+        class="modal__close"
+        type="button"
+        onclick="closeModal('viewModal-{{ complaint.record_id }}')"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="detail-row">
+        <span class="label">Category</span>
+        <span class="value">{{ complaint.get_category_display }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Priority</span>
+        <span
+          class="value priority-badge priority-{{ complaint.priority|lower }}"
+        >
+          {{ complaint.get_priority_display }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Status</span>
+        <span class="value">
+          <span class="status-badge status-{{ complaint.status|lower }}">
+            {{ complaint.get_status_display }}
+          </span>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Opened</span>
+        <span class="value">{{ complaint.date_opened|date:"d M Y, H:i" }}</span>
+      </div>
+      {% if complaint.status == 'Escalated' %}
+      <div class="detail-row">
+        <span class="label">Currently with</span>
+        <span class="value">{{ complaint.get_current_level_display }}</span>
+      </div>
+      {% endif %}
+
+      <div class="detail-row detail-row--block">
+        <span class="label">Description</span>
+        <span class="value">{{ complaint.description }}</span>
+      </div>
+
+      {% if complaint.status == 'Resolved' and complaint.resolution_remarks %}
+      <div class="detail-row detail-row--block">
+        <span class="label">Resolution</span>
+        <span class="value">{{ complaint.resolution_remarks }}</span>
+      </div>
+      {% endif %} {% if complaint.documents.all %}
+      <div class="doc-section">
+        <div class="doc-title">📎 Attached Documents</div>
+        <div class="doc-list">
+          {% for doc in complaint.documents.all %}
+          <a
+            class="doc-pill"
+            href="{{ doc.file.url }}"
+            target="_blank"
+            rel="noopener"
+          >
+            📄 {{ doc.original_name }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %} {% if complaint.escalation_history.all %}
+      <div class="doc-section">
+        <div class="doc-title">📈 Escalation History</div>
+        {% for step in complaint.escalation_history.all %}
+        <div class="escalation-step">
+          {{ step.escalated_from_level }} → {{ step.escalated_to_level }}
+          <span class="ticket-meta">
+            ({{ step.date_escalated|date:"d M Y" }}{% if step.is_automatic %},
+            auto{% endif %})
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="modal__footer">
+      <button
+        class="btn-outline btn"
+        type="button"
+        onclick="closeModal('viewModal-{{ complaint.record_id }}')"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      if (e.target === el) closeModal(el.id);
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document
+        .querySelectorAll(".modal-overlay.active")
+        .forEach((el) => closeModal(el.id));
+    }
+  });
+
+  // ===== FILE PICKER DISPLAY (native form submit — no fetch/AJAX) =====
+  const fileInput = document.getElementById("fileInput");
+  if (fileInput) {
+    fileInput.addEventListener("change", function () {
+      const display = document.getElementById("fileDisplay");
+      const list = document.getElementById("fileList");
+      const files = Array.from(this.files);
+      if (files.length === 0) {
+        display.textContent = "No files selected";
+        list.innerHTML = "";
+        return;
+      }
+      display.textContent = `${files.length} file(s) selected`;
+      list.innerHTML = files
+        .map(
+          (f) => `
+        <span class="file-pill">📄 ${f.name}</span>
+      `,
+        )
+        .join("");
+    });
+  }
+
+  // ===== TOAST — driven by Django messages, not fabricated actions =====
+  function showToast(message, type) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.className = "toast show" + (type ? " " + type : "");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  document.querySelectorAll(".server-message").forEach((el) => {
+    const type = el.classList.contains("error") ? "warning" : "success";
+    showToast(el.dataset.toast, type);
+  });
+</script>
+
+{% endblock %}

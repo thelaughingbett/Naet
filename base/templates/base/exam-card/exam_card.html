@@ -268,8 +268,8 @@
       immediately. {% for clash in clashes %}
       <div class="clash-row">
         <!-- prettier-ignore -->
-        {{ clash.session_a.curriculum.course.course_code }} clashes with
-        {{ clash.session_b.curriculum.course.course_code }} on 
+        {{ clash.session_a.curriculum.syllabus.course.course_code }} clashes with
+        {{ clash.session_b.curriculum.syllabus.course.course_code }} on 
         {{  clash.session_a.date|date:"d M Y" }} at {{ clash.session_a.time_slot }}
       </div>
       {% endfor %}
@@ -324,8 +324,10 @@
         {% for exam in exam_schedule %}
         <tr>
           <td>{{ exam.date|date:"d M Y" }}</td>
-          <td class="mono">{{ exam.curriculum.course.course_code|upper }}</td>
-          <td>{{ exam.curriculum.course.course_name }}</td>
+          <td class="mono">
+            {{ exam.curriculum.syllabus.course.course_code|upper }}
+          </td>
+          <td>{{ exam.curriculum.syllabus.course.course_name }}</td>
           <td class="mono">{{ exam.time_slot }}</td>
           <td>
             <!-- prettier-ignore -->
@@ -334,8 +336,14 @@
           </td>
           <td>
             <!-- prettier-ignore -->
-            {% for ev in exam.venues.all %} {{ ev.invigilator.user.full_name }}{% if not forloop.last %},<br />
-            {% endif %} {% empty %} TBA {% endfor %}
+            {% for ev in exam.venues.all %} 
+            {% for inv in ev.invigilators.all %}
+            {{ inv.user.full_name }}
+            {% if not forloop.last %},
+             {% endif %} 
+             {% empty %} TBA {% endfor %}
+              {% if not forloop.last %}
+            <br />{% endif %} {% empty %} TBA {% endfor %}
           </td>
           <td class="sig-col">
             <div class="sig-line"></div>

@@ -210,6 +210,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+bin/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
@@ -219,4 +220,3 @@ cython_debug/
 #.idea/
 
 # End of https://www.toptal.com/devel
-bin/

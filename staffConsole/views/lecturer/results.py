@@ -15,8 +15,9 @@ from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
+from django.db.models import Count
 
-from base.models import Curriculum, Enrollment, Result, Session
+from base.models import Curriculum, Enrollment, Result, Session, RESULT_TYPE_CHOICES
 from staffConsole.views.base import RoleRequiredMixin
 
 
@@ -50,6 +51,8 @@ def _build_assessment_list(curriculum):
     Returns [ { title, type, type_display, score_count, total_students } ]
     sorted by earliest created_at within the group.
     """
+    from django.db.models import Count
+
     enrollments = list(
         Enrollment.objects.filter(curriculum=curriculum, status='approved')
     )
@@ -60,26 +63,21 @@ def _build_assessment_list(curriculum):
         Result.objects
         .filter(enrollment_id__in=enrollment_ids)
         .values('title', 'type')
-        .distinct()
+        .annotate(score_count=Count('record_id'))
     )
 
+    type_display = dict(RESULT_TYPE_CHOICES)
     assessments = []
-    type_display = dict(Result.type_result)
     for r in results:
-        score_count = Result.objects.filter(
-            enrollment_id__in=enrollment_ids,
-            title=r['title'],
-            type=r['type'],
-        ).count()
         assessments.append({
-            # synthetic stable ID
             'id':           f"{r['type']}::{r['title']}",
             'title':        r['title'],
             'type':         r['type'],
             'type_display': type_display.get(r['type'], r['type']),
-            'score_count':  score_count,
+            'score_count':  r['score_count'],
             'total':        total,
         })
+
     return assessments
 
 
@@ -193,7 +191,7 @@ class EnterResultsView(RoleRequiredMixin, View):
             'selected_assessment':  selected_assessment,
             'student_rows':         student_rows,
             'student_rows_json':    json.dumps(student_rows),
-            'result_type_choices':  Result.type_result,
+            'result_type_choices':  RESULT_TYPE_CHOICES,
             'stats': {
                 'total':   total,
                 'scored':  scored,
@@ -327,7 +325,6 @@ class SaveScoreAjaxView(RoleRequiredMixin, View):
 # ─────────────────────────────────────────────────────────────────────────────
 # AJAX — add assessment (just validates; rows are created on first score save)
 # ─────────────────────────────────────────────────────────────────────────────
-
 class AddAssessmentAjaxView(RoleRequiredMixin, View):
     """
     POST /lecturer/results/add-assessment/
@@ -350,7 +347,7 @@ class AddAssessmentAjaxView(RoleRequiredMixin, View):
         if not title:
             return JsonResponse({'error': 'Title is required'}, status=400)
 
-        valid_types = [t[0] for t in Result.type_result]
+        valid_types = [t[0] for t in RESULT_TYPE_CHOICES]
         if result_type not in valid_types:
             return JsonResponse({'error': f'Invalid type. Choose from {valid_types}'}, status=400)
 
@@ -361,7 +358,6 @@ class AddAssessmentAjaxView(RoleRequiredMixin, View):
         except Curriculum.DoesNotExist:
             return JsonResponse({'error': 'Not found'}, status=404)
 
-        # Check for duplicate
         enrollment_ids = list(
             Enrollment.objects.filter(
                 curriculum=curriculum,
@@ -377,10 +373,8 @@ class AddAssessmentAjaxView(RoleRequiredMixin, View):
                 'error': f'An assessment called "{title}" ({result_type}) already exists for this course.'
             }, status=400)
 
-        # Return updated assessment list (new one won't appear until first score is saved,
-        # so we return a synthetic entry too)
         assessments = _build_assessment_list(curriculum)
-        type_display = dict(Result.type_result)
+        type_display = dict(RESULT_TYPE_CHOICES)
         assessments.append({
             'id':           f'{result_type}::{title}',
             'title':        title,
@@ -392,11 +386,10 @@ class AddAssessmentAjaxView(RoleRequiredMixin, View):
         })
 
         return JsonResponse({'assessments': assessments})
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # AJAX — delete assessment (deletes all Result rows for title+type)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class DeleteAssessmentAjaxView(RoleRequiredMixin, View):
     """

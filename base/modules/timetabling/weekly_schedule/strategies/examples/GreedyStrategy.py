@@ -61,7 +61,7 @@ class GreedyStrategy(AbstractTimetableStrategy):
         curriculum_qs = (
             Curriculum.objects
             .filter(session=session)
-            .select_related('Tclass', 'course')
+            .select_related('Tclass', 'syllabus__course')
             .prefetch_related('professor')
         )
 

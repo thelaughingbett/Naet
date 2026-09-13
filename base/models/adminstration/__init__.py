@@ -27,8 +27,6 @@ from earlier in this conversation, so `curriculum` and `university`
 below are best guesses, not confirmed paths.
 """
 
-from base.models import BaseModelMixin  # noqa: F401
-
 # --- Student lifecycle events -----------------------------------------
 from .deferment import (  # noqa: F401
     DefermentDocument,
@@ -70,14 +68,14 @@ from .evaluations import (
     HOSTEL_EVALUATION_CATEGORIES
 )
 
+
+# --- Admissions -------------------------------------------------------------
+
 from .admissions import (
     Application,
     ApplicationDocument,
     TransferCreditEvaluation
 )
-
-# --- Off-campus housing guide (independent of on-campus Hostel model) ---
-from .hostel_listing import HostelListing  # noqa: F401
 
 
 __all__ = [
@@ -107,8 +105,7 @@ __all__ = [
     'Graduation',
     'Diploma',
     'Convocation',
-    # hostel listing
-    'HostelListing',
+
 
     # Evaluations
     'CourseEvaluation',
@@ -120,4 +117,5 @@ __all__ = [
     'Application',
     'ApplicationDocument',
     'TransferCreditEvaluation',
+
 ]

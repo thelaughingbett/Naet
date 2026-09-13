@@ -155,5 +155,13 @@ class Tclass(BaseModelMixin):
         on_delete=models.DO_NOTHING
     )
 
+    student_rep = models.ForeignKey(
+        'Student',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='class_representative'
+    )
+
     def __str__(self):
         return self.class_name

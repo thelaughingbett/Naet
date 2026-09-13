@@ -393,7 +393,7 @@ class BudgetLine(BaseModelMixin):
         return self.allocated_amount - self.committed_amount - self.spent_amount
 
     def _procurement_committed(self):
-        from ..procurement import PurchaseOrderLine
+        from .procurement import PurchaseOrderLine
         lines = PurchaseOrderLine.objects.filter(
             po__cost_centre=self.budget.cost_centre,
             po__fiscal_year=self.budget.fiscal_year,
@@ -406,7 +406,7 @@ class BudgetLine(BaseModelMixin):
         return total
 
     def _procurement_spent(self):
-        from ..procurement import VendorInvoiceLine
+        from .procurement import VendorInvoiceLine
         total = VendorInvoiceLine.objects.filter(
             invoice__po__cost_centre=self.budget.cost_centre,
             invoice__po__fiscal_year=self.budget.fiscal_year,

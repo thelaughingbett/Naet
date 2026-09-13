@@ -632,7 +632,7 @@ class BankReconciliation(BaseModelMixin):
         Returns the number of lines matched.
         """
         from .fees import Payment, Refund
-        from ..procurement import VendorPayment
+        from .procurement import VendorPayment
 
         matched_count = 0
         method = self.bank_account.ledger_account.payment_method
@@ -720,7 +720,7 @@ class BankReconciliation(BaseModelMixin):
         spans three different models.
         """
         from .fees import Payment, Refund
-        from ..procurement import VendorPayment
+        from .procurement import VendorPayment
 
         method = self.bank_account.ledger_account.payment_method
         already_matched = {

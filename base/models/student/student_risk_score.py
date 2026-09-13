@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from .base import BaseModelMixin
+from ..base import BaseModelMixin
 
 
 class StudentRiskScoreQuerySet(models.QuerySet):

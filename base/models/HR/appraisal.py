@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from .base import BaseModelMixin, ValidatedFileMixin
+from ..base import BaseModelMixin, ValidatedFileMixin
 
 
 class RatingScale(models.TextChoices):

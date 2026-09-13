@@ -4,13 +4,11 @@ tracking. Applies to any staff member (Lecturer, AdministrativeStaff,
 ItStaff, FinanceStaff, etc.) since leave isn't role-specific, so this hangs
 off `User` rather than any one staff subtype.
 """
-import datetime
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from .base import BaseModelMixin, ValidatedFileMixin
+from ..base import BaseModelMixin, ValidatedFileMixin
 
 
 class LeaveType(BaseModelMixin):

@@ -38,7 +38,7 @@ from django.utils import timezone
 
 from simple_history.models import HistoricalRecords
 
-from .base import BaseModelMixin
+from ..base import BaseModelMixin
 
 
 class Vendor(BaseModelMixin):

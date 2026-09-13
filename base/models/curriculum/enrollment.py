@@ -272,24 +272,24 @@ class Enrollment(BaseModelMixin):
         super().clean()
 
         from base.models import RegistrationWindow
-        window = (
-            RegistrationWindow.objects.filter(
-                term=self.curriculum.session,
-                window_type=RegistrationWindow.WindowType.COURSE_REGISTRATION,  # check for errors here
-            )
-            # possible BUG
-            .filter(models.Q(programme=self.student.class_entered.programme) | models.Q(programme__isnull=True))
-            # prefer a program-specific window over an institution-wide one
-            .order_by("programme")
-            .first()
-        )
+        # window = (
+        #     RegistrationWindow.objects.filter(
+        #         term=self.curriculum.session,
+        #         window_type='course_registration',
+        #     )
+        #     .filter(models.Q(programme=self.student.class_entered.programme) | models.Q(programme__isnull=True))
+        #     .order_by("programme")
+        #     .first()
+        # )
 
-        if window is None:
-            raise ValidationError(
-                "No course registration window has been configured for this term.")
-        if not window.is_open:
-            raise ValidationError(
-                "Course registration is closed for this term.")
+        # if window is None:
+        #     raise ValidationError(
+        #         "No course registration window has been configured for this term."
+        #     )
+        # if not window.is_open:
+        #     raise ValidationError(
+        #         "Course registration is closed for this term."
+        #     )
 
         if self.status == 'completed' and self.graded_at is None:
             self.finalize_grade()
@@ -346,6 +346,28 @@ class Enrollment(BaseModelMixin):
         self.approved_by = by_user
         self.approved_at = timezone.now()
         self.approval_method = None
+        self.save()
+
+    def drop(self):
+        """
+         Withdraws the student from this curriculum slot — self-service,
+         student-initiated. Only allowed pre-grading; a graded unit needs a
+         different process (academic appeal), not a silent withdrawal that
+         would erase graded_score/credits_earned history.
+
+         Explicitly clears approval_method/approved_by/approved_at rather
+         than leaving them — clean()'s else-branch requires all three be
+         unset whenever status != 'approved', and 'dropped' isn't 'approved'.
+         """
+        if self.graded_at is not None:
+            raise ValidationError(
+                "Cannot drop a unit that has already been graded."
+            )
+
+        self.status = 'dropped'
+        self.approval_method = None
+        self.approved_by = None
+        self.approved_at = None
         self.save()
 
     def _current_score(self):

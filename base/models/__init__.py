@@ -11,19 +11,19 @@ from .academic import *  # noqa: F401, E402
 from .adminstration import *  # noqa: F401, E402
 from .base import *  # noqa: F401, E402
 from .curriculum import *  # noqa: F401, E402
+from .exams import *  # noqa: F401, E402
 from .finance import *  # noqa: F401, E402
-from .hostel import *  # noqa: F401, E402
 from .staff import *  # noqa: F401, E402
-from .timetables import *  # noqa: F401, E402
-from .users import *  # noqa : F401,E402
+from .timetable import *  # noqa: F401, E402
+from .user import *  # noqa : F401,E402
 from .clubs import *  # noqa : F401,E402
 from .security import *  # noqa : F401,E402
-from .student_council import *  # noqa : F401,E402
-from .regulatory import *  # noqa : F401,E402
+from .studentCouncil import *  # noqa : F401,E402
+from .compliance import *  # noqa : F401,E402
 from .announcements import *  # noqa : F401,E402
-from .leave import *  # noqa : F401,E402
-from .student_risk_score_model import *  # noqa : F401,E402
-from .performance_appraisal import *
+from .facilities import *  # noqa : F401,E402
 
+from .HR import *  # noqa : F401,E402
+from .innovation import *  # noqa : F401,E402
 from .socials import *  # noqa : F401,E402
 from .erp import *  # noqa : F401,E402

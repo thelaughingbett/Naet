@@ -14,6 +14,12 @@ Exams subpackage — the exam department's side of the schema:
                         paper sat for an ExamSession.
 - attendance.py        ExamAttendance — whether a student sat an
                         ExamSession, and any malpractice reported.
+- exam_scheduling.py   ExamSession, ExamVenue,
+                        ExamInvigilatorAssignment, ExamClash — when
+                        and where each course's exam sits, who
+                        invigilates it, and detected timetable clashes.
+- hall_tickets.py      ExamCard — the term-scoped admit card issued
+                        to a student.
 - academic_records.py  GradeCard, RevaluationRequest,
                         BacklogRegistration — downstream processing
                         of published results (term rollups, disputes,
@@ -30,6 +36,17 @@ from .exam_papers import (
 from .attendance import (
     ExamAttendance,
 )
+from .exam_scheduling import (
+    INVIGILATOR_ROLE_CHOICES,
+    INVIGILATOR_ASSIGNMENT_STATUS_CHOICES,
+    ExamSession,
+    ExamVenue,
+    ExamInvigilatorAssignment,
+    ExamClash,
+)
+from .hall_tickets import (
+    ExamCard,
+)
 from .academic_records import (
     GradeCard,
     RevaluationRequest,
@@ -45,6 +62,13 @@ __all__ = [
     "QuestionPaperModeration",
     "QuestionBankItem",
     "ExamAttendance",
+    "INVIGILATOR_ROLE_CHOICES",
+    "INVIGILATOR_ASSIGNMENT_STATUS_CHOICES",
+    "ExamSession",
+    "ExamVenue",
+    "ExamInvigilatorAssignment",
+    "ExamClash",
+    "ExamCard",
     "GradeCard",
     "RevaluationRequest",
     "BacklogRegistration",

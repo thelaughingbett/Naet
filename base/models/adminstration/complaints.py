@@ -135,7 +135,7 @@ class ComplaintDocument(BaseModelMixin):
         """
         super().clean()
         if self.file:
-            ext = os.path.splitext(self.file.name).lower()
+            ext = os.path.splitext(self.file.name)[1].lower()
             # Dynamic allowance array for easy mobile/desktop usability
             allowed_extensions = [
                 '.pdf',

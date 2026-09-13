@@ -18,7 +18,7 @@ Covers: ideation, incubation, funding/grants, IP & patents, R&D projects,
 events, and industry partnerships.
 """
 
-from .base import BaseModelMixin
+from ..base import BaseModelMixin
 from django.db import models
 
 

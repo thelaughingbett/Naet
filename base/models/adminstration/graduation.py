@@ -68,7 +68,9 @@ class DegreeAudit(BaseModelMixin):
             total=models.Sum('credits_earned')
         )['total'] or 0
 
-        graded_and_passed = graded.filter(is_passed=True)
+        graded_and_passed = graded.filter(
+            graded_score__gte=models.F('pass_mark_applied')
+        )
         weighted = sum(
             (e.grade_points_earned or 0) * e.credits_earned
             for e in graded_and_passed
@@ -92,32 +94,29 @@ class DegreeAudit(BaseModelMixin):
             self.result = self.Result.ELIGIBLE
         elif self.result != self.Result.ELIGIBLE:
             self.result = self.Result.ON_TRACK
-        # else: already eligible but credits dropped below required after
-        # the fact (e.g. a regrade) — left alone deliberately. A human
-        # decides whether to walk back a nomination.
 
         self.save()
 
         if newly_eligible and not was_eligible:
             self._nominate_for_graduation()
 
-    def _nominate_for_graduation(self):
-        graduation, created = Graduation.objects.get_or_create(
-            student=self.student,
-            defaults={
-                'Tclass': self.student.class_entered,
-                'status': 'nominated',
-                'nominated_at': timezone.now(),
-                # final_classification is required on the model with no
-                # default — left blank here on purpose. Nothing computes
-                # First Class/Upper/Lower/Pass from gpa yet, so this is
-                # deliberately punted to whoever verifies the nomination.
-                'final_classification': '',
-            },
-        )
-        if not created and graduation.status == 'nominated':
-            graduation.nominated_at = timezone.now()
-            graduation.save(update_fields=['nominated_at'])
+        def _nominate_for_graduation(self):
+            graduation, created = Graduation.objects.get_or_create(
+                student=self.student,
+                defaults={
+                    'Tclass': self.student.class_entered,
+                    'status': 'nominated',
+                    'nominated_at': timezone.now(),
+                    # final_classification is required on the model with no
+                    # default — left blank here on purpose. Nothing computes
+                    # First Class/Upper/Lower/Pass from gpa yet, so this is
+                    # deliberately punted to whoever verifies the nomination.
+                    'final_classification': '',
+                },
+            )
+            if not created and graduation.status == 'nominated':
+                graduation.nominated_at = timezone.now()
+                graduation.save(update_fields=['nominated_at'])
 
 
 class Graduation(BaseModelMixin):

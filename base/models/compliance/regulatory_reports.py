@@ -1,208 +1,41 @@
-from base.modules.regulatory import agency_registry
+# Copyright 2026 Emmanuel Kipng'eno
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+
+"""
+Regulatory reporting domain — statutory submissions to an agency
+(enrolment returns, graduation audits, staff workload ledgers,
+financial statements, etc.), the evidence files backing them, and the
+recurring-report rollover from one session to the next.
+
+Like accreditation.py, defers agency-specific rules (accepted document
+types, submission validation) to whatever backend `agency_registry`
+resolves `self.agency`/`self.report.agency` to, rather than hardcoding
+one agency's requirements onto the model.
+
+NOTE ON `STATUS_CHOICES`: this module-level name is fairly generic —
+worth being deliberate about it if it's ever imported by name
+elsewhere (`from base.models.compliance.regulatory_reports import
+STATUS_CHOICES`), since `Accreditation` in accreditation.py also
+defines its own `STATUS_CHOICES` as a *class* attribute (a different,
+non-colliding namespace, but easy to confuse at a glance). Left
+unrenamed here since it's a straight carry-over from the original
+source, not a naming decision made during this split.
+"""
+
 import os
-from django.core.exceptions import ValidationError
-from django.db import models
 import datetime
 import magic
 
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 
-
-from .base import (
-    BaseModelMixin,
-)
-
-
-class AccreditationDocument(BaseModelMixin):
-    """
-    Supporting an official Accreditation .
-    """
-    accreditation = models.ForeignKey(
-        'Accreditation',
-        on_delete=models.CASCADE,
-        related_name='documents'
-    )
-
-    file = models.FileField(upload_to='accreditation_documents/%Y/%m/')
-    original_name = models.CharField(max_length=255, blank=True)
-
-    description = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="accreditation document"
-    )
-
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.original_name and self.file:
-            self.original_name = self.file.name
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Doc for {self.accreditation.code}: {self.original_name}"
-
-
-class Accreditation(BaseModelMixin):
-
-    ACCREDITATION_TYPE_CHOICES = [
-        ("Institutional", "Institutional"),
-        ("Programme",      "Programme"),
-        ("Specialized",    "Specialized"),
-    ]
-
-    STATUS_CHOICES = [
-        ("Active",      "Active"),
-        ("Pending",     "Pending"),
-        ("Review",      "In Review"),
-        ("Conditional", "Conditional"),
-        ("Expired",     "Expired"),
-    ]
-
-    # Left blank for institution-wide accreditations (e.g. the CUE charter
-    # itself), which don't belong to a single programme.
-    programme = models.ForeignKey(
-        'Programme',
-        on_delete=models.CASCADE,
-        related_name='accreditations',
-        null=True,
-        blank=True
-    )
-
-    code = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=255)
-
-    body = models.CharField(
-        max_length=30,
-        choices=agency_registry.choices,
-        help_text="e.g. CUE, KASNEB, Nursing Council of Kenya, Engineers Board of Kenya"
-    )
-
-    accreditation_type = models.CharField(
-        max_length=20,
-        choices=ACCREDITATION_TYPE_CHOICES,
-        default="Programme"
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="Pending"
-    )
-
-    valid_from = models.DateField()
-    valid_to = models.DateField(null=True)
-
-    description = models.TextField(blank=True, default="")
-
-    version = models.IntegerField(default=1)
-
-    class Meta:
-        ordering = ['valid_to']
-
-    def __str__(self):
-        return f"{self.code} — {self.name}"
-
-    def clean(self):
-        super().clean()
-        backend = agency_registry.get(self.body)
-        if backend and self.status == "Active":
-            result = backend.validate_accreditation(self)
-            if not result.valid:
-                raise ValidationError(result.errors)
-
-    @property
-    def is_expiring_soon(self):
-        backend = agency_registry.get(self.body)
-        lead_time = backend.renewal_lead_time_days() if backend else 180
-        delta = (self.valid_to - datetime.date.today()).days
-        return 0 <= delta <= lead_time
-
-    @classmethod
-    def expiring_within(cls, days=None):
-        """
-        days=None → use each accreditation's own body-specific lead time
-        instead of one fixed window for every agency.
-        """
-        today = datetime.date.today()
-        qs = cls.objects.filter(status="Active", valid_to__gte=today)
-        if days is not None:
-            cutoff = today + datetime.timedelta(days=days)
-            return qs.filter(valid_to__lte=cutoff)
-        return [a for a in qs if a.is_expiring_soon]
-
-
-class RegistrationWindow(BaseModelMixin):
-    window_choices = [
-        ("course_registration", "Course Registration"),
-        ("bursary", "Bursary/Financial Aid Registration"),
-        ("hostel", "Hostel Allocation"),
-        ("exam_registration", "Exam Registration"),
-        ("backlog_exam", "Backlog/Supplementary Exam Registration"),
-        ("graduation_candidacy", "Graduation Candidacy Nomination"),
-        ("club_membership", "Club Membership Drive"),
-        ("scholarship", "Scholarship Application"),
-    ]
-
-    session = models.ForeignKey(
-        "Session",
-        on_delete=models.CASCADE,
-        related_name="registration_windows",
-        help_text="e.g. Semester 2 2026/2027",
-    )
-    window_type = models.CharField(
-        max_length=30,
-        choices=window_choices,
-        help_text="What this window governs, e.g. course registration, bursary",
-    )
-    programme = models.ForeignKey(
-        "Programme",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="registration_windows",
-        help_text="Optional: restrict this window to one program. Leave blank for institution-wide.",
-    )
-    opens_date = models.DateField()
-    closes_date = models.DateField()
-    late_closes_date = models.DateField(
-        null=True,
-        blank=True,
-        help_text="Optional grace/late period end date, if late registration is allowed (often with a penalty fee).",
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Manual kill-switch to close a window early regardless of dates.",
-    )
-
-    class Meta:
-        ordering = ["-opens_date"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["session", "window_type", "programme"],
-                name="unique_window_per_session_type_program",
-            )
-        ]
-
-    def __str__(self):
-        scope = f" - {self.programme}" if self.programme_id else ""
-        return f"{self.get_window_type_display()} ({self.session}){scope}"
-
-    @property
-    def is_open(self):
-        from django.utils import timezone
-        today = timezone.now().date()
-        end = self.late_closes_date or self.closes_date
-        return self.is_active and self.opens_date <= today <= end
-
-    @property
-    def is_late_period(self):
-        from django.utils import timezone
-        today = timezone.now().date()
-        return bool(
-            self.late_closes_date
-            and self.closes_date < today <= self.late_closes_date
-        )
+from base.modules.regulatory import agency_registry
+from ..base import BaseModelMixin
 
 
 # --- REGULATORY REPORTING LIST CHOICES ---
@@ -477,56 +310,3 @@ class RegulatoryReport(BaseModelMixin):
         """Helper tool mirroring Django's native choice label resolution."""
         mapping = dict(REPORT_TYPE_CHOICES)
         return mapping.get(self.report_type, self.report_type)
-
-
-SOURCE_TYPE_CHOICES = [
-    ("accreditation_expiry", "Accreditation Expiry"),
-    ("report_deadline", "Report Deadline"),
-    ("registration_window", "Registration Window"),
-]
-
-RECURRENCE_CHOICES = [
-    ("none", "None"),
-    ("semester", "Semester"),
-    ("annual", "Annual"),
-]
-
-
-class ComplianceCalendarEvent(BaseModelMixin):
-    """
-    A denormalized projection over Accreditation, RegulatoryReport, and
-    RegistrationWindow deadlines, so the calendar view can query one table
-    instead of joining three. Regenerate via a management command / signal
-    whenever a source record's date fields change — don't hand-maintain.
-    """
-
-    source_type = models.CharField(
-        max_length=30,
-        choices=SOURCE_TYPE_CHOICES
-    )
-
-    # Generic-ish pointer without full GenericForeignKey overhead; app-level
-    # code resolves source_id against the right model based on source_type.
-    source_id = models.CharField(max_length=30, )
-
-    title = models.CharField(max_length=255)
-    due_date = models.DateField(db_index=True)
-
-    recurrence = models.CharField(
-        max_length=20,
-        choices=RECURRENCE_CHOICES,
-        default="none"
-    )
-
-    class Meta:
-        ordering = ["due_date"]
-        indexes = [
-            models.Index(fields=["source_type", "source_id"])
-        ]
-
-    def __str__(self):
-        return f"{self.title} ({self.due_date})"
-
-    def days_remaining(self):
-        from django.utils import timezone
-        return (self.due_date - timezone.now().date()).days

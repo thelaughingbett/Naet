@@ -5,6 +5,151 @@
   rel="stylesheet"
   href="{% static  'base/styles/academics/unit-registration/index.css' %}"
 />
+
+<style>
+  .unit-row--clickable {
+    cursor: pointer;
+  }
+  .unit-row--clickable:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .status-badge--pending {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+  .status-badge--approved {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .status-badge--rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .status-badge--dropped {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  .status-badge--completed {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: var(--color-background-primary, #fff);
+    border-radius: 12px;
+    max-width: 460px;
+    width: 100%;
+    padding: 1.75rem;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    opacity: 0.55;
+  }
+  .modal-close:hover {
+    opacity: 1;
+  }
+  .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 2px;
+  }
+  .modal-subtitle {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-bottom: 1.25rem;
+  }
+
+  .results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .results-empty {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.85rem;
+    opacity: 0.6;
+  }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--color-border-tertiary, #e5e7eb);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+  }
+  .result-item .result-score {
+    font-weight: 700;
+  }
+
+  .modal-final-outcome {
+    margin-top: 4px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .modal-final-outcome--pass {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .modal-final-outcome--fail {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .modal-box .btn {
+    width: 100%;
+    padding: 0.7rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+  .btn--danger {
+    background: #dc2626;
+    color: white;
+  }
+  .btn--danger:hover {
+    background: #b91c1c;
+  }
+</style>
+
 <title>Unit Registration</title>
 {% endblock %} {% block body %}
 <div class="page-header">
@@ -223,25 +368,41 @@
     <div class="summary-title enrolled-title">🎓 My Units — {{ session }}</div>
 
     {% if enrolled %}
-    <table class="unit-table" id="unitsTable">
+    <table class="unit-table" id="myUnitsTable">
       <thead>
         <tr>
           <th>Unit Code</th>
           <th>Unit Name</th>
           <th>Credits</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody id="unitsBody">
+      <tbody>
         {% for unit in enrolled %}
         <tr
-          data-credits="{{ unit.course.credits }}"
-          data-id="{{ unit.record_id }}"
-          data-coursecode="{{ unit.course.course_code|upper }}"
+          class="unit-row unit-row--clickable"
+          data-enrollment-id="{{ unit.record_id }}"
+          data-coursecode="{{ unit.curriculum.course.course_code|upper }}"
+          data-coursename="{{ unit.curriculum.course.course_name|escapejs }}"
+          data-credits="{{ unit.curriculum.course.credits }}"
+          data-coursetype="{{ unit.curriculum.course.course_type }}"
+          data-status="{{ unit.status }}"
+          data-gradedscore="{{ unit.graded_score|default_if_none:'' }}"
+          data-ispassed="{% if unit.graded_at %}{{ unit.is_passed|yesno:'true,false' }}{% else %}{% endif %}"
         >
-          <td class="unit-code">{{ unit.course.course_code|upper }}</td>
-          <td>{{ unit.course.course_name }}</td>
+          <td class="unit-code">
+            {{ unit.curriculum.course.course_code|upper }}
+          </td>
+          <td>{{ unit.curriculum.course.course_name }}</td>
           <td>
-            <span class="credits-badge">{{ unit.course.credits }} credits</span>
+            <span class="credits-badge"
+              >{{ unit.curriculum.course.credits }} credits</span
+            >
+          </td>
+          <td>
+            <span class="status-badge status-badge--{{ unit.status }}"
+              >{{ unit.get_status_display }}</span
+            >
           </td>
         </tr>
         {% endfor %}
@@ -252,59 +413,174 @@
     {% endif %}
   </div>
 </div>
+<div class="modal-overlay" id="unitModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="unitModalClose">&times;</button>
+    <h3 class="modal-title" id="unitModalTitle">Unit Name</h3>
+    <div class="modal-subtitle" id="unitModalSubtitle">CODE · Credits</div>
+
+    <div id="unitModalOutcome"></div>
+
+    <div id="unitResultsList" class="results-list">
+      <div class="results-empty">No published results yet.</div>
+    </div>
+
+    <button class="btn btn--danger" id="dropUnitBtn" style="display: none">
+      🗑️ Drop This Unit
+    </button>
+  </div>
+</div>
 
 <script>
-    const MIN_CREDITS = {{ min_credits|default:2 }};
-    const MAX_CREDITS = {{ max_credits|default:21 }};
+  const DROP_UNIT_URL = "{% url 'drop-elective-unit' %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+  const RESULTS_DATA = JSON.parse(
+    document.getElementById("resultsData")?.textContent || "{}",
+  );
 
-    const tbody       = document.getElementById('unitsBody');
-    const registerBtn = document.getElementById('registerBtn');
-    const totalEl     = document.getElementById('totalCredits');
-    const listEl      = document.getElementById('selectedList');
+  let activeEnrollmentId = null;
 
-    function getSelectedRows() {
-      if (!tbody) return [];
-      return [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
-        .map(cb => cb.closest('tr'));
-    }
+  document.querySelectorAll(".unit-row--clickable").forEach((row) => {
+    row.addEventListener("click", () => {
+      activeEnrollmentId = row.dataset.enrollmentId;
 
-    function updateSummary() {
-      if (!totalEl) return; // no available units rendered
+      document.getElementById("unitModalTitle").textContent =
+        row.dataset.coursename;
+      document.getElementById("unitModalSubtitle").textContent =
+        `${row.dataset.coursecode} · ${row.dataset.credits} credits`;
 
-      const selected = getSelectedRows();
-      const totalCredits = selected.reduce(
-        (sum, row) => sum + parseInt(row.dataset.credits, 10),
-        0
-      );
-
-      totalEl.textContent = `Total Credits: ${totalCredits}`;
-
-      if (selected.length === 0) {
-        listEl.innerHTML = '<li class="empty-row">No units selected</li>';
+      // final outcome banner, only once graded
+      const outcomeBox = document.getElementById("unitModalOutcome");
+      if (row.dataset.ispassed === "true") {
+        outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--pass">✅ Passed — Final score: ${row.dataset.gradedscore}</div>`;
+      } else if (row.dataset.ispassed === "false") {
+        outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--fail">❌ Not passed — Final score: ${row.dataset.gradedscore}</div>`;
       } else {
-        listEl.innerHTML = selected
-          .map(row => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`)
-          .join('');
+        outcomeBox.innerHTML = "";
       }
 
-      if (totalCredits < MIN_CREDITS) {
-        registerBtn.disabled = true;
-        registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
-      } else if (totalCredits > MAX_CREDITS) {
-        registerBtn.disabled = true;
-        registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
+      // published results
+      const results = RESULTS_DATA[activeEnrollmentId] || [];
+      const list = document.getElementById("unitResultsList");
+      if (results.length === 0) {
+        list.innerHTML = `<div class="results-empty">No published results yet.</div>`;
       } else {
-        registerBtn.disabled = false;
-        registerBtn.title = '';
+        list.innerHTML = results
+          .map(
+            (r) => `
+          <div class="result-item">
+            <span>${r.title} (${r.type})</span>
+            <span class="result-score">${r.score}</span>
+          </div>
+        `,
+          )
+          .join("");
       }
-    }
 
-    tbody?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', updateSummary);
+      // drop button — electives only, not already dropped/completed
+      const dropBtn = document.getElementById("dropUnitBtn");
+      const canDrop =
+        row.dataset.coursetype === "E" &&
+        row.dataset.status !== "dropped" &&
+        row.dataset.status !== "completed";
+      dropBtn.style.display = canDrop ? "block" : "none";
+
+      document.getElementById("unitModalOverlay").classList.add("active");
     });
+  });
 
-    // confirm before submitting — electives go to approval
-    document.getElementById('registrationForm')?.addEventListener('submit', async (e) => {
+  document.getElementById("unitModalClose").addEventListener("click", () => {
+    document.getElementById("unitModalOverlay").classList.remove("active");
+  });
+  document.getElementById("unitModalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "unitModalOverlay") {
+      document.getElementById("unitModalOverlay").classList.remove("active");
+    }
+  });
+
+  document.getElementById("dropUnitBtn").addEventListener("click", async () => {
+    if (
+      !confirm(
+        "Drop this unit? You can re-register for it later if seats remain open.",
+      )
+    )
+      return;
+
+    const formData = new FormData();
+    formData.append("enrollment_id", activeEnrollmentId);
+
+    try {
+      const res = await fetch(DROP_UNIT_URL, {
+        method: "POST",
+        headers: { "X-CSRFToken": CSRF_TOKEN },
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message || "Failed to drop unit.");
+        return;
+      }
+
+      window.location.reload();
+    } catch (err) {
+      alert("Network error — please try again.");
+    }
+  });
+</script>
+{{ results_by_enrollment|json_script:"resultsData" }}
+<script>
+      const MIN_CREDITS = {{ min_credits|default:2 }};
+      const MAX_CREDITS = {{ max_credits|default:21 }};
+
+      const tbody       = document.getElementById('unitsBody');
+      const registerBtn = document.getElementById('registerBtn');
+      const totalEl     = document.getElementById('totalCredits');
+      const listEl      = document.getElementById('selectedList');
+
+      function getSelectedRows() {
+        if (!tbody) return [];
+        return [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
+          .map(cb => cb.closest('tr'));
+      }
+
+      function updateSummary() {
+        if (!totalEl) return; // no available units rendered
+
+        const selected = getSelectedRows();
+        const totalCredits = selected.reduce(
+          (sum, row) => sum + parseInt(row.dataset.credits, 10),
+          0
+        );
+
+        totalEl.textContent = `Total Credits: ${totalCredits}`;
+
+        if (selected.length === 0) {
+          listEl.innerHTML = '<li class="empty-row">No units selected</li>';
+        } else {
+          listEl.innerHTML = selected
+            .map(row => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`)
+            .join('');
+        }
+
+        if (totalCredits < MIN_CREDITS) {
+          registerBtn.disabled = true;
+          registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
+        } else if (totalCredits > MAX_CREDITS) {
+          registerBtn.disabled = true;
+          registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
+        } else {
+          registerBtn.disabled = false;
+          registerBtn.title = '';
+        }
+      }
+
+      tbody?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateSummary);
+      });
+
+      // confirm before submitting — electives go to approval
+      document.getElementById('registrationForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const form      = e.target;
@@ -320,7 +596,9 @@
     );
     if (!ok) return;
 
+    const originalLabel = registerBtn.textContent;
     registerBtn.disabled = true;
+    registerBtn.textContent = '⏳ Submitting…';
 
     try {
       const response = await fetch(window.location.pathname, {
@@ -331,19 +609,28 @@
 
       messageEl.textContent = data.message;
       messageEl.className = `form-message form-message--${data.success ? 'success' : 'error'}`;
-      setTimeout(() => {
-              window.location.reload();
-      }, 5000);
+
+      if (data.success) {
+        //registerBtn.textContent = '✅ Pending Approval';
+        // stays disabled — page reload below will reset everything to the
+        // correct post-submission state anyway
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      } else {
+        // failed — restore button so the student can fix selection and retry
+        registerBtn.disabled = false;
+        registerBtn.textContent = originalLabel;
+      }
 
     } catch (err) {
       messageEl.textContent = 'Something went wrong submitting your request. Please try again.';
       messageEl.className = 'form-message form-message--error';
-    } finally {
       registerBtn.disabled = false;
+      registerBtn.textContent = originalLabel;
     }
   });
-
-    // initial state
-    updateSummary();
+      // initial state
+      updateSummary();
 </script>
 {% endblock %}

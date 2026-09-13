@@ -59,11 +59,11 @@ def generate_exam_timetable(session, exam_type='MAIN'):
     curriculum = Curriculum.objects.filter(
         session=session
     ).select_related(
-        'Tclass', 'course'
+        'Tclass', 'syllabus__course'
     ).prefetch_related(
         'professor',
         'enrolled_students',  # through Enrollment
-    ).order_by('course__course_type', 'Tclass')
+    ).order_by('syllabus__course__course_type', 'Tclass')
 
     exam_sessions_to_create = []
     exam_venues_to_create = []

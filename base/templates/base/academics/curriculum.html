@@ -1,5 +1,8 @@
-{% extends 'base/main.html' %}{% load static %} <br />
-{% load humanize %} {% block head %}
+<!-- prettier-ignore -->
+{% extends 'base/main.html' %}
+{% load static %}
+{% load humanize %}
+{% block head %}
 
 <link
   rel="stylesheet"
@@ -13,21 +16,20 @@
     📚 Curriculum &amp; Units
   </h1>
   <p style="color: var(--text-muted); margin-top: 0.2rem">
-    Filter by semester, status, or search by unit name/code.
+    Your full programme roadmap. Filter by year, status, or search by unit
+    name/code.
   </p>
 </div>
 
 <!-- FILTER BAR -->
 <div class="filter-section">
   <div class="filter-group">
-    <label>Semester</label>
-    <select id="semesterFilter">
-      <option value="all">All Semesters</option>
-      {% for sesh in sessions %}
-      <option value="{{sesh}}">
-        {{sesh}} {%if sesh == session %} (current) {%endif%}
-      </option>
-      {%endfor%}
+    <label>Year</label>
+    <select id="yearFilter">
+      <option value="all">All Years</option>
+      {% for yr in years %}
+      <option value="{{ yr }}">Year {{ yr }}</option>
+      {% endfor %}
     </select>
   </div>
 
@@ -40,55 +42,66 @@
 
 <div class="stats-row">
   <div class="result-count" id="resultCount">
-    Showing {% if curriculum %} {{student.enrollments.all.count}} {%else%} 0
-    {%endif%}units
+    <!-- prettier-ignore -->
+    Showing {{ syllabus_entries|length }} unit{{  syllabus_entries|length|pluralize }}
   </div>
   <div style="font-size: 0.75rem; color: var(--text-muted)">
-    🎓 {{student.class_entered.programme}} • Total Credits: 144
+    <!-- prettier-ignore -->
+    🎓 {{ student.class_entered.programme }} • Total Credits: {{ total_credits  }}
   </div>
 </div>
-{% if curriculum %}
+
+{% if syllabus_entries %}
 <div id="unitsContainer" class="units-grid">
-  {% for unit in curriculum %}
+  {% for entry in syllabus_entries %}
   <div
     class="unit-card"
-    data-semester="{{unit.session}}"
-    data-status="completed"
-    data-name="{{unit.course.course_name}}"
-    data-code="{{unit.course.course_code}}"
-    data-credits="{{unit.course.credits}}"
+    data-year="{{ entry.offered }}"
+    data-status="{{ entry.state }}"
+    data-name="{{ entry.course.course_name }}"
+    data-code="{{ entry.course.course_code }}"
+    data-credits="{{ entry.course.credits }}"
   >
     <div class="unit-card__header">
-      <span class="unit-code-badge">{{unit.course.course_code | upper}}</span>
-      <span class="unit-credits">3 Credits</span>
+      <span class="unit-code-badge">{{ entry.course.course_code|upper }}</span>
+      <span class="unit-credits">{{ entry.course.credits }} Credits</span>
     </div>
-    <div class="unit-title">{{unit.course.course_name}}</div>
+    <div class="unit-title">{{ entry.course.course_name }}</div>
     <div class="unit-details">
-      <div><strong>Semester:</strong> {{unit.session}}</div>
+      <div><strong>Year:</strong> Year {{ entry.offered }}</div>
       <div>
-        {% with professors=unit.professor.all %}
-        <strong>Instructor{{ professors|length|pluralize:"s" }}:</strong>
-
+        <strong>Type:</strong> {{ entry.course.get_course_type_display }}
+      </div>
+      <div>
         <!-- prettier-ignore -->
-        {% for prof in professors %} {{ prof.name }}
-        {% if not  forloop.last %}, {% endif %} {% empty %}
-        <em>No instructor assigned</em>
-        {% endfor %} {% endwith %}
+        {% if entry.current_curriculum %}
+         {% with  professors=entry.current_curriculum.professor.all %}
+        <strong>Instructor{{ professors|length|pluralize:"s" }}:</strong>
+        <!-- prettier-ignore -->
+        {% for prof in professors %} 
+        {{ prof.user.full_name }} 
+        {% if not  forloop.last %},
+         {% endif %}{% empty %}
+
+        <em>Not yet assigned</em>
+        <!-- prettier-ignore -->
+        {% endfor %}
+        {% endwith  %} 
+        {% else %}
+        <strong>Instructor:</strong>
+        <em>Not yet scheduled</em>
+        {% endif %}
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
+{% else %}
+<div class="no-results">⚠️ No curriculum found for your programme yet.</div>
 {% endif %}
+
 <script>
   let unitsData;
-
-  function getStatusClass(status) {
-    if (status === "Completed") return "status-completed";
-    if (status === "In Progress") return "status-progress";
-    if (status === "Registered") return "status-registered";
-    return "status-planned";
-  }
 
   function renderUnits(filtered) {
     const container = document.getElementById("unitsContainer");
@@ -105,12 +118,11 @@
   }
 
   function filterUnits() {
-    const semester = document.getElementById("semesterFilter").value;
+    const year = document.getElementById("yearFilter").value;
     const search = document.getElementById("searchInput").value.toLowerCase();
 
     const filtered = unitsData.filter((unit) => {
-      if (semester !== "all" && unit.dataset.semester !== semester)
-        return false;
+      if (year !== "all" && unit.dataset.year !== year) return false;
 
       if (
         search &&
@@ -123,28 +135,20 @@
     renderUnits(filtered);
   }
 
-  // Event listeners
-  document
-    .getElementById("semesterFilter")
-    .addEventListener("change", filterUnits);
+  document.getElementById("yearFilter").addEventListener("change", filterUnits);
 
   document.getElementById("searchInput").addEventListener("input", filterUnits);
   document.getElementById("resetFiltersBtn").addEventListener("click", () => {
-    document.getElementById("semesterFilter").value = "all";
-
+    document.getElementById("yearFilter").value = "all";
     document.getElementById("searchInput").value = "";
     filterUnits();
   });
 
   document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("unitsContainer");
-
-    unitsData = [...container.querySelectorAll(".unit-card")];
-
-    unitsData.forEach((unit) => {
-      if (unit.dataset.semester === "2026/2027 - Sem 1") {
-      }
-    });
+    if (container) {
+      unitsData = [...container.querySelectorAll(".unit-card")];
+    }
   });
 </script>
 {% endblock %}

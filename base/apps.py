@@ -1,6 +1,13 @@
 from django.apps import AppConfig
 from django.conf import settings
 
+from base.modules.erp.tasks.examples.implementations import (
+    DefermentNotificationTask,
+    FeeAccountCreatedTask,
+    EnrollmentERPTask
+)
+from base.modules.erp.registry import erp_registry
+
 
 class BaseConfig(AppConfig):
     name = 'base'
@@ -16,8 +23,6 @@ class BaseConfig(AppConfig):
         registry.register(EquityBankBackend())
 
         if settings.DEBUG:
-            from base.modules.erp.tasks.examples.implementations import DefermentNotificationTask, FeeAccountCreatedTask, EnrollmentERPTask
-            from base.modules.erp.registry import erp_registry
 
             erp_registry.register(DefermentNotificationTask())
             erp_registry.register(FeeAccountCreatedTask())

@@ -8,8 +8,6 @@ from base.models import Curriculum, Timetable, Venue
 from django.db import transaction
 
 from itertools import groupby
-from base.models import Curriculum, Timetable, Venue
-from django.db import transaction
 
 DAYS = ('MON', 'TUE', 'WED', 'THU', 'FRI')
 
@@ -36,8 +34,8 @@ def generate_timetable(session):
     curriculum = Curriculum.objects.filter(
         session=session
     ).select_related(
-        'Tclass', 'course'
-    ).prefetch_related('professor').order_by('course__course_type')
+        'Tclass', 'syllabus__course'
+    ).prefetch_related('professor').order_by('syllabus__course__course_type')
 
     to_create = []
 
@@ -48,7 +46,7 @@ def generate_timetable(session):
 
     for entry in curriculum:
         if entry.course.course_type == 'CC':
-            common_units.setdefault(entry.course_id, []).append(entry)
+            common_units.setdefault(entry.course.record_id, []).append(entry)
         else:
             regular.append(entry)
 
@@ -206,7 +204,7 @@ def generate_with_csp(session):
     problem = Problem()
 
     curriculum = Curriculum.objects.filter(
-        session=session).select_related('Tclass', 'course')
+        session=session).select_related('Tclass', 'syllabus__course')
     slots = [(day, time) for day in DAYS for time in SLOTS]
 
     # variable per curriculum entry

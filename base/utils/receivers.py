@@ -67,7 +67,7 @@ def auto_enroll_core_courses(
             core_subjects = Curriculum.objects.filter(
                 Tclass=instance.class_entered,
                 session=current_session,
-                course__course_type__in=['C', 'CC']
+                syllabus__course__course_type__in=['C', 'CC']
             )
 
             Enrollment.objects.bulk_create([
@@ -98,14 +98,14 @@ def auto_enroll_core_courses(
                 fee_structure=feesturcture
             )
 
-            # TODO : send a notification to create fee account to finance erp✔️
             from base.modules.erp.dispatch import dispatch_erp_event
             dispatch_erp_event(feeaccount, "feeaccount.created")
         except Exception:
-            pass  # fail silently  or notify finance
-
+            pass  # fail silently or notify finance
 
 # To Intergrator  - update the permissions with new models added
+
+
 @receiver(post_migrate)
 def create_roles_and_permissions(
     sender,

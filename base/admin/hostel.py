@@ -18,6 +18,8 @@ from base.models import (
     HostelListing
 )
 
+from base.models.facilities.hostel import (Hostel)
+
 
 @admin.register(Hostel)
 class HostelAdmin(BaseAdmin):

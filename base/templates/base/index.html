@@ -63,7 +63,9 @@
     <div class="card">
       <div class="card__header">
         <span>📚 Registered Units (Current Semester)</span>
-        <!-- <span class="link" style="cursor: pointer">View All →</span> -->
+        <a href="{% url 'base-unit-registration' %}" class="card__header-link"
+          >View All →</a
+        >
       </div>
       <div class="card__body">
         <table class="portal-table">
@@ -188,7 +190,9 @@
         </p>
       </div>
     </div>
-    {% if user.student_profile.stay == 'resident' %}
+    <!-- prettier-ignore -->
+    {% with allocation=student.hostel_allocations.filter.first %} 
+    {% if  allocation %}
     <div class="hostel-card">
       <div
         style="
@@ -211,8 +215,7 @@
         <h4 style="margin: 0">🏠 Hostel Info</h4>
       </div>
       <!-- prettier-ignore -->
-      {% with allocation=student.hostel_allocations.filter.first %}
-      {% if  allocation %}
+
       <p><strong>Hostel:</strong> {{ allocation.room.hostel.name }}</p>
       <p>
         <strong>Room:</strong> {{ allocation.room.room_number }}
@@ -224,11 +227,6 @@
         <!-- prettier-ignore -->
         {% if  allocation.room.floor == 0 %} ground {% else%} {{ allocation.room.floor }} {% endif %}
       </p>
-      {% else %}
-      <p style="opacity: 0.6; font-size: 0.85rem">
-        No hostel allocation for this session.
-      </p>
-      {% endif %} {% endwith %}
     </div>
     {% else %}
     <div class="nonresident-card">
@@ -251,7 +249,7 @@
         </button>
       </a>
     </div>
-    {% endif %}
+    {% endif %} {% endwith %}
     <div class="card">
       <div class="card__header">📅 Upcoming Deadlines</div>
       <div class="card__body" style="font-size: 0.8rem">

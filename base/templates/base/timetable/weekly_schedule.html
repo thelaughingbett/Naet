@@ -117,6 +117,221 @@
     }
   }
 </style>
+<style>
+  .exec-badge--Attended {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .exec-badge--Scheduled {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .exec-badge--Missed {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .exec-badge--Rescheduled {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .exec-badge--Cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.75rem;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+  }
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.5;
+    color: var(--text);
+  }
+  .modal-close:hover {
+    opacity: 1;
+  }
+  .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 2px;
+  }
+  .modal-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  /* history list */
+  .exec-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .exec-history-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  .exec-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+  }
+  .exec-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .exec-date {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .exec-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .exec-badge--Attended {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .exec-badge--Scheduled {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .exec-badge--Postponed {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+  .exec-badge--Rescheduled {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .exec-badge--Cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .exec-detail {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .exec-detail strong {
+    color: var(--text);
+  }
+  .exec-notes {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .modal-box .btn {
+    padding: 0.65rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  .btn--primary {
+    background: var(--navy);
+    color: white;
+    flex: 1;
+  }
+  .btn--primary:hover {
+    background: #0d3060;
+  }
+  .btn--secondary {
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* attendance form */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-family: var(--font);
+  }
+  .form-textarea {
+    resize: vertical;
+  }
+  .reschedule-fields {
+    display: none;
+    border-top: 1px dashed var(--border);
+    padding-top: 1rem;
+    margin-top: 0.25rem;
+  }
+  .reschedule-fields.active {
+    display: block;
+  }
+  .form-error {
+    color: #dc2626;
+    font-size: 0.78rem;
+    margin-top: 4px;
+    display: none;
+  }
+  .form-error.active {
+    display: block;
+  }
+</style>
+
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📅 Weekly Timetable</h1>
@@ -146,7 +361,34 @@
         <td class="time-col">{{ slot.label }}</td>
         {% for day in days %}
         <!-- prettier-ignore -->
-        <td>{% with entry=slot.days|dict_key:day %}{% if entry %}<div class="class-slot"><div class="class-title">{{ entry.curriculum.course.course_name }}</div><div class="class-detail">{{ entry.curriculum.course.course_code }} | {{ entry.venue.venue_name }}</div><div class="class-detail">👨‍🏫 {% for lecturer in entry.curriculum.professor.all %}{{ lecturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div><span class="lecture-badge">Lecture</span></div>{% else %}<div class="empty-slot">— Free —</div>{% endif %}{% endwith %}</td>
+        <td>
+          {% with entry=slot.days|dict_key:day %} {% if entry %}
+          <div
+            class="class-slot class-slot--clickable"
+            data-timetable-id="{{ entry.pk }}"
+            data-course-name="{{ entry.curriculum.syllabus.course.course_name|escapejs }}"
+            data-course-code="{{ entry.curriculum.syllabus.course.course_code|escapejs }}"
+            data-venue="{{ entry.venue.venue_name|escapejs }}"
+          >
+            <div class="class-title">
+              {{ entry.curriculum.syllabus.course.course_name }}
+            </div>
+            <div class="class-detail">
+              {{ entry.curriculum.syllabus.course.course_code }} | {{ entry.venue.venue_name }}
+            </div>
+            <div class="class-detail">
+              👨‍🏫 {% for lecturer in entry.curriculum.professor.all %} 
+              {{  lecturer.name }} 
+              {% if not forloop.last %}, 
+              {% endif %} 
+              {% endfor  %}
+            </div>
+            <span class="lecture-badge"> Lecture </span>
+          </div>
+          {% else %}
+          <div class="empty-slot">— Free —</div>
+          {% endif %} {% endwith %}
+        </td>
         {% endfor %}
       </tr>
       {% endfor %}
@@ -180,4 +422,264 @@
   </div>
 </div>
 
-{% endif %} {% endblock %}
+{% endif %}
+<!-- ── Execution History Modal ── -->
+<div class="modal-overlay" id="historyModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="historyModalClose">&times;</button>
+    <h3 class="modal-title" id="historyCourseName">Course Name</h3>
+    <div class="modal-subtitle" id="historyCourseMeta">CODE | Venue</div>
+
+    <div id="execHistoryList" class="exec-history-list">
+      <div class="exec-history-empty">Loading…</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn--primary" id="openLogExecutionBtn">
+        ✅ Confirm Lecturer Attendance
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Log Execution Modal (attendance / reschedule form) ── -->
+<div class="modal-overlay" id="logModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="logModalClose">&times;</button>
+    <h3 class="modal-title">Log Class Execution</h3>
+    <div class="modal-subtitle" id="logCourseMeta">CODE — Venue</div>
+
+    <form id="logExecutionForm">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="execDate" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">What happened?</label>
+        <select class="form-select" id="execStatus">
+          <option value="Attended">✅ Class held — Attended</option>
+          <option value="Missed">⚠️ Lecturer didn't show — Missed</option>
+          <option value="Rescheduled">
+            🔁 Class was moved to another slot
+          </option>
+          <option value="Cancelled">
+            ❌ Cancelled / General University Holiday
+          </option>
+        </select>
+      </div>
+
+      <!-- shown only when status == Rescheduled -->
+      <div class="reschedule-fields" id="rescheduleFields">
+        <div class="form-group">
+          <!-- hardcode rather than expose a choice, since only a student is submitting this form -->
+          <input type="hidden" id="rescheduleRole" value="STUDENT" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Date</label>
+          <input type="date" class="form-input" id="rescheduledToDate" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Time Slot</label>
+          <select class="form-select" id="rescheduledToTimeSlot">
+            <!-- TODO: populate from Timetable.TIME_SLOTS, e.g.
+                 {% for value, label in timetable_slot_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %} -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Venue</label>
+          <select class="form-select" id="rescheduledToVenue">
+            <!-- TODO: populate from Venue.objects.all(), passed in context -->
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea
+          class="form-textarea"
+          id="execNotes"
+          rows="3"
+          placeholder="Reason for cancellation/reschedule, or general remarks…"
+        ></textarea>
+      </div>
+
+      <div class="form-error" id="execFormError"></div>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn--primary">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const EXEC_HISTORY_URL = "{% url 'execution-history' %}"; // TODO: add this URL name
+  const LOG_EXECUTION_URL = "{% url 'log-execution' %}"; // TODO: add this URL name
+  const CSRF_TOKEN = "{{ csrf_token }}";
+
+  let activeTimetableId = null;
+
+  // ── open history modal on slot click ─────────────────────────────────────
+  document.querySelectorAll(".class-slot--clickable").forEach((slot) => {
+    slot.addEventListener("click", () => {
+      activeTimetableId = slot.dataset.timetableId;
+      document.getElementById("historyCourseName").textContent =
+        slot.dataset.courseName;
+      document.getElementById("historyCourseMeta").textContent =
+        `${slot.dataset.courseCode} | ${slot.dataset.venue}`;
+      document.getElementById("logCourseMeta").textContent =
+        `${slot.dataset.courseCode} — ${slot.dataset.venue}`;
+
+      openModal("historyModalOverlay");
+      loadExecutionHistory(activeTimetableId);
+    });
+  });
+
+  function openModal(id) {
+    document.getElementById(id).classList.add("active");
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("active");
+  }
+
+  document
+    .getElementById("historyModalClose")
+    .addEventListener("click", () => closeModal("historyModalOverlay"));
+  document
+    .getElementById("logModalClose")
+    .addEventListener("click", () => closeModal("logModalOverlay"));
+  [["historyModalOverlay"], ["logModalOverlay"]].forEach(([id]) => {
+    document.getElementById(id).addEventListener("click", (e) => {
+      if (e.target.id === id) closeModal(id);
+    });
+  });
+
+  // ── fetch + render history ────────────────────────────────────────────────
+  async function loadExecutionHistory(timetableId) {
+    const list = document.getElementById("execHistoryList");
+    list.innerHTML = `<div class="exec-history-empty">Loading…</div>`;
+
+    try {
+      const res = await fetch(
+        `${EXEC_HISTORY_URL}?timetable_id=${timetableId}`,
+      );
+      const data = await res.json();
+
+      if (!data.executions || data.executions.length === 0) {
+        list.innerHTML = `<div class="exec-history-empty">📭 No executions logged yet for this slot.</div>`;
+        return;
+      }
+
+      list.innerHTML = data.executions
+        .map((ex) => {
+          let detail = "";
+          if (ex.status === "Rescheduled") {
+            detail = `<div class="exec-detail">→ Moved to <strong>${ex.rescheduled_to_date || "—"}</strong> at <strong>${ex.rescheduled_to_time_slot || "—"}</strong>, <strong>${ex.rescheduled_to_venue || "—"}</strong></div>`;
+          } else if (ex.status === "Missed") {
+            detail = `<div class="exec-detail">Lecturer did not attend this session.</div>`;
+          } else if (ex.status === "Attended" && ex.class_representative) {
+            detail = `<div class="exec-detail">Confirmed by <strong>${ex.class_representative}</strong></div>`;
+          }
+          const notes = ex.notes
+            ? `<div class="exec-notes">"${ex.notes}"</div>`
+            : "";
+
+          return `
+          <div class="exec-item">
+            <div class="exec-item-top">
+              <span class="exec-date">${ex.calendar_date}</span>
+              <span class="exec-badge exec-badge--${ex.status}">${ex.status}</span>
+            </div>
+            ${detail}
+            ${notes}
+          </div>
+        `;
+        })
+        .join("");
+    } catch (err) {
+      list.innerHTML = `<div class="exec-history-empty">⚠️ Failed to load history. Try again.</div>`;
+    }
+  }
+
+  // ── open log-execution modal ────────────────────────────────────────────
+  document
+    .getElementById("openLogExecutionBtn")
+    .addEventListener("click", () => {
+      document.getElementById("execDate").value = new Date()
+        .toISOString()
+        .slice(0, 10);
+      document.getElementById("execStatus").value = "Attended";
+      toggleStatusFields();
+      document.getElementById("execFormError").classList.remove("active");
+      closeModal("historyModalOverlay");
+      openModal("logModalOverlay");
+    });
+
+  document
+    .getElementById("execStatus")
+    .addEventListener("change", toggleStatusFields);
+
+  function toggleStatusFields() {
+    const status = document.getElementById("execStatus").value;
+    // prettier-ignore
+    //document.getElementById("attendedFields").style.display = ( status === "Attended" ? "block" : "none");
+    document
+      .getElementById("rescheduleFields")
+      .classList.toggle("active", status === "Rescheduled");
+  }
+
+  // ── submit ────────────────────────────────────────────────────────────────
+  document
+    .getElementById("logExecutionForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById("execFormError");
+      errorBox.classList.remove("active");
+
+      const status = document.getElementById("execStatus").value;
+      const payload = {
+        timetable_id: activeTimetableId,
+        calendar_date: document.getElementById("execDate").value,
+        status: status,
+        notes: document.getElementById("execNotes").value.trim(),
+      };
+
+      if (status === "Rescheduled") {
+        payload.reschedule_requested_by_role = "STUDENT";
+        payload.rescheduled_to_date =
+          document.getElementById("rescheduledToDate").value;
+        payload.rescheduled_to_time_slot = document.getElementById(
+          "rescheduledToTimeSlot",
+        ).value;
+        payload.rescheduled_to_venue =
+          document.getElementById("rescheduledToVenue").value;
+      }
+
+      try {
+        const res = await fetch(LOG_EXECUTION_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": CSRF_TOKEN,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          errorBox.textContent = data.message || "Something went wrong.";
+          errorBox.classList.add("active");
+          return;
+        }
+
+        closeModal("logModalOverlay");
+        openModal("historyModalOverlay");
+        loadExecutionHistory(activeTimetableId);
+      } catch (err) {
+        errorBox.textContent = "Network error — please try again.";
+        errorBox.classList.add("active");
+      }
+    });
+</script>
+{% endblock %}

@@ -459,11 +459,11 @@ class ExamCardView(
         return ExamSession.objects.filter(
             curriculum_id__in=enrolled_curriculum_ids
         ).select_related(
-            'curriculum__course',
+            'curriculum__syllabus__course',
             'curriculum__Tclass',
         ).prefetch_related(
             'venues__venue',
-            'venues__invigilator__user',
+            'venues__invigilators__user',
         ).order_by('date', 'time_slot')
 
     def _get_clashes(self, student, session):
@@ -472,8 +472,10 @@ class ExamCardView(
             session_a__curriculum__session=session,
             resolved=False
         ).select_related(
-            'session_a__curriculum__course',
-            'session_b__curriculum__course',
+            # was 'session_a__curriculum__course'
+            'session_a__curriculum__syllabus__course',
+            # was 'session_b__curriculum__course'
+            'session_b__curriculum__syllabus__course',
         )
 
     def get(self, request):
@@ -544,11 +546,11 @@ class ExamCardView(
         })
 
     def post(self, request):
-        student = self._get_student(request)
+        student = self.get_student(request)
         if not student:
             return JsonResponse({'success': False, 'message': 'No student profile.'}, status=403)
 
-        session = self._get_session()
+        session = self.get_active_session()
         if not session:
             return JsonResponse({'success': False, 'message': 'No active session.'}, status=400)
 

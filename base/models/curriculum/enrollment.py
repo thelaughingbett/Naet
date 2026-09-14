@@ -63,6 +63,7 @@ field) changes what `credits_earned`/`grade_points_earned` freezing
 actually does and deserves a deliberate decision, not a drive-by fix.
 """
 
+from decimal import Decimal, ROUND_HALF_UP
 from decimal import Decimal
 
 from django.conf import settings
@@ -371,13 +372,6 @@ class Enrollment(BaseModelMixin):
         self.save()
 
     def _current_score(self):
-        """
-        Weighted sum across every component in the resolved scheme, each
-        component's own contribution computed via its aggregation
-        strategy. None if ANY component isn't complete yet (see
-        WeightingComponent.compute()) — a partial weighted average would
-        understate the grade, so we wait for everything.
-        """
         scheme = self.curriculum.get_weighting_scheme()
         components = list(scheme.components.all())
         if not components:
@@ -392,13 +386,13 @@ class Enrollment(BaseModelMixin):
             )
             component_score = component.compute(results_qs)
             if component_score is None:
-                return None  # this component still has submissions pending
+                return None
 
             weighted_total += Decimal(str(component_score)) * (
                 component.weight_percent / Decimal('100')
             )
 
-        return weighted_total
+        return weighted_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def finalize_grade(self, force=False):
         if self.graded_at is not None and not force:
@@ -412,18 +406,19 @@ class Enrollment(BaseModelMixin):
         grading_scale = course.get_grading_scale()
         weighting_scheme = self.curriculum.get_weighting_scheme()
         pass_mark = course.pass_mark
+        # local — sidesteps the is_passed field/property collision entirely
+        passed = score >= pass_mark
 
         self.graded_score = score
-        # self.is_passed = score >= pass_mark
         self.grade_points_earned = grading_scale.grade_points_for(score)
-        self.credits_earned = course.credits if self.is_passed else 0
+        self.credits_earned = course.credits if passed else 0
         self.graded_scale = grading_scale
         self.weighting_scheme_used = weighting_scheme
         self.pass_mark_applied = pass_mark
         self.graded_at = timezone.now()
 
         self.save(update_fields=[
-            'graded_score', 'is_passed', 'grade_points_earned', 'credits_earned',
+            'graded_score', 'grade_points_earned', 'credits_earned',
             'graded_scale', 'weighting_scheme_used', 'pass_mark_applied', 'graded_at',
         ])
         return True

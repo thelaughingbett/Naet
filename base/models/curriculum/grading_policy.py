@@ -25,6 +25,7 @@ per-curriculum resolution, and the best-N/average/sum/latest
 aggregation strategy for multiple same-type results (e.g. 3 CATs).
 """
 
+from decimal import Decimal, ROUND_HALF_UP
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -43,6 +44,8 @@ RESULT_TYPE_CHOICES = [
     ('Q', 'Quizzes'),
     ('PR', 'Projects'),
 ]
+
+TWO_PLACES = Decimal('0.01')
 
 
 # --- Grading scale (score -> grade points) ----------------------------
@@ -246,7 +249,7 @@ class WeightingComponent(BaseModelMixin):
             return None  # still waiting on more submissions of this type
 
         if self.aggregation == self.Aggregation.AVERAGE_ALL:
-            return sum(scores) / count
+            return (sum(scores) / count).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
 
         if self.aggregation == self.Aggregation.SUM:
             return sum(scores)
@@ -256,7 +259,7 @@ class WeightingComponent(BaseModelMixin):
 
         if self.aggregation == self.Aggregation.BEST_N:
             best = sorted(scores, reverse=True)[:self.best_n_count]
-            return sum(best) / len(best)
+            return (sum(best) / len(best)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
 
         raise ValidationError(
             f"Unknown aggregation strategy '{self.aggregation}'.")

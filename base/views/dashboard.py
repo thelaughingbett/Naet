@@ -28,7 +28,8 @@ from base.models import (
     Curriculum,
     StudentFeeAccount,
     Timetable,
-    Reporting
+    Reporting,
+    Enrollment
 )
 from .base import (
     StudentProfileRequiredMixin,
@@ -80,9 +81,14 @@ class IndexView(
             today_day = day_map.get(today.weekday())
 
             if today_day:
-                entries = Timetable.objects.filter(
+                enrolled_curriculum_ids = Enrollment.objects.filter(
+                    student=student,
                     curriculum__session=session,
-                    curriculum__Tclass=student.class_entered,
+                    status__in=['approved', 'pending']
+                ).values_list('curriculum_id', flat=True)
+
+                entries = Timetable.objects.filter(
+                    curriculum_id__in=enrolled_curriculum_ids,
                     day=today_day,
                 ).select_related(
                     'curriculum__syllabus__course',
@@ -116,6 +122,7 @@ class IndexView(
                     'display':   f'{days_left} days left' if days_left <= 7 else due.strftime('%b %d, %Y'),
                     'is_urgent': days_left <= 7,
                 })
+
         already_reported = False
         if student and session:
             already_reported = Reporting.objects.filter(

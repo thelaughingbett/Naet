@@ -414,7 +414,7 @@ class Enrollment(BaseModelMixin):
         pass_mark = course.pass_mark
 
         self.graded_score = score
-        self.is_passed = score >= pass_mark
+        # self.is_passed = score >= pass_mark
         self.grade_points_earned = grading_scale.grade_points_for(score)
         self.credits_earned = course.credits if self.is_passed else 0
         self.graded_scale = grading_scale

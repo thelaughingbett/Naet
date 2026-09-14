@@ -302,34 +302,75 @@ class ResultsView(
     redirect_field_name = config("REDIRECT_FIELD_NAME")
 
     def get(self, request):
-        from base.models import Result
+        from base.models import Enrollment, Result
         student = self.get_student(request)
-        session = self.get_active_session()
+        active_session = self.get_active_session()
 
-        results = Result.objects.none()
+        enrollment_rows = []
+        sessions = Session.objects.none()
+
         if student:
             target_class = student.class_entered
 
-            # 1. Find the earliest session this class was ever a part of
             earliest_session = Session.objects.filter(
                 curricula__Tclass=target_class
             ).order_by('start_date').first()
 
-            if not earliest_session:
-                sessions = Session.objects.none()  # Return empty if class has no history
-            else:
-                # 2. Grab every session from that start date up until the current timeline
+            if earliest_session:
                 sessions = Session.objects.filter(
                     start_date__gte=earliest_session.start_date
                 ).order_by('start_date')
-                results = Result.objects.filter(
-                    enrollment__student=student
-                ).select_related('enrollment__curriculum__syllabus__course').order_by('-created_at')
+
+            # Every non-dropped/non-rejected enrollment — includes units
+            # currently being taken (no results published yet) as well as
+            # past graded ones, so the table always reflects the full
+            # course load, not just what's already been marked.
+            enrollments = Enrollment.objects.filter(
+                student=student,
+            ).exclude(
+                status__in=['dropped', 'rejected']
+            ).select_related(
+                'curriculum__syllabus__course',
+                'curriculum__session',
+            ).order_by('-curriculum__session__start_date')
+
+            enrollment_ids = [e.record_id for e in enrollments]
+
+            # Only PUBLISHED CAT/Exam results — draft/submitted/disputed
+            # results shouldn't display as a real score, and per the
+            # requirement here, shouldn't count toward GPA either.
+            published = Result.objects.filter(
+                enrollment_id__in=enrollment_ids,
+                type__in=['C', 'E'],
+                state='published',
+            ).order_by('record_id')
+
+            scores_by_enrollment = {}
+            for r in published:
+                bucket = scores_by_enrollment.setdefault(
+                    str(r.enrollment_id), {})
+                # last published wins if more than one
+                bucket[r.type] = float(r.score)
+
+            for enr in enrollments:
+                course = enr.curriculum.course
+                bucket = scores_by_enrollment.get(str(enr.record_id), {})
+                has_published = bool(bucket)
+
+                enrollment_rows.append({
+                    'session': str(enr.curriculum.session),
+                    'course_code': course.course_code,
+                    'course_name': course.course_name,
+                    'credits': course.credits,
+                    'cat': bucket.get('C', 0),
+                    'exam': bucket.get('E', 0),
+                    'has_published': has_published,
+                })
 
         context = {
-            'results': results,
+            'enrollment_rows': enrollment_rows,
             'student': student,
-            'session': session,
-            'sessions': sessions
+            'session': active_session,
+            'sessions': sessions,
         }
         return render(request, 'base/academics/results.html', context)

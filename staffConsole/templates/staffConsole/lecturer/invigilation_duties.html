@@ -863,38 +863,6 @@
   });
 
   // ============================================
-  // SIDEBAR TOGGLE (mirrors my_courses.html)
-  // ============================================
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-
-  function toggleMobileSidebar() {
-    sidebar?.classList.toggle('open');
-    overlay?.classList.toggle('active');
-  }
-  hamburgerBtn?.addEventListener('click', toggleMobileSidebar);
-  overlay?.addEventListener('click', toggleMobileSidebar);
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      sidebar?.classList.remove('open');
-      overlay?.classList.remove('active');
-    }
-  });
-
-  // ============================================
-  // TOAST
-  // ============================================
-  function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => toast.classList.remove('show'), 3500);
-  }
-
-  // ============================================
   // INIT
   // ============================================
   document.addEventListener('DOMContentLoaded', () => {

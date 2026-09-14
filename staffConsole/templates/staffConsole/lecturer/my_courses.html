@@ -885,63 +885,7 @@
     });
   }
 
-  // ── sidebar collapsible groups ───────────────────────────────────────────────
-  document.querySelectorAll(".sidebar__link--toggle").forEach((btn) => {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      const sub = document.getElementById(this.dataset.target);
-      const parentItem = this.closest(".sidebar__item--group");
-      if (!sub) return;
-      sub.classList.toggle("sidebar__submenu--open");
-      parentItem.classList.toggle("sidebar__item--open");
-      this.setAttribute(
-        "aria-expanded",
-        sub.classList.contains("sidebar__submenu--open"),
-      );
-    });
-  });
-
-  // ── mobile sidebar ───────────────────────────────────────────────────────────
-  const hamburgerBtn = document.getElementById("hamburgerBtn");
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("sidebarOverlay");
-
-  function toggleMobileSidebar() {
-    sidebar.classList.toggle("open");
-    overlay?.classList.toggle("active");
-  }
-  hamburgerBtn?.addEventListener("click", toggleMobileSidebar);
-  overlay?.addEventListener("click", toggleMobileSidebar);
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 768) {
-      sidebar.classList.remove("open");
-      overlay?.classList.remove("active");
-    }
-  });
-
-  // ── toast helper (matches the shell pattern) ─────────────────────────────────
-  function showToast(message, type = "info") {
-    const toast = document.getElementById("toast");
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => toast.classList.remove("show"), 3500);
-  }
-
-  // ── init ────────────────────────────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", () => {
-    // ensure My Teaching is open on load
-    const sub = document.getElementById("teaching-sub");
-    const btn = document.querySelector('[data-target="teaching-sub"]');
-    if (sub && btn) {
-      sub.classList.add("sidebar__submenu--open");
-      btn
-        .closest(".sidebar__item--group")
-        ?.classList.add("sidebar__item--open");
-      btn.setAttribute("aria-expanded", "true");
-    }
-  });
+  document.addEventListener("DOMContentLoaded", () => {});
 </script>
 
 {% endblock %}

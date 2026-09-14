@@ -1229,65 +1229,6 @@
     }
   });
 
-  document.querySelectorAll(".sidebar__link--toggle").forEach((button) => {
-    button.addEventListener("click", function (e) {
-      e.preventDefault();
-      const targetId = this.dataset.target;
-      const submenu = document.getElementById(targetId);
-      const parentItem = this.closest(".sidebar__item--group");
-      if (!submenu) return;
-
-      submenu.classList.toggle("sidebar__submenu--open");
-      parentItem.classList.toggle("sidebar__item--open");
-      const isOpen = submenu.classList.contains("sidebar__submenu--open");
-      this.setAttribute("aria-expanded", isOpen);
-    });
-  });
-
-  const hamburgerBtn = document.getElementById("hamburgerBtn");
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("sidebarOverlay");
-
-  function toggleMobileSidebar() {
-    sidebar.classList.toggle("open");
-    overlay.classList.toggle("active");
-  }
-
-  hamburgerBtn.addEventListener("click", toggleMobileSidebar);
-  overlay.addEventListener("click", toggleMobileSidebar);
-
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 768) {
-      sidebar.classList.remove("open");
-      overlay.classList.remove("active");
-    }
-  });
-
-  function showToast(message, type = "success") {
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
-    toast.className = "toast " + type;
-    toast.classList.add("show");
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => toast.classList.remove("show"), 3500);
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const profileToggle = document.querySelector('[data-target="profile-sub"]');
-    if (profileToggle) {
-      const sub = document.getElementById("profile-sub");
-      if (sub) {
-        sub.classList.add("sidebar__submenu--open");
-        profileToggle
-          .closest(".sidebar__item--group")
-          ?.classList.add("sidebar__item--open");
-      }
-    }
-    document
-      .querySelectorAll(".sidebar__item--open .sidebar__link--toggle")
-      .forEach((el) => {
-        el.setAttribute("aria-expanded", "true");
-      });
-  });
+  document.addEventListener("DOMContentLoaded", () => {});
 </script>
 {% endblock %}

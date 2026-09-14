@@ -819,22 +819,16 @@
             </ul>
           </li>
 
-          <li class="sidebar__item sidebar__item--group sidebar__item--open">
-            <button
-              class="sidebar__link--toggle active"
-              data-target="assessment-sub"
-            >
+          <li class="sidebar__item sidebar__item--group">
+            <button class="sidebar__link--toggle" data-target="assessment-sub">
               <i class="fas fa-clipboard-list"></i><span>Assessment</span>
               <i class="fas fa-chevron-down sidebar__chevron"></i>
             </button>
-            <ul
-              class="sidebar__submenu sidebar__submenu--open"
-              id="assessment-sub"
-            >
+            <ul class="sidebar__submenu" id="assessment-sub">
               <li>
                 <a
                   href="{% url 'lecturer-enter-results' %}"
-                  class="sidebar__sublink active"
+                  class="sidebar__sublink"
                 >
                   Enter Results {% if stats.pending %}<span class="badge"
                     >{{ stats.pending }}</span
@@ -864,7 +858,11 @@
                   >Profile Details</a
                 >
               </li>
-              <li><a href="#" class="sidebar__sublink">Settings</a></li>
+              <li>
+                <a href="{% url 'coming-soon' %}" class="sidebar__sublink"
+                  >Settings</a
+                >
+              </li>
             </ul>
           </li>
         </ul>
@@ -875,5 +873,49 @@
     <main class="main-content" id="mainContent">
       {% block content %} {% endblock content %}
     </main>
+    <script>
+      // ── sidebar ───────────────────────────────────────────────────────────────
+      document.querySelectorAll(".sidebar__link--toggle").forEach((btn) => {
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          const sub = document.getElementById(this.dataset.target);
+          const item = this.closest(".sidebar__item--group");
+          if (!sub) return;
+          sub.classList.toggle("sidebar__submenu--open");
+          item.classList.toggle("sidebar__item--open");
+          this.setAttribute(
+            "aria-expanded",
+            sub.classList.contains("sidebar__submenu--open"),
+          );
+        });
+      });
+      const hamburgerBtn = document.getElementById("hamburgerBtn");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      hamburgerBtn?.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        overlay?.classList.toggle("active");
+      });
+      overlay?.addEventListener("click", () => {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      });
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove("open");
+          overlay?.classList.remove("active");
+        }
+      });
+
+      // ── toast ─────────────────────────────────────────────────────────────────
+      function showToast(msg, type = "info") {
+        const t = document.getElementById("toast");
+        if (!t) return;
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove("show"), 3500);
+      }
+    </script>
   </body>
 </html>

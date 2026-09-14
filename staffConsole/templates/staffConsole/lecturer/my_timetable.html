@@ -1005,47 +1005,10 @@
     showToast('📅 Current week', 'info');
   }
 
-  // ── sidebar ───────────────────────────────────────────────────────────────
-  document.querySelectorAll('.sidebar__link--toggle').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      const sub  = document.getElementById(this.dataset.target);
-      const item = this.closest('.sidebar__item--group');
-      if (!sub) return;
-      sub.classList.toggle('sidebar__submenu--open');
-      item.classList.toggle('sidebar__item--open');
-      this.setAttribute('aria-expanded', sub.classList.contains('sidebar__submenu--open'));
-    });
-  });
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const sidebar      = document.getElementById('sidebar');
-  const overlay      = document.getElementById('sidebarOverlay');
-  hamburgerBtn?.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay?.classList.toggle('active'); });
-  overlay?.addEventListener('click',      () => { sidebar.classList.remove('open'); overlay?.classList.remove('active'); });
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) { sidebar.classList.remove('open'); overlay?.classList.remove('active'); }
-  });
-
-  // ── toast ─────────────────────────────────────────────────────────────────
-  function showToast(msg, type = 'info') {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.textContent = msg;
-    t.className   = `toast ${type} show`;
-    clearTimeout(t._t);
-    t._t = setTimeout(() => t.classList.remove('show'), 3500);
-  }
-
+ 
   // ── init ──────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    const sub = document.getElementById('teaching-sub');
-    const btn = document.querySelector('[data-target="teaching-sub"]');
-    if (sub && btn) {
-      sub.classList.add('sidebar__submenu--open');
-      btn.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
-      btn.setAttribute('aria-expanded', 'true');
-    }
-
+    
     {% if grid_rows %}
     renderTimetable();
     {% endif %}

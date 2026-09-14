@@ -80,19 +80,28 @@ class CurriculumView(
             # being taught to THIS student's class in the active session —
             # a future year's units won't have this yet, which is expected.
             if active_session:
+                # Curriculum has no direct `syllabus` field anymore —
+                # `course` is direct, and `classes` (through CurriculumClass)
+                # is how we know this student's class is actually attached
+                # to that slot. `class_links__syllabus__in=...` narrows it
+                # to the specific syllabus-approved link, matching the old
+                # per-syllabus semantics. Since Syllabus is unique per
+                # (programme, course) and syllabus_entries is already
+                # scoped to this student's programme, keying the lookup
+                # dict by course_id is unambiguous.
                 curricula = Curriculum.objects.filter(
-                    Tclass=student.class_entered,
+                    classes=student.class_entered,
                     session=active_session,
-                    syllabus__in=syllabus_entries,
-                ).select_related('syllabus').prefetch_related('professor__user')
+                    class_links__syllabus__in=syllabus_entries,
+                ).select_related('course').prefetch_related('professor__user').distinct()
 
-                curriculum_by_syllabus_id = {
-                    c.syllabus_id: c for c in curricula
+                curriculum_by_course_id = {
+                    c.course_id: c for c in curricula
                 }
 
                 for entry in syllabus_entries:
-                    entry.current_curriculum = curriculum_by_syllabus_id.get(
-                        entry.record_id)
+                    entry.current_curriculum = curriculum_by_course_id.get(
+                        entry.course_id)
             else:
                 for entry in syllabus_entries:
                     entry.current_curriculum = None
@@ -126,6 +135,11 @@ class UnitRegistrationView(
         enrolled = []
         active_curriculum_ids = []
         available = Curriculum.objects.none()
+        # Was previously undefined whenever `student` or `session` was
+        # falsy — the context dict below always references it, which
+        # would raise UnboundLocalError on that path. Initialize it
+        # unconditionally.
+        results_map = {}
 
         if student and session:
             enrolled_qs = Enrollment.objects.filter(
@@ -134,8 +148,8 @@ class UnitRegistrationView(
             ).exclude(
                 status='dropped'
             ).select_related(
-                'curriculum__syllabus__course'
-            ).order_by('curriculum__syllabus__course__course_code')
+                'curriculum__course'
+            ).order_by('curriculum__course__course_code')
 
             active_curriculum_ids = list(
                 enrolled_qs.values_list('curriculum_id', flat=True)
@@ -151,7 +165,6 @@ class UnitRegistrationView(
                 state='published',
             ).order_by('type')
 
-            results_map = {}
             for r in published_results:
                 results_map.setdefault(str(r.enrollment_id), []).append({
                     'type': r.get_type_display(),
@@ -163,13 +176,19 @@ class UnitRegistrationView(
                 e.published_results_list = results_map.get(
                     str(e.record_id), [])
 
+            # `Tclass=`/`syllabus__course__course_type=` no longer exist
+            # on Curriculum. `classes=student.class_entered` requires a
+            # CurriculumClass link already exists for this student's
+            # class — i.e. this elective has actually been scheduled for
+            # their class, matching the old per-class Curriculum row
+            # semantics as closely as the new shared-slot schema allows.
             available = Curriculum.objects.filter(
-                Tclass=student.class_entered,
+                classes=student.class_entered,
                 session=session,
-                syllabus__course__course_type='E',
+                course__course_type='E',
             ).exclude(
                 record_id__in=active_curriculum_ids
-            ).select_related('syllabus__course')
+            ).select_related('course').distinct()
 
         context = {
             'available': available,
@@ -206,12 +225,12 @@ class UnitRegistrationView(
 
         curricula = Curriculum.objects.filter(
             record_id__in=curriculum_ids,
-            Tclass=student.class_entered,
+            classes=student.class_entered,
             session=session,
-            syllabus__course__course_type='E',
+            course__course_type='E',
         ).exclude(
             record_id__in=active_curriculum_ids
-        ).select_related('syllabus__course')
+        ).select_related('course').distinct()
 
         if not curricula.exists():
             return JsonResponse({'success': False, 'message': 'No matching units found.'}, status=404)
@@ -267,7 +286,7 @@ class DropElectiveUnitView(
         enrollment = Enrollment.objects.filter(
             record_id=enrollment_id,
             student=student,
-        ).select_related('curriculum__syllabus__course').first()
+        ).select_related('curriculum__course').first()
 
         if not enrollment:
             return JsonResponse({'success': False, 'message': 'Enrollment not found.'}, status=404)
@@ -312,8 +331,11 @@ class ResultsView(
         if student:
             target_class = student.class_entered
 
+            # `curricula__Tclass` doesn't exist — `curricula` is the
+            # related_name on Curriculum.session, and the class link is
+            # now via `classes` (through CurriculumClass).
             earliest_session = Session.objects.filter(
-                curricula__Tclass=target_class
+                curricula__classes=target_class
             ).order_by('start_date').first()
 
             if earliest_session:
@@ -330,7 +352,7 @@ class ResultsView(
             ).exclude(
                 status__in=['dropped', 'rejected']
             ).select_related(
-                'curriculum__syllabus__course',
+                'curriculum__course',
                 'curriculum__session',
             ).order_by('-curriculum__session__start_date')
 

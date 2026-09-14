@@ -1214,29 +1214,36 @@
       >
     </div>
     <div class="course-context__meta">
-      <span><i class="far fa-calendar-alt"></i> {{ selected.session }}</span>
+      <span>
+        <i class="far fa-calendar-alt"></i>
+        {{ selected.session }}
+      </span>
       {% if selected_slot %}
       <span>
         <i class="fas fa-clock"></i>
+        {{ selected_slot.get_day_display }} · {{ selected_slot.time_slot }}
+      </span>
+      <span>
+        <i class="fas fa-map-pin"></i>
         <!-- prettier-ignore -->
-        {{ selected_slot.get_day_display }} · 
-        {{ selected_slot.time_slot }}</span
-      >
-      <span
-        ><i class="fas fa-map-pin"></i> {{ selected_slot.venue.venue_name }} ·
-        {{ selected.Tclass.class_name }}</span
-      >
+        {{ selected_slot.venue.venue_name }} · {% for cls in  selected.classes.all %}
+        {{ cls.class_name }} {% if not forloop.last %},
+        {% endif %}{% endfor %}
+      </span>
       {% else %}
-      <span
-        ><i class="fas fa-map-pin"></i> {{ selected.Tclass.class_name }}</span
-      >
+      <span>
+        <i class="fas fa-map-pin"></i>
+        <!-- prettier-ignore -->
+        {% for cls in selected.classes.all %}
+         {{ cls.class_name }}
+         {% if not forloop.last %}, {% endif %}{% endfor %}
+      </span>
       <span style="font-style: italic; opacity: 0.6"
         ><i class="fas fa-clock"></i> No timetable slot yet</span
       >
       {% endif %}
       <span>
         <i class="fas fa-user-graduate"></i>
-        <!-- prettier-ignore -->
         {{ stats.total }} student{{ stats.total|pluralize }}</span
       >
       <span><i class="fas fa-chalkboard-teacher"></i> {{ lecturer.name }}</span>
@@ -1280,6 +1287,9 @@
     />
   </div>
   <div class="search-filter-bar__filters">
+    <select id="classFilter" onchange="filterTable()">
+      <option value="">All Classes</option>
+    </select>
     <select id="statusFilter" onchange="filterTable()">
       <option value="">All Status</option>
       <option value="approved">Approved</option>
@@ -1295,6 +1305,11 @@
       <option value="F">F</option>
       <option value="—">Not entered</option>
     </select>
+    <select id="resultsFilter" onchange="filterTable()">
+      <option value="">All Results</option>
+      <option value="entered">Results Entered</option>
+      <option value="not_entered">Not Entered</option>
+    </select>
     <button class="btn-sm" onclick="resetFilters()">
       <i class="fas fa-undo"></i> Reset
     </button>
@@ -1309,12 +1324,13 @@
           <th onclick="sortTable(0)"># <i class="fas fa-sort"></i></th>
           <th onclick="sortTable(1)">Student <i class="fas fa-sort"></i></th>
           <th onclick="sortTable(2)">Reg. No. <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(3)">Email <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(4)">Status <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(5)">CAT</th>
-          <th onclick="sortTable(6)">Exam</th>
-          <th onclick="sortTable(7)">Total</th>
-          <th onclick="sortTable(8)">Grade <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(3)">Class <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(4)">Email <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(5)">Status <i class="fas fa-sort"></i></th>
+          <th onclick="sortTable(6)">CAT</th>
+          <th onclick="sortTable(7)">Exam</th>
+          <th onclick="sortTable(8)">Total</th>
+          <th onclick="sortTable(9)">Grade <i class="fas fa-sort"></i></th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -1324,9 +1340,11 @@
           class="student-row"
           data-name="{{ row.full_name|lower }}"
           data-reg="{{ row.registration_no|lower }}"
+          data-class="{{ row.class_name|lower }}"
           data-email="{{ row.email|lower }}"
           data-status="{{ row.status }}"
           data-grade="{{ row.grade }}"
+          data-results="{% if row.cat or row.exam %}entered{% else %}not_entered{% endif %}"
           data-enrollment="{{ row.enrollment_id }}"
         >
           <td class="row-index"></td>
@@ -1349,6 +1367,9 @@
             >
               {{ row.registration_no|upper }}
             </code>
+          </td>
+          <td>
+            <span style="font-size: 0.75rem">{{ row.class_name }}</span>
           </td>
           <td>
             <span style="font-size: 0.7rem; color: var(--text-muted)"
@@ -1402,7 +1423,7 @@
         {% empty %}
         <tr>
           <td
-            colspan="10"
+            colspan="11"
             style="text-align: center; padding: 3rem; opacity: 0.5"
           >
             <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
@@ -1518,11 +1539,26 @@
 
   let sortCol = -1,
     sortAsc = true;
+  function populateClassFilter() {
+    const select = document.getElementById("classFilter");
+    const classes = new Set();
+    document.querySelectorAll("#tableBody .student-row").forEach((row) => {
+      if (row.dataset.class) classes.add(row.dataset.class);
+    });
+    [...classes].sort().forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c.toUpperCase();
+      select.appendChild(opt);
+    });
+  }
 
   function filterTable() {
     const q = document.getElementById("studentSearch").value.toLowerCase();
     const status = document.getElementById("statusFilter").value;
     const grade = document.getElementById("gradeFilter").value;
+    const klass = document.getElementById("classFilter").value;
+    const results = document.getElementById("resultsFilter").value;
     let idx = 1;
 
     document.querySelectorAll("#tableBody .student-row").forEach((row) => {
@@ -1533,7 +1569,9 @@
         row.dataset.email.includes(q);
       const matchS = !status || row.dataset.status === status;
       const matchG = !grade || row.dataset.grade === grade;
-      const show = matchQ && matchS && matchG;
+      const matchC = !klass || row.dataset.class === klass;
+      const matchR = !results || row.dataset.results === results;
+      const show = matchQ && matchS && matchG && matchC && matchR;
       row.style.display = show ? "" : "none";
       if (show) row.querySelector(".row-index").textContent = idx++;
     });
@@ -1547,9 +1585,10 @@
     document.getElementById("studentSearch").value = "";
     document.getElementById("statusFilter").value = "";
     document.getElementById("gradeFilter").value = "";
+    document.getElementById("classFilter").value = "";
+    document.getElementById("resultsFilter").value = "";
     filterTable();
   }
-
   function sortTable(col) {
     if (sortCol === col) sortAsc = !sortAsc;
     else {
@@ -1559,8 +1598,7 @@
 
     const tbody = document.getElementById("tableBody");
     const rows = [...tbody.querySelectorAll(".student-row")];
-    const keys = ["", "name", "reg", "email", "status", "", "", "", "grade"];
-
+    const keys = ["", "name", "reg", "class", "email", "status", "grade"];
     rows.sort((a, b) => {
       const ak = (
         a.dataset[keys[col]] ||
@@ -1595,41 +1633,45 @@
           ? d.grade
           : "";
         document.getElementById("viewModalBody").innerHTML = `
-        <div class="detail-row">
-          <span class="detail-row__label">Full Name</span>
-          <span><strong>${d.full_name}</strong></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Reg. No.</span>
-          <span><code style="background:var(--bg);padding:.1rem .5rem;border-radius:4px">${d.registration_no.toUpperCase()}</code></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Email</span>
-          <span><a href="mailto:${d.email}" style="color:var(--blue-card)">${d.email}</a></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Status</span>
-          <span class="status-badge ${d.status}">${d.status.charAt(0).toUpperCase() + d.status.slice(1)}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">CAT</span>
-          <span>${d.cat || "—"}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Exam</span>
-          <span>${d.exam || "—"}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Total / Grade</span>
-          <span>${d.total || "—"} &nbsp;
-            <span class="grade-pill ${gradeClass}">${d.grade}</span>
-          </span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-row__label">Course</span>
-          <span><strong>${d.course_code}</strong> — ${d.course_name}</span>
-        </div>
-      `;
+  <div class="detail-row">
+    <span class="detail-row__label">Full Name</span>
+    <span><strong>${d.full_name}</strong></span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Reg. No.</span>
+    <span><code style="background:var(--bg);padding:.1rem .5rem;border-radius:4px">${d.registration_no.toUpperCase()}</code></span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Class</span>
+    <span>${d.class_name}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Email</span>
+    <span><a href="mailto:${d.email}" style="color:var(--blue-card)">${d.email}</a></span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Status</span>
+    <span class="status-badge ${d.status}">${d.status.charAt(0).toUpperCase() + d.status.slice(1)}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">CAT</span>
+    <span>${d.cat || "—"}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Exam</span>
+    <span>${d.exam || "—"}</span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Total / Grade</span>
+    <span>${d.total || "—"} &nbsp;
+      <span class="grade-pill ${gradeClass}">${d.grade}</span>
+    </span>
+  </div>
+  <div class="detail-row">
+    <span class="detail-row__label">Course</span>
+    <span><strong>${d.course_code}</strong> — ${d.course_name}</span>
+  </div>
+`;
       })
       .catch(() => showToast("Network error loading student.", "warning"));
   }
@@ -1661,6 +1703,7 @@
       "#",
       "Name",
       "Reg No",
+      "Class",
       "Email",
       "Status",
       "CAT",
@@ -1707,6 +1750,7 @@
   });
 
   document.addEventListener("DOMContentLoaded", () => {
+    populateClassFilter();
     filterTable();
   });
 </script>

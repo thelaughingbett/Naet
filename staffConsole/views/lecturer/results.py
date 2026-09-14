@@ -24,21 +24,23 @@ from staffConsole.views.base import RoleRequiredMixin
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
-
 def _build_unit_list(lecturer, session):
     """Return lightweight course selector data for all lecturer curricula."""
     units = (
         Curriculum.objects
         .filter(professor=lecturer, session=session)
-        .select_related('syllabus__course', 'Tclass')
-        .order_by('syllabus__course__course_code')
+        .select_related('course')
+        .prefetch_related('classes')
+        .order_by('course__course_code')
     )
     return [
         {
             'curriculum_id':  str(u.record_id),
             'code':           u.course.course_code,
             'name':           u.course.course_name,
-            'class_name':     u.Tclass.class_name,
+            # A shared Curriculum can now serve several classes across
+            # different programmes — join them rather than assuming one.
+            'class_names':    ", ".join(u.classes.values_list('class_name', flat=True)),
             'enrolled_count': u.enrollment_records.filter(status='approved').count(),
         }
         for u in units
@@ -88,11 +90,10 @@ def _build_student_rows(curriculum, title, result_type):
     enrollments = (
         Enrollment.objects
         .filter(curriculum=curriculum, status='approved')
-        .select_related('student__user')
+        .select_related('student__user', 'student__class_entered')
         .order_by('student__registration_number')
     )
 
-    # Pre-fetch all result rows for this assessment in one query
     enrollment_ids = [e.record_id for e in enrollments]
     existing = {
         str(r.enrollment_id): r
@@ -112,15 +113,19 @@ def _build_student_rows(curriculum, title, result_type):
             'registration_no': enr.student.registration_number,
             'full_name':       enr.student.user.full_name,
             'initials':        enr.student.user.initials,
+            # NEW — a shared Curriculum can now serve several classes at
+            # once, so students entering the same assessment may belong
+            # to different classes. Needed for the class filter/column.
+            'class_name':      enr.student.class_entered.class_name,
             'score':           str(result.score) if result else '',
             'result_id':       str(result.record_id) if result else '',
         })
     return rows
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Page view
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class EnterResultsView(RoleRequiredMixin, View):
     required_role = 'lecturer'
@@ -135,16 +140,23 @@ class EnterResultsView(RoleRequiredMixin, View):
             session
         ) if session else ([], [])
 
-        # Resolve the selected curriculum (query param or first)
         selected_id = request.GET.get('curriculum')
         selected = None
 
         if session and selected_id:
             try:
-                selected = Curriculum.objects.select_related('syllabus__course', 'Tclass').get(
+                selected = Curriculum.objects.select_related('course').prefetch_related('classes').get(
                     record_id=selected_id,
                     professor=lecturer,
                     session=session,
+                )
+            except Curriculum.DoesNotExist:
+                pass
+
+        if session and not selected and unit_list:
+            try:
+                selected = Curriculum.objects.select_related('course').prefetch_related('classes').get(
+                    record_id=unit_list[0]['curriculum_id']
                 )
             except Curriculum.DoesNotExist:
                 pass

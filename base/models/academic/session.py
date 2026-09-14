@@ -83,27 +83,37 @@ class Session(BaseModelMixin):
         with transaction.atomic():
             current_session = cls.objects.get(is_active=True)
             next_sem, start_date, next_year = current_session.generate_next_session_name()
+            # semester is a CharField choice ("1"/"2"/"3");
+            next_sem = str(next_sem)
+            # generate_next_session_name returns an int
 
+            # is_active/start_date moved to defaults — unique_together is only
+            # (academic_year, semester), so filtering on is_active here would
+            # miss an existing-but-inactive row and try to create a duplicate,
+            # tripping the unique constraint.
             next_session, created = cls.objects.get_or_create(
                 academic_year=next_year,
                 semester=next_sem,
-                is_active=True,
-                start_date=start_date
+                defaults={
+                    'is_active': True,
+                    'start_date': start_date,
+                },
             )
 
-            session_prev = cls.objects.get(
-                semester=next_sem,
-                academic_year=current_session.academic_year
-            )
-
-            cloned_count = Curriculum.clone_curriculum(
-                from_session_id=session_prev.record_id,
-                to_session_id=next_session.record_id
+            # current_session already IS the "previous" session — no need to
+            # re-fetch it. The old session_prev lookup queried semester=next_sem
+            # against the CURRENT academic_year, which doesn't correspond to any
+            # real session and raised Session.DoesNotExist on every call.
+            clone_stats = Curriculum.clone_curriculum(
+                from_session_id=current_session.record_id,
+                to_session_id=next_session.record_id,
+                keep_professor=keep_professor,
             )
 
             current_session.is_active = False
             current_session.save()
-            next_session.is_active = True
-            next_session.save()
+            if not next_session.is_active:
+                next_session.is_active = True
+                next_session.save()
 
-            return next_session, cloned_count
+            return next_session, clone_stats

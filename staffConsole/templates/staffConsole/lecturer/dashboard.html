@@ -767,7 +767,9 @@
             <strong>{{ slot.curriculum.course.course_name }}</strong>
             <div class="timetable-row__meta">
               <!-- prettier-ignore -->
-              {{ slot.curriculum.course.course_code }} · {{ slot.venue }} · {{ slot.curriculum.Tclass.class_name }}
+              {{ slot.curriculum.course.course_code }} · {{ slot.venue }} ·
+              {% for c in slot.curriculum.classes.all %}
+              {{ c.class_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
             </div>
           </div>
           <span class="timetable-row__tag">Lecture</span>
@@ -826,9 +828,14 @@
           <div class="progress-row__label">
             <strong>{{ row.unit.course.course_code }}</strong>
             <!-- prettier-ignore -->
-            <span
-              >{{ row.unit.course.course_code }} ({{ row.unit.Tclass.class_name }}) results due · {{ row.total }} student{{ row.total|pluralize }}</span
-            >
+            <span >
+              {{ row.unit.course.course_code }} 
+              ({% for c in row.unit.classes.all %}
+              {{ c.class_name }}
+              {% if not forloop.last %},
+              {% endif %}{% endfor %}) 
+              results due · {{ row.total }} student{{ row.total|pluralize }}
+            </span >
           </div>
           <div class="progress-row__bar-wrap">
             <div class="progress-row__bar-track">
@@ -901,13 +908,13 @@
     <!-- Upcoming Deadlines -->
     <div class="card">
       <div class="card__header">
-        <span
-          ><i
+        <span>
+          <i
             class="fas fa-hourglass-half"
             style="color: var(--maroon); margin-right: 0.4rem"
           ></i>
-          Upcoming Deadlines</span
-        >
+          Upcoming Deadlines
+        </span>
       </div>
 
       {% if pending_results or invigilation %}
@@ -917,17 +924,21 @@
           <span class="pending-item__label">
             <i class="fas fa-clipboard-list"></i>
             <!-- prettier-ignore -->
-            {{ row.unit.course.course_code }} ({{ row.unit.Tclass.class_name }}) results due
+            {{ row.unit.course.course_code }}
+      ({% for c in row.unit.classes.all %}{{ c.class_name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+      results due
           </span>
           <span class="pending-item__count">{{ row.pct }}%</span>
         </div>
         {% endfor %} {% for invig in invigilation %}
         <div class="pending-item">
           <span class="pending-item__label">
-            <i class="fas fa-user-shield"></i> Invigilation — {{ invig.venue }}
+            <i class="fas fa-user-shield"></i> Invigilation —
+            <!-- prettier-ignore -->
+            {{ invig.exam_venue.venue.venue_name }}
           </span>
           <span class="pending-item__count"
-            >{{ invig.exam_session.date|date:"d M" }}</span
+            >{{ invig.exam_venue.exam_session.date|date:"d M" }}</span
           >
         </div>
         {% endfor %}

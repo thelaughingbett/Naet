@@ -324,10 +324,8 @@
         {% for exam in exam_schedule %}
         <tr>
           <td>{{ exam.date|date:"d M Y" }}</td>
-          <td class="mono">
-            {{ exam.curriculum.syllabus.course.course_code|upper }}
-          </td>
-          <td>{{ exam.curriculum.syllabus.course.course_name }}</td>
+          <td class="mono">{{ exam.curriculum.course.course_code|upper }}</td>
+          <td>{{ exam.curriculum.course.course_name }}</td>
           <td class="mono">{{ exam.time_slot }}</td>
           <td>
             <!-- prettier-ignore -->

@@ -416,6 +416,9 @@
   /* ============================================
            TIMETABLE GRID
            ============================================ */
+  /* ============================================
+         TIMETABLE GRID
+         ============================================ */
   .timetable-wrapper {
     background: var(--white);
     border-radius: var(--radius);
@@ -426,18 +429,19 @@
   .timetable-scroll {
     overflow-x: auto;
     padding: 0 0.5rem 0.5rem 0.5rem;
+    -webkit-overflow-scrolling: touch;
   }
   .timetable-grid {
     width: 100%;
     border-collapse: collapse;
-    min-width: 700px;
+    min-width: 760px; /* comfortable fixed size — never shrinks below this */
     table-layout: fixed;
   }
   .timetable-grid th {
-    padding: 0.8rem 0.5rem;
+    padding: 0.9rem 0.6rem;
     text-align: center;
     font-weight: 700;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: var(--text-muted);
@@ -445,16 +449,16 @@
     background: var(--bg);
   }
   .timetable-grid th:first-child {
-    width: 80px;
-    min-width: 80px;
+    width: 90px;
+    min-width: 90px;
   }
   .timetable-grid td {
-    padding: 0.3rem;
+    padding: 0.4rem;
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
     vertical-align: top;
-    height: 72px;
-    min-height: 72px;
+    height: 92px; /* was 72px — more room for a readable course block */
+    min-height: 92px;
     position: relative;
   }
   .timetable-grid td:last-child {
@@ -466,14 +470,14 @@
   .timetable-grid .time-label {
     text-align: center;
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
     padding: 0.3rem 0.2rem;
     background: var(--bg);
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    height: 72px;
-    min-height: 72px;
+    height: 92px;
+    min-height: 92px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -481,7 +485,7 @@
     line-height: 1.3;
   }
   .timetable-grid .time-label .ampm {
-    font-size: 0.55rem;
+    font-size: 0.6rem;
     font-weight: 400;
     color: var(--text-muted);
   }
@@ -496,12 +500,13 @@
   .course-block {
     background: #eef2ff;
     border-radius: 8px;
-    padding: 0.4rem 0.5rem;
+    padding: 0.55rem 0.65rem;
     height: 100%;
-    min-height: 62px;
+    min-height: 80px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: 0.15rem;
     border-left: 4px solid var(--navy);
     cursor: pointer;
     transition: 0.2s;
@@ -512,11 +517,11 @@
   }
   .course-block .code {
     font-weight: 700;
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     color: var(--navy);
   }
   .course-block .title {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 500;
     color: var(--text);
     white-space: nowrap;
@@ -524,26 +529,26 @@
     text-overflow: ellipsis;
   }
   .course-block .meta {
-    font-size: 0.55rem;
+    font-size: 0.63rem;
     color: var(--text-muted);
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-top: 0.1rem;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
     flex-wrap: wrap;
   }
   .course-block .meta i {
-    font-size: 0.5rem;
+    font-size: 0.58rem;
   }
   .course-block .tag {
-    font-size: 0.5rem;
+    font-size: 0.58rem;
     font-weight: 700;
-    padding: 0.05rem 0.4rem;
+    padding: 0.08rem 0.45rem;
     border-radius: 30px;
     background: rgba(10, 37, 64, 0.1);
     color: var(--navy);
     display: inline-block;
-    margin-top: 0.1rem;
+    margin-top: 0.15rem;
     align-self: flex-start;
   }
   .course-block .tag.invig {
@@ -555,7 +560,6 @@
     color: #9e2a2b;
   }
 
-  /* Color variants */
   .course-block.color-1 {
     border-left-color: #1f6392;
     background: #e8f0fe;
@@ -577,24 +581,205 @@
     background: #f3e8ff;
   }
 
-  .course-block .code {
-    font-weight: 700;
-    font-size: 0.7rem;
-    color: var(--navy);
-  }
-
-  /* ============================================
-           EMPTY STATE
-           ============================================ */
   .empty-cell {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
-    min-height: 62px;
+    min-height: 80px;
     color: var(--text-muted);
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     opacity: 0.4;
+  }
+
+  /* ============================================
+         MODAL
+         ============================================ */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-overlay.active .modal {
+    animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  .exec-history-divider {
+    margin: 1.2rem 0 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .exec-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .exec-history-empty {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .exec-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+  }
+  .exec-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .exec-date {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+  .exec-badge {
+    font-size: 0.63rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .exec-badge--Attended {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .exec-badge--Scheduled {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .exec-badge--Missed {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .exec-badge--Rescheduled {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .exec-badge--Cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .exec-detail {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .exec-detail strong {
+    color: var(--text);
+  }
+  .exec-notes {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-style: italic;
+  }
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    padding: 0;
+  }
+  .modal__header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    border-radius: var(--radius) var(--radius) 0 0;
+    z-index: 2;
+  }
+  .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  .modal__close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal__body {
+    padding: 1.5rem;
+  }
+  .modal__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    background: var(--bg);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .detail-row {
+    display: flex;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row__label {
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .detail-row__value {
+    flex: 1;
+    color: var(--text);
   }
 
   /* ============================================
@@ -795,7 +980,7 @@
 
 {% elif not grid_rows %}
 <div class="timetable-wrapper">
-  <div class="no-timetable" style="padding: 2rem;">
+  <div class="no-timetable" style="padding: 2rem">
     <div style="font-size: 2rem; margin-bottom: 12px">📅</div>
     <div style="font-weight: 600; margin-bottom: 6px">
       No timetable slots yet
@@ -839,12 +1024,12 @@
         <tr>
           <td class="time-label">
             <span>{{ start }}</span>
-            
+
             <span class="ampm" data-time="{{ row.time }}"></span>
           </td>
 
-          {% for day in days %} 
-        </td>
+          {% for day in days %}
+
           <td
             id="cell-{{ day }}-{{ forloop.parentloop.counter0 }}"
             class="tt-cell"
@@ -859,160 +1044,326 @@
   </div>
 </div>
 
-{% endif %} 
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h2 id="entryModalTitle">
+        <i class="fas fa-book" style="color: var(--navy)"></i> Class Details
+      </h2>
+      <button class="modal__close" onclick="closeModal('entryModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body" id="entryModalBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('entryModal')">
+        Close
+      </button>
+      <button
+        class="btn btn-primary"
+        id="entryModalClassListBtn"
+        style="display: none"
+      >
+        <i class="fas fa-users"></i> View Class List
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <div class="toast" id="toast"></div>
 
 <script>
-  // Recurring lecture grid from server
-  // Structure: [ { time, label, days: { MON: slot|null, TUE: slot|null, … } } ]
-  const GRID_ROWS = {{ grid_rows_json|safe }};
+      // Recurring lecture grid from server
+      // Structure: [ { time, label, days: { MON: slot|null, TUE: slot|null, … } } ]
+      const GRID_ROWS = {{ grid_rows_json|safe }};
 
-  // Date-specific exam/invigilation duties
-  // Structure: [ { date, time_slot, code, name, exam_type, venue, class_name, color, tag, tag_class } ]
-  const EXAM_LIST = {{ exam_list_json|safe }};
+      // Date-specific exam/invigilation duties
+      // Structure: [ { date, time_slot, code, name, exam_type, venue, class_name, color, tag, tag_class } ]
+      const EXAM_LIST = {{ exam_list_json|safe }};
 
-  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
-  const DAY_LABELS = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday' };
+      const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+      const DAY_LABELS = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday' };
 
-  // ── week state ────────────────────────────────────────────────────────────
-  let weekOffset = 0;
+      // ── week state ────────────────────────────────────────────────────────────
+      let weekOffset = 0;
 
-  function getWeekDates(offset) {
-    const today   = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dow     = today.getDay();                      // 0=Sun
-    const fromMon = (dow === 0) ? 6 : dow - 1;
-    const mon     = new Date(today);
-    mon.setDate(today.getDate() - fromMon + offset * 7);
+      function getWeekDates(offset) {
+        const today   = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dow     = today.getDay();                      // 0=Sun
+        const fromMon = (dow === 0) ? 6 : dow - 1;
+        const mon     = new Date(today);
+        mon.setDate(today.getDate() - fromMon + offset * 7);
 
-    return DAYS.map((_, i) => {
-      const d = new Date(mon);
-      d.setDate(mon.getDate() + i);
-      return d;
-    });
-  }
+        return DAYS.map((_, i) => {
+          const d = new Date(mon);
+          d.setDate(mon.getDate() + i);
+          return d;
+        });
+      }
 
-  function isToday(date) {
-    const t = new Date(); t.setHours(0,0,0,0);
-    return date.getTime() === t.getTime();
-  }
+      function isToday(date) {
+        const t = new Date(); t.setHours(0,0,0,0);
+        return date.getTime() === t.getTime();
+      }
 
-  function fmtShort(d) {
-    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-  }
-  function fmtLong(d) {
-    return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  }
+      function fmtShort(d) {
+        return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+      }
+      function fmtLong(d) {
+        return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+      }
 
-  // ── render ────────────────────────────────────────────────────────────────
-  function renderTimetable() {
-    const dates = getWeekDates(weekOffset);
+      // ── render ────────────────────────────────────────────────────────────────
+      function renderTimetable() {
+        const dates = getWeekDates(weekOffset);
 
-    // Update week header label
-    document.getElementById('weekDate').textContent =
-      `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+        // Update week header label
+        document.getElementById('weekDate').textContent =
+          `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
 
-    const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
-    const todayOnScreen = weekOffset === 0;
+        const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
+        const todayOnScreen = weekOffset === 0;
 
-    // Update "Today" pill
-    const todayLabel = document.getElementById('todayLabel');
-    const todayDayIdx = DAYS.indexOf(['MON','TUE','WED','THU','FRI','',''][
-      todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
-    ]);
-    if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
-      todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
-    } else {
-      todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
+        // Update "Today" pill
+        const todayLabel = document.getElementById('todayLabel');
+        const todayDayIdx = DAYS.indexOf(['MON','TUE','WED','THU','FRI','',''][
+          todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
+        ]);
+        if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
+          todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
+        } else {
+          todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
+        }
+
+        // Update column headers + today highlight
+        DAYS.forEach((day, i) => {
+          const th = document.getElementById(`th-${day}`);
+          if (!th) return;
+          th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
+          th.className   = (isToday(dates[i])) ? 'th-today' : '';
+        });
+
+        // Build a lookup of exam duties for this displayed week
+        // exam: { "2026-06-30|08:00-11:00": slotObj }
+        const examLookup = {};
+        EXAM_LIST.forEach(e => {
+          // Check if this exam date falls within the displayed week
+          const eDate = new Date(e.date); eDate.setHours(0,0,0,0);
+          dates.forEach((d, idx) => {
+            if (d.getTime() === eDate.getTime()) {
+              const key = `${DAYS[idx]}|${e.time_slot}`;
+              examLookup[key] = e;
+            }
+          });
+        });
+
+        // Populate cells
+        GRID_ROWS.forEach((row, rowIdx) => {
+          // Set AM/PM label
+          const ampms = document.querySelectorAll(`.ampm[data-time="${row.time}"]`);
+          const startHour = parseInt(row.time.slice(0, 2), 10);
+          const ampm = startHour >= 12 ? 'PM' : 'AM';
+          ampms.forEach(el => el.textContent = ampm);
+
+          DAYS.forEach((day, dayIdx) => {
+            const cell = document.getElementById(`cell-${day}-${rowIdx}`);
+            if (!cell) return;
+
+            // today highlight
+            cell.className = 'tt-cell' + (isToday(dates[dayIdx]) ? ' cell-today' : '');
+
+            // exam duty takes priority over lecture for this cell
+            const examKey  = `${day}|${row.time}`;
+            const examSlot = examLookup[examKey];
+            const lectSlot = row.days[day];
+
+            const slot = examSlot || lectSlot;
+
+            if (slot && slot.code) {
+              cell.innerHTML = blockHTML(slot);
+            } else {
+              cell.innerHTML = `<div class="empty-cell">—</div>`;
+            }
+          });
+        });
+      }
+
+    function truncateClasses(classNameStr, limit = 3) {
+      const classes = classNameStr
+        ? classNameStr.split(',').map(c => c.trim()).filter(Boolean)
+        : [];
+
+      if (classes.length <= limit) {
+        return { display: classes.join(', '), full: classes, hasMore: false };
+      }
+
+      const shown = classes.slice(0, limit).join(', ');
+      const remaining = classes.length - limit;
+      return {
+        display: `${shown} +${remaining} more`,
+        full: classes,
+        hasMore: true,
+      };
     }
 
-    // Update column headers + today highlight
-    DAYS.forEach((day, i) => {
-      const th = document.getElementById(`th-${day}`);
-      if (!th) return;
-      th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
-      th.className   = (isToday(dates[i])) ? 'th-today' : '';
-    });
+    function blockHTML(slot) {
+      const { display: classesDisplay } = truncateClasses(slot.class_name);
 
-    // Build a lookup of exam duties for this displayed week
-    // exam: { "2026-06-30|08:00-11:00": slotObj }
-    const examLookup = {};
-    EXAM_LIST.forEach(e => {
-      // Check if this exam date falls within the displayed week
-      const eDate = new Date(e.date); eDate.setHours(0,0,0,0);
-      dates.forEach((d, idx) => {
-        if (d.getTime() === eDate.getTime()) {
-          const key = `${DAYS[idx]}|${e.time_slot}`;
-          examLookup[key] = e;
+      return `
+        <div class="course-block ${slot.color}" onclick='openEntryModal(${JSON.stringify(slot)})'>
+          <div class="code">${slot.code}</div>
+          <div class="title">${slot.name}</div>
+          <div class="meta">
+            <span><i class="fas fa-map-pin"></i> ${slot.venue}</span>
+            <span><i class="fas fa-users"></i> ${classesDisplay}</span>
+          </div>
+          <span class="${slot.tag_class || 'tag'}">${slot.tag || 'Lecture'}</span>
+        </div>`;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
+    const CLASS_LIST_URL = "{% url 'lecturer-class-list' %}";  // adjust to your actual URL name
+    const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
+
+  async function loadExecutionHistory(timetableId) {
+    const list = document.getElementById('entryExecHistoryList');
+    if (!list) return;
+    list.innerHTML = `<div class="exec-history-empty">Loading…</div>`;
+
+    try {
+      const res = await fetch(`${EXEC_HISTORY_URL}?timetable_id=${timetableId}`);
+      const data = await res.json();
+
+      if (!data.executions || data.executions.length === 0) {
+        list.innerHTML = `<div class="exec-history-empty">📭 No executions logged yet for this slot.</div>`;
+        return;
+      }
+
+      list.innerHTML = data.executions.map(ex => {
+        let detail = '';
+        if (ex.status === 'Rescheduled') {
+          detail = `<div class="exec-detail">→ Moved to <strong>${escapeHtml(ex.rescheduled_to_date || '—')}</strong> at <strong>${escapeHtml(ex.rescheduled_to_time_slot || '—')}</strong>, <strong>${escapeHtml(ex.rescheduled_to_venue || '—')}</strong></div>`;
+        } else if (ex.status === 'Missed') {
+          detail = `<div class="exec-detail">Lecturer did not attend this session.</div>`;
+        } else if (ex.status === 'Attended' && ex.class_representative) {
+          detail = `<div class="exec-detail">Confirmed by <strong>${escapeHtml(ex.class_representative)}</strong></div>`;
         }
+        const notes = ex.notes ? `<div class="exec-notes">"${escapeHtml(ex.notes)}"</div>` : '';
+
+        return `
+          <div class="exec-item">
+            <div class="exec-item-top">
+              <span class="exec-date">${escapeHtml(ex.calendar_date)}</span>
+              <span class="exec-badge exec-badge--${ex.status}">${escapeHtml(ex.status)}</span>
+            </div>
+            ${detail}
+            ${notes}
+          </div>`;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="exec-history-empty">⚠️ Failed to load history. Try again.</div>`;
+    }
+  }
+
+  function openEntryModal(slot) {
+    const isExam = !!slot.exam_type;
+    const { full: fullClasses } = truncateClasses(slot.class_name);
+
+    document.getElementById('entryModalTitle').innerHTML = isExam
+      ? `<i class="fas fa-file-alt" style="color: var(--maroon)"></i> Exam / Invigilation`
+      : `<i class="fas fa-book" style="color: var(--navy)"></i> Class Details`;
+
+    const rows = [
+      ['Course', `<strong>${escapeHtml(slot.code)}</strong> — ${escapeHtml(slot.name)}`],
+      ['Classes', fullClasses.map(escapeHtml).join('<br>')],
+      ['Venue', escapeHtml(slot.venue)],
+    ];
+
+    if (isExam) {
+      rows.push(['Date', escapeHtml(slot.date || '')]);
+      rows.push(['Time', escapeHtml(slot.time_slot || '')]);
+      rows.push(['Exam Type', escapeHtml(slot.exam_type)]);
+    } else {
+      rows.push(['Type', escapeHtml(slot.tag || 'Lecture')]);
+    }
+
+    const detailRowsHtml = rows.map(([label, value]) => `
+      <div class="detail-row">
+        <span class="detail-row__label">${label}</span>
+        <span class="detail-row__value">${value}</span>
+      </div>
+    `).join('');
+
+    // Only recurring lecture slots have a real Timetable row (slot_id) to
+    // look up DailyClassExecution history against — exam duties don't.
+    const historyHtml = (!isExam && slot.slot_id) ? `
+      <div class="exec-history-divider"><i class="fas fa-history"></i> Execution History</div>
+      <div id="entryExecHistoryList" class="exec-history-list">
+        <div class="exec-history-empty">Loading…</div>
+      </div>
+    ` : '';
+
+    document.getElementById('entryModalBody').innerHTML = detailRowsHtml + historyHtml;
+
+    if (!isExam && slot.slot_id) {
+      loadExecutionHistory(slot.slot_id);
+    }
+
+    const classListBtn = document.getElementById('entryModalClassListBtn');
+    if (slot.curriculum_id) {
+      classListBtn.style.display = 'inline-flex';
+      classListBtn.onclick = () => {
+        window.location.href = `${CLASS_LIST_URL}?curriculum=${slot.curriculum_id}`;
+      };
+    } else {
+      classListBtn.style.display = 'none';
+    }
+
+    openModal('entryModal');
+  }
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === this) closeModal(this.id);
       });
     });
-
-    // Populate cells
-    GRID_ROWS.forEach((row, rowIdx) => {
-      // Set AM/PM label
-      const ampms = document.querySelectorAll(`.ampm[data-time="${row.time}"]`);
-      const startHour = parseInt(row.time.slice(0, 2), 10);
-      const ampm = startHour >= 12 ? 'PM' : 'AM';
-      ampms.forEach(el => el.textContent = ampm);
-
-      DAYS.forEach((day, dayIdx) => {
-        const cell = document.getElementById(`cell-${day}-${rowIdx}`);
-        if (!cell) return;
-
-        // today highlight
-        cell.className = 'tt-cell' + (isToday(dates[dayIdx]) ? ' cell-today' : '');
-
-        // exam duty takes priority over lecture for this cell
-        const examKey  = `${day}|${row.time}`;
-        const examSlot = examLookup[examKey];
-        const lectSlot = row.days[day];
-
-        const slot = examSlot || lectSlot;
-
-        if (slot && slot.code) {
-          cell.innerHTML = blockHTML(slot);
-        } else {
-          cell.innerHTML = `<div class="empty-cell">—</div>`;
-        }
-      });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(el => closeModal(el.id));
+      }
     });
-  }
+      // ── week navigation ───────────────────────────────────────────────────────
+      function changeWeek(delta) {
+        weekOffset += delta;
+        renderTimetable();
+      }
+      function goToToday() {
+        weekOffset = 0;
+        renderTimetable();
+        showToast('📅 Current week', 'info');
+      }
 
-  function blockHTML(slot) {
-    const toast = `showToast('📚 ${slot.code}: ${slot.name} · ${slot.venue} · ${slot.class_name}', 'info')`;
-    return `
-      <div class="course-block ${slot.color}" onclick="${toast}">
-        <div class="code">${slot.code}</div>
-        <div class="title">${slot.name}</div>
-        <div class="meta">
-          <span><i class="fas fa-map-pin"></i> ${slot.venue}</span>
-          <span><i class="fas fa-users"></i> ${slot.class_name}</span>
-        </div>
-        <span class="${slot.tag_class || 'tag'}">${slot.tag || 'Lecture'}</span>
-      </div>`;
-  }
 
-  // ── week navigation ───────────────────────────────────────────────────────
-  function changeWeek(delta) {
-    weekOffset += delta;
-    renderTimetable();
-  }
-  function goToToday() {
-    weekOffset = 0;
-    renderTimetable();
-    showToast('📅 Current week', 'info');
-  }
+      // ── init ──────────────────────────────────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
 
- 
-  // ── init ──────────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', () => {
-    
-    {% if grid_rows %}
-    renderTimetable();
-    {% endif %}
-  });
+        {% if grid_rows %}
+        renderTimetable();
+        {% endif %}
+      });
 </script>
 
 {% endblock %}

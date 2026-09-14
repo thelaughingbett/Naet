@@ -26,9 +26,10 @@ from .curriculum import (  # noqa: F401
     ASSIGNMENT_STATUS_CHOICES,
     Syllabus,
     Curriculum,
+    CurriculumClass,
     LecturerAssignment,
-    CommonUnitCurriculum,
 )
+
 from .enrollment import (
     Enrollment,
     Result
@@ -46,7 +47,7 @@ __all__ = [
     'Syllabus',
     'Curriculum',
     'LecturerAssignment',
-    'CommonUnitCurriculum',
+    'CurriculumClass',
     'Enrollment',
     'Result',
     'RESULT_TYPE_CHOICES',

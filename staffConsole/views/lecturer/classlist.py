@@ -46,6 +46,12 @@ def _build_student_row(enrollment: Enrollment, results_by_student: dict) -> dict
 
     results_by_student = {student_id: {'cat': Decimal, 'exam': Decimal}}
     No Attendance model yet — attendance field is None until implemented.
+
+    `class_name` reflects THIS student's own Tclass (student.class_entered)
+    — not the (possibly shared, multi-class) curriculum.classes set. A
+    curriculum slot can serve several classes at once, but each enrolled
+    student still belongs to exactly one specific class, which is what
+    the class-list table needs to display per row.
     """
     student = enrollment.student
     user = student.user
@@ -62,6 +68,9 @@ def _build_student_row(enrollment: Enrollment, results_by_student: dict) -> dict
         'initials':          user.initials,
         'email':             user.email,
         'school_email':      student.school_email,
+        'class_name':        (
+            student.class_entered.class_name if student.class_entered else '—'
+        ),
         'status':            enrollment.status,          # pending | approved | rejected
         'cat':               cat,
         'exam':              exam,
@@ -83,12 +92,16 @@ class ClassListView(RoleRequiredMixin, View):
         lecturer = self.get_profile()
         session = Session.objects.filter(is_active=True).first()
 
-        # All curriculum entries assigned to this lecturer this session
+        # All curriculum entries assigned to this lecturer this session.
+        # syllabus__course -> course (direct FK again); Tclass -> classes
+        # (M2M, prefetched — a shared slot can have several attending
+        # classes now).
         all_units = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .select_related('syllabus__course', 'Tclass', 'session')
-            .order_by('syllabus__course__course_code')
+            .select_related('course', 'session')
+            .prefetch_related('classes')
+            .order_by('course__course_code')
             if session else []
         )
 
@@ -131,7 +144,7 @@ class ClassListView(RoleRequiredMixin, View):
             enrollments = (
                 Enrollment.objects
                 .filter(curriculum=selected)
-                .select_related('student__user')
+                .select_related('student__user', 'student__class_entered')
                 .order_by('student__registration_number')
             )
 
@@ -214,7 +227,11 @@ class StudentDetailAjaxView(RoleRequiredMixin, View):
         try:
             enrollment = (
                 Enrollment.objects
-                .select_related('student__user', 'curriculum__syllabus__course')
+                .select_related(
+                    'student__user',
+                    'student__class_entered',
+                    'curriculum__course',
+                )
                 .get(record_id=enrollment_id)
             )
         except Enrollment.DoesNotExist:
@@ -257,6 +274,9 @@ class StudentDetailAjaxView(RoleRequiredMixin, View):
             'full_name':       user.full_name,
             'email':           user.email,
             'school_email':    student.school_email,
+            'class_name':      (
+                student.class_entered.class_name if student.class_entered else '—'
+            ),
             'status':          enrollment.status,
             'cat':             str(cat_total),
             'exam':            str(exam_total),

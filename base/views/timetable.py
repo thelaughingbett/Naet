@@ -31,7 +31,8 @@ from base.models import (
     Timetable,
     ExamSession,
     Session,
-    Enrollment
+    Enrollment,
+    CurriculumClass,
 )
 
 from .base import (
@@ -67,11 +68,14 @@ class WeeklyScheduleView(
 
             # NOTE : if the student is class_rep just load all for the class not just the student's
 
+            # Curriculum has no direct `syllabus` or `Tclass` field —
+            # `course` is a direct FK, and a shared curriculum slot can
+            # have several classes attending, so there's no single
+            # `Tclass` to select_related through it anymore.
             entries = Timetable.objects.filter(
                 curriculum_id__in=enrolled_curriculum_ids
             ).select_related(
-                'curriculum__syllabus__course',
-                'curriculum__Tclass',
+                'curriculum__course',
                 'venue',
             ).prefetch_related(
                 'curriculum__professor__user'
@@ -119,6 +123,12 @@ class ExamTimetableView(
         student = self.get_student(request)
         session = self.get_active_session()
 
+        # Were previously only assigned inside `if student and session:` —
+        # the context dict below references them unconditionally, so a
+        # request missing either would raise UnboundLocalError.
+        exam_sessions = ExamSession.objects.none()
+        all_sessions = Session.objects.none()
+
         if student and session:
             enrolled_curriculum_ids = Enrollment.objects.filter(
                 student=student,
@@ -129,12 +139,12 @@ class ExamTimetableView(
             exam_sessions = ExamSession.objects.filter(
                 curriculum_id__in=enrolled_curriculum_ids
             ).select_related(
-                'curriculum__syllabus__course',
+                'curriculum__course',
                 'curriculum__session',
             ).prefetch_related(
                 'venues__venue',
                 'venues__invigilators__user',
-            ).order_by('date', 'time_slot') if session else []
+            ).order_by('date', 'time_slot')
 
             all_sessions = Session.objects.filter(
                 curricula__exam_sessions__isnull=False
@@ -213,12 +223,31 @@ def log_execution(request):
 
     timetable_id = payload.get("timetable_id")
     timetable_slot = Timetable.objects.select_related(
-        "curriculum__Tclass").filter(pk=timetable_id).first()
+        "curriculum").filter(pk=timetable_id).first()
     if not timetable_slot:
         return JsonResponse({"success": False, "message": "Timetable slot not found."}, status=404)
 
-    # confirm this slot actually belongs to the rep's own class
-    if timetable_slot.curriculum.Tclass_id != student.class_entered_id:
+    # `curriculum.Tclass_id` doesn't exist — a shared curriculum slot can
+    # have several classes attending it via CurriculumClass, so "does
+    # this slot belong to the rep's own class" now means "is the rep's
+    # class one of the classes attending it", not an equality check.
+    #
+    # PRE-EXISTING BUG, worth flagging separately: this was ALREADY a
+    # silently-wrong permission check before the refactor too, in a
+    # different way — it compared curriculum.Tclass_id to the student's
+    # class, but never verified the student IS that class's rep (the
+    # actual rep check above is commented out). Fixing the schema
+    # mismatch here does not fix that the rep check itself is disabled;
+    # right now ANY student can submit an execution report for their own
+    # class, not just the designated rep, regardless of this queryset
+    # fix. Worth re-enabling that check (with the correct field name)
+    # once you confirm how class_representative is modeled — Tclass
+    # already has a `student_rep` FK per the model you shared earlier.
+    class_attends_slot = CurriculumClass.objects.filter(
+        curriculum_id=timetable_slot.curriculum_id,
+        Tclass_id=student.class_entered_id,
+    ).exists()
+    if not class_attends_slot:
         raise PermissionDenied(
             "You can only confirm execution for your own class.")
 

@@ -1130,10 +1130,50 @@
       onkeyup="filterTable()"
     />
   </div>
+  <select
+    id="classFilter"
+    onchange="filterTable()"
+    style="
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-family: var(--font);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    "
+  >
+    <option value="">All Classes</option>
+  </select>
+  <select
+    id="resultsFilter"
+    onchange="filterTable()"
+    style="
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-family: var(--font);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    "
+  >
+    <option value="">All Results</option>
+    <option value="entered">Score Entered</option>
+    <option value="not_entered">Not Entered</option>
+  </select>
   <button
     class="btn-sm"
     onclick="
       document.getElementById('studentSearch').value = '';
+      document.getElementById('classFilter').value = '';
+      document.getElementById('resultsFilter').value = '';
       filterTable();
     "
   >
@@ -1149,6 +1189,7 @@
           <th>#</th>
           <th>Student</th>
           <th>Reg. No.</th>
+          <th>Class</th>
           <th style="min-width: 120px">Score</th>
           <th>Status</th>
         </tr>
@@ -1170,378 +1211,403 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const CSRF      = '{{ csrf_token }}';
-  const CURR_ID   = '{{ selected.record_id|default:"" }}';
-  const UNIT_LIST = {{ unit_list_json|safe }};
+      const CSRF      = '{{ csrf_token }}';
+      const CURR_ID   = '{{ selected.record_id|default:"" }}';
+      const UNIT_LIST = {{ unit_list_json|safe }};
 
-  // Result type choices for the add-assessment form (mirrors model)
-  const TYPE_DISPLAY = { C: 'Cat', E: 'Exams', A: 'Assignment' };
+      // Result type choices for the add-assessment form (mirrors model)
+      const TYPE_DISPLAY = { C: 'Cat', E: 'Exams', A: 'Assignment' };
 
-  // Current assessment state
-  let currentTitle = '{{ selected_assessment.title|default:""|escapejs }}';
-  let currentType  = '{{ selected_assessment.type|default:"C" }}';
+      // Current assessment state
+      let currentTitle = '{{ selected_assessment.title|default:""|escapejs }}';
+      let currentType  = '{{ selected_assessment.type|default:"C" }}';
 
-  // Student rows for the current assessment (server-rendered, then updated by JS)
-  let allRows = {{ student_rows_json|safe }};
+      // Student rows for the current assessment (server-rendered, then updated by JS)
+      let allRows = {{ student_rows_json|safe }};
 
-  // Debounce timers per enrollment_id
-  const saveTimers = {};
+      // Debounce timers per enrollment_id
+      const saveTimers = {};
 
-  // ── render table ──────────────────────────────────────────────────────────
-  function renderTable(rows) {
-    const q    = document.getElementById('studentSearch')?.value.toLowerCase() || '';
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
+      // ── render table ──────────────────────────────────────────────────────────
+      function renderTable(rows) {
+      const q     = document.getElementById('studentSearch')?.value.toLowerCase() || '';
+      const klass = document.getElementById('classFilter')?.value || '';
+      const results = document.getElementById('resultsFilter')?.value || '';
+      const tbody = document.getElementById('tableBody');
+      if (!tbody) return;
 
-    if (!currentTitle) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align:center;padding:2.5rem 1rem;opacity:.6">
-          <div style="font-size:1.6rem;margin-bottom:8px">📋</div>
-          <div style="font-weight:600;margin-bottom:4px">No assessment selected</div>
-          <div style="font-size:0.75rem;color:var(--text-muted)">
-            Add an assessment above to start entering scores.
-          </div>
-        </td>
-      </tr>`;
-    document.getElementById('rowCount').textContent = '0 students';
-    updateStats([]);
-    return;
-  }
-
-    let visible = rows.filter(r =>
-      r.full_name.toLowerCase().includes(q) ||
-      r.registration_no.toLowerCase().includes(q)
-    );
-
-    if (!visible.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.5">No students found.</td></tr>`;
-      document.getElementById('rowCount').textContent = '0 students';
-      return;
-    }
-
-    tbody.innerHTML = visible.map((r, i) => `
-      <tr data-eid="${r.enrollment_id}">
-        <td>${i + 1}</td>
-        <td>
-          <div class="student-info">
-            <span class="avatar">${r.initials}</span>
-            <span class="student-name">${r.full_name}</span>
-          </div>
-        </td>
-        <td><code style="font-size:.7rem;background:var(--bg);padding:.1rem .4rem;border-radius:4px">${r.registration_no.toUpperCase()}</code></td>
-        <td>
-          <input type="number" step="0.01" min="0" max="100"
-                 class="score-input ${r.score !== '' ? 'saved' : ''}"
-                 value="${r.score}"
-                 placeholder="0.00"
-                 data-eid="${r.enrollment_id}"
-                 oninput="scheduleAutoSave('${r.enrollment_id}', this)" />
-        </td>
-        <td>
-          <div class="save-status" id="status-${r.enrollment_id}">
-            ${r.score !== '' ? '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>' : '<span style="opacity:.4">—</span>'}
-          </div>
-        </td>
-      </tr>
-    `).join('');
-
-    document.getElementById('rowCount').textContent =
-      `${visible.length} student${visible.length !== 1 ? 's' : ''}`;
-
-    updateStats(rows);
-  }
-
-  function filterTable() { renderTable(allRows); }
-
-  // ── stats ─────────────────────────────────────────────────────────────────
-  function updateStats(rows) {
-    const total   = rows.length;
-    const scored  = rows.filter(r => r.score !== '').length;
-    const pending = total - scored;
-    const vals    = rows.filter(r => r.score !== '').map(r => parseFloat(r.score));
-    const avg     = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2) : '—';
-
-    document.getElementById('statTotal').textContent   = total;
-    document.getElementById('statScored').textContent  = scored;
-    document.getElementById('statPending').textContent = pending;
-    document.getElementById('statAvg').textContent     = avg;
-  }
-
-  // ── assessment tabs ───────────────────────────────────────────────────────
-  function selectAssessment(title, type, btn) {
-    currentTitle = title;
-    currentType  = type;
-
-    // Update tab active state
-    document.querySelectorAll('.assessment-tab').forEach(t => t.classList.remove('active'));
-    btn?.classList.add('active');
-
-    // Fetch student rows for this assessment
-    const url = new URL('/staff/lecturer/results/assessment-students/', location.origin);
-    url.searchParams.set('curriculum', CURR_ID);
-    url.searchParams.set('title', title);
-    url.searchParams.set('type', type);
-
-    fetch(url)
-      .then(r => r.json())
-      .then(d => {
-        if (d.error) { showToast(d.error, 'warning'); return; }
-        allRows = d.rows;
-        renderTable(allRows);
-      })
-      .catch(() => showToast('Failed to load scores.', 'warning'));
-  }
-
-  // ── save single score (debounced) ─────────────────────────────────────────
-  function scheduleAutoSave(eid, input) {
-    const statusEl = document.getElementById(`status-${eid}`);
-    statusEl.innerHTML = '<span class="ing"><i class="fas fa-spinner fa-spin"></i> Saving…</span>';
-    input.classList.remove('saved', 'error');
-    input.classList.add('saving');
-
-    clearTimeout(saveTimers[eid]);
-    saveTimers[eid] = setTimeout(() => saveScore(eid, input.value, input, statusEl), 600);
-  }
-
-  function saveScore(eid, rawScore, inputEl, statusEl) {
-    fetch('/staff/lecturer/results/save-score/', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({
-        enrollment_id: eid,
-        title:         currentTitle,
-        type:          currentType,
-        score:         rawScore === '' ? '' : parseFloat(rawScore),
-      }),
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) {
-        inputEl?.classList.remove('saving');
-        inputEl?.classList.add('error');
-        statusEl.innerHTML = `<span class="err"><i class="fas fa-exclamation-circle"></i> ${d.error}</span>`;
+      if (!currentTitle) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;padding:2.5rem 1rem;opacity:.6">
+              <div style="font-size:1.6rem;margin-bottom:8px">📋</div>
+              <div style="font-weight:600;margin-bottom:4px">No assessment selected</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">
+                Add an assessment above to start entering scores.
+              </div>
+            </td>
+          </tr>`;
+        document.getElementById('rowCount').textContent = '0 students';
+        updateStats([]);
         return;
       }
-      inputEl?.classList.remove('saving');
-      // Update allRows cache
-      const row = allRows.find(r => r.enrollment_id === eid);
-      if (row) row.score = d.status === 'deleted' ? '' : rawScore;
 
-      if (d.status === 'deleted' || rawScore === '') {
-        inputEl?.classList.remove('saved');
-        statusEl.innerHTML = '<span style="opacity:.4">—</span>';
-      } else {
-        inputEl?.classList.add('saved');
-        statusEl.innerHTML = '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>';
-      }
-      updateAssessmentBadge();
-      updateStats(allRows);
-    })
-    .catch(() => {
-      statusEl.innerHTML = '<span class="err">Network error</span>';
-    });
-  }
-
-  // ── save all ──────────────────────────────────────────────────────────────
-  document.getElementById('saveAllBtn')?.addEventListener('click', () => {
-    const inputs = document.querySelectorAll('.score-input');
-    const scores = [...inputs].map(inp => ({
-      enrollment_id: inp.dataset.eid,
-      score: inp.value === '' ? '' : parseFloat(inp.value),
-    }));
-
-    fetch('/staff/lecturer/results/bulk-save/', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({
-        curriculum_id: CURR_ID,
-        title:         currentTitle,
-        type:          currentType,
-        scores,
-      }),
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) { showToast(d.error, 'warning'); return; }
-      // Refresh rows from server
-      selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
-      showToast(`✅ Saved ${d.saved} score${d.saved !== 1 ? 's' : ''}${d.errors?.length ? ' (some errors)' : ''}`, 'success');
-      if (d.errors?.length) console.warn('Bulk save errors:', d.errors);
-    })
-    .catch(() => showToast('Network error saving scores.', 'warning'));
-  });
-
-  // ── add assessment ────────────────────────────────────────────────────────
-  function addAssessment() {
-    const title = document.getElementById('newTitle').value.trim();
-    const type  = document.getElementById('newType').value;
-    if (!title) { showToast('Please enter a title.', 'warning'); return; }
-
-    fetch('/staff/lecturer/results/add-assessment/', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) { showToast(d.error, 'warning'); return; }
-      rebuildAssessmentTabs(d.assessments, title, type);
-      document.getElementById('newTitle').value = '';
-      showToast(`✅ Added: ${title}`, 'success');
-      selectAssessment(title, type, document.querySelector('.assessment-tab.active'));
-    })
-    .catch(() => showToast('Network error.', 'warning'));
-  }
-
-  // ── delete assessment ─────────────────────────────────────────────────────
-  function deleteAssessment(title, type) {
-    if (!confirm(`Delete "${title}" and all its scores?`)) return;
-
-    fetch('/staff/lecturer/results/delete-assessment/', {
-      method:  'DELETE',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) { showToast(d.error, 'warning'); return; }
-      rebuildAssessmentTabs(d.assessments, null, null);
-      showToast(`🗑️ Deleted "${title}"`, 'info');
-    })
-    .catch(() => showToast('Network error.', 'warning'));
-  }
-
-  // ── rebuild assessment tab strip ──────────────────────────────────────────
-  function rebuildAssessmentTabs(assessments, activeTitle, activeType) {
-    const container = document.getElementById('assessmentList');
-    if (!assessments.length) {
-      container.innerHTML = `<span style="font-size:.75rem;color:var(--text-muted)">No assessments yet.</span>`;
-      currentTitle = '';
-      allRows = [];
-      renderTable([]);
-      return;
-    }
-
-    container.innerHTML = assessments.map(a => `
-      <button class="assessment-tab ${a.title === activeTitle && a.type === activeType ? 'active' : ''}"
-              data-title="${a.title}" data-type="${a.type}"
-              onclick="selectAssessment('${a.title}', '${a.type}', this)">
-        <span>${a.title}</span>
-        <span class="type-badge ${a.type}">${TYPE_DISPLAY[a.type] || a.type}</span>
-        <span class="badge">${a.score_count}/${a.total}</span>
-        <span class="del-btn" onclick="event.stopPropagation();deleteAssessment('${a.title}','${a.type}')"
-              style="color:var(--text-muted);cursor:pointer;font-size:.7rem;margin-left:.2rem">
-          <i class="fas fa-times"></i>
-        </span>
-      </button>
-    `).join('');
-  }
-
-  function updateAssessmentBadge() {
-    const activeTab = document.querySelector('.assessment-tab.active');
-    if (!activeTab) return;
-    const badge = activeTab.querySelector('.badge');
-    if (!badge) return;
-    const scored = allRows.filter(r => r.score !== '').length;
-    badge.textContent = `${scored}/${allRows.length}`;
-  }
-
-  // ── import CSV ────────────────────────────────────────────────────────────
-  document.getElementById('importFile')?.addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file || !currentTitle) {
-      showToast('Select an assessment first.', 'warning');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const lines  = ev.target.result.split('\n').filter(l => l.trim());
-      if (lines.length < 2) return;
-      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const idIdx  = header.findIndex(h => h.includes('id') || h.includes('reg'));
-      const scIdx  = header.findIndex(h => h.includes('score') || h.includes('mark'));
-      if (idIdx < 0 || scIdx < 0) { showToast('CSV needs "Student ID" and "Score" columns.', 'warning'); return; }
-
-      // Build reg→enrollment_id map from allRows
-      const regMap = {};
-      allRows.forEach(r => { regMap[r.registration_no.toLowerCase()] = r.enrollment_id; });
-
-      const scores = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
-        const reg  = cols[idIdx]?.toLowerCase();
-        const val  = cols[scIdx];
-        const eid  = regMap[reg];
-        if (eid && val !== undefined) scores.push({ enrollment_id: eid, score: val });
-      }
-
-      fetch('/staff/lecturer/results/bulk-save/', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-        body: JSON.stringify({ curriculum_id: CURR_ID, title: currentTitle, type: currentType, scores }),
-      })
-      .then(r => r.json())
-      .then(d => {
-        selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
-        showToast(`✅ Imported ${d.saved} score${d.saved !== 1 ? 's' : ''}`, 'success');
+      let visible = rows.filter(r => {
+        const matchQ = r.full_name.toLowerCase().includes(q) ||
+                       r.registration_no.toLowerCase().includes(q);
+        const matchC = !klass || r.class_name === klass;
+        const matchR = !results ||
+                       (results === 'entered' ? r.score !== '' : r.score === '');
+        return matchQ && matchC && matchR;
       });
-      e.target.value = '';
-    };
-    reader.readAsText(file);
-  });
 
-  // ── export template ───────────────────────────────────────────────────────
-  document.getElementById('exportBtn')?.addEventListener('click', () => {
-    const url = new URL('/staff/lecturer/results/export-template/', location.origin);
-    url.searchParams.set('curriculum', CURR_ID);
-    url.searchParams.set('title', currentTitle);
-    url.searchParams.set('type',  currentType);
-    window.location.href = url.toString();
-  });
-
-  // ── course selector ───────────────────────────────────────────────────────
-  const trigger  = document.getElementById('courseTrigger');
-  const dropdown = document.getElementById('courseDropdown');
-  const searchIn = document.getElementById('courseSearchInput');
-
-  trigger?.addEventListener('click', () => {
-    dropdown.classList.toggle('open');
-    trigger.classList.toggle('open');
-    if (dropdown.classList.contains('open')) searchIn?.focus();
-  });
-  searchIn?.addEventListener('input', () => {
-    const q = searchIn.value.toLowerCase();
-    document.querySelectorAll('.course-selector__item').forEach(item => {
-      item.style.display = (item.dataset.code?.includes(q) || item.dataset.title?.includes(q)) ? '' : 'none';
-    });
-  });
-  document.addEventListener('click', e => {
-    const sel = document.getElementById('courseSelector');
-    if (sel && !sel.contains(e.target)) {
-      dropdown?.classList.remove('open');
-      trigger?.classList.remove('open');
-    }
-  });
-
-
-  // ── init ──────────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', () => {
-    // Open sidebar groups
-    ['assessment-sub'].forEach(id => {
-      const sub = document.getElementById(id);
-      const btn = document.querySelector(`[data-target="${id}"]`);
-      if (sub && btn) {
-        sub.classList.add('sidebar__submenu--open');
-        btn.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
-        btn.setAttribute('aria-expanded', 'true');
+      if (!visible.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;opacity:.5">No students found.</td></tr>`;
+        document.getElementById('rowCount').textContent = '0 students';
+        return;
       }
-    });
+
+      tbody.innerHTML = visible.map((r, i) => `
+        <tr data-eid="${r.enrollment_id}">
+          <td>${i + 1}</td>
+          <td>
+            <div class="student-info">
+              <span class="avatar">${r.initials}</span>
+              <span class="student-name">${r.full_name}</span>
+            </div>
+          </td>
+          <td><code style="font-size:.7rem;background:var(--bg);padding:.1rem .4rem;border-radius:4px">${r.registration_no.toUpperCase()}</code></td>
+          <td><span style="font-size:.75rem">${r.class_name}</span></td>
+          <td>
+            <input type="number" step="0.01" min="0" max="100"
+                   class="score-input ${r.score !== '' ? 'saved' : ''}"
+                   value="${r.score}"
+                   placeholder="0.00"
+                   data-eid="${r.enrollment_id}"
+                   oninput="scheduleAutoSave('${r.enrollment_id}', this)" />
+          </td>
+          <td>
+            <div class="save-status" id="status-${r.enrollment_id}">
+              ${r.score !== '' ? '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>' : '<span style="opacity:.4">—</span>'}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('rowCount').textContent =
+        `${visible.length} student${visible.length !== 1 ? 's' : ''}`;
+
+      updateStats(rows);
+    }
+
+    function populateClassFilter(rows) {
+    const select = document.getElementById('classFilter');
+    const current = select.value;
+    const classes = [...new Set(rows.map(r => r.class_name))].sort();
+
+    select.innerHTML = '<option value="">All Classes</option>' +
+      classes.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    // preserve selection if it's still valid after rows changed
+    if (classes.includes(current)) select.value = current;
+  }
+      function filterTable() { renderTable(allRows); }
+
+      // ── stats ─────────────────────────────────────────────────────────────────
+      function updateStats(rows) {
+        const total   = rows.length;
+        const scored  = rows.filter(r => r.score !== '').length;
+        const pending = total - scored;
+        const vals    = rows.filter(r => r.score !== '').map(r => parseFloat(r.score));
+        const avg     = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2) : '—';
+
+        document.getElementById('statTotal').textContent   = total;
+        document.getElementById('statScored').textContent  = scored;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statAvg').textContent     = avg;
+      }
+
+      // ── assessment tabs ───────────────────────────────────────────────────────
+      function selectAssessment(title, type, btn) {
+        currentTitle = title;
+        currentType  = type;
+
+        // Update tab active state
+        document.querySelectorAll('.assessment-tab').forEach(t => t.classList.remove('active'));
+        btn?.classList.add('active');
+
+        // Fetch student rows for this assessment
+        const url = new URL('/staff/lecturer/results/assessment-students/', location.origin);
+        url.searchParams.set('curriculum', CURR_ID);
+        url.searchParams.set('title', title);
+        url.searchParams.set('type', type);
+
+        fetch(url)
+          .then(r => r.json())
+          .then(d => {
+            if (d.error) { showToast(d.error, 'warning'); return; }
+
+            allRows = d.rows;
+            populateClassFilter(allRows);
+            renderTable(allRows);
+          })
+          .catch(() => showToast('Failed to load scores.', 'warning'));
+      }
+
+      // ── save single score (debounced) ─────────────────────────────────────────
+      function scheduleAutoSave(eid, input) {
+        const statusEl = document.getElementById(`status-${eid}`);
+        statusEl.innerHTML = '<span class="ing"><i class="fas fa-spinner fa-spin"></i> Saving…</span>';
+        input.classList.remove('saved', 'error');
+        input.classList.add('saving');
+
+        clearTimeout(saveTimers[eid]);
+        saveTimers[eid] = setTimeout(() => saveScore(eid, input.value, input, statusEl), 600);
+      }
+
+      function saveScore(eid, rawScore, inputEl, statusEl) {
+        fetch('/staff/lecturer/results/save-score/', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({
+            enrollment_id: eid,
+            title:         currentTitle,
+            type:          currentType,
+            score:         rawScore === '' ? '' : parseFloat(rawScore),
+          }),
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) {
+            inputEl?.classList.remove('saving');
+            inputEl?.classList.add('error');
+            statusEl.innerHTML = `<span class="err"><i class="fas fa-exclamation-circle"></i> ${d.error}</span>`;
+            return;
+          }
+          inputEl?.classList.remove('saving');
+          // Update allRows cache
+          const row = allRows.find(r => r.enrollment_id === eid);
+          if (row) row.score = d.status === 'deleted' ? '' : rawScore;
+
+          if (d.status === 'deleted' || rawScore === '') {
+            inputEl?.classList.remove('saved');
+            statusEl.innerHTML = '<span style="opacity:.4">—</span>';
+          } else {
+            inputEl?.classList.add('saved');
+            statusEl.innerHTML = '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>';
+          }
+          updateAssessmentBadge();
+          updateStats(allRows);
+        })
+        .catch(() => {
+          statusEl.innerHTML = '<span class="err">Network error</span>';
+        });
+      }
+
+      // ── save all ──────────────────────────────────────────────────────────────
+      document.getElementById('saveAllBtn')?.addEventListener('click', () => {
+        const inputs = document.querySelectorAll('.score-input');
+        const scores = [...inputs].map(inp => ({
+          enrollment_id: inp.dataset.eid,
+          score: inp.value === '' ? '' : parseFloat(inp.value),
+        }));
+
+        fetch('/staff/lecturer/results/bulk-save/', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({
+            curriculum_id: CURR_ID,
+            title:         currentTitle,
+            type:          currentType,
+            scores,
+          }),
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) { showToast(d.error, 'warning'); return; }
+          // Refresh rows from server
+          selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
+          showToast(`✅ Saved ${d.saved} score${d.saved !== 1 ? 's' : ''}${d.errors?.length ? ' (some errors)' : ''}`, 'success');
+          if (d.errors?.length) console.warn('Bulk save errors:', d.errors);
+        })
+        .catch(() => showToast('Network error saving scores.', 'warning'));
+      });
+
+      // ── add assessment ────────────────────────────────────────────────────────
+      function addAssessment() {
+        const title = document.getElementById('newTitle').value.trim();
+        const type  = document.getElementById('newType').value;
+        if (!title) { showToast('Please enter a title.', 'warning'); return; }
+
+        fetch('/staff/lecturer/results/add-assessment/', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) { showToast(d.error, 'warning'); return; }
+          rebuildAssessmentTabs(d.assessments, title, type);
+          document.getElementById('newTitle').value = '';
+          showToast(`✅ Added: ${title}`, 'success');
+          selectAssessment(title, type, document.querySelector('.assessment-tab.active'));
+        })
+        .catch(() => showToast('Network error.', 'warning'));
+      }
+
+      // ── delete assessment ─────────────────────────────────────────────────────
+      function deleteAssessment(title, type) {
+        if (!confirm(`Delete "${title}" and all its scores?`)) return;
+
+        fetch('/staff/lecturer/results/delete-assessment/', {
+          method:  'DELETE',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) { showToast(d.error, 'warning'); return; }
+          rebuildAssessmentTabs(d.assessments, null, null);
+          showToast(`🗑️ Deleted "${title}"`, 'info');
+        })
+        .catch(() => showToast('Network error.', 'warning'));
+      }
+
+      // ── rebuild assessment tab strip ──────────────────────────────────────────
+      function rebuildAssessmentTabs(assessments, activeTitle, activeType) {
+        const container = document.getElementById('assessmentList');
+        if (!assessments.length) {
+          container.innerHTML = `<span style="font-size:.75rem;color:var(--text-muted)">No assessments yet.</span>`;
+          currentTitle = '';
+          allRows = [];
+          renderTable([]);
+          return;
+        }
+
+        container.innerHTML = assessments.map(a => `
+          <button class="assessment-tab ${a.title === activeTitle && a.type === activeType ? 'active' : ''}"
+                  data-title="${a.title}" data-type="${a.type}"
+                  onclick="selectAssessment('${a.title}', '${a.type}', this)">
+            <span>${a.title}</span>
+            <span class="type-badge ${a.type}">${TYPE_DISPLAY[a.type] || a.type}</span>
+            <span class="badge">${a.score_count}/${a.total}</span>
+            <span class="del-btn" onclick="event.stopPropagation();deleteAssessment('${a.title}','${a.type}')"
+                  style="color:var(--text-muted);cursor:pointer;font-size:.7rem;margin-left:.2rem">
+              <i class="fas fa-times"></i>
+            </span>
+          </button>
+        `).join('');
+      }
+
+      function updateAssessmentBadge() {
+        const activeTab = document.querySelector('.assessment-tab.active');
+        if (!activeTab) return;
+        const badge = activeTab.querySelector('.badge');
+        if (!badge) return;
+        const scored = allRows.filter(r => r.score !== '').length;
+        badge.textContent = `${scored}/${allRows.length}`;
+      }
+
+      // ── import CSV ────────────────────────────────────────────────────────────
+      document.getElementById('importFile')?.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file || !currentTitle) {
+          showToast('Select an assessment first.', 'warning');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const lines  = ev.target.result.split('\n').filter(l => l.trim());
+          if (lines.length < 2) return;
+          const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+          const idIdx  = header.findIndex(h => h.includes('id') || h.includes('reg'));
+          const scIdx  = header.findIndex(h => h.includes('score') || h.includes('mark'));
+          if (idIdx < 0 || scIdx < 0) { showToast('CSV needs "Student ID" and "Score" columns.', 'warning'); return; }
+
+          // Build reg→enrollment_id map from allRows
+          const regMap = {};
+          allRows.forEach(r => { regMap[r.registration_no.toLowerCase()] = r.enrollment_id; });
+
+          const scores = [];
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(c => c.trim());
+            const reg  = cols[idIdx]?.toLowerCase();
+            const val  = cols[scIdx];
+            const eid  = regMap[reg];
+            if (eid && val !== undefined) scores.push({ enrollment_id: eid, score: val });
+          }
+
+          fetch('/staff/lecturer/results/bulk-save/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ curriculum_id: CURR_ID, title: currentTitle, type: currentType, scores }),
+          })
+          .then(r => r.json())
+          .then(d => {
+            allRows = [];
+            populateClassFilter(allRows);
+            renderTable([]);
+            selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
+            showToast(`✅ Imported ${d.saved} score${d.saved !== 1 ? 's' : ''}`, 'success');
+          });
+          e.target.value = '';
+        };
+        reader.readAsText(file);
+      });
+
+      // ── export template ───────────────────────────────────────────────────────
+      document.getElementById('exportBtn')?.addEventListener('click', () => {
+        const url = new URL('/staff/lecturer/results/export-template/', location.origin);
+        url.searchParams.set('curriculum', CURR_ID);
+        url.searchParams.set('title', currentTitle);
+        url.searchParams.set('type',  currentType);
+        window.location.href = url.toString();
+      });
+
+      // ── course selector ───────────────────────────────────────────────────────
+      const trigger  = document.getElementById('courseTrigger');
+      const dropdown = document.getElementById('courseDropdown');
+      const searchIn = document.getElementById('courseSearchInput');
+
+      trigger?.addEventListener('click', () => {
+        dropdown.classList.toggle('open');
+        trigger.classList.toggle('open');
+        if (dropdown.classList.contains('open')) searchIn?.focus();
+      });
+      searchIn?.addEventListener('input', () => {
+        const q = searchIn.value.toLowerCase();
+        document.querySelectorAll('.course-selector__item').forEach(item => {
+          item.style.display = (item.dataset.code?.includes(q) || item.dataset.title?.includes(q)) ? '' : 'none';
+        });
+      });
+      document.addEventListener('click', e => {
+        const sel = document.getElementById('courseSelector');
+        if (sel && !sel.contains(e.target)) {
+          dropdown?.classList.remove('open');
+          trigger?.classList.remove('open');
+        }
+      });
 
 
-    renderTable(allRows);
+      // ── init ──────────────────────────────────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
+        // Open sidebar groups
+        ['assessment-sub'].forEach(id => {
+          const sub = document.getElementById(id);
+          const btn = document.querySelector(`[data-target="${id}"]`);
+          if (sub && btn) {
+            sub.classList.add('sidebar__submenu--open');
+            btn.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
 
-  });
+
+
+         populateClassFilter(allRows);
+        renderTable(allRows);
+
+      });
 </script>
 
 {% endblock %}

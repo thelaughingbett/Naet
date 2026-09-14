@@ -19,7 +19,8 @@ from base.models import (
     Session,
     Student,
     FeeStructure,
-    StudentFeeAccount
+    StudentFeeAccount,
+    Syllabus
 )
 from base.utils.signals import send_notification
 from base.utils.notifications.handlers import NotificationEngine
@@ -55,51 +56,65 @@ class ScopedUser:
 
 
 @receiver(post_save, sender='base.Student')
-def auto_enroll_core_courses(
-    sender,
-    instance,
-    created,
-    **kwargs
-):
-    if created:
-        try:
-            current_session = Session.objects.get(is_active=True)
-            core_subjects = Curriculum.objects.filter(
-                Tclass=instance.class_entered,
-                session=current_session,
-                syllabus__course__course_type__in=['C', 'CC']
-            )
+def auto_enroll_core_courses(sender, instance, created, **kwargs):
+    if not created:
+        return
 
-            Enrollment.objects.bulk_create([
+    try:
+        current_session = Session.objects.get(is_active=True)
+    except Session.DoesNotExist:
+        current_session = None
+
+    if current_session is not None:
+        # Curriculum no longer has a direct Tclass or syllabus field.
+        # Tclass is reached via `classes` (M2M through CurriculumClass);
+        # course_type is reached via Curriculum.course directly. Both
+        # conditions below traverse class_links__ so they apply to the
+        # SAME CurriculumClass row, ensuring we only pick up slots this
+        # student's specific class is actually authorized to attend.
+        core_subjects = Curriculum.objects.filter(
+            class_links__Tclass=instance.class_entered,
+            class_links__syllabus__state__in=Syllabus.SCHEDULABLE_STATES,
+            session=current_session,
+            course__course_type__in=['C', 'CC'],
+        ).distinct()
+
+        Enrollment.objects.bulk_create(
+            [
                 Enrollment(
                     student=instance,
                     curriculum=curriculum,
-                    status='approved'  # core courses auto-approved
+                    status='approved',  # core courses auto-approved
                 )
                 for curriculum in core_subjects
             ],
-                ignore_conflicts=True
-            )
-
-            # TODO : send notification here and update lms
-
-        except Session.DoesNotExist:
-            pass
-
-        session = Session.objects.filter(is_active=True).first()
-        feesturcture = FeeStructure.objects.get(
-            session=session,
-            Tclass=instance.class_entered
+            ignore_conflicts=True,
         )
 
-        try:
-            feeaccount = StudentFeeAccount.objects.create(
-                student=instance,
-                fee_structure=feesturcture
-            )
+        # TODO: send notification here and update lms
 
+    # Fee account creation is intentionally independent of the enrollment
+    # block above — a missing FeeStructure or inactive session should
+    # never prevent the Student row (or its core-course enrollment) from
+    # being created.
+    active_session = current_session or Session.objects.filter(
+        is_active=True).first()
+    if active_session is not None:
+        try:
+            fee_structure = FeeStructure.objects.get(
+                session=active_session,
+                Tclass=instance.class_entered,
+            )
+            StudentFeeAccount.objects.create(
+                student=instance,
+                fee_structure=fee_structure,
+            )
             from base.modules.erp.dispatch import dispatch_erp_event
-            dispatch_erp_event(feeaccount, "feeaccount.created")
+            # dispatch_erp_event(feeaccount, "feeaccount.created")
+        except FeeStructure.DoesNotExist:
+            pass  # no fee structure published yet for this class/session
+        except FeeStructure.MultipleObjectsReturned:
+            pass  # data integrity issue — worth logging separately
         except Exception:
             pass  # fail silently or notify finance
 

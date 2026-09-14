@@ -5,13 +5,23 @@ Key behaviours vs a naive greedy:
   - Round-robin slot selection spreads entries evenly across the week.
   - Two-phase placement: tries strict day-spread cap first, then
     relaxes it automatically per-entry if needed rather than failing.
-  - Classes with the most curriculum entries are placed first so they
+  - Curricula with the most attending classes are placed first so they
     get first pick of slots.
   - Lecturer over-subscription is a warning not a failure (necessary
     when the lecturer pool is small relative to class count).
   - Missing professors produce a warning and placement continues.
-  - Common units (CC) remain a hard simultaneous-placement constraint.
   - validate() is still called before returning success.
+
+SCHEMA NOTE: Curriculum is keyed by (course, session) and shared across
+every class attending it (via the `classes` M2M / CurriculumClass
+through-table) — it no longer has a direct `Tclass` field, and there is
+no more "regular, single-class" case as distinct from "common unit":
+EVERY Curriculum entry is placed once and simultaneously blocks the
+slot for every class in `entry.classes.all()`. The old regular/CC split
+and the old per-class `entry.Tclass` references have been removed
+accordingly — CC courses are no longer structurally special, though
+`course_type` is still available if you want to weight them differently
+in sorting.
 
 Register in settings.py:
     TIMETABLE_STRATEGY = 'base.modules.timetabling.strategies.greedy.GreedyStrategy'
@@ -61,8 +71,8 @@ class GreedyStrategy(AbstractTimetableStrategy):
         curriculum_qs = (
             Curriculum.objects
             .filter(session=session)
-            .select_related('Tclass', 'syllabus__course')
-            .prefetch_related('professor')
+            .select_related('course')
+            .prefetch_related('professor', 'classes')
         )
 
         if not curriculum_qs.exists():
@@ -73,23 +83,28 @@ class GreedyStrategy(AbstractTimetableStrategy):
 
         all_entries = list(curriculum_qs)
 
-        # ── split CC from regular ─────────────────────────────────────
-        common_units = defaultdict(list)   # {course_id: [entry, ...]}
-        regular = []
-
+        # Drop any entry with no attending classes at all — nothing to
+        # place, and it would otherwise pass every check trivially and
+        # burn a slot for no one.
+        entries_with_classes = []
+        skipped = []
         for entry in all_entries:
-            if entry.course.course_type == 'CC':
-                common_units[entry.course_id].append(entry)
-            else:
-                regular.append(entry)
+            classes = list(entry.classes.all())
+            if not classes:
+                skipped.append(entry.course.course_code)
+                continue
+            entries_with_classes.append((entry, classes))
 
-        # Sort regular entries: most curricula per class first.
-        # This ensures busy classes claim their slots before sparse ones,
-        # preventing the "last class has nowhere to go" failure.
-        class_load = defaultdict(int)
-        for e in regular:
-            class_load[e.Tclass.pk] += 1
-        regular.sort(key=lambda e: -class_load[e.Tclass.pk])
+        if not entries_with_classes:
+            return TimetableGenerationResult(
+                success=False,
+                message=f"No curriculum entries with attending classes for {session}.",
+            )
+
+        # Busiest curricula (most attending classes, i.e. widest shared
+        # lecture) placed first — they're the hardest to fit since they
+        # block the most class-slots at once, so give them first pick.
+        entries_with_classes.sort(key=lambda pair: -len(pair[1]))
 
         # ── booking state (in-memory only) ────────────────────────────
         lecturer_busy = {}   # {(lecturer_id, day, slot): True}
@@ -108,19 +123,28 @@ class GreedyStrategy(AbstractTimetableStrategy):
         slots = []
         warnings = []
 
-        # ── place regular courses ─────────────────────────────────────
-        for entry in regular:
+        if skipped:
+            warnings.append(
+                f"Skipped {len(skipped)} curriculum entr{'y' if len(skipped) == 1 else 'ies'} "
+                f"with no attending classes: {', '.join(skipped)}."
+            )
+
+        # ── place every curriculum entry (simultaneously across all its
+        #    attending classes) ─────────────────────────────────────────
+        for entry, classes in entries_with_classes:
             professors = list(entry.professor.all())
 
             if not professors:
+                class_names = ', '.join(c.class_name for c in classes)
                 warnings.append(
-                    f"{entry.course.course_code} ({entry.Tclass.class_name}) "
+                    f"{entry.course.course_code} ({class_names}) "
                     f"has no assigned professor — placed without lecturer constraint."
                 )
 
             start = advance_cursor()
             placed, w = self._place_with_fallback(
-                entries=[entry],
+                entry=entry,
+                classes=classes,
                 professors=professors,
                 venues=venues,
                 lecturer_busy=lecturer_busy,
@@ -128,57 +152,19 @@ class GreedyStrategy(AbstractTimetableStrategy):
                 class_busy=class_busy,
                 class_day=class_day,
                 slots=slots,
-                one_venue_each=False,
                 start_idx=start,
             )
             warnings.extend(w)
 
             if not placed:
+                class_names = ', '.join(c.class_name for c in classes)
                 return TimetableGenerationResult(
                     success=False,
                     message=(
                         f"Could not place {entry.course.course_code} "
-                        f"for {entry.Tclass.class_name} — all "
+                        f"for [{class_names}] — all "
                         f"{len(all_day_slots)} day/slot combinations "
                         f"exhausted even after relaxing day-spread limit."
-                    ),
-                    warnings=warnings,
-                )
-
-        # ── place common units ────────────────────────────────────────
-        for course_id, entries in common_units.items():
-            all_professors = []
-            for e in entries:
-                all_professors.extend(list(e.professor.all()))
-
-            if not all_professors:
-                warnings.append(
-                    f"Common unit {entries[0].course.course_code} has no "
-                    f"assigned professors — placed without lecturer constraint."
-                )
-
-            start = advance_cursor()
-            placed, w = self._place_with_fallback(
-                entries=entries,
-                professors=all_professors,
-                venues=venues,
-                lecturer_busy=lecturer_busy,
-                venue_busy=venue_busy,
-                class_busy=class_busy,
-                class_day=class_day,
-                slots=slots,
-                one_venue_each=True,
-                start_idx=start,
-            )
-            warnings.extend(w)
-
-            if not placed:
-                code = entries[0].course.course_code
-                return TimetableGenerationResult(
-                    success=False,
-                    message=(
-                        f"Could not place common unit {code} — no slot free "
-                        f"for all {len(entries)} classes simultaneously."
                     ),
                     warnings=warnings,
                 )
@@ -192,10 +178,9 @@ class GreedyStrategy(AbstractTimetableStrategy):
                 f"Generated {len(slots)} slot(s) with {len(warnings)} warning(s)."
             ),
             stats={
-                'total_slots':  len(slots),
-                'common_units': len(common_units),
-                'regular':      len(regular),
-                'warnings':     len(warnings),
+                'total_slots': len(slots),
+                'curricula':   len(entries_with_classes),
+                'warnings':    len(warnings),
             },
         )
 
@@ -226,20 +211,22 @@ class GreedyStrategy(AbstractTimetableStrategy):
         # Phase 2 — relax the day-spread soft cap
         placed, w2 = self._place(day_cap=len(SLOTS), **kwargs)
         if placed:
-            entries = kwargs['entries']
-            for entry in entries:
-                w2.append(
-                    f"{entry.Tclass.class_name} day-spread cap relaxed for "
-                    f"{entry.course.course_code} — consider adding more venues "
-                    f"or days to reduce congestion."
-                )
+            entry = kwargs['entry']
+            classes = kwargs['classes']
+            class_names = ', '.join(c.class_name for c in classes)
+            w2.append(
+                f"[{class_names}] day-spread cap relaxed for "
+                f"{entry.course.course_code} — consider adding more venues "
+                f"or days to reduce congestion."
+            )
         return placed, w + w2
 
     # ── core placement ────────────────────────────────────────────────
 
     def _place(
         self,
-        entries,
+        entry,
+        classes,
         professors,
         venues,
         lecturer_busy,
@@ -247,14 +234,16 @@ class GreedyStrategy(AbstractTimetableStrategy):
         class_busy,
         class_day,
         slots,
-        one_venue_each=False,
         start_idx=0,
         day_cap=MAX_SLOTS_PER_CLASS_PER_DAY,
         relax_lecturer=True,
     ) -> tuple[bool, list[str]]:
         """
-        Try every (day, slot) combination starting from start_idx.
-        Mutates busy dicts and appends to slots on success.
+        Try every (day, slot) combination starting from start_idx for a
+        single shared curriculum entry, checking/blocking it against
+        every class in `classes` simultaneously (it's one physical
+        lecture attended by all of them at once). Mutates busy dicts and
+        appends one TimetableSlot to `slots` on success.
         Returns (placed, warnings).
         """
         warnings = []
@@ -264,12 +253,12 @@ class GreedyStrategy(AbstractTimetableStrategy):
         for offset in range(n):
             day, slot = all_day_slots[(start_idx + offset) % n]
 
-            # hard: no class double-booking
-            if any(class_busy.get((e.Tclass.pk, day, slot)) for e in entries):
+            # hard: no class double-booking, for ANY attending class
+            if any(class_busy.get((c.pk, day, slot)) for c in classes):
                 continue
 
-            # soft cap on slots per day per class
-            if any(class_day[(e.Tclass.pk, day)] >= day_cap for e in entries):
+            # soft cap on slots per day, for ANY attending class
+            if any(class_day[(c.pk, day)] >= day_cap for c in classes):
                 continue
 
             # lecturer constraint (relaxable)
@@ -279,15 +268,9 @@ class GreedyStrategy(AbstractTimetableStrategy):
             if lecturer_clash and not relax_lecturer:
                 continue
 
-            # venue check
-            if one_venue_each:
-                assigned = self._free_venues(
-                    venues, venue_busy, day, slot, len(entries))
-            else:
-                v = self._free_venue(venues, venue_busy, day, slot)
-                assigned = [v] * len(entries) if v else None
-
-            if not assigned:
+            # venue check — one shared venue for the whole lecture
+            venue = self._free_venue(venues, venue_busy, day, slot)
+            if venue is None:
                 continue
 
             # ── commit ────────────────────────────────────────────────
@@ -302,28 +285,29 @@ class GreedyStrategy(AbstractTimetableStrategy):
             for professor in professors:
                 lecturer_busy[(professor.pk, day, slot)] = True
 
-            for entry, venue in zip(entries, assigned):
-                venue_busy[(venue.pk, day, slot)] = True
-                class_busy[(entry.Tclass.pk, day, slot)] = True
-                class_day[(entry.Tclass.pk, day)] += 1
+            venue_busy[(venue.pk, day, slot)] = True
 
-                cnt = class_day[(entry.Tclass.pk, day)]
+            for c in classes:
+                class_busy[(c.pk, day, slot)] = True
+                class_day[(c.pk, day)] += 1
+
+                cnt = class_day[(c.pk, day)]
                 if cnt == MAX_SLOTS_PER_CLASS_PER_DAY:
                     warnings.append(
-                        f"{entry.Tclass.class_name} now has {cnt} slots on "
+                        f"{c.class_name} now has {cnt} slots on "
                         f"{day} — consider distributing across the week."
                     )
 
-                slots.append(TimetableSlot(
-                    curriculum_id=str(entry.pk),
-                    day=day,
-                    time_slot=slot,
-                    venue_id=str(venue.pk),
-                    meta={
-                        'course_code': entry.course.course_code,
-                        'class_name':  entry.Tclass.class_name,
-                    },
-                ))
+            slots.append(TimetableSlot(
+                curriculum_id=str(entry.pk),
+                day=day,
+                time_slot=slot,
+                venue_id=str(venue.pk),
+                meta={
+                    'course_code': entry.course.course_code,
+                    'class_names': [c.class_name for c in classes],
+                },
+            ))
 
             return True, warnings
 
@@ -336,7 +320,3 @@ class GreedyStrategy(AbstractTimetableStrategy):
             if not venue_busy.get((v.pk, day, slot)):
                 return v
         return None
-
-    def _free_venues(self, venues, venue_busy, day, slot, n):
-        free = [v for v in venues if not venue_busy.get((v.pk, day, slot))]
-        return free[:n] if len(free) >= n else None

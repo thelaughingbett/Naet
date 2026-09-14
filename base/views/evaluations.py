@@ -63,7 +63,8 @@ class CourseEvaluationView(
                     curriculum__session=session,
                     status='approved',
                 )
-                .select_related('curriculum__syllabus__course')
+                # syllabus__course -> course (direct FK on Curriculum now)
+                .select_related('curriculum__course')
                 .prefetch_related('curriculum__professor')
             )
 
@@ -156,7 +157,8 @@ class LecturerEvaluationView(
                     curriculum__session=session,
                     status='approved',
                 )
-                .select_related('curriculum__syllabus__course')
+                # syllabus__course -> course (direct FK on Curriculum now)
+                .select_related('curriculum__course')
                 .prefetch_related('curriculum__professor__user')
             )
 

@@ -30,18 +30,21 @@ class MyCourseView(RoleRequiredMixin, View):
         session = Session.objects.filter(is_active=True).first()
 
         # ── curriculum entries assigned to this lecturer this session ─────
+        # syllabus__course -> course (direct FK again); Tclass -> classes
+        # (M2M, prefetched — a shared slot can have several attending
+        # classes now, so no single Tclass to select_related through it).
         units = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .select_related('syllabus__course', 'Tclass', 'session')
-            .prefetch_related('professor')
+            .select_related('course', 'session')
+            .prefetch_related('professor', 'classes')
             if session else []
         )
 
         distinct_course_count = (
             Curriculum.objects
             .filter(professor=lecturer, session=session)
-            .values('syllabus__course')
+            .values('course')
             .distinct()
             .count()
             if session else 0
@@ -90,7 +93,7 @@ class MyCourseView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__syllabus__course',
+                'exam_venue__exam_session__curriculum__course',
                 'exam_venue__exam_session',
                 'exam_venue__venue',
             )

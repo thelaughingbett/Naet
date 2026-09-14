@@ -73,7 +73,7 @@ class IndexView(
                 enrollment_records__student=student,
                 enrollment_records__status='approved',
                 session=session,
-            ).select_related('syllabus__course')[:5]
+            ).select_related('course')[:5]
 
             # today's timetable
             today = datetime.date.today()
@@ -91,7 +91,7 @@ class IndexView(
                     curriculum_id__in=enrolled_curriculum_ids,
                     day=today_day,
                 ).select_related(
-                    'curriculum__syllabus__course',
+                    'curriculum__course',
                     'venue',
                 ).prefetch_related(
                     'curriculum__professor__user'

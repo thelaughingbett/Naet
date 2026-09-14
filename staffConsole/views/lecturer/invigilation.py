@@ -56,13 +56,20 @@ def _serialize(duty: ExamInvigilatorAssignment) -> dict:
     approved_count = curriculum.enrollment_records.filter(
         status='approved').count()
 
+    # A shared Curriculum slot can now serve multiple classes at once
+    # (e.g. two programmes sitting the same exam together) — join them
+    # rather than assuming exactly one, same as the class-list fix.
+    class_names = ", ".join(
+        curriculum.classes.values_list('class_name', flat=True)
+    )
+
     return {
         'id':            str(duty.record_id),
         'date':          exam_session.date.isoformat(),
         'time':          exam_session.time_slot.replace('-', ' – '),
         'course_code':   course.course_code,
         'course_title':  course.course_name,
-        'class_name':    curriculum.Tclass.class_name,
+        'class_name':    class_names,
         'venue':         duty.exam_venue.venue.venue_name,
         'type':          exam_session.exam_type,
         'type_display':  exam_session.get_exam_type_display(),
@@ -89,9 +96,11 @@ class InvigilationDutiesView(RoleRequiredMixin, View):
                 exam_venue__exam_session__curriculum__session=session,
             )
             .select_related(
-                'exam_venue__exam_session__curriculum__syllabus__course',
-                'exam_venue__exam_session__curriculum__Tclass',
+                'exam_venue__exam_session__curriculum__course',
                 'exam_venue__venue',
+            )
+            .prefetch_related(
+                'exam_venue__exam_session__curriculum__classes',
             )
             .order_by('exam_venue__exam_session__date', 'exam_venue__exam_session__time_slot')
             if session else ExamInvigilatorAssignment.objects.none()

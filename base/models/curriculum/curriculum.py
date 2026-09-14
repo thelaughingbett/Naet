@@ -24,7 +24,6 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
-from base.managers import CommonUnitCurriculumManager
 from ..base import BaseModelMixin
 
 
@@ -121,19 +120,23 @@ class Syllabus(BaseModelMixin):
 
 class Curriculum(BaseModelMixin):
     """
-    Represents an active teaching slot pairing a course unit with a specific
-    class/cohort during an academic session.
+    Now represents a shared teaching slot for one Course in one Session —
+    potentially serving several classes across different programmes at
+    once (e.g. an Informatics section and a CS section attending the
+    same lecture). Which classes attend, and under what syllabus
+    approval, is tracked via CurriculumClass below — not a direct FK.
     """
 
-    Tclass = models.ForeignKey(
-        'Tclass',
-        on_delete=models.PROTECT
-    )
-
-    syllabus = models.ForeignKey(
-        'Syllabus',
+    course = models.ForeignKey(
+        'Course',
         on_delete=models.PROTECT,
         related_name='curriculum_entries',
+    )
+
+    classes = models.ManyToManyField(
+        'Tclass',
+        through='CurriculumClass',
+        related_name='curricula',
     )
 
     professor = models.ManyToManyField(
@@ -141,7 +144,7 @@ class Curriculum(BaseModelMixin):
         through='LecturerAssignment',
         related_name='assigned_curricula',
         blank=True
-    )  # TODO : change name to lecturer not professor
+    )
 
     session = models.ForeignKey(
         'Session',
@@ -149,130 +152,148 @@ class Curriculum(BaseModelMixin):
         related_name="curricula"
     )
 
-    weekly_allocated_slots = models.PositiveIntegerField(
-        default=3,
-        help_text="Weekly instructional contact hours allocated to this curriculum for this unit."
-    )  # for timetabling and other purposes
-
+    weekly_allocated_slots = models.PositiveIntegerField(default=3)
     history = HistoricalRecords()
-
-    capacity = models.PositiveIntegerField(default=60)
+    capacity = models.PositiveIntegerField(
+        default=60,
+        help_text="Total seats across ALL classes attending this slot, "
+        "not per-class. Enrollment capacity checks must sum across "
+        "every class now, not assume one Tclass per Curriculum."
+    )
 
     weighting_scheme_override = models.ForeignKey(
-        'WeightingScheme',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
+        'WeightingScheme', on_delete=models.PROTECT, null=True, blank=True,
         related_name='curricula_overriding',
-        help_text="Lets whoever teaches THIS class this session use a "
-        "different weighting than the course default — e.g. "
-        "one lecturer runs 40% CAT / 60% Exam for their section "
-        "while the course default is 30/70. Leave blank to "
-        "inherit the course's scheme."
     )
 
     class Meta:
-        unique_together = ('syllabus', 'Tclass', 'session')
+        unique_together = ('course', 'session')
         verbose_name = "Curriculum Slot"
         verbose_name_plural = "Curriculum Slots"
 
-    @property
-    def results(self):
-        """All Result rows for students enrolled in this curriculum slot."""
-        from .enrollment import Result
-        return Result.objects.filter(
-            enrollment__curriculum=self
-        ).select_related('enrollment__student')
-
     def __str__(self):
-        return f"{self.course} - {self.Tclass} - {self.session}"
+        class_names = ", ".join(
+            self.classes.values_list('class_name', flat=True))
+        return f"{self.course} - [{class_names}] - {self.session}"
 
-    @property
-    def course(self):
-        return self.syllabus.course
+    def get_weighting_scheme(self):
+        if self.weighting_scheme_override_id:
+            return self.weighting_scheme_override
+        return self.course.get_weighting_scheme()
+
+    @classmethod
+    def clone_curriculum(cls, from_session_id, to_session_id, keep_professor=True):
+        """
+        Clones curriculum slots from one session to another.
+
+        Curriculum has no direct `syllabus`/`Tclass` fields — those live on
+        CurriculumClass, one row per (curriculum, Tclass), each carrying its
+        own `syllabus`. So schedulability has to be checked per class-link,
+        not per Curriculum: a shared slot might have one class whose
+        Syllabus entry is still Approved and another that's since been
+        Retired, and only the former should be carried into the new session.
+        A Curriculum whose class-links are all unschedulable is skipped
+        entirely rather than cloned with zero classes attached.
+
+        Lecturer assignments are carried over reset to 'Draft', matching the
+        original intent of re-confirming staffing each session rather than
+        silently inheriting Confirmed status.
+
+        get_or_create is used throughout instead of bulk_create so reruns
+        (e.g. after a partial failure) don't violate the unique_together
+        constraints on Curriculum/CurriculumClass/LecturerAssignment.
+        Note this bypasses clean() (as bulk_create did before it) — none of
+        the model-level ValidationError checks run here, only the
+        SCHEDULABLE_STATES filter below.
+        """
+        source_curricula = cls.objects.filter(
+            session_id=from_session_id
+        ).prefetch_related(
+            'class_links__syllabus',
+            'lecturer_assignments',
+        )
+
+        slots_created = 0
+        links_created = 0
+
+        for old_curriculum in source_curricula:
+            schedulable_links = [
+                link for link in old_curriculum.class_links.all()
+                if link.syllabus.state in Syllabus.SCHEDULABLE_STATES
+            ]
+            if not schedulable_links:
+                continue  # nothing left worth scheduling for this slot
+
+            new_curriculum, created = cls.objects.get_or_create(
+                course_id=old_curriculum.course_id,
+                session_id=to_session_id,
+                defaults={
+                    'weekly_allocated_slots': old_curriculum.weekly_allocated_slots,
+                    'capacity': old_curriculum.capacity,
+                    'weighting_scheme_override_id': old_curriculum.weighting_scheme_override_id,
+                },
+            )
+            if created:
+                slots_created += 1
+
+            for link in schedulable_links:
+                _, link_created = CurriculumClass.objects.get_or_create(
+                    curriculum=new_curriculum,
+                    Tclass_id=link.Tclass_id,
+                    defaults={'syllabus_id': link.syllabus_id},
+                )
+                if link_created:
+                    links_created += 1
+
+            if keep_professor:
+                for assignment in old_curriculum.lecturer_assignments.all():
+                    LecturerAssignment.objects.get_or_create(
+                        curriculum=new_curriculum,
+                        lecturer_id=assignment.lecturer_id,
+                        defaults={
+                            'is_primary': assignment.is_primary,
+                            'allocated_workload_hours': assignment.allocated_workload_hours,
+                            'status': 'Draft',
+                        },
+                    )
+
+        return {'slots_created': slots_created, 'links_created': links_created}
+
+
+class CurriculumClass(BaseModelMixin):
+    """
+    Links one Tclass to a shared Curriculum slot, recording the specific
+    Syllabus entry that authorizes THAT class's programme to take this
+    course — preserving per-programme approval even when the teaching
+    slot itself is shared across programmes.
+    """
+
+    curriculum = models.ForeignKey(
+        'Curriculum', on_delete=models.CASCADE, related_name='class_links'
+    )
+    Tclass = models.ForeignKey(
+        'Tclass', on_delete=models.PROTECT, related_name='curriculum_links'
+    )
+    syllabus = models.ForeignKey(
+        'Syllabus', on_delete=models.PROTECT, related_name='curriculum_links'
+    )
+
+    class Meta:
+        unique_together = ('curriculum', 'Tclass')
+        verbose_name = "Curriculum Class Link"
 
     def clean(self):
         super().clean()
-        if self.syllabus.state not in Syllabus.SCHEDULABLE_STATES:
+        if self.syllabus.course_id != self.curriculum.course_id:
             raise ValidationError({
-                'syllabus': f"Cannot schedule a class into a course that is "
-                f"'{self.syllabus.get_state_display()}' — only "
-                f"Approved or Adjunct syllabus entries can be taught."
+                'syllabus': "This syllabus entry is for a different course "
+                f"than {self.curriculum.course}."
             })
         if self.syllabus.programme_id != self.Tclass.programme_id:
             raise ValidationError({
                 'syllabus': f"This syllabus entry belongs to "
                 f"{self.syllabus.programme}, not {self.Tclass.programme}."
             })
-
-    @classmethod
-    def clone_curriculum(cls, from_session_id, to_session_id):
-        """
-        Clones all curriculum allocations from one session to another,
-        maintaining the respective lecturer assignments under a 'Draft' state.
-
-        FIXED: previously referenced `course`/`course_id`, which no longer
-        exist as real fields on Curriculum (course is now a @property
-        proxying `syllabus.course`) — this raised TypeError/AttributeError
-        on every call since the Syllabus refactor. Now uses `syllabus`/
-        `syllabus_id` throughout.
-
-        ALSO FIXED: the source queryset now excludes any Curriculum whose
-        syllabus entry is no longer in a SCHEDULABLE_STATE. bulk_create()
-        never calls clean(), so without this filter a Retired or
-        still-Proposed syllabus entry could get silently cloned into the
-        next session's timetable — exactly what Curriculum.clean() exists
-        to prevent for normal creates.
-        """
-
-        # NOTE : irrelevant with syllabus model probably change to transfer assigned lecturers
-        source = cls.objects.filter(
-            session_id=from_session_id,
-            syllabus__state__in=Syllabus.SCHEDULABLE_STATES,
-        ).select_related('syllabus').prefetch_related('professor')
-
-        professor_map = {}
-        new_records = []
-        for req in source:
-            obj = cls(
-                syllabus=req.syllabus,
-                Tclass=req.Tclass,
-                session_id=to_session_id,
-            )
-            new_records.append(obj)
-            professor_map[(req.syllabus_id, req.Tclass_id)
-                          ] = list(req.professor.all())
-
-        cls.objects.bulk_create(new_records, ignore_conflicts=True)
-
-        created = cls.objects.filter(
-            session_id=to_session_id,
-            syllabus_id__in=[r.syllabus_id for r in new_records],
-            Tclass_id__in=[r.Tclass_id for r in new_records],
-        )
-        for obj in created:
-            professors = professor_map.get(
-                (obj.syllabus_id, obj.Tclass_id), [])
-            if professors:
-                obj.professor.set(professors)
-
-        return created.count()
-
-    def get_weighting_scheme(self):
-        """
-        Resolution order: this specific class offering's override,
-        then the course's default, then the institution default (via
-        Course.get_weighting_scheme()'s own fallback).
-
-        NOTE: nothing here enforces that only the primary lecturer
-        (LecturerAssignment.is_primary=True) can set this override —
-        that's a permission/view-layer concern, not a model constraint.
-        If two co-lecturers disagree, whoever has edit access to this
-        field wins; consider gating the admin/API field to primary only.
-        """
-        if self.weighting_scheme_override_id:
-            return self.weighting_scheme_override
-        return self.syllabus.course.get_weighting_scheme()
 
 
 class LecturerAssignment(BaseModelMixin):
@@ -355,26 +376,3 @@ class LecturerAssignment(BaseModelMixin):
     def __str__(self):
         role = "Primary" if self.is_primary else "Assistant"
         return f"{self.lecturer} - {self.curriculum.course.course_code} ({role})"
-
-
-class CommonUnitCurriculum(Curriculum):
-    objects = CommonUnitCurriculumManager()
-
-    class Meta:
-        proxy = True
-        verbose_name = 'Common Unit'
-        verbose_name_plural = 'Common Units'
-
-    @property
-    def classes(self):
-        """
-        FIXED: previously filtered only on `session=self.session` +
-        `syllabus__course__course_type='CC'`, which returns every class
-        taking ANY common-unit course this session, not classes sharing
-        THIS specific common unit. Scoping to `syllabus=self.syllabus`
-        restores "all classes sharing this course + session".
-        """
-        return Curriculum.objects.filter(
-            session=self.session,
-            syllabus=self.syllabus,
-        ).values_list('Tclass__class_name', flat=True)

@@ -128,40 +128,27 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
 class Tclass(BaseModelMixin):
     class_name = models.CharField(max_length=78)
 
-    programme = models.ForeignKey(
-        'Programme',
-        on_delete=models.PROTECT
-    )
+    programme = models.ForeignKey('Programme', on_delete=models.PROTECT)
 
-    courses = models.ManyToManyField(
-        'Syllabus',
-        through='Curriculum'
-    )  # change field to  curriculum ,this is going to be a problem maybe make a property for backwards compatability
+    # removed: courses = models.ManyToManyField('Syllabus', through='Curriculum')
+    # Curriculum is no longer a valid through-model for this — it has no FK
+    # to Tclass or Syllabus under the shared-slot design. Use CurriculumClass
+    # (which links Tclass -> Syllabus via a specific Curriculum slot) instead.
 
-    year_of_study = models.IntegerField(
-        default=1,
-        blank=True
-    )
-
-    graduated = models.DateField(
-        null=True,
-        blank=True
-    )  # TODO :  change to convocation link ,actually this is irrelevant as it is catered for by graduation ,or keep the reference to convocation
-
+    year_of_study = models.IntegerField(default=1, blank=True)
+    graduated = models.DateField(null=True, blank=True)
     liason = models.ForeignKey(
-        'Lecturer',
-        null=True,
-        blank=True,
-        on_delete=models.DO_NOTHING
+        'Lecturer', null=True, blank=True, on_delete=models.DO_NOTHING)
+    student_rep = models.ForeignKey(
+        'Student', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='class_representative'
     )
 
-    student_rep = models.ForeignKey(
-        'Student',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='class_representative'
-    )
+    @property
+    def syllabus_entries(self):
+        """Syllabus entries this class is actually scheduled for, via CurriculumClass."""
+        from ..curriculum import Syllabus
+        return Syllabus.objects.filter(curriculum_links__Tclass=self)
 
     def __str__(self):
         return self.class_name

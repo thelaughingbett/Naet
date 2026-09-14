@@ -493,7 +493,6 @@ class Result(BaseModelMixin):
     history = HistoricalRecords()
 
     def clean(self):
-
         if self.type != 'E' and self.type != 'PR':
             self.state = 'published'
 

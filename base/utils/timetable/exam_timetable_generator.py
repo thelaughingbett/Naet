@@ -1,6 +1,6 @@
 from django.db import transaction
 from base.models import (
-    Curriculum, ExamSession, ExamVenue, Lecturer,  Venue, ExamInvigilatorAssignment
+    Curriculum, ExamSession, ExamVenue, Lecturer, Venue, ExamInvigilatorAssignment
 )
 
 # must match ExamSession.TIME_SLOTS values exactly
@@ -26,6 +26,14 @@ def generate_exam_timetable(session, exam_type='MAIN'):
       - An invigilator can't be in two venues at the same date+slot
       - A student can't have two exams at the same date+slot (clash detection)
       - Max 4 exams per day across all classes (slot limit)
+
+    SCHEMA NOTE: Curriculum is keyed by (course, session) and shared
+    across every class attending it (no direct Tclass or syllabus field
+    anymore — `classes` is an M2M, `course` is a direct FK). Each
+    Curriculum entry's exam now has to be checked/blocked against EVERY
+    attending class simultaneously, the same way the weekly-schedule
+    greedy strategy handles it — one physical exam sitting, potentially
+    shared by several classes at once.
 
     Returns count of ExamSession records created.
     Raises if any curriculum entry can't be placed.
@@ -59,11 +67,25 @@ def generate_exam_timetable(session, exam_type='MAIN'):
     curriculum = Curriculum.objects.filter(
         session=session
     ).select_related(
-        'Tclass', 'syllabus__course'
+        'course'
     ).prefetch_related(
+        'classes',
         'professor',
         'enrolled_students',  # through Enrollment
-    ).order_by('syllabus__course__course_type', 'Tclass')
+    ).order_by('course__course_type')
+
+    # Entries with no attending classes have nothing to schedule an exam
+    # for — skip rather than raise, mirroring the weekly-schedule strategy.
+    entries_with_classes = []
+    for entry in curriculum:
+        classes = list(entry.classes.all())
+        if classes:
+            entries_with_classes.append((entry, classes))
+
+    # Curricula with more attending classes are harder to place (they
+    # block more class-slots at once) — place them first while the
+    # calendar is emptiest.
+    entries_with_classes.sort(key=lambda pair: -len(pair[1]))
 
     exam_sessions_to_create = []
     exam_venues_to_create = []
@@ -73,7 +95,7 @@ def generate_exam_timetable(session, exam_type='MAIN'):
     # [(curriculum_entry, date, slot, venue, invigilator), ...]
     placement_map = []
 
-    for entry in curriculum:
+    for entry, classes in entries_with_classes:
         placed = False
 
         # get all students enrolled in this curriculum
@@ -86,8 +108,8 @@ def generate_exam_timetable(session, exam_type='MAIN'):
                 break
 
             for slot in EXAM_SLOTS:
-                # class already has an exam at this date+slot
-                if class_busy.get((entry.Tclass.pk, date, slot)):
+                # any attending class already has an exam at this date+slot
+                if any(class_busy.get((c.pk, date, slot)) for c in classes):
                     continue
 
                 # check no student clash
@@ -116,7 +138,8 @@ def generate_exam_timetable(session, exam_type='MAIN'):
                     continue
 
                 # commit
-                class_busy[(entry.Tclass.pk, date, slot)] = True
+                for c in classes:
+                    class_busy[(c.pk, date, slot)] = True
                 venue_busy[(venue.pk, date, slot)] = True
                 invig_busy[(invigilator.pk, date, slot)] = True
 
@@ -136,9 +159,10 @@ def generate_exam_timetable(session, exam_type='MAIN'):
                 break
 
         if not placed:
+            class_names = ', '.join(c.class_name for c in classes)
             raise Exception(
                 f"Could not place {exam_type} exam for "
-                f"{entry.course.course_code} ({entry.Tclass.class_name}) — "
+                f"{entry.course.course_code} ({class_names}) — "
                 f"no available slot found. Add more exam dates or venues."
             )
 

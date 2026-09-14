@@ -46,13 +46,6 @@ class GraduatedStudentManager(models.Manager):
         return super().get_queryset().filter(graduated__isnull=False)
 
 
-class CommonUnitCurriculumManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(
-            course__course_type='CC'
-        )
-
-
 # staff
 class StaffQuerySet(models.QuerySet):
     """Reusable queryset methods for individual staff child tables."""

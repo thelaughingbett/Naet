@@ -330,6 +330,57 @@
   .form-error.active {
     display: block;
   }
+
+  .week-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .week-nav__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .week-nav__controls button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .week-nav__controls button:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .week-nav__controls button.active-btn {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .week-nav__date {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .week-nav__today {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+  }
 </style>
 
 {% endblock %} {% block body %}
@@ -345,13 +396,27 @@
   <div class="info-chip">⏰ All times are EAT (UTC+3)</div>
 </div>
 
+<div class="week-nav">
+  <div class="week-nav__controls">
+    <button onclick="changeWeek(-1)">
+      <i class="fas fa-chevron-left"></i> Prev
+    </button>
+    <button class="active-btn" onclick="goToToday()">Today</button>
+    <button onclick="changeWeek(1)">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+  <div class="week-nav__date" id="weekDate"></div>
+  <div class="week-nav__today" id="todayLabel"></div>
+</div>
+
 <div class="timetable-container">
   <table class="timetable">
     <thead>
       <tr>
         <th>Time</th>
         {% for day in days %}
-        <th>{{ day }}</th>
+        <th id="th-{{ day }}">{{ day }}</th>
         {% endfor %}
       </tr>
     </thead>
@@ -366,15 +431,16 @@
           <div
             class="class-slot class-slot--clickable"
             data-timetable-id="{{ entry.pk }}"
-            data-course-name="{{ entry.curriculum.syllabus.course.course_name|escapejs }}"
-            data-course-code="{{ entry.curriculum.syllabus.course.course_code|escapejs }}"
-            data-venue="{{ entry.venue.venue_name|escapejs }}"
+            data-day="{{ day }}"
+            data-course-name="{{ entry.curriculum.course.course_name }}"
+            data-course-code="{{ entry.curriculum.course.course_code }}"
+            data-venue="{{ entry.venue.venue_name }}"
           >
             <div class="class-title">
-              {{ entry.curriculum.syllabus.course.course_name }}
+              {{ entry.curriculum.course.course_name }}
             </div>
             <div class="class-detail">
-              {{ entry.curriculum.syllabus.course.course_code }} | {{ entry.venue.venue_name }}
+              {{ entry.curriculum.course.course_code }} | {{ entry.venue.venue_name }}
             </div>
             <div class="class-detail">
               👨‍🏫 {% for lecturer in entry.curriculum.professor.all %} 
@@ -514,172 +580,270 @@
 </div>
 
 <script>
-  const EXEC_HISTORY_URL = "{% url 'execution-history' %}"; // TODO: add this URL name
-  const LOG_EXECUTION_URL = "{% url 'log-execution' %}"; // TODO: add this URL name
-  const CSRF_TOKEN = "{{ csrf_token }}";
+      const EXEC_HISTORY_URL = "{% url 'execution-history' %}"; // TODO: add this URL name
+      const LOG_EXECUTION_URL = "{% url 'log-execution' %}"; // TODO: add this URL name
+      const CSRF_TOKEN = "{{ csrf_token }}";
 
-  let activeTimetableId = null;
-
-  // ── open history modal on slot click ─────────────────────────────────────
-  document.querySelectorAll(".class-slot--clickable").forEach((slot) => {
-    slot.addEventListener("click", () => {
-      activeTimetableId = slot.dataset.timetableId;
-      document.getElementById("historyCourseName").textContent =
-        slot.dataset.courseName;
-      document.getElementById("historyCourseMeta").textContent =
-        `${slot.dataset.courseCode} | ${slot.dataset.venue}`;
-      document.getElementById("logCourseMeta").textContent =
-        `${slot.dataset.courseCode} — ${slot.dataset.venue}`;
-
-      openModal("historyModalOverlay");
-      loadExecutionHistory(activeTimetableId);
-    });
-  });
-
-  function openModal(id) {
-    document.getElementById(id).classList.add("active");
-  }
-  function closeModal(id) {
-    document.getElementById(id).classList.remove("active");
-  }
-
-  document
-    .getElementById("historyModalClose")
-    .addEventListener("click", () => closeModal("historyModalOverlay"));
-  document
-    .getElementById("logModalClose")
-    .addEventListener("click", () => closeModal("logModalOverlay"));
-  [["historyModalOverlay"], ["logModalOverlay"]].forEach(([id]) => {
-    document.getElementById(id).addEventListener("click", (e) => {
-      if (e.target.id === id) closeModal(id);
-    });
-  });
-
-  // ── fetch + render history ────────────────────────────────────────────────
-  async function loadExecutionHistory(timetableId) {
-    const list = document.getElementById("execHistoryList");
-    list.innerHTML = `<div class="exec-history-empty">Loading…</div>`;
-
-    try {
-      const res = await fetch(
-        `${EXEC_HISTORY_URL}?timetable_id=${timetableId}`,
-      );
-      const data = await res.json();
-
-      if (!data.executions || data.executions.length === 0) {
-        list.innerHTML = `<div class="exec-history-empty">📭 No executions logged yet for this slot.</div>`;
-        return;
-      }
-
-      list.innerHTML = data.executions
-        .map((ex) => {
-          let detail = "";
-          if (ex.status === "Rescheduled") {
-            detail = `<div class="exec-detail">→ Moved to <strong>${ex.rescheduled_to_date || "—"}</strong> at <strong>${ex.rescheduled_to_time_slot || "—"}</strong>, <strong>${ex.rescheduled_to_venue || "—"}</strong></div>`;
-          } else if (ex.status === "Missed") {
-            detail = `<div class="exec-detail">Lecturer did not attend this session.</div>`;
-          } else if (ex.status === "Attended" && ex.class_representative) {
-            detail = `<div class="exec-detail">Confirmed by <strong>${ex.class_representative}</strong></div>`;
-          }
-          const notes = ex.notes
-            ? `<div class="exec-notes">"${ex.notes}"</div>`
-            : "";
-
-          return `
-          <div class="exec-item">
-            <div class="exec-item-top">
-              <span class="exec-date">${ex.calendar_date}</span>
-              <span class="exec-badge exec-badge--${ex.status}">${ex.status}</span>
-            </div>
-            ${detail}
-            ${notes}
-          </div>
-        `;
-        })
-        .join("");
-    } catch (err) {
-      list.innerHTML = `<div class="exec-history-empty">⚠️ Failed to load history. Try again.</div>`;
-    }
-  }
-
-  // ── open log-execution modal ────────────────────────────────────────────
-  document
-    .getElementById("openLogExecutionBtn")
-    .addEventListener("click", () => {
-      document.getElementById("execDate").value = new Date()
-        .toISOString()
-        .slice(0, 10);
-      document.getElementById("execStatus").value = "Attended";
-      toggleStatusFields();
-      document.getElementById("execFormError").classList.remove("active");
-      closeModal("historyModalOverlay");
-      openModal("logModalOverlay");
-    });
-
-  document
-    .getElementById("execStatus")
-    .addEventListener("change", toggleStatusFields);
-
-  function toggleStatusFields() {
-    const status = document.getElementById("execStatus").value;
-    // prettier-ignore
-    //document.getElementById("attendedFields").style.display = ( status === "Attended" ? "block" : "none");
-    document
-      .getElementById("rescheduleFields")
-      .classList.toggle("active", status === "Rescheduled");
-  }
-
-  // ── submit ────────────────────────────────────────────────────────────────
-  document
-    .getElementById("logExecutionForm")
-    .addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const errorBox = document.getElementById("execFormError");
-      errorBox.classList.remove("active");
-
-      const status = document.getElementById("execStatus").value;
-      const payload = {
-        timetable_id: activeTimetableId,
-        calendar_date: document.getElementById("execDate").value,
-        status: status,
-        notes: document.getElementById("execNotes").value.trim(),
+      const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
+      const DAY_LABELS = {
+        MON: "Monday",
+        TUE: "Tuesday",
+        WED: "Wednesday",
+        THU: "Thursday",
+        FRI: "Friday",
       };
 
-      if (status === "Rescheduled") {
-        payload.reschedule_requested_by_role = "STUDENT";
-        payload.rescheduled_to_date =
-          document.getElementById("rescheduledToDate").value;
-        payload.rescheduled_to_time_slot = document.getElementById(
-          "rescheduledToTimeSlot",
-        ).value;
-        payload.rescheduled_to_venue =
-          document.getElementById("rescheduledToVenue").value;
+      let weekOffset = 0;
+
+      function getWeekDates(offset) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dow = today.getDay(); // 0=Sun
+        const fromMon = dow === 0 ? 6 : dow - 1;
+        const mon = new Date(today);
+        mon.setDate(today.getDate() - fromMon + offset * 7);
+
+        return DAYS.map((_, i) => {
+          const d = new Date(mon);
+          d.setDate(mon.getDate() + i);
+          return d;
+        });
       }
 
-      try {
-        const res = await fetch(LOG_EXECUTION_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": CSRF_TOKEN,
-          },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
+      function isToday(date) {
+        const t = new Date();
+        t.setHours(0, 0, 0, 0);
+        return date.getTime() === t.getTime();
+      }
 
-        if (!data.success) {
-          errorBox.textContent = data.message || "Something went wrong.";
-          errorBox.classList.add("active");
-          return;
+      function fmtShort(d) {
+        return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+      }
+      function fmtLong(d) {
+        return d.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+      function toISODate(d) {
+        // local-date ISO string (YYYY-MM-DD), avoids UTC offset shifting the day
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+
+      function renderWeekHeader() {
+        const dates = getWeekDates(weekOffset);
+
+        document.getElementById("weekDate").textContent =
+          `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+
+        const todayLocal = new Date();
+        todayLocal.setHours(0, 0, 0, 0);
+        const todayOnScreen = weekOffset === 0;
+        const todayDayIdx = DAYS.indexOf(
+          ["MON", "TUE", "WED", "THU", "FRI", "", ""][
+            todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
+          ],
+        );
+
+        const todayLabel = document.getElementById("todayLabel");
+        if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
+          todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
+        } else {
+          todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
         }
 
-        closeModal("logModalOverlay");
-        openModal("historyModalOverlay");
-        loadExecutionHistory(activeTimetableId);
-      } catch (err) {
-        errorBox.textContent = "Network error — please try again.";
-        errorBox.classList.add("active");
+        DAYS.forEach((day, i) => {
+          const th = document.getElementById(`th-${day}`);
+          if (!th) return;
+          th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
+        });
       }
-    });
+
+      function changeWeek(delta) {
+        weekOffset += delta;
+        renderWeekHeader();
+      }
+      function goToToday() {
+        weekOffset = 0;
+        renderWeekHeader();
+      }
+
+      // ── open history modal on slot click ─────────────────────────────────────
+      let activeTimetableId = null;
+      let activeDay = null;
+
+      document.querySelectorAll(".class-slot--clickable").forEach((slot) => {
+        slot.addEventListener("click", () => {
+          activeTimetableId = slot.dataset.timetableId;
+          activeDay = slot.dataset.day;
+          document.getElementById("historyCourseName").textContent =
+            slot.dataset.courseName;
+          document.getElementById("historyCourseMeta").textContent =
+            `${slot.dataset.courseCode} | ${slot.dataset.venue}`;
+          document.getElementById("logCourseMeta").textContent =
+            `${slot.dataset.courseCode} — ${slot.dataset.venue}`;
+
+          openModal("historyModalOverlay");
+          loadExecutionHistory(activeTimetableId);
+        });
+      });
+
+      function openModal(id) {
+        document.getElementById(id).classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+
+      document
+        .getElementById("historyModalClose")
+        .addEventListener("click", () => closeModal("historyModalOverlay"));
+      document
+        .getElementById("logModalClose")
+        .addEventListener("click", () => closeModal("logModalOverlay"));
+      [["historyModalOverlay"], ["logModalOverlay"]].forEach(([id]) => {
+        document.getElementById(id).addEventListener("click", (e) => {
+          if (e.target.id === id) closeModal(id);
+        });
+      });
+
+      // ── fetch + render history ────────────────────────────────────────────────
+      async function loadExecutionHistory(timetableId) {
+        const list = document.getElementById("execHistoryList");
+        list.innerHTML = `<div class="exec-history-empty">Loading…</div>`;
+
+        try {
+          const res = await fetch(
+            `${EXEC_HISTORY_URL}?timetable_id=${timetableId}`,
+          );
+          const data = await res.json();
+
+          if (!data.executions || data.executions.length === 0) {
+            list.innerHTML = `<div class="exec-history-empty">📭 No executions logged yet for this slot.</div>`;
+            return;
+          }
+
+          list.innerHTML = data.executions
+            .map((ex) => {
+              let detail = "";
+              if (ex.status === "Rescheduled") {
+                detail = `<div class="exec-detail">→ Moved to <strong>${ex.rescheduled_to_date || "—"}</strong> at <strong>${ex.rescheduled_to_time_slot || "—"}</strong>, <strong>${ex.rescheduled_to_venue || "—"}</strong></div>`;
+              } else if (ex.status === "Missed") {
+                detail = `<div class="exec-detail">Lecturer did not attend this session.</div>`;
+              } else if (ex.status === "Attended" && ex.class_representative) {
+                detail = `<div class="exec-detail">Confirmed by <strong>${ex.class_representative}</strong></div>`;
+              }
+              const notes = ex.notes
+                ? `<div class="exec-notes">"${ex.notes}"</div>`
+                : "";
+
+              return `
+            <div class="exec-item">
+              <div class="exec-item-top">
+                <span class="exec-date">${ex.calendar_date}</span>
+                <span class="exec-badge exec-badge--${ex.status}">${ex.status}</span>
+              </div>
+              ${detail}
+              ${notes}
+            </div>
+          `;
+            })
+            .join("");
+        } catch (err) {
+          list.innerHTML = `<div class="exec-history-empty">⚠️ Failed to load history. Try again.</div>`;
+        }
+      }
+
+      // ── open log-execution modal ────────────────────────────────────────────
+      document
+        .getElementById("openLogExecutionBtn")
+        .addEventListener("click", () => {
+          const dates = getWeekDates(weekOffset);
+          const dayIdx = DAYS.indexOf(activeDay);
+          const defaultDate = dayIdx >= 0 ? dates[dayIdx] : new Date();
+
+          document.getElementById("execDate").value = toISODate(defaultDate);
+          document.getElementById("execStatus").value = "Attended";
+          toggleStatusFields();
+          document.getElementById("execFormError").classList.remove("active");
+          closeModal("historyModalOverlay");
+          openModal("logModalOverlay");
+        });
+      document
+        .getElementById("execStatus")
+        .addEventListener("change", toggleStatusFields);
+
+      function toggleStatusFields() {
+        const status = document.getElementById("execStatus").value;
+        // prettier-ignore
+        //document.getElementById("attendedFields").style.display = ( status === "Attended" ? "block" : "none");
+        document
+        .getElementById("rescheduleFields")
+        .classList.toggle("active", status === "Rescheduled");
+      }
+
+      // ── submit ────────────────────────────────────────────────────────────────
+      document
+        .getElementById("logExecutionForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const errorBox = document.getElementById("execFormError");
+          errorBox.classList.remove("active");
+
+          const status = document.getElementById("execStatus").value;
+          const payload = {
+            timetable_id: activeTimetableId,
+            calendar_date: document.getElementById("execDate").value,
+            status: status,
+            notes: document.getElementById("execNotes").value.trim(),
+          };
+
+          if (status === "Rescheduled") {
+            payload.reschedule_requested_by_role = "STUDENT";
+            payload.rescheduled_to_date =
+              document.getElementById("rescheduledToDate").value;
+            payload.rescheduled_to_time_slot = document.getElementById(
+              "rescheduledToTimeSlot",
+            ).value;
+            payload.rescheduled_to_venue =
+              document.getElementById("rescheduledToVenue").value;
+          }
+
+          try {
+            const res = await fetch(LOG_EXECUTION_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": CSRF_TOKEN,
+              },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+              errorBox.textContent = data.message || "Something went wrong.";
+              errorBox.classList.add("active");
+              return;
+            }
+
+            closeModal("logModalOverlay");
+            openModal("historyModalOverlay");
+            loadExecutionHistory(activeTimetableId);
+          } catch (err) {
+            errorBox.textContent = "Network error — please try again.";
+            errorBox.classList.add("active");
+          }
+        });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    {% if has_slots %}
+    renderWeekHeader();
+    {% endif %}
+  });
 </script>
 {% endblock %}

@@ -404,6 +404,8 @@ class ExamCardView(
         """
         from base.models import FeeStructure, StudentFeeAccount
 
+        # FeeStructure still has a direct Tclass field (unlike Curriculum) —
+        # unaffected by the Curriculum refactor.
         structure = FeeStructure.objects.filter(
             Tclass=student.class_entered,
             session=session
@@ -450,6 +452,14 @@ class ExamCardView(
         """
         Returns ExamSession queryset for approved enrollments
         in the active session, ordered by date + time slot.
+
+        `curriculum__Tclass` doesn't exist — Curriculum has no direct
+        Tclass field anymore. No replacement is needed here though: this
+        queryset is already scoped to THIS student's approved enrollments
+        via enrolled_curriculum_ids, so which class the (possibly shared)
+        curriculum belongs to is irrelevant for selecting the rows — only
+        `curriculum__course` is actually used downstream (for course_code
+        etc. in the template).
         """
         enrolled_curriculum_ids = student.enrollment_records.filter(
             curriculum__session=session,
@@ -459,23 +469,22 @@ class ExamCardView(
         return ExamSession.objects.filter(
             curriculum_id__in=enrolled_curriculum_ids
         ).select_related(
-            'curriculum__syllabus__course',
-            'curriculum__Tclass',
+            'curriculum__course',
         ).prefetch_related(
             'venues__venue',
             'venues__invigilators__user',
         ).order_by('date', 'time_slot')
 
     def _get_clashes(self, student, session):
+        # `syllabus__course` doesn't exist on Curriculum — `course` is
+        # direct now.
         return ExamClash.objects.filter(
             student=student,
             session_a__curriculum__session=session,
             resolved=False
         ).select_related(
-            # was 'session_a__curriculum__course'
-            'session_a__curriculum__syllabus__course',
-            # was 'session_b__curriculum__course'
-            'session_b__curriculum__syllabus__course',
+            'session_a__curriculum__course',
+            'session_b__curriculum__course',
         )
 
     def get(self, request):

@@ -33,12 +33,14 @@ class SendStudentEmailView(RoleRequiredMixin, View):
     required_role = 'lecturer'
 
     def post(self, request):
+
         lecturer = self.get_profile()
         try:
             data = json.loads(request.body)
             to = data['to'].strip()
             subject = data['subject'].strip()
             message = data['message'].strip()
+
         except (KeyError, json.JSONDecodeError, AttributeError):
             return JsonResponse({'error': 'Bad payload'}, status=400)
 
@@ -50,6 +52,7 @@ class SendStudentEmailView(RoleRequiredMixin, View):
             status='approved',
             student__school_email__iexact=to,
         ).exists()
+
         if not is_valid_recipient:
             return JsonResponse({'error': 'That address is not a school email for one of your enrolled students.'}, status=400)
 
@@ -74,30 +77,40 @@ class SendBulkEmailView(RoleRequiredMixin, View):
     required_role = 'lecturer'
 
     def post(self, request):
+
         lecturer = self.get_profile()
+
         try:
             data = json.loads(request.body)
             curriculum_id = data['curriculum_id']
             recipients = data['recipients']
             subject = data['subject'].strip()
             message = data['message'].strip()
+
         except (KeyError, json.JSONDecodeError):
             return JsonResponse({'error': 'Bad payload'}, status=400)
 
         if not subject or not message:
             return JsonResponse({'error': 'Subject and message are required.'}, status=400)
+
         if not recipients:
             return JsonResponse({'error': 'No recipients provided.'}, status=400)
 
         try:
             curriculum = Curriculum.objects.get(
-                record_id=curriculum_id, professor=lecturer)
+                record_id=curriculum_id,
+                professor=lecturer
+            )
+
         except Curriculum.DoesNotExist:
             return JsonResponse({'error': 'Course not found.'}, status=404)
 
         valid_emails = {
             e.lower() for e in
-            Enrollment.objects.filter(curriculum=curriculum, status='approved')
+            Enrollment.objects.filter(
+                curriculum=curriculum,
+                status='approved'
+            )
             .select_related('student')
             .values_list('student__school_email', flat=True)
             if e
@@ -122,15 +135,20 @@ class SendBulkEmailView(RoleRequiredMixin, View):
                 continue
 
             body = message.replace(
-                '{{name}}', name) if '{{name}}' in message else message
-            messages.append(EmailMessage(
-                subject=subject,
-                body=body,
-                from_email=from_email,
-                to=[addr],
-                reply_to=[from_email],
-                connection=connection,
-            ))
+                '{{name}}',
+                name
+            ) if '{{name}}' in message else message
+
+            messages.append(
+                EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=from_email,
+                    to=[addr],
+                    reply_to=[from_email],
+                    connection=connection,
+                )
+            )
 
         if not messages:
             connection.close()

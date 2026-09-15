@@ -21,3 +21,4 @@ from .timetable import *  # noqa : F401,E402
 from .ticket import TicketView
 from .club_directory import ClubDirectoryView
 from .club_membership import MyMembershipsView
+from .error import ErrorNotFound

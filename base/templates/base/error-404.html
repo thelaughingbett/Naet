@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>404 · Page Not Found</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --navy: #0a2540;
+        --navy-light: #1a3a5c;
+        --maroon: #9e2a2b;
+        --maroon-hover: #b13e3f;
+        --blue-card: #1f6392;
+        --green: #1e6f3f;
+        --gold: #fbbf24;
+        --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --text: #1e293b;
+        --text-muted: #5a6874;
+        --border: #e9edf2;
+        --bg: #f1f5f9;
+        --white: #ffffff;
+        --radius: 20px;
+        --shadow: 0 8px 30px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03);
+        --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
+        --transition: 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      }
+
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100dvh;
+        width: 100dvw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        margin: 0;
+        background-image:
+          radial-gradient(
+            circle at 10% 20%,
+            rgba(31, 99, 146, 0.03) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(158, 42, 43, 0.03) 0%,
+            transparent 50%
+          );
+      }
+
+      .card {
+        max-width: 680px;
+        width: 100%;
+        background: var(--white);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition:
+          box-shadow var(--transition),
+          transform var(--transition);
+        backdrop-filter: blur(2px);
+      }
+
+      .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+      }
+
+      .card__header {
+        padding: 1.2rem 1.8rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: -0.01em;
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(4px);
+      }
+
+      .card__header span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text);
+      }
+
+      .card__header span i {
+        color: var(--maroon);
+        font-size: 1.1rem;
+      }
+
+      .card__header a {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--blue-card);
+        text-decoration: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 40px;
+        background: rgba(31, 99, 146, 0.06);
+        transition:
+          background 0.2s,
+          color 0.2s,
+          transform 0.15s;
+        border: 1px solid transparent;
+      }
+
+      .card__header a i {
+        font-size: 0.7rem;
+        transition: transform 0.2s;
+      }
+
+      .card__header a:hover {
+        background: rgba(31, 99, 146, 0.12);
+        color: var(--navy);
+        border-color: rgba(31, 99, 146, 0.15);
+      }
+
+      .card__header a:hover i {
+        transform: translateX(2px);
+      }
+
+      .card__body {
+        padding: 2.5rem 2rem 2.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      /* 404 icon / illustration */
+      .error-icon {
+        font-size: 4.2rem;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
+        filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.04));
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(0px) scale(1);
+        }
+        50% {
+          transform: translateY(-6px) scale(1.02);
+        }
+        100% {
+          transform: translateY(0px) scale(1);
+        }
+      }
+
+      .error-code {
+        font-size: 4.8rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        background: linear-gradient(135deg, var(--navy), var(--maroon));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.2rem;
+      }
+
+      .card__body h2 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        margin: 0.25rem 0 0.15rem;
+      }
+
+      .card__body .sub {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        max-width: 380px;
+        margin: 0.4rem auto 1.5rem;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      /* ============================================
+         REQUESTED PATH DISPLAY
+         ============================================ */
+      .path-display {
+        width: 100%;
+        max-width: 460px;
+        margin: 0.2rem auto 1.8rem;
+        background: rgba(10, 37, 64, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.8rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+        text-align: left;
+      }
+
+      .path-display:hover {
+        background: rgba(10, 37, 64, 0.05);
+        border-color: rgba(31, 99, 146, 0.2);
+      }
+
+      .path-display i {
+        color: var(--maroon);
+        font-size: 1rem;
+        flex-shrink: 0;
+        opacity: 0.85;
+      }
+
+      .path-display .path-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin-right: 0.2rem;
+        white-space: nowrap;
+      }
+
+      .path-display .path-value {
+        font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--navy);
+        background: rgba(31, 99, 146, 0.06);
+        padding: 0.15rem 0.6rem;
+        border-radius: 20px;
+        word-break: break-all;
+        line-height: 1.4;
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* status pill (modified for error) */
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(158, 42, 43, 0.06);
+        border: 1px solid rgba(158, 42, 43, 0.15);
+        padding: 0.3rem 1.2rem 0.3rem 1rem;
+        border-radius: 40px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--maroon);
+        margin-bottom: 1.5rem;
+      }
+
+      .status-pill i {
+        font-size: 0.5rem;
+        color: var(--maroon);
+        animation: pulse-dot 1.8s ease-in-out infinite;
+      }
+
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 0.4;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.2);
+        }
+      }
+
+      /* Action buttons */
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.8rem;
+        margin-top: 0.8rem;
+        width: 100%;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.6rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        border: 1px solid transparent;
+        letter-spacing: 0.01em;
+        min-width: 160px;
+      }
+
+      .btn-primary {
+        background: var(--maroon);
+        color: white;
+        box-shadow: 0 4px 12px rgba(158, 42, 43, 0.2);
+      }
+
+      .btn-primary:hover {
+        background: var(--maroon-hover);
+        box-shadow: 0 6px 18px rgba(158, 42, 43, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+
+      .btn-outline:hover {
+        background: var(--bg);
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+      }
+
+      .btn i {
+        font-size: 0.85rem;
+      }
+
+      /* note at bottom */
+      .card__body .note {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        opacity: 0.7;
+        margin-top: 1.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        letter-spacing: 0.01em;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--border);
+        width: 100%;
+        max-width: 380px;
+      }
+
+      .card__body .note i {
+        font-size: 0.6rem;
+        opacity: 0.6;
+      }
+
+      .divider {
+        width: 40px;
+        height: 2px;
+        background: var(--border);
+        border-radius: 4px;
+        margin: 0.8rem auto 0.2rem;
+      }
+
+      /* responsiveness */
+      @media (max-width: 480px) {
+        .card__header {
+          padding: 0.9rem 1.2rem;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        .card__body {
+          padding: 1.8rem 1.2rem 2rem;
+        }
+        .error-icon {
+          font-size: 3.2rem;
+        }
+        .error-code {
+          font-size: 3.6rem;
+        }
+        .card__body h2 {
+          font-size: 1.3rem;
+        }
+        .card__body .sub {
+          font-size: 0.85rem;
+        }
+        .path-display {
+          padding: 0.7rem 0.9rem;
+          flex-wrap: wrap;
+          gap: 0.3rem;
+        }
+        .path-display .path-value {
+          font-size: 0.75rem;
+        }
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn {
+          width: 100%;
+          min-width: unset;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="main" aria-label="404 page not found">
+      <!-- header -->
+      <div class="card__header">
+        <span>
+          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+          404 · Not Found
+        </span>
+        <a onclick="history.back()" aria-label="Go back to previous page">
+          <span>Go Back</span>
+          <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <!-- body -->
+      <div class="card__body">
+        <!-- floating icon -->
+        <div class="error-icon" aria-hidden="true">🧭</div>
+
+        <!-- big 404 -->
+        <div class="error-code">404</div>
+
+        <h2>Page not found</h2>
+        <p class="sub">
+          The page you’re looking for doesn’t exist, was moved, or is
+          temporarily unavailable.
+        </p>
+
+        <!-- ============================================
+             REQUESTED PATH DISPLAY
+             ============================================ -->
+        <div class="path-display" role="status" aria-label="Requested path">
+          <i class="fas fa-link" aria-hidden="true"></i>
+          <span class="path-label">Requested</span>
+          <span class="path-value" id="requestedPath">{{failed_url}}</span>
+        </div>
+
+        <!-- status pill -->
+        <div class="status-pill">
+          <i class="fas fa-circle" aria-hidden="true"></i>
+          <span>404 — Resource not found</span>
+        </div>
+
+        <!-- action buttons -->
+        <div class="actions">
+          <a
+            href="{% url 'base-login' %}"
+            class="btn btn-primary"
+            aria-label="Go to login page"
+          >
+            <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+            Go to Login
+          </a>
+          <a
+            href="#"
+            class="btn btn-outline"
+            onclick="
+              event.preventDefault();
+              window.location.href = '/';
+            "
+            aria-label="Go to home page"
+          >
+            <i class="fas fa-home" aria-hidden="true"></i>
+            Home
+          </a>
+        </div>
+
+        <div class="divider" aria-hidden="true"></div>
+
+        <div class="note">
+          <i class="fas fa-shield-alt" aria-hidden="true"></i>
+          <span
+            >If you believe this is an error, contact the administrator.</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============================================
+      // ANIMATION: progress bar bump (optional, but we removed the bar)
+      // We now have a path display instead.
+      // ============================================
+    </script>
+  </body>
+</html>

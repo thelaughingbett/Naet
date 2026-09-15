@@ -1,0 +1,1905 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naet — The open-source system of record for universities</title>
+    <meta
+      name="description"
+      content="Naet is an Apache-2.0 licensed university system of record for Kenyan institutions. Admissions, curriculum, grading, fees, residence, and grievances — one shared, versioned backend, self-hosted on your own infrastructure."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #0f1a2b;
+        --ink-soft: #33425a;
+        --paper: #edeee6;
+        --paper-white: #f7f7f2;
+        --line: #d8d8cc;
+        --stamp: #8a2a2a;
+        --stamp-soft: #f3e5e3;
+        --verified: #2f6b4f;
+        --verified-soft: #e4ede7;
+        --brass: #a9832e;
+        --serif: "Fraunces", serif;
+        --sans: "IBM Plex Sans", sans-serif;
+        --mono: "IBM Plex Mono", monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      body {
+        font-family: var(--sans);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 2.5rem;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        background: var(--ink);
+        color: var(--paper-white);
+        padding: 0.7rem 1.1rem;
+        font-size: 0.85rem;
+        z-index: 100;
+        border-radius: 0 0 3px 0;
+      }
+      .skip-link:focus {
+        left: 0;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--stamp);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* ============================================
+     LETTERHEAD NAV
+     ============================================ */
+      .letterhead {
+        border-bottom: 1px solid var(--ink);
+        background: var(--paper-white);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .letterhead__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.05rem 0;
+        gap: 1.5rem;
+      }
+      .mark {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+      .mark__word {
+        font-family: var(--serif);
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .mark__sub {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        color: var(--ink-soft);
+        border-left: 1px solid var(--line);
+        padding-left: 0.6rem;
+        letter-spacing: 0.02em;
+      }
+      nav.primary {
+        display: flex;
+        gap: 1.9rem;
+        font-size: 0.85rem;
+      }
+      nav.primary a {
+        text-decoration: none;
+        color: var(--ink-soft);
+        transition: color 0.15s;
+        white-space: nowrap;
+      }
+      nav.primary a:hover {
+        color: var(--ink);
+      }
+      .letterhead__cta {
+        display: flex;
+        gap: 0.7rem;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .btn {
+        font-family: var(--sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.55rem 1.1rem;
+        border-radius: 3px;
+        border: 1px solid var(--ink);
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+        white-space: nowrap;
+      }
+      .btn--dark {
+        background: var(--ink);
+        color: var(--paper-white);
+      }
+      .btn--dark:hover {
+        background: #1c2c47;
+      }
+      .btn--ghost {
+        background: transparent;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      .btn--ghost:hover {
+        border-color: var(--ink);
+      }
+      .btn--large {
+        font-size: 0.95rem;
+        padding: 0.8rem 1.5rem;
+      }
+
+      /* mobile menu */
+      .menu-toggle {
+        display: none;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0.5rem 0.7rem;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      @media (max-width: 900px) {
+        nav.primary {
+          display: none;
+        }
+        .letterhead__cta .btn--ghost {
+          display: none;
+        }
+        .menu-toggle {
+          display: block;
+        }
+      }
+      @media (max-width: 560px) {
+        .letterhead__cta .btn--dark {
+          display: none;
+        }
+        .mark__sub {
+          display: none;
+        }
+      }
+
+      .mobile-nav {
+        display: none;
+        border-top: 1px solid var(--line);
+        background: var(--paper-white);
+        padding: 1rem 0 1.4rem;
+      }
+      .mobile-nav[data-open="true"] {
+        display: block;
+      }
+      .mobile-nav ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      .mobile-nav a {
+        display: block;
+        text-decoration: none;
+        font-size: 0.95rem;
+        padding: 0.65rem 0;
+        border-bottom: 1px dotted var(--line);
+        color: var(--ink-soft);
+      }
+      .mobile-nav .mobile-cta {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.7rem;
+      }
+
+      /* ============================================
+     HERO
+     ============================================ */
+      .hero {
+        padding: 5.5rem 0 4.5rem;
+      }
+      .hero__grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 4rem;
+        align-items: center;
+      }
+      .hero__eyebrow {
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: var(--stamp);
+        margin-bottom: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+      .licence-tag {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        color: var(--verified);
+        border: 1px solid var(--verified);
+        border-radius: 2px;
+        padding: 0.15rem 0.45rem;
+        letter-spacing: 0.03em;
+      }
+      .hero h1 {
+        font-family: var(--serif);
+        font-size: clamp(2.3rem, 4.1vw, 3.5rem);
+        font-weight: 500;
+        line-height: 1.08;
+        letter-spacing: -0.015em;
+        max-width: 17ch;
+      }
+      .hero p.lede {
+        margin-top: 1.5rem;
+        font-size: 1.07rem;
+        color: var(--ink-soft);
+        max-width: 48ch;
+      }
+      .hero__ctas {
+        margin-top: 2.2rem;
+        display: flex;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+      }
+      .hero__note {
+        margin-top: 1.5rem;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        max-width: 44ch;
+      }
+      .hero__note .tick {
+        color: var(--verified);
+        flex-shrink: 0;
+        font-weight: 600;
+      }
+
+      /* ---- transcript card visual ---- */
+      .transcript {
+        background: var(--paper-white);
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+        padding: 1.6rem 1.7rem;
+        box-shadow: 6px 6px 0 var(--ink);
+      }
+      .transcript__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.9rem;
+        gap: 1rem;
+      }
+      .transcript__head h3 {
+        font-family: var(--serif);
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .transcript__id {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--ink-soft);
+        text-align: right;
+      }
+      .t-row {
+        display: grid;
+        grid-template-columns: 3.2rem 1fr auto auto;
+        gap: 0.7rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px dotted var(--line);
+        font-size: 0.82rem;
+        align-items: center;
+      }
+      .t-row:last-of-type {
+        border-bottom: none;
+      }
+      .t-row .code {
+        font-family: var(--mono);
+        color: var(--ink-soft);
+        font-size: 0.78rem;
+      }
+      .t-row .credits {
+        color: var(--ink-soft);
+        font-size: 0.76rem;
+      }
+      .t-row .grade {
+        font-family: var(--mono);
+        font-weight: 500;
+        width: 1.6rem;
+        text-align: center;
+      }
+      .grade.a {
+        color: var(--verified);
+      }
+      .grade.b {
+        color: var(--brass);
+      }
+      .transcript__seal {
+        margin-top: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--ink);
+      }
+      .seal-dot {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid var(--verified);
+        color: var(--verified);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+      }
+      .transcript__seal small {
+        font-size: 0.72rem;
+        color: var(--ink-soft);
+        line-height: 1.35;
+      }
+
+      @media (max-width: 900px) {
+        .hero {
+          padding-top: 3.5rem;
+        }
+        .hero__grid {
+          grid-template-columns: 1fr;
+          gap: 3rem;
+        }
+        .hero h1 {
+          max-width: 22ch;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .hero {
+          padding: 3rem 0 3.5rem;
+        }
+      }
+
+      /* ============================================
+     CONTEXT BAND
+     ============================================ */
+      .context {
+        background: var(--paper-white);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 2.6rem 0;
+      }
+      .context__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2.5rem;
+      }
+      .context__row p {
+        font-size: 0.93rem;
+        color: var(--ink-soft);
+      }
+      .context__row p strong {
+        display: block;
+        font-family: var(--serif);
+        font-size: 1.28rem;
+        font-weight: 500;
+        color: var(--ink);
+        margin-bottom: 0.3rem;
+      }
+      @media (max-width: 760px) {
+        .context__row {
+          grid-template-columns: 1fr;
+          gap: 1.6rem;
+        }
+      }
+
+      /* ============================================
+     THE REGISTRY (module ledger)
+     ============================================ */
+      .registry {
+        padding: 5rem 0 4rem;
+      }
+      .registry__intro {
+        max-width: 660px;
+        margin-bottom: 3rem;
+      }
+      .registry__intro h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.9rem, 3vw, 2.5rem);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .registry__intro p {
+        margin-top: 0.9rem;
+        color: var(--ink-soft);
+        font-size: 1.01rem;
+      }
+
+      .ledger {
+        border-top: 1px solid var(--ink);
+      }
+      .ledger__item {
+        display: grid;
+        grid-template-columns: 7rem 1fr 1.3fr;
+        gap: 2.2rem;
+        padding: 2rem 0;
+        border-bottom: 1px solid var(--line);
+        align-items: start;
+      }
+      .ledger__code {
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        color: var(--stamp);
+        padding-top: 0.2rem;
+        letter-spacing: 0.04em;
+      }
+      .ledger__title {
+        font-family: var(--serif);
+        font-size: 1.26rem;
+        font-weight: 500;
+      }
+      .ledger__detail p {
+        color: var(--ink-soft);
+        font-size: 0.93rem;
+      }
+      .ledger__detail ul {
+        margin-top: 0.7rem;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .ledger__detail li {
+        font-size: 0.83rem;
+        color: var(--ink-soft);
+        padding-left: 1rem;
+        position: relative;
+      }
+      .ledger__detail li::before {
+        content: "—";
+        position: absolute;
+        left: 0;
+        color: var(--line);
+      }
+      @media (max-width: 820px) {
+        .ledger__item {
+          grid-template-columns: 1fr;
+          gap: 0.6rem;
+          padding: 1.7rem 0;
+        }
+      }
+
+      /* ============================================
+     OPEN SOURCE / LICENCE
+     ============================================ */
+      .opensource {
+        background: var(--paper-white);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 5rem 0;
+      }
+      .opensource__grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 4rem;
+        align-items: start;
+      }
+      .opensource__label {
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: var(--verified);
+        margin-bottom: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        letter-spacing: 0.03em;
+      }
+      .opensource__label svg {
+        width: 14px;
+        height: 14px;
+      }
+      .opensource h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.8rem, 2.9vw, 2.4rem);
+        font-weight: 500;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+      }
+      .opensource p.opensource__lede {
+        margin-top: 1.1rem;
+        color: var(--ink-soft);
+        font-size: 0.98rem;
+        max-width: 48ch;
+      }
+      .opensource__points {
+        list-style: none;
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+      }
+      .opensource__points li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.9rem;
+        align-items: start;
+      }
+      .opensource__points .glyph {
+        font-family: var(--serif);
+        color: var(--brass);
+        font-size: 1.15rem;
+        line-height: 1.4;
+        width: 1.2rem;
+        text-align: center;
+      }
+      .opensource__points strong {
+        display: block;
+        font-weight: 600;
+        font-size: 0.94rem;
+        margin-bottom: 0.15rem;
+      }
+      .opensource__points span {
+        font-size: 0.87rem;
+        color: var(--ink-soft);
+        line-height: 1.5;
+      }
+
+      /* ---- licence card ---- */
+      .licence-card {
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+      .licence-card__head {
+        background: var(--ink);
+        color: var(--paper-white);
+        padding: 1rem 1.4rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .licence-card__head h3 {
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 500;
+        letter-spacing: 0.03em;
+      }
+      .licence-card__badge {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        border: 1px solid #4a5a76;
+        border-radius: 2px;
+        padding: 0.15rem 0.45rem;
+        color: #b9c2d2;
+        white-space: nowrap;
+      }
+      .licence-card__body {
+        padding: 1.5rem 1.4rem 1.7rem;
+      }
+      .licence-row {
+        display: grid;
+        grid-template-columns: 8.5rem 1fr;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px dotted var(--line);
+        font-size: 0.85rem;
+        align-items: baseline;
+      }
+      .licence-row:last-of-type {
+        border-bottom: none;
+      }
+      .licence-row dt {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        color: var(--ink-soft);
+        letter-spacing: 0.02em;
+      }
+      .licence-row dd {
+        color: var(--ink);
+      }
+      .licence-row dd a {
+        color: var(--stamp);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+      .licence-card__foot {
+        margin-top: 1.3rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--ink);
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+      }
+      .licence-card__foot code {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        background: var(--stamp-soft);
+        color: var(--stamp);
+        padding: 0.1rem 0.35rem;
+        border-radius: 2px;
+      }
+
+      /* ---- code block ---- */
+      .code-block {
+        margin-top: 1.5rem;
+        background: var(--ink);
+        border-radius: 3px;
+        padding: 1.1rem 1.2rem;
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        line-height: 1.75;
+        color: #dde3ec;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .code-block .comment {
+        color: #7e8ca3;
+      }
+      .code-block .cmd {
+        color: #e8b75c;
+      }
+      .code-block .string {
+        color: #a8c7b0;
+      }
+
+      @media (max-width: 860px) {
+        .opensource__grid {
+          grid-template-columns: 1fr;
+          gap: 2.8rem;
+        }
+      }
+
+      /* ============================================
+     LIVE DEMO
+     ============================================ */
+      .demo {
+        padding: 5rem 0;
+      }
+      .demo__card {
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+        background: var(--ink);
+        color: var(--paper-white);
+        padding: 3rem 2.5rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .demo__card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 15% 20%,
+            rgba(232, 183, 92, 0.1),
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 85% 80%,
+            rgba(47, 107, 79, 0.14),
+            transparent 45%
+          );
+        pointer-events: none;
+      }
+      .demo__card > * {
+        position: relative;
+      }
+      .demo__icon {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        display: inline-block;
+      }
+      .demo__card h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.7rem, 2.8vw, 2.3rem);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+        max-width: 22ch;
+        margin: 0 auto 1rem;
+      }
+      .demo__card p {
+        color: #b9c2d2;
+        font-size: 0.97rem;
+        max-width: 52ch;
+        margin: 0 auto 2rem;
+      }
+      .demo__card p code {
+        font-family: var(--mono);
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 0.1rem 0.4rem;
+        border-radius: 2px;
+        color: #e8b75c;
+      }
+      .demo__actions {
+        display: flex;
+        gap: 0.9rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn--brass {
+        background: #e8b75c;
+        color: var(--ink);
+        border-color: #e8b75c;
+        font-weight: 600;
+      }
+      .btn--brass:hover {
+        background: #f0c679;
+        border-color: #f0c679;
+      }
+      .btn--outline-light {
+        background: transparent;
+        color: var(--paper-white);
+        border-color: #4a5a76;
+      }
+      .btn--outline-light:hover {
+        border-color: var(--paper-white);
+      }
+      .demo__note {
+        margin-top: 1.8rem;
+        padding-top: 1.4rem;
+        border-top: 1px solid #23324a;
+        font-size: 0.8rem;
+        color: #7e8ca3;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .demo__note code {
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        color: #dde3ec;
+      }
+
+      /* ---- tenant credentials note ---- */
+      .tenant__note {
+        margin-top: 1.1rem;
+        font-size: 0.85rem;
+        color: var(--ink);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        max-width: 60ch;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+        padding: 0.9rem 1.1rem;
+        background: var(--stamp-soft);
+        border-left: 3px solid var(--stamp);
+        border-radius: 2px;
+      }
+      .tenant__note svg {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        margin-top: 0.2rem;
+        color: var(--stamp);
+      }
+      .tenant__note a {
+        color: var(--stamp);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        font-weight: 500;
+      }
+
+      /* ============================================
+     MECHANISM SPOTLIGHT
+     ============================================ */
+      .spotlight {
+        background: var(--ink);
+        color: var(--paper-white);
+        padding: 5rem 0;
+      }
+      .spotlight__grid {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 3.5rem;
+        align-items: center;
+      }
+      .spotlight__eyebrow {
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: #e8b75c;
+        margin-bottom: 1rem;
+      }
+      .spotlight h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.85rem, 2.9vw, 2.35rem);
+        font-weight: 500;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+      }
+      .spotlight p {
+        margin-top: 1.1rem;
+        color: #b9c2d2;
+        font-size: 0.97rem;
+        max-width: 42ch;
+      }
+
+      .escalation {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        list-style: none;
+      }
+      .esc-step {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.95rem 0;
+        border-bottom: 1px solid #23324a;
+        font-size: 0.86rem;
+      }
+      .esc-step:first-child {
+        border-top: 1px solid #23324a;
+      }
+      .esc-step .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4a5a76;
+      }
+      .esc-step.active .dot {
+        background: #e8b75c;
+        box-shadow: 0 0 0 3px rgba(232, 183, 92, 0.18);
+      }
+      .esc-step .level {
+        color: #dde3ec;
+      }
+      .esc-step .sla {
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: #7e8ca3;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 860px) {
+        .spotlight__grid {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
+        }
+      }
+
+      /* ============================================
+     AUDIENCES
+     ============================================ */
+      .audiences {
+        padding: 5rem 0;
+      }
+      .audiences__intro h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.85rem, 2.9vw, 2.45rem);
+        font-weight: 500;
+        max-width: 20ch;
+        margin-bottom: 3rem;
+        letter-spacing: -0.01em;
+      }
+      .aud-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .aud-card {
+        background: var(--paper-white);
+        padding: 2.1rem 1.9rem;
+      }
+      .aud-card__role {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--ink-soft);
+        margin-bottom: 0.8rem;
+        letter-spacing: 0.03em;
+      }
+      .aud-card h3 {
+        font-family: var(--serif);
+        font-size: 1.18rem;
+        font-weight: 600;
+        margin-bottom: 0.7rem;
+        line-height: 1.25;
+      }
+      .aud-card p {
+        font-size: 0.89rem;
+        color: var(--ink-soft);
+      }
+      @media (max-width: 820px) {
+        .aud-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ============================================
+     TRUST / COMPLIANCE
+     ============================================ */
+      .trust {
+        background: var(--paper-white);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        padding: 3.2rem 0;
+      }
+      .trust__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+      .trust__item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .trust__item .glyph {
+        font-family: var(--serif);
+        font-size: 1.35rem;
+        color: var(--brass);
+        flex-shrink: 0;
+      }
+      .trust__item span.label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .trust__item span.sub {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--ink-soft);
+      }
+
+      /* ============================================
+     CLOSING CTA
+     ============================================ */
+      .closing {
+        padding: 6rem 0;
+        text-align: center;
+      }
+      .closing h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.95rem, 3.3vw, 2.75rem);
+        font-weight: 500;
+        max-width: 24ch;
+        margin: 0 auto 1.3rem;
+        letter-spacing: -0.015em;
+        line-height: 1.12;
+      }
+      .closing p {
+        color: var(--ink-soft);
+        font-size: 0.98rem;
+        max-width: 46ch;
+        margin: 0 auto 2rem;
+      }
+      .closing__ctas {
+        display: flex;
+        gap: 0.9rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .closing__note {
+        margin-top: 1.6rem;
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: var(--ink-soft);
+      }
+
+      /* ============================================
+     FOOTER
+     ============================================ */
+      footer {
+        border-top: 1px solid var(--ink);
+        background: var(--paper-white);
+        padding: 2.6rem 0 2.2rem;
+      }
+      .footer__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 2rem;
+        padding-bottom: 1.8rem;
+        border-bottom: 1px dotted var(--line);
+      }
+      .footer__brand {
+        max-width: 30ch;
+      }
+      .footer__brand .mark__word {
+        font-size: 1.3rem;
+      }
+      .footer__brand p {
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+      }
+      .footer__cols {
+        display: flex;
+        gap: 3.5rem;
+        flex-wrap: wrap;
+      }
+      .footer__col h4 {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--ink-soft);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.7rem;
+        font-weight: 500;
+      }
+      .footer__col ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .footer__col a {
+        text-decoration: none;
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+      }
+      .footer__col a:hover {
+        color: var(--ink);
+      }
+      .footer__bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding-top: 1.6rem;
+        font-size: 0.78rem;
+        color: var(--ink-soft);
+      }
+      .footer__bottom .licence-line {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+      }
+      @media (max-width: 640px) {
+        .footer__cols {
+          gap: 2rem;
+        }
+        .footer__bottom {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+      @media (max-width: 480px) {
+        .wrap {
+          padding: 0 1.4rem;
+        }
+        .transcript {
+          padding: 1.3rem 1.2rem;
+          box-shadow: 4px 4px 0 var(--ink);
+        }
+        .demo__card {
+          padding: 2.2rem 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="letterhead">
+      <div class="wrap letterhead__row">
+        <a href="#" class="mark" aria-label="Naet home">
+          <span class="mark__word">Naet</span>
+          <span class="mark__sub">OPEN-SOURCE UNIVERSITY RECORDS</span>
+        </a>
+        <nav class="primary" aria-label="Primary">
+          <a href="#registry">The registry</a>
+          <a href="#opensource">Open source</a>
+          <a href="#demo">Live demo</a>
+          <a href="#mechanism">Grievances</a>
+          <a href="#audiences">Who it's for</a>
+        </nav>
+        <div class="letterhead__cta">
+          <a
+            href="https://github.com/thelaughingbett/naet"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--ghost"
+            >View source</a
+          >
+          <a href="#demo" class="btn btn--dark">Try the demo</a>
+          <button
+            class="menu-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="mobile-nav"
+          >
+            Menu
+          </button>
+        </div>
+      </div>
+      <div class="wrap mobile-nav" id="mobile-nav" data-open="false">
+        <ul>
+          <li><a href="#registry">The registry</a></li>
+          <li><a href="#opensource">Open source</a></li>
+          <li><a href="#demo">Live demo</a></li>
+          <li><a href="#mechanism">Grievances</a></li>
+          <li><a href="#audiences">Who it's for</a></li>
+        </ul>
+        <div class="mobile-cta">
+          <a
+            href="https://github.com/thelaughingbett/naet"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--ghost"
+            >View source</a
+          >
+          <a href="#demo" class="btn btn--dark">Try the demo</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ================= HERO ================= -->
+      <section class="hero">
+        <div class="wrap hero__grid">
+          <div>
+            <div class="hero__eyebrow">
+              CUE-aligned · built for Kenyan universities
+              <span class="licence-tag">APACHE-2.0</span>
+            </div>
+            <h1>
+              One system your registrar, lecturers, and students can all trust
+              the same record from.
+            </h1>
+            <p class="lede">
+              Naet replaces the spreadsheet-and-signature chain universities run
+              admissions, grading, fees, and residence on — with one open-source
+              system of record that every office reads from and writes to
+              correctly.
+            </p>
+            <div class="hero__ctas">
+              <a href="#demo" class="btn btn--dark">Try the live demo</a>
+              <a href="#opensource" class="btn btn--ghost">Read the licence</a>
+            </div>
+            <div class="hero__note">
+              <span class="tick">✓</span>
+              <span
+                >Self-hosted on your own infrastructure. Apache-2.0 licensed —
+                no per-student fee, no vendor lock-in. Already running across
+                academics, finance, residence, and student affairs at pilot
+                institutions.</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="transcript"
+            role="img"
+            aria-label="Mock semester record card showing three courses with grades A, B, and A, and a verified seal indicating results are frozen at grading time."
+          >
+            <div class="transcript__head">
+              <h3>Semester record</h3>
+              <span class="transcript__id">COM/26/0142<br />2026/2027 S1</span>
+            </div>
+            <div class="t-row">
+              <span class="code">CS301</span>
+              <span>Database Management Systems</span>
+              <span class="credits">3 cr</span>
+              <span class="grade a">A</span>
+            </div>
+            <div class="t-row">
+              <span class="code">CS302</span>
+              <span>Operating Systems</span>
+              <span class="credits">3 cr</span>
+              <span class="grade b">B</span>
+            </div>
+            <div class="t-row">
+              <span class="code">CS303</span>
+              <span>Computer Networks</span>
+              <span class="credits">3 cr</span>
+              <span class="grade a">A</span>
+            </div>
+            <div class="transcript__seal">
+              <div class="seal-dot">✓</div>
+              <small
+                >Frozen at grading time — a later change to the grading scale
+                never rewrites a published result.</small
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONTEXT BAND ================= -->
+      <section class="context">
+        <div class="wrap context__row">
+          <p>
+            <strong>One record</strong>Admissions, curriculum, results, fees,
+            and hostel allocation read from the same student, not five
+            disconnected systems reconciled by hand.
+          </p>
+          <p>
+            <strong>One escalation path</strong>A missed deadline or an
+            unresolved complaint climbs the right chain automatically —
+            department, school, senate — on a clock, not a memory.
+          </p>
+          <p>
+            <strong>One audit trail</strong>Every grade change, every
+            appointment, every fee adjustment is versioned — who changed it,
+            when, and why.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= THE REGISTRY ================= -->
+      <section class="registry" id="registry">
+        <div class="wrap">
+          <div class="registry__intro">
+            <h2>The registry</h2>
+            <p>
+              Six modules, built around how a university actually operates — not
+              a generic project-management shell with education vocabulary
+              bolted on.
+            </p>
+          </div>
+
+          <div class="ledger">
+            <div class="ledger__item">
+              <div class="ledger__code">REG</div>
+              <div class="ledger__title">Admissions &amp; curriculum</div>
+              <div class="ledger__detail">
+                <p>
+                  Programmes, syllabus approval, and course scheduling — with
+                  per-programme approval so a course can be core for one degree
+                  and elective for another, without duplicating the catalogue.
+                </p>
+                <ul>
+                  <li>
+                    Shared teaching slots across programmes, one lecturer
+                    assignment
+                  </li>
+                  <li>Syllabus states from proposed through retired</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="ledger__item">
+              <div class="ledger__code">EXM</div>
+              <div class="ledger__title">Grading &amp; examinations</div>
+              <div class="ledger__detail">
+                <p>
+                  Configurable weighting per course — 30/70 CAT-to-exam as the
+                  default, overridable per class — with automated timetabling,
+                  clash detection, and QR-verified admit cards.
+                </p>
+                <ul>
+                  <li>
+                    Grades freeze at publish time, immune to later policy
+                    changes
+                  </li>
+                  <li>Invigilator assignment with workload limits enforced</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="ledger__item">
+              <div class="ledger__code">FIN</div>
+              <div class="ledger__title">Fees &amp; finance</div>
+              <div class="ledger__detail">
+                <p>
+                  Fee structures by class and session, statements,
+                  part-payments, and the registration hold that only lifts once
+                  an account clears — no separate finance office spreadsheet to
+                  reconcile.
+                </p>
+                <ul>
+                  <li>Exam cards gate on account status automatically</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="ledger__item">
+              <div class="ledger__code">RES</div>
+              <div class="ledger__title">Residence &amp; welfare</div>
+              <div class="ledger__detail">
+                <p>
+                  Hostel allocation by room capacity and gender, plus a
+                  grievance system that routes complaints — academic,
+                  harassment, facilities — to the right office and escalates
+                  automatically if it stalls.
+                </p>
+                <ul>
+                  <li>
+                    Harassment cases route straight to the Dean of Students,
+                    skipping department level
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="ledger__item">
+              <div class="ledger__code">SOC</div>
+              <div class="ledger__title">Clubs &amp; societies</div>
+              <div class="ledger__detail">
+                <p>
+                  Membership, leadership terms, and patron oversight for every
+                  registered society — recruitment drives, approvals, and events
+                  routed for Dean of Students sign-off.
+                </p>
+              </div>
+            </div>
+
+            <div class="ledger__item">
+              <div class="ledger__code">LEC</div>
+              <div class="ledger__title">Lecturer &amp; staff console</div>
+              <div class="ledger__detail">
+                <p>
+                  Class lists, results entry, invigilation duty, and a live
+                  timetable — built for the person standing in front of a class,
+                  not repurposed admin tooling.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= OPEN SOURCE ================= -->
+      <section class="opensource" id="opensource">
+        <div class="wrap opensource__grid">
+          <div>
+            <div class="opensource__label">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+              Open Source
+            </div>
+            <h2>
+              Your university's record shouldn't be someone else's lock-in.
+            </h2>
+            <p class="opensource__lede">
+              Naet is fully open source. Inspect every line that calculates a
+              grade point average, audit how fee holds are applied, contribute
+              features, or fork it for your own institution. No black boxes, no
+              hidden fees.
+            </p>
+            <ul class="opensource__points">
+              <li>
+                <span class="glyph">§</span>
+                <span>
+                  <strong>Self-hosted on your infrastructure</strong>
+                  <span
+                    >Student records live on servers your institution controls —
+                    not in a vendor's multi-tenant cloud.</span
+                  >
+                </span>
+              </li>
+              <li>
+                <span class="glyph">†</span>
+                <span>
+                  <strong>No per-student licence fee</strong>
+                  <span
+                    >No seat count, no renewal trap, no module gated behind a
+                    higher tier. Budget for hosting and support, not a headcount
+                    tax.</span
+                  >
+                </span>
+              </li>
+              <li>
+                <span class="glyph">‡</span>
+                <span>
+                  <strong>Fork it, extend it, own it</strong>
+                  <span
+                    >Add the integrations your institution needs — an eLearning
+                    platform, a payment gateway, a national reporting feed —
+                    without waiting on a roadmap.</span
+                  >
+                </span>
+              </li>
+              <li>
+                <span class="glyph">◆</span>
+                <span>
+                  <strong>Auditable by design</strong>
+                  <span
+                    >Registrars, ICT directors, and internal audit can inspect
+                    the exact logic behind versioning, freezing, and access
+                    control.</span
+                  >
+                </span>
+              </li>
+            </ul>
+            <div class="hero__ctas" style="margin-top: 2rem">
+              <a
+                href="https://github.com/thelaughingbett/naet"
+                target="_blank"
+                rel="noopener"
+                class="btn btn--dark"
+                >Star on GitHub</a
+              >
+              <a
+                href="https://github.com/thelaughingbett/Naet/blob/main/CONTRIBUTING.md"
+                target="_blank"
+                rel="noopener"
+                class="btn btn--ghost"
+                >Contribute</a
+              >
+            </div>
+          </div>
+
+          <div class="licence-card">
+            <div class="licence-card__head">
+              <h3>NAET — LICENCE AT A GLANCE</h3>
+              <span class="licence-card__badge">APACHE-2.0</span>
+            </div>
+            <div class="licence-card__body">
+              <dl>
+                <div class="licence-row">
+                  <dt>LICENCE</dt>
+                  <dd>Apache License, Version 2.0</dd>
+                </div>
+                <div class="licence-row">
+                  <dt>COPYRIGHT</dt>
+                  <dd>Naet contributors</dd>
+                </div>
+                <div class="licence-row">
+                  <dt>STACK</dt>
+                  <dd>Python / Django</dd>
+                </div>
+                <div class="licence-row">
+                  <dt>DEPLOY</dt>
+                  <dd>Self-hosted — your servers, your data</dd>
+                </div>
+                <div class="licence-row">
+                  <dt>PERMITS</dt>
+                  <dd>
+                    Commercial use, modification, distribution, private use
+                  </dd>
+                </div>
+                <div class="licence-row">
+                  <dt>REQUIRES</dt>
+                  <dd>
+                    Licence &amp; copyright notice retained; modified files
+                    marked as changed
+                  </dd>
+                </div>
+                <div class="licence-row">
+                  <dt>WARRANTY</dt>
+                  <dd>
+                    Provided “as is” — see <a href="#trust">compliance notes</a>
+                  </dd>
+                </div>
+              </dl>
+              <div
+                class="code-block"
+                role="img"
+                aria-label="Terminal snippet showing how to clone and run Naet locally."
+              >
+                <div><span class="comment"># Clone the repository</span></div>
+                <div>
+                  <span class="cmd">git clone</span>
+                  <span class="string"
+                    >https://github.com/thelaughingbett/naet</span
+                  >
+                </div>
+                <div>&nbsp;</div>
+                <div><span class="comment"># Install dependencies</span></div>
+                <div>
+                  <span class="cmd">cd</span> naet &amp;&amp;
+                  <span class="cmd">pip install</span> -r requirements.txt
+                </div>
+                <div>&nbsp;</div>
+                <div>
+                  <span class="comment"># Apply migrations and run</span>
+                </div>
+                <div><span class="cmd">python</span> manage.py migrate</div>
+                <div><span class="cmd">python</span> manage.py runserver</div>
+              </div>
+              <p class="licence-card__foot">
+                Licensed under the Apache License, Version 2.0. You may obtain a
+                copy of the licence at
+                <code>apache.org/licenses/LICENSE-2.0</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LIVE DEMO ================= -->
+      <section class="demo" id="demo">
+        <div class="wrap">
+          <div class="demo__card">
+            <div class="demo__icon" aria-hidden="true">🚀</div>
+            <h2>See Naet running on a live instance.</h2>
+            <p>
+              Explore a fully functional deployment with sample data for each
+              tenant role. No sign-up required — pick a role, grab its
+              credentials from the
+              <code>CREDENTIALS.md</code> file on GitHub, and start exploring.
+            </p>
+            <div class="demo__actions">
+              <a
+                href="https://naet-tat2.onrender.com/"
+                target="_blank"
+                rel="noopener"
+                class="btn btn--brass btn--large"
+                >Launch live demo</a
+              >
+              <a
+                href="https://github.com/thelaughingbett/Naet/blob/main/credentials.txt"
+                target="_blank"
+                rel="noopener"
+                class="btn btn--outline-light btn--large"
+                >Get credentials</a
+              >
+            </div>
+            <div class="demo__note">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                style="width: 14px; height: 14px"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span
+                >Demo resets every 24 hours · Login accounts listed in
+                <code>CREDENTIALS.txt</code></span
+              >
+            </div>
+
+            <div class="tenant__note">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+                ></path>
+              </svg>
+              <span>
+                Demo credentials for each role are published in the
+                <a
+                  href="https://github.com/thelaughingbett/Naet/blob/main/credentials.txt"
+                  target="_blank"
+                  rel="noopener"
+                  >CREDENTIALS.txt</a
+                >
+                file on GitHub.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MECHANISM SPOTLIGHT ================= -->
+      <section class="spotlight" id="mechanism">
+        <div class="wrap spotlight__grid">
+          <div>
+            <div class="spotlight__eyebrow">How a complaint actually moves</div>
+            <h2>A grievance can't quietly sit on someone's desk.</h2>
+            <p>
+              Every complaint carries a category-specific SLA. If it isn't
+              resolved before the clock runs out, it escalates automatically —
+              priority bumped, next office notified — without anyone having to
+              chase it.
+            </p>
+          </div>
+          <ol class="escalation">
+            <li class="esc-step">
+              <div class="dot" aria-hidden="true"></div>
+              <div class="level">Department — Head of Department</div>
+              <div class="sla">72h SLA</div>
+            </li>
+            <li class="esc-step active">
+              <div class="dot" aria-hidden="true"></div>
+              <div class="level">School — Dean</div>
+              <div class="sla">72h SLA</div>
+            </li>
+            <li class="esc-step">
+              <div class="dot" aria-hidden="true"></div>
+              <div class="level">Dean of Students</div>
+              <div class="sla">48h SLA</div>
+            </li>
+            <li class="esc-step">
+              <div class="dot" aria-hidden="true"></div>
+              <div class="level">Registrar, Academic Affairs</div>
+              <div class="sla">72h SLA</div>
+            </li>
+            <li class="esc-step">
+              <div class="dot" aria-hidden="true"></div>
+              <div class="level">University Senate</div>
+              <div class="sla">final review</div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ================= AUDIENCES ================= -->
+      <section class="audiences" id="audiences">
+        <div class="wrap">
+          <div class="audiences__intro">
+            <h2>Three offices, one shared truth.</h2>
+          </div>
+          <div class="aud-grid">
+            <div class="aud-card">
+              <div class="aud-card__role">REGISTRAR &amp; ADMIN STAFF</div>
+              <h3>See the whole institution at once</h3>
+              <p>
+                Enrollment approvals, fee accounts, graduation nominations, and
+                audit history — all versioned, all in one place instead of five
+                offices' spreadsheets.
+              </p>
+            </div>
+            <div class="aud-card">
+              <div class="aud-card__role">LECTURERS</div>
+              <h3>Spend less time on admin, more on teaching</h3>
+              <p>
+                Enter results against a real weighting scheme, see your
+                invigilation duties, message a class — without a separate login
+                for every office you deal with.
+              </p>
+            </div>
+            <div class="aud-card">
+              <div class="aud-card__role">STUDENTS</div>
+              <h3>One place for everything that affects your semester</h3>
+              <p>
+                Register units, check results the moment they're published,
+                download an exam card, raise a grievance, join a society — all
+                from a single account.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TRUST / COMPLIANCE ================= -->
+      <section class="trust" id="trust">
+        <div class="wrap trust__row">
+          <div class="trust__item">
+            <span class="glyph" aria-hidden="true">§</span>
+            <span>
+              <span class="label">CUE-aligned records</span>
+              <span class="sub"
+                >Structured for Commission for University Education
+                reporting</span
+              >
+            </span>
+          </div>
+          <div class="trust__item">
+            <span class="glyph" aria-hidden="true">†</span>
+            <span>
+              <span class="label">Full audit history</span>
+              <span class="sub"
+                >Every grade, appointment, and fee change is versioned</span
+              >
+            </span>
+          </div>
+          <div class="trust__item">
+            <span class="glyph" aria-hidden="true">‡</span>
+            <span>
+              <span class="label">Data protection by design</span>
+              <span class="sub"
+                >Sensitive records scoped and access-logged</span
+              >
+            </span>
+          </div>
+          <div class="trust__item">
+            <span class="glyph" aria-hidden="true">◆</span>
+            <span>
+              <span class="label">Open source, auditable</span>
+              <span class="sub"
+                >Apache-2.0 licensed · self-hosted · no lock-in</span
+              >
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CLOSING CTA ================= -->
+      <section class="closing" id="closing">
+        <div class="wrap">
+          <h2>See it running on your own curriculum.</h2>
+          <p>
+            We'll walk through your programmes, your grading policy, and your
+            escalation chain — not a generic demo tenant. Or start with the
+            source and bring your own team.
+          </p>
+          <div class="closing__ctas">
+            <a href="#demo" class="btn btn--dark btn--large"
+              >Try the live demo</a
+            >
+            <a
+              href="https://github.com/naet/naet"
+              target="_blank"
+              rel="noopener"
+              class="btn btn--ghost btn--large"
+              >Clone the repository</a
+            >
+          </div>
+          <p class="closing__note">
+            Apache-2.0 · self-hosted · no per-student licence fee
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="footer__top">
+          <div class="footer__brand">
+            <span class="mark__word">Naet</span>
+            <p>
+              A university system of record for Kenyan institutions. Open source
+              under the Apache License, Version 2.0.
+            </p>
+          </div>
+          <div class="footer__cols">
+            <div class="footer__col">
+              <h4>PRODUCT</h4>
+              <ul>
+                <li><a href="#registry">The registry</a></li>
+                <li><a href="#mechanism">Grievances</a></li>
+                <li><a href="#audiences">Who it's for</a></li>
+                <li><a href="#trust">Compliance</a></li>
+              </ul>
+            </div>
+            <div class="footer__col">
+              <h4>OPEN SOURCE</h4>
+              <ul>
+                <li>
+                  <a
+                    href="https://github.com/thelaughingbett/naet"
+                    target="_blank"
+                    rel="noopener"
+                    >Source repository</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/thelaughingbett/Naet/blob/main/credentials.txt"
+                    target="_blank"
+                    rel="noopener"
+                    >Demo credentials</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/thelaughingbett/Naet/blob/main/CONTRIBUTING.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Contributing</a
+                  >
+                </li>
+                <li><a href="#opensource">Licence</a></li>
+              </ul>
+            </div>
+            <div class="footer__col">
+              <h4>DEMO</h4>
+              <ul>
+                <li><a href="#demo">Live demo</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="footer__bottom">
+          <div>
+            © 2026 Naet contributors. Licensed under the Apache License, Version
+            2.0.
+          </div>
+          <div class="licence-line">
+            APACHE-2.0 · SELF-HOSTED · NO PER-STUDENT FEE
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var toggle = document.querySelector(".menu-toggle");
+        var nav = document.getElementById("mobile-nav");
+        if (!toggle || !nav) return;
+
+        toggle.addEventListener("click", function () {
+          var open = nav.getAttribute("data-open") === "true";
+          nav.setAttribute("data-open", open ? "false" : "true");
+          toggle.setAttribute("aria-expanded", open ? "false" : "true");
+        });
+
+        // Close menu when a link inside it is followed
+        nav.addEventListener("click", function (e) {
+          if (e.target.tagName === "A") {
+            nav.setAttribute("data-open", "false");
+            toggle.setAttribute("aria-expanded", "false");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

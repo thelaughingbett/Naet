@@ -68,6 +68,31 @@
         padding: 0 2.5rem;
       }
 
+      .menu-toggle {
+        display: none;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0.55rem 0.75rem;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        color: var(--ink);
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .menu-toggle:hover {
+        border-color: var(--ink);
+        background: var(--paper);
+      }
+      .menu-toggle[aria-expanded="true"] {
+        background: var(--ink);
+        color: var(--paper-white);
+        border-color: var(--ink);
+      }
+
       .skip-link {
         position: absolute;
         left: -9999px;
@@ -227,12 +252,11 @@
           display: none;
         }
       }
-
       .mobile-nav {
         display: none;
         border-top: 1px solid var(--line);
         background: var(--paper-white);
-        padding: 1rem 0 1.4rem;
+        padding: 0.6rem 0 1.2rem;
       }
       .mobile-nav[data-open="true"] {
         display: block;
@@ -241,22 +265,63 @@
         list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 0.1rem;
+        gap: 0.15rem;
+        margin-bottom: 0.9rem;
       }
       .mobile-nav a {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         text-decoration: none;
         font-size: 0.95rem;
-        padding: 0.65rem 0;
-        border-bottom: 1px dotted var(--line);
-        color: var(--ink-soft);
+        font-weight: 500;
+        padding: 0.85rem 1rem;
+        border-radius: 4px;
+        color: var(--ink);
+        background: transparent;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .mobile-nav a::after {
+        content: "→";
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        color: var(--line);
+        transition:
+          color 0.15s,
+          transform 0.15s;
+      }
+      .mobile-nav a:hover,
+      .mobile-nav a:active {
+        background: var(--paper);
+        color: var(--ink);
+      }
+      .mobile-nav a:hover::after,
+      .mobile-nav a:active::after {
+        color: var(--stamp);
+        transform: translateX(2px);
       }
       .mobile-nav .mobile-cta {
-        margin-top: 1rem;
+        margin-top: 0.9rem;
+        padding-top: 1rem;
+        border-top: 1px dotted var(--line);
         display: flex;
-        gap: 0.7rem;
+        flex-direction: column;
+        gap: 0.55rem;
+      }
+      .mobile-nav .mobile-cta .btn {
+        display: block;
+        text-align: center;
+        padding: 0.85rem 1.2rem;
+        font-size: 0.9rem;
       }
 
+      @media (min-width: 941px) {
+        .mobile-nav {
+          display: none !important;
+        }
+      }
       /* ============================================
      HERO
      ============================================ */
@@ -1375,6 +1440,8 @@
             type="button"
             aria-expanded="false"
             aria-controls="mobile-nav"
+            data-label-open="Close"
+            data-label-closed="Menu"
           >
             Menu
           </button>
@@ -1677,7 +1744,10 @@
                   </div>
                 </div>
               </div>
-              <div class="arch-card__foot">
+              <div
+                class="arch-card__foot licence-card__foot"
+                style="padding-inline: 2rem; padding-block-end: 2rem"
+              >
                 Sync to SAP, Oracle, a homegrown PHP system, or a Google Sheet —
                 the layer doesn't care. Write one class extending
                 <code>AbstractERPTask</code>, register it, done.
@@ -1734,7 +1804,10 @@
                   is supported so third-party packages stay isolated.
                 </p>
               </div>
-              <div class="arch-card__foot">
+              <div
+                class="arch-card__foot licence-card__foot"
+                style="padding-inline: 2rem; padding-block-end: 2rem"
+              >
                 The rule that keeps it clean: core packages contain only
                 abstract contracts and generic orchestration. Implementations go
                 in <code>contrib/</code> or the integrator's own app.
@@ -2305,17 +2378,27 @@
         var nav = document.getElementById("mobile-nav");
         if (!toggle || !nav) return;
 
+        function setOpen(open) {
+          nav.setAttribute("data-open", open ? "true" : "false");
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+          toggle.textContent = open
+            ? toggle.dataset.labelOpen
+            : toggle.dataset.labelClosed;
+        }
+
         toggle.addEventListener("click", function () {
-          var open = nav.getAttribute("data-open") === "true";
-          nav.setAttribute("data-open", open ? "false" : "true");
-          toggle.setAttribute("aria-expanded", open ? "false" : "true");
+          setOpen(nav.getAttribute("data-open") !== "true");
         });
 
-        // Close menu when a link inside it is followed
         nav.addEventListener("click", function (e) {
-          if (e.target.tagName === "A") {
-            nav.setAttribute("data-open", "false");
-            toggle.setAttribute("aria-expanded", "false");
+          if (e.target.tagName === "A") setOpen(false);
+        });
+
+        // Close on Escape for keyboard users
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && nav.getAttribute("data-open") === "true") {
+            setOpen(false);
+            toggle.focus();
           }
         });
       })();

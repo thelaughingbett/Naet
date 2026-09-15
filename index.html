@@ -142,7 +142,7 @@
       }
       nav.primary {
         display: flex;
-        gap: 1.9rem;
+        gap: 1.7rem;
         font-size: 0.85rem;
       }
       nav.primary a {
@@ -208,7 +208,7 @@
         cursor: pointer;
         color: var(--ink);
       }
-      @media (max-width: 900px) {
+      @media (max-width: 940px) {
         nav.primary {
           display: none;
         }
@@ -301,6 +301,10 @@
         font-size: 1.07rem;
         color: var(--ink-soft);
         max-width: 48ch;
+      }
+      .hero p.lede strong {
+        color: var(--ink);
+        font-weight: 500;
       }
       .hero__ctas {
         margin-top: 2.2rem;
@@ -535,6 +539,140 @@
           grid-template-columns: 1fr;
           gap: 0.6rem;
           padding: 1.7rem 0;
+        }
+      }
+
+      /* ============================================
+     ARCHITECTURE  (new — "Built to be extended")
+     ============================================ */
+      .architecture {
+        padding: 5rem 0;
+        border-top: 1px solid var(--line);
+      }
+      .architecture__intro {
+        max-width: 720px;
+        margin-bottom: 3rem;
+      }
+      .architecture__intro h2 {
+        font-family: var(--serif);
+        font-size: clamp(1.9rem, 3vw, 2.5rem);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .architecture__intro p {
+        margin-top: 0.9rem;
+        color: var(--ink-soft);
+        font-size: 1.01rem;
+        max-width: 62ch;
+      }
+
+      .arch-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+        align-items: start;
+      }
+      .arch-card {
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+        background: var(--paper-white);
+        overflow: hidden;
+      }
+      .arch-card__head {
+        border-bottom: 1px solid var(--line);
+        padding: 1rem 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      .arch-card__head .tag {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.05em;
+        color: var(--stamp);
+        border: 1px solid var(--stamp);
+        border-radius: 2px;
+        padding: 0.12rem 0.4rem;
+        flex-shrink: 0;
+      }
+      .arch-card__head h3 {
+        font-family: var(--serif);
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .arch-card__body {
+        padding: 1.3rem 1.3rem 1.5rem;
+      }
+      .arch-card__body p {
+        color: var(--ink-soft);
+        font-size: 0.92rem;
+      }
+      .arch-card__body p + p {
+        margin-top: 0.9rem;
+      }
+
+      .event-flow {
+        margin-top: 1.2rem;
+        background: var(--ink);
+        border-radius: 3px;
+        padding: 1rem 1.15rem;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        line-height: 1.7;
+        color: #dde3ec;
+        overflow-x: auto;
+      }
+      .event-flow .comment {
+        color: #7e8ca3;
+      }
+      .event-flow .evt {
+        color: #e8b75c;
+      }
+      .event-flow .arrow {
+        color: #4a5a76;
+      }
+
+      .plugin-list {
+        margin-top: 1.2rem;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+      .plugin-list li {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        padding: 0.25rem 0.55rem;
+        background: var(--paper);
+        letter-spacing: 0.02em;
+      }
+      .plugin-list li::before {
+        content: "· ";
+        color: var(--brass);
+      }
+
+      .arch-card__foot {
+        margin-top: 1.3rem;
+        padding-top: 1.1rem;
+        border-top: 1px dotted var(--line);
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+      }
+      .arch-card__foot code {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        background: var(--stamp-soft);
+        color: var(--stamp);
+        padding: 0.1rem 0.35rem;
+        border-radius: 2px;
+      }
+
+      @media (max-width: 860px) {
+        .arch-grid {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -991,35 +1129,93 @@
         background: var(--paper-white);
         border-top: 1px solid var(--line);
         border-bottom: 1px solid var(--line);
-        padding: 3.2rem 0;
+        padding: 3.4rem 0;
       }
-      .trust__row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 2rem;
-        flex-wrap: wrap;
+      .trust__intro {
+        max-width: 720px;
+        margin-bottom: 2.2rem;
       }
-      .trust__item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-      .trust__item .glyph {
+      .trust__intro h2 {
         font-family: var(--serif);
-        font-size: 1.35rem;
-        color: var(--brass);
-        flex-shrink: 0;
-      }
-      .trust__item span.label {
-        display: block;
-        font-size: 0.85rem;
+        font-size: clamp(1.5rem, 2.3vw, 1.9rem);
         font-weight: 500;
+        letter-spacing: -0.01em;
       }
-      .trust__item span.sub {
-        display: block;
-        font-size: 0.75rem;
+      .trust__intro p {
+        margin-top: 0.7rem;
         color: var(--ink-soft);
+        font-size: 0.94rem;
+        max-width: 66ch;
+      }
+      .trust__grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .trust__cell {
+        background: var(--paper);
+        padding: 1.3rem 1.4rem;
+      }
+      .trust__cell .body {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--stamp);
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 0.4rem;
+      }
+      .trust__cell .label {
+        font-family: var(--serif);
+        font-size: 1.02rem;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.3rem;
+      }
+      .trust__cell .sub {
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+        line-height: 1.45;
+      }
+      .trust__cell .sub a {
+        color: var(--stamp);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .trust__legal {
+        margin-top: 2rem;
+        padding-top: 1.6rem;
+        border-top: 1px dotted var(--line);
+        font-size: 0.85rem;
+        color: var(--ink-soft);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      .trust__legal svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        color: var(--brass);
+      }
+      .trust__legal a {
+        color: var(--stamp);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      @media (max-width: 900px) {
+        .trust__grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .trust__grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       /* ============================================
@@ -1160,9 +1356,9 @@
         </a>
         <nav class="primary" aria-label="Primary">
           <a href="#registry">The registry</a>
+          <a href="#architecture">Architecture</a>
           <a href="#opensource">Open source</a>
           <a href="#demo">Live demo</a>
-          <a href="#mechanism">Grievances</a>
           <a href="#audiences">Who it's for</a>
         </nav>
         <div class="letterhead__cta">
@@ -1187,9 +1383,9 @@
       <div class="wrap mobile-nav" id="mobile-nav" data-open="false">
         <ul>
           <li><a href="#registry">The registry</a></li>
+          <li><a href="#architecture">Architecture</a></li>
           <li><a href="#opensource">Open source</a></li>
           <li><a href="#demo">Live demo</a></li>
-          <li><a href="#mechanism">Grievances</a></li>
           <li><a href="#audiences">Who it's for</a></li>
         </ul>
         <div class="mobile-cta">
@@ -1222,7 +1418,9 @@
               Naet replaces the spreadsheet-and-signature chain universities run
               admissions, grading, fees, and residence on — with one open-source
               system of record that every office reads from and writes to
-              correctly.
+              correctly. Most Kenyan student portals feel like they were built
+              in 2008 and never touched again.
+              <strong>Naet is the correction.</strong>
             </p>
             <div class="hero__ctas">
               <a href="#demo" class="btn btn--dark">Try the live demo</a>
@@ -1411,6 +1609,141 @@
         </div>
       </section>
 
+      <!-- ================= ARCHITECTURE ================= -->
+      <section class="architecture" id="architecture">
+        <div class="wrap">
+          <div class="architecture__intro">
+            <h2>Built to be extended, not replaced.</h2>
+            <p>
+              Naet is a template, not a finished platform. The integration layer
+              is generic and event-driven: every subsystem — payments, ERP sync,
+              notifications, events, news — follows the same pattern. Core holds
+              abstract contracts. Implementations live in
+              <code
+                style="
+                  font-family: var(--mono);
+                  font-size: 0.88em;
+                  background: var(--stamp-soft);
+                  color: var(--stamp);
+                  padding: 0.1rem 0.35rem;
+                  border-radius: 2px;
+                "
+                >contrib/</code
+              >. Register one class and it works.
+            </p>
+          </div>
+
+          <div class="arch-grid">
+            <div class="arch-card">
+              <div class="arch-card__head">
+                <span class="tag">ERP</span>
+                <h3>Event-driven ERP integration</h3>
+              </div>
+              <div class="arch-card__body">
+                <p>
+                  When something happens anywhere in the system, a dispatch
+                  fires on transaction commit. A Celery task resolves the
+                  instance, looks up the registered handler for that event, and
+                  runs it — with exponential backoff and per-handler retry up to
+                  five attempts before notifying admin.
+                </p>
+                <div
+                  class="event-flow"
+                  role="img"
+                  aria-label="Event naming examples: model dot action. payment.confirmed, enrollment.approved, reporting.submitted, deferment.created, student.graduated."
+                >
+                  <div>
+                    <span class="comment"># Event naming — model.action</span>
+                  </div>
+                  <div>
+                    <span class="evt">payment.confirmed</span>
+                    <span class="arrow">·</span>
+                    <span class="evt">enrollment.approved</span>
+                  </div>
+                  <div>
+                    <span class="evt">payment.failed</span>
+                    <span class="arrow">·</span>
+                    <span class="evt">reporting.submitted</span>
+                  </div>
+                  <div>
+                    <span class="evt">deferment.created</span>
+                    <span class="arrow">·</span>
+                    <span class="evt">result.published</span>
+                  </div>
+                  <div>
+                    <span class="evt">student.graduated</span>
+                    <span class="arrow">·</span>
+                    <span class="evt">student.registered</span>
+                  </div>
+                </div>
+              </div>
+              <div class="arch-card__foot">
+                Sync to SAP, Oracle, a homegrown PHP system, or a Google Sheet —
+                the layer doesn't care. Write one class extending
+                <code>AbstractERPTask</code>, register it, done.
+              </div>
+            </div>
+
+            <div class="arch-card">
+              <div class="arch-card__head">
+                <span class="tag">PLUGGABLE</span>
+                <h3>Consistent contract across subsystems</h3>
+              </div>
+              <div class="arch-card__body">
+                <p>
+                  Adding a new payment provider, notification channel, calendar
+                  source, or news feed follows the same three-step pattern
+                  everywhere. No provider-specific code ever lives in core.
+                </p>
+                <ul
+                  class="plugin-list"
+                  aria-label="Subsystems with pluggable backends"
+                >
+                  <li>payments</li>
+                  <li>erp</li>
+                  <li>notifications</li>
+                  <li>events</li>
+                  <li>news</li>
+                </ul>
+                <p style="margin-top: 1rem">
+                  Each subsystem exposes an abstract base class, a registry, and
+                  a reference implementation in
+                  <code
+                    style="
+                      font-family: var(--mono);
+                      font-size: 0.85em;
+                      background: var(--paper-white);
+                      padding: 0.05rem 0.3rem;
+                      border-radius: 2px;
+                      border: 1px solid var(--line);
+                    "
+                    >contrib/</code
+                  >. Local integrators write their backend alongside the base or
+                  in their own Django app — dynamic registration via
+                  <code
+                    style="
+                      font-family: var(--mono);
+                      font-size: 0.85em;
+                      background: var(--paper-white);
+                      padding: 0.05rem 0.3rem;
+                      border-radius: 2px;
+                      border: 1px solid var(--line);
+                    "
+                    >apps.py ready()</code
+                  >
+                  is supported so third-party packages stay isolated.
+                </p>
+              </div>
+              <div class="arch-card__foot">
+                The rule that keeps it clean: core packages contain only
+                abstract contracts and generic orchestration. Implementations go
+                in <code>contrib/</code> or the integrator's own app.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= OPEN SOURCE ================= -->
       <section class="opensource" id="opensource">
         <div class="wrap opensource__grid">
@@ -1590,7 +1923,7 @@
               Explore a fully functional deployment with sample data for each
               tenant role. No sign-up required — pick a role, grab its
               credentials from the
-              <code>CREDENTIALS.md</code> file on GitHub, and start exploring.
+              <code>CREDENTIALS.txt</code> file on GitHub, and start exploring.
             </p>
             <div class="demo__actions">
               <a
@@ -1718,21 +2051,25 @@
               </p>
             </div>
             <div class="aud-card">
-              <div class="aud-card__role">LECTURERS</div>
-              <h3>Spend less time on admin, more on teaching</h3>
+              <div class="aud-card__role">ICT &amp; INTEGRATION TEAMS</div>
+              <h3>Wire Naet into what you already run</h3>
               <p>
-                Enter results against a real weighting scheme, see your
-                invigilation duties, message a class — without a separate login
-                for every office you deal with.
+                Event-driven ERP sync, pluggable payment and notification
+                backends, and a documented extension pattern. Write one class,
+                register it, and the rest of the system dispatches to it
+                automatically.
               </p>
             </div>
             <div class="aud-card">
-              <div class="aud-card__role">STUDENTS</div>
-              <h3>One place for everything that affects your semester</h3>
+              <div class="aud-card__role">DEVELOPERS &amp; CONTRIBUTORS</div>
+              <h3>Fork it, deploy it, improve it</h3>
               <p>
-                Register units, check results the moment they're published,
-                download an exam card, raise a grievance, join a society — all
-                from a single account.
+                Django, PostgreSQL, Apache-2.0. The core holds abstract
+                contracts; everything provider-specific lives in
+                <code style="font-family: var(--mono); font-size: 0.9em"
+                  >contrib/</code
+                >. Submit a backend, fix a bug, or start your own institutional
+                build on top.
               </p>
             </div>
           </div>
@@ -1741,42 +2078,102 @@
 
       <!-- ================= TRUST / COMPLIANCE ================= -->
       <section class="trust" id="trust">
-        <div class="wrap trust__row">
-          <div class="trust__item">
-            <span class="glyph" aria-hidden="true">§</span>
-            <span>
-              <span class="label">CUE-aligned records</span>
-              <span class="sub"
-                >Structured for Commission for University Education
-                reporting</span
-              >
-            </span>
+        <div class="wrap">
+          <div class="trust__intro">
+            <h2>Deploying in Kenya means meeting Kenyan obligations.</h2>
+            <p>
+              Naet collects sensitive personal data — national IDs, financial
+              records, family information, and special category data under the
+              Kenya Data Protection Act, 2019. Compliance isn't a checkbox; it's
+              documented and reflected in the schema. Every regulator a
+              deploying institution answers to is listed below, with the
+              obligation it imposes.
+            </p>
           </div>
-          <div class="trust__item">
-            <span class="glyph" aria-hidden="true">†</span>
-            <span>
-              <span class="label">Full audit history</span>
+
+          <div class="trust__grid">
+            <div class="trust__cell">
+              <span class="body">ODPC</span>
+              <span class="label">Data protection registration</span>
               <span class="sub"
-                >Every grade, appointment, and fee change is versioned</span
+                >Every deploying institution is a data controller under the DPA
+                2019 and must register with the Office of the Data Protection
+                Commissioner before going live.</span
               >
-            </span>
+            </div>
+            <div class="trust__cell">
+              <span class="body">CUE</span>
+              <span class="label">Academic records retention</span>
+              <span class="sub"
+                >Universities Act, 2012 — admission and academic records
+                retained permanently and exportable on audit request.</span
+              >
+            </div>
+            <div class="trust__cell">
+              <span class="body">KRA</span>
+              <span class="label">7-year financial retention</span>
+              <span class="sub"
+                >Fee receipts, payment records, and ledgers retained per Kenya
+                Revenue Authority requirements. Payment references
+                preserved.</span
+              >
+            </div>
+            <div class="trust__cell">
+              <span class="body">HELB</span>
+              <span class="label">Enrollment verification</span>
+              <span class="sub"
+                >Semester reporting model supports HELB enrollment confirmation
+                exports for loan beneficiaries.</span
+              >
+            </div>
+            <div class="trust__cell">
+              <span class="body">KE-CIRT</span>
+              <span class="label">Cybercrime reporting</span>
+              <span class="sub"
+                >Computer Misuse and Cybercrimes Act, 2018 — role-scoped admin,
+                password hashing, and audit logging on the application
+                side.</span
+              >
+            </div>
+            <div class="trust__cell">
+              <span class="body">NCPWD</span>
+              <span class="label">Accessibility</span>
+              <span class="sub"
+                >Persons with Disabilities Act — WCAG 2.1 AA as the target for
+                the student-facing portal.</span
+              >
+            </div>
           </div>
-          <div class="trust__item">
-            <span class="glyph" aria-hidden="true">‡</span>
+
+          <div class="trust__legal">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 2v20M5 7l7-5 7 5M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z"
+              />
+            </svg>
             <span>
-              <span class="label">Data protection by design</span>
-              <span class="sub"
-                >Sensitive records scoped and access-logged</span
+              Full obligations, retention schedules, and breach response in
+              <a
+                href="https://github.com/thelaughingbett/Naet/blob/main/DATA_PROTECTION.md"
+                target="_blank"
+                rel="noopener"
+                >DATA_PROTECTION.md</a
               >
-            </span>
-          </div>
-          <div class="trust__item">
-            <span class="glyph" aria-hidden="true">◆</span>
-            <span>
-              <span class="label">Open source, auditable</span>
-              <span class="sub"
-                >Apache-2.0 licensed · self-hosted · no lock-in</span
-              >
+              and
+              <a
+                href="https://github.com/thelaughingbett/Naet/blob/main/LEGAL.md"
+                target="_blank"
+                rel="noopener"
+                >LEGAL.md</a
+              >.
             </span>
           </div>
         </div>
@@ -1796,7 +2193,7 @@
               >Try the live demo</a
             >
             <a
-              href="https://github.com/naet/naet"
+              href="https://github.com/thelaughingbett/naet"
               target="_blank"
               rel="noopener"
               class="btn btn--ghost btn--large"
@@ -1825,9 +2222,9 @@
               <h4>PRODUCT</h4>
               <ul>
                 <li><a href="#registry">The registry</a></li>
+                <li><a href="#architecture">Architecture</a></li>
                 <li><a href="#mechanism">Grievances</a></li>
                 <li><a href="#audiences">Who it's for</a></li>
-                <li><a href="#trust">Compliance</a></li>
               </ul>
             </div>
             <div class="footer__col">
@@ -1858,6 +2255,28 @@
                   >
                 </li>
                 <li><a href="#opensource">Licence</a></li>
+              </ul>
+            </div>
+            <div class="footer__col">
+              <h4>COMPLIANCE</h4>
+              <ul>
+                <li>
+                  <a
+                    href="https://github.com/thelaughingbett/Naet/blob/main/DATA_PROTECTION.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Data protection</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/thelaughingbett/Naet/blob/main/LEGAL.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Legal obligations</a
+                  >
+                </li>
+                <li><a href="#trust">Regulators</a></li>
               </ul>
             </div>
             <div class="footer__col">

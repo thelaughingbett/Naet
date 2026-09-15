@@ -1341,7 +1341,7 @@
           data-name="{{ row.full_name|lower }}"
           data-reg="{{ row.registration_no|lower }}"
           data-class="{{ row.class_name|lower }}"
-          data-email="{{ row.email|lower }}"
+          data-email="{{ row.school_email|lower }}"
           data-status="{{ row.status }}"
           data-grade="{{ row.grade }}"
           data-results="{% if row.cat or row.exam %}entered{% else %}not_entered{% endif %}"
@@ -1413,7 +1413,7 @@
               <button
                 class="btn-sm"
                 title="Email student"
-                onclick="openEmailModal('{{ row.email }}', '{{ row.full_name }}')"
+                onclick="openEmailModal('{{ row.school_email }}', '{{ row.full_name }}')"
               >
                 <i class="fas fa-envelope"></i>
               </button>
@@ -1500,8 +1500,97 @@
       <button class="btn btn-outline" onclick="closeModal('emailModal')">
         Cancel
       </button>
-      <button class="btn btn-success" onclick="sendEmail()">
+      <button class="btn btn-success" id="sendEmailBtn" onclick="sendEmail()">
         <i class="fas fa-paper-plane"></i> Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="emailAllModal">
+  <div class="modal modal--large">
+    <div class="modal__header">
+      <h2>
+        <i
+          class="fas fa-envelope-open-text"
+          style="color: var(--blue-card)"
+        ></i>
+        Email All Students
+      </h2>
+      <button class="modal__close" onclick="closeModal('emailAllModal')">
+        &times;
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label>Recipients</label>
+        <div
+          id="emailAllRecipientCount"
+          style="
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+          "
+        ></div>
+        <div
+          id="emailAllRecipientList"
+          style="
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+          "
+        ></div>
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="emailAllSubject" placeholder="Enter subject…" />
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea
+          id="emailAllMessage"
+          rows="6"
+          placeholder="Write your message here…"
+        ></textarea>
+        <div
+          style="
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+          "
+        >
+          Tip:
+          <code>
+            {% templatetag openvariable %}name{% templatetag closevariable %}
+          </code>
+          will be replaced with each student's name.
+        </div>
+      </div>
+      <div
+        class="form-error"
+        id="emailAllError"
+        style="
+          display: none;
+          color: #dc2626;
+          font-size: 0.78rem;
+          margin-top: 0.4rem;
+        "
+      ></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('emailAllModal')">
+        Cancel
+      </button>
+      <button
+        class="btn btn-success"
+        id="emailAllSendBtn"
+        onclick="sendBulkEmail()"
+      >
+        <i class="fas fa-paper-plane"></i> Send to All
       </button>
     </div>
   </div>
@@ -1513,6 +1602,11 @@
   const trigger = document.getElementById("courseTrigger");
   const dropdown = document.getElementById("courseDropdown");
   const searchIn = document.getElementById("courseSearchInput");
+
+  const CSRF_TOKEN = "{{ csrf_token }}";
+  const CURRICULUM_ID = "{{ selected.record_id|default:'' }}";
+  const SEND_EMAIL_URL = "{% url 'lecturer-send-student-email' %}";
+  const SEND_BULK_EMAIL_URL = "{% url 'lecturer-send-bulk-email' %}";
 
   trigger?.addEventListener("click", () => {
     dropdown.classList.toggle("open");
@@ -1539,6 +1633,7 @@
 
   let sortCol = -1,
     sortAsc = true;
+
   function populateClassFilter() {
     const select = document.getElementById("classFilter");
     const classes = new Set();
@@ -1589,6 +1684,7 @@
     document.getElementById("resultsFilter").value = "";
     filterTable();
   }
+
   function sortTable(col) {
     if (sortCol === col) sortAsc = !sortAsc;
     else {
@@ -1646,9 +1742,9 @@
     <span>${d.class_name}</span>
   </div>
   <div class="detail-row">
-    <span class="detail-row__label">Email</span>
-    <span><a href="mailto:${d.email}" style="color:var(--blue-card)">${d.email}</a></span>
-  </div>
+  <span class="detail-row__label">Email</span>
+  <span><a href="mailto:${d.school_email}" style="color:var(--blue-card)">${d.school_email}</a></span>
+</div>
   <div class="detail-row">
     <span class="detail-row__label">Status</span>
     <span class="status-badge ${d.status}">${d.status.charAt(0).toUpperCase() + d.status.slice(1)}</span>
@@ -1685,15 +1781,141 @@
     openModal("emailModal");
   }
 
-  function sendEmail() {
+  async function sendEmail() {
     const to = document.getElementById("emailTo").value;
-    closeModal("emailModal");
-    showToast(`📧 Email sent to ${to}`, "success");
-    // TODO: wire to NotificationService endpoint
-  }
+    const subject = document.getElementById("emailSubject").value.trim();
+    const message = document.getElementById("emailMessage").value.trim();
+    const btn = document.getElementById("sendEmailBtn");
 
+    if (!subject || !message) {
+      showToast("Subject and message are required.", "warning");
+      return;
+    }
+
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+    try {
+      const res = await fetch(SEND_EMAIL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": CSRF_TOKEN,
+        },
+        body: JSON.stringify({ to, subject, message }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        showToast(data.error, "warning");
+        return;
+      }
+
+      closeModal("emailModal");
+      showToast(`📧 Email sent to ${to}`, "success");
+    } catch (err) {
+      showToast("Network error sending email.", "warning");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
   document.getElementById("exportBtn")?.addEventListener("click", exportCSV);
   document.getElementById("exportBtnCtx")?.addEventListener("click", exportCSV);
+
+  document
+    .getElementById("emailAllBtn")
+    ?.addEventListener("click", openEmailAllModal);
+
+  function getVisibleRecipients() {
+    return [...document.querySelectorAll("#tableBody .student-row")]
+      .filter((r) => r.style.display !== "none")
+      .map((r) => ({
+        email: r.dataset.email,
+        name: r.querySelector(".student-name")?.textContent.trim() || "",
+      }))
+      .filter((r) => r.email);
+  }
+
+  function openEmailAllModal() {
+    const recipients = getVisibleRecipients();
+
+    if (recipients.length === 0) {
+      showToast("No students match the current filters.", "warning");
+      return;
+    }
+
+    document.getElementById("emailAllRecipientCount").textContent =
+      `${recipients.length} student${recipients.length !== 1 ? "s" : ""} (based on current filters)`;
+    document.getElementById("emailAllRecipientList").innerHTML = recipients
+      .map((r) => `${r.name} &lt;${r.email}&gt;`)
+      .join("<br>");
+
+    document.getElementById("emailAllSubject").value =
+      `[{{ selected.course.course_code|default:"" }}] `;
+    document.getElementById("emailAllMessage").value =
+      `Dear student,\n\n\n\nBest regards,\n{{ lecturer.name|default:"" }}\n{{ selected.course.course_code|default:"" }} — {{ selected.course.course_name|default:"" }}`;
+    document.getElementById("emailAllError").style.display = "none";
+
+    openModal("emailAllModal");
+  }
+
+  async function sendBulkEmail() {
+    const recipients = getVisibleRecipients();
+    const subject = document.getElementById("emailAllSubject").value.trim();
+    const message = document.getElementById("emailAllMessage").value.trim();
+    const errorBox = document.getElementById("emailAllError");
+    const btn = document.getElementById("emailAllSendBtn");
+
+    errorBox.style.display = "none";
+
+    if (!subject || !message) {
+      errorBox.textContent = "Subject and message are required.";
+      errorBox.style.display = "block";
+      return;
+    }
+
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+    try {
+      const res = await fetch(SEND_BULK_EMAIL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": CSRF_TOKEN,
+        },
+        body: JSON.stringify({
+          curriculum_id: CURRICULUM_ID,
+          recipients,
+          subject,
+          message,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        errorBox.textContent = data.error;
+        errorBox.style.display = "block";
+        return;
+      }
+
+      closeModal("emailAllModal");
+      showToast(
+        `📧 Sent to ${data.sent} student${data.sent !== 1 ? "s" : ""}${data.errors?.length ? " (some skipped)" : ""}`,
+        "success",
+      );
+      if (data.errors?.length) console.warn("Bulk email skips:", data.errors);
+    } catch (err) {
+      errorBox.textContent = "Network error sending emails.";
+      errorBox.style.display = "block";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
 
   function exportCSV() {
     const rows = [
@@ -1731,10 +1953,12 @@
     document.getElementById(id).classList.add("active");
     document.body.style.overflow = "hidden";
   }
+
   function closeModal(id) {
     document.getElementById(id).classList.remove("active");
     document.body.style.overflow = "";
   }
+
   document.querySelectorAll(".modal-overlay").forEach((o) => {
     o.addEventListener("click", (e) => {
       if (e.target === o) {
@@ -1742,6 +1966,7 @@
       }
     });
   });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape")
       document

@@ -15,7 +15,9 @@ from staffConsole.views.lecturer import (
     ExportTemplateView,
     InvigilationDutiesView,
     LecturerProfileDetailView,
-    LecturerProfileUpdateAjaxView
+    LecturerProfileUpdateAjaxView,
+    SendBulkEmailView,
+    SendStudentEmailView
 )
 
 urlpatterns = [
@@ -91,5 +93,15 @@ urlpatterns = [
         'profile/update/',
         LecturerProfileUpdateAjaxView.as_view(),
         name='lecturer-profile-update'
+    ),
+    path(
+        'class-list/send-email/',
+        SendStudentEmailView.as_view(),
+        name='lecturer-send-student-email'
+    ),
+    path(
+        'class-list/send-bulk-email/',
+        SendBulkEmailView.as_view(),
+        name='lecturer-send-bulk-email'
     ),
 ]

@@ -16,7 +16,7 @@
 from decouple import config
 
 from django.db import IntegrityError
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (
     render,
     redirect
@@ -88,26 +88,32 @@ class CourseEvaluationView(
         return render(request, 'base/evaluations/course.html', context)
 
     def post(self, request):
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         student = self.get_student(request)
         session = self.get_active_session()
 
+        def fail(message, status=400):
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': message}, status=status)
+            return HttpResponse(message, status=status)
+
         if not student or not session:
-            return HttpResponse('Invalid request', status=400)
+            return fail('Invalid request')
 
         enrollment_id = request.POST.get('enrollment_id')
         rating_raw = request.POST.get('rating')
         comments = request.POST.get('comments', '').strip()
 
         if not enrollment_id or not rating_raw:
-            return HttpResponse('Rating is required', status=400)
+            return fail('Rating is required')
 
         try:
             rating = int(rating_raw)
         except (TypeError, ValueError):
-            return HttpResponse('Invalid rating', status=400)
+            return fail('Invalid rating')
 
         if rating < 1 or rating > 5:
-            return HttpResponse('Rating must be between 1 and 5', status=400)
+            return fail('Rating must be between 1 and 5')
 
         enrollment = (
             Enrollment.objects
@@ -119,19 +125,27 @@ class CourseEvaluationView(
             .first()
         )
         if not enrollment:
-            return HttpResponse('Enrollment not found', status=404)
+            return fail('Enrollment not found', status=404)
 
         if CourseEvaluation.objects.filter(enrollment=enrollment).exists():
-            return HttpResponse('You have already evaluated this course', status=400)
+            return fail('You have already evaluated this course')
 
         try:
-            CourseEvaluation.objects.create(
+            evaluation = CourseEvaluation.objects.create(
                 enrollment=enrollment,
                 rating=rating,
                 comments=comments,
             )
         except IntegrityError:
-            return HttpResponse('You have already evaluated this course', status=400)
+            return fail('You have already evaluated this course')
+
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'rating': evaluation.rating,
+                'comments': evaluation.comments,
+                'submitted_on': evaluation.created_at.strftime('%d %b %Y'),
+            })
 
         return redirect('base-course-evaluation')
 
@@ -189,11 +203,17 @@ class LecturerEvaluationView(
         return render(request, 'base/evaluations/lecturer.html', context)
 
     def post(self, request):
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         student = self.get_student(request)
         session = self.get_active_session()
 
+        def fail(message, status=400):
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': message}, status=status)
+            return HttpResponse(message, status=status)
+
         if not student or not session:
-            return HttpResponse('Invalid request', status=400)
+            return fail('Invalid request')
 
         enrollment_id = request.POST.get('enrollment_id')
         lecturer_id = request.POST.get('lecturer_id')
@@ -201,15 +221,15 @@ class LecturerEvaluationView(
         comments = request.POST.get('comments', '').strip()
 
         if not enrollment_id or not lecturer_id or not rating_raw:
-            return HttpResponse('Rating is required', status=400)
+            return fail('Rating is required')
 
         try:
             rating = int(rating_raw)
         except (TypeError, ValueError):
-            return HttpResponse('Invalid rating', status=400)
+            return fail('Invalid rating')
 
         if rating < 1 or rating > 5:
-            return HttpResponse('Rating must be between 1 and 5', status=400)
+            return fail('Rating must be between 1 and 5')
 
         enrollment = (
             Enrollment.objects
@@ -221,30 +241,36 @@ class LecturerEvaluationView(
             .first()
         )
         if not enrollment:
-            return HttpResponse('Enrollment not found', status=404)
+            return fail('Enrollment not found', status=404)
 
-        # Make sure the submitted lecturer is actually assigned to this
-        # enrollment's curriculum, not an arbitrary lecturer_id.
         lecturer = enrollment.curriculum.professor.filter(
             record_id=lecturer_id
         ).first()
         if not lecturer:
-            return HttpResponse('Lecturer not found for this course', status=404)
+            return fail('Lecturer not found for this course', status=404)
 
         if LecturerEvaluation.objects.filter(
             enrollment=enrollment, lecturer=lecturer
         ).exists():
-            return HttpResponse('You have already evaluated this lecturer', status=400)
+            return fail('You have already evaluated this lecturer')
 
         try:
-            LecturerEvaluation.objects.create(
+            evaluation = LecturerEvaluation.objects.create(
                 enrollment=enrollment,
                 lecturer=lecturer,
                 rating=rating,
                 comments=comments,
             )
         except IntegrityError:
-            return HttpResponse('You have already evaluated this lecturer', status=400)
+            return fail('You have already evaluated this lecturer')
+
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'rating': evaluation.rating,
+                'comments': evaluation.comments,
+                'submitted_on': evaluation.created_at.strftime('%d %b %Y'),
+            })
 
         return redirect('base-lecturer-evaluation')
 

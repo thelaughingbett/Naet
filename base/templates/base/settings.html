@@ -24,6 +24,16 @@
     color: #1e7e34;
     border: 1px solid #d4edda;
   }
+  .alert-danger {
+    background-color: #fdeeee;
+    color: #a12a2a;
+    border: 1px solid #f5c6cb;
+  }
+  .alert-info {
+    background-color: #eef6ff;
+    color: #1f6392;
+    border: 1px solid #cfe3f5;
+  }
 
   /* 🏛️ Top Tab Navigation Styling */
   .tabs-navigation {
@@ -32,6 +42,7 @@
     border-bottom: 2px solid var(--border);
     margin-bottom: 30px;
     padding-bottom: 2px;
+    flex-wrap: wrap;
   }
   .tab-btn {
     background: none;
@@ -54,6 +65,14 @@
   .tab-btn.active {
     color: var(--navy);
     border-bottom: 3px solid var(--navy);
+  }
+  .tab-btn.has-errors {
+    color: #a12a2a;
+  }
+  .tab-btn.has-errors::after {
+    content: "•";
+    margin-left: 4px;
+    color: #a12a2a;
   }
 
   /* Form Section Visibility Logic */
@@ -114,6 +133,13 @@
     border-color: var(--blue-card);
     box-shadow: 0 0 0 3px rgba(31, 99, 146, 0.15);
   }
+  .form-group .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #a12a2a;
+  }
   .read-only-box {
     padding: 12px;
     background-color: rgba(0, 0, 0, 0.02);
@@ -121,6 +147,12 @@
     border-radius: var(--radius-md);
     font-size: 14px;
     color: var(--text);
+  }
+  .read-only-box-input,
+  .form-group input:disabled {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed;
   }
 
   /* Emergency Contacts Sections */
@@ -171,7 +203,130 @@
   .btn-secondary:hover {
     background-color: rgba(31, 99, 146, 0.05);
   }
+  .id-card-panel {
+    max-width: 480px;
+  }
+  .id-card-visual {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    box-shadow: var(--shadow-md);
+  }
+  .id-card-visual--inactive {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  }
+  .id-card-visual__photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .id-card-visual__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .id-card-visual__photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .id-card-visual__name {
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .id-card-visual__reg {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .id-card-visual__meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 6px;
+  }
+  .id-card-visual__status {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+  }
+  .status-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .status-pill--active {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .status-pill--inactive {
+    background: rgba(255, 255, 255, 0.15);
+  }
 
+  .id-card-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .id-card-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .id-card-info-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .id-card-info-value {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .id-card-no-file {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .id-card-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .id-card-empty-state__icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+  }
+  .id-card-empty-state__title {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .id-card-empty-state__text {
+    font-size: 14px;
+    max-width: 340px;
+    margin: 0 auto;
+  }
   /* 🔒 Constant Sticky Footer Styling */
   .form-actions {
     margin-top: 30px;
@@ -219,7 +374,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    text-decoration: none; /* Strip standard anchor lines underlines layout formatting */
+    text-decoration: none;
     box-shadow: var(--shadow-sm);
   }
 
@@ -239,6 +394,15 @@
     {% endfor %}
   </div>
   {% endif %}
+  <!-- prettier-ignore -->
+  {% if tabs_config %} 
+   {% for tab in tabs_config %}
+   {% if tab.has_errors %}
+  <div class="alert alert-danger">
+    There are errors in the "{{ tab.title }}" tab — please review and fix them
+    before saving.
+  </div>
+  {% endif %} {% endfor %} {% endif %}
 
   <!-- 🏛️ Navigation Tabs Header -->
   <div
@@ -257,52 +421,179 @@
       class="tabs-navigation"
       style="margin-bottom: 0; border-bottom: none; display: flex; gap: 8px"
     >
-      {% for tab in tabs_config %}
-      <button
-        type="button"
-        class="tab-btn {% if forloop.first %}active{% endif %}"
-        data-tab="{{ tab.id }}"
+      <!-- prettier-ignore -->
+
+      <div
+        class="tabs-navigation"
+        style="margin-bottom: 0; border-bottom: none; display: flex; gap: 8px"
       >
-        {{ tab.title }}
-      </button>
-      {% endfor %}
+        {% for tab in tabs_config %}
+        <button
+          type="button"
+          class="tab-btn {% if tab.id == active_tab %}active{% endif %} {% if tab.has_errors %}has-errors{% endif %}"
+          data-tab="{{ tab.id }}"
+        >
+          {{ tab.title }}
+        </button>
+        {% endfor %}
+      </div>
     </div>
 
-    <!-- New Export Action Button Trigger -->
+    <!-- Export Action -->
     <a
       href="{% url 'data-export' %}"
       class="btn btn-export"
-      title="Download all system profile tracking data records safely as a JSON file format structure layout alignment maps"
+      title="Download your profile data as a JSON file"
     >
       📥 Export My Data (JSON)
     </a>
   </div>
-  <div class="tabs-navigation"></div>
 
-  <form action="" method="post" enctype="multipart/form-data">
+  <form action="" method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %} {% for tab in tabs_config %}
     <div
       id="tab-{{ tab.id }}"
-      class="form-tab-content {% if forloop.first %}active{% endif %}"
+      class="form-tab-content {% if tab.id == active_tab %}active{% endif %}"
     >
       <fieldset>
         <legend>{{ tab.legend }}</legend>
-
-        <!-- Inject Avatar UI layout logic if checking the General Info tab -->
-        {% if not tab.is_formset and tab.id == 'general' %}
+        <!-- prettier-ignore -->
+        {% if not tab.is_formset and not tab.is_readonly and tab.id == 'general'  %}
         <div class="profile-avatar-wrapper">
+          {% if request.user.profile_picture %}
           <img
             src="{{ request.user.profile_picture.url }}"
             alt="Profile Photo"
             style="height: 100px; width: 100px; border-radius: 50%"
           />
+          {% else %}
+          <div
+            style="
+              height: 100px;
+              width: 100px;
+              border-radius: 50%;
+              background: var(--border);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 2rem;
+              color: var(--text-muted);
+            "
+          >
+            {{ request.user.first_name|first|upper }}
+          </div>
+          {% endif %}
           <div class="form-group">
             <label>Update Profile Photo</label>
             {{ tab.form.profile_picture }}
           </div>
         </div>
-        {% endif %} {% if not tab.is_formset %}
-        <!-- Render User & Student Forms fields dynamically -->
+        {% endif %}
+        <!-- prettier-ignore -->
+        {% if not tab.is_formset and not tab.is_readonly and tab.id == 'medical' %}
+        <div class="alert alert-info">
+          Your medical information is confidential — it's only visible to campus
+          clinic staff and the Dean of Students, and is used for care, exam
+          exemptions, and accommodation planning.
+        </div>
+        {% endif %}
+        <!-- prettier-ignore -->
+        {% if tab.is_readonly and tab.id == 'id_card' %}
+        {% if tab.id_card %}
+        <div class="id-card-panel">
+          <div
+            class="id-card-visual {% if not tab.id_card.is_active %}id-card-visual--inactive{% endif %}"
+          >
+            <div class="id-card-visual__photo">
+              {% if tab.id_card.photo %}
+              <img src="{{ tab.id_card.photo.url }}" alt="ID photo" />
+              {% else %}
+              <div class="id-card-visual__photo-placeholder">
+                <!-- prettier-ignore -->
+                {{ request.user.first_name|first|upper }}
+                {{request.user.last_name|first|upper }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="id-card-visual__details">
+              <div class="id-card-visual__name">
+                {{ student.user.half_name }}
+              </div>
+              <div class="id-card-visual__reg">
+                {{ student.registration_number|upper }}
+              </div>
+              <div class="id-card-visual__meta">
+                <span>Issued - {{ tab.id_card.issued_date|date:"d M Y" }}</span>
+                <span>Expires {{ tab.id_card.expiry_date|date:"d M Y" }}</span>
+              </div>
+            </div>
+            <div class="id-card-visual__status">
+              {% if tab.id_card.is_active %}
+              <span class="status-pill status-pill--active">Active</span>
+              {% else %}
+              <span class="status-pill status-pill--inactive">Inactive</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="id-card-info-grid">
+            <div class="id-card-info-item">
+              <span class="id-card-info-label">Card Number</span>
+              <span class="id-card-info-value"
+                >{{ tab.id_card.card_number }}</span
+              >
+            </div>
+            <div class="id-card-info-item">
+              <span class="id-card-info-label">Issued</span>
+              <span class="id-card-info-value"
+                >{{ tab.id_card.issued_date|date:"d F Y" }}</span
+              >
+            </div>
+            <div class="id-card-info-item">
+              <span class="id-card-info-label">Expires</span>
+              <span class="id-card-info-value"
+                >{{ tab.id_card.expiry_date|date:"d F Y" }}</span
+              >
+            </div>
+            <div class="id-card-info-item">
+              <span class="id-card-info-label">Status</span>
+              <span class="id-card-info-value">
+                {% if tab.id_card.is_active %}Active{% else %}Inactive — contact
+                the registrar{% endif %}
+              </span>
+            </div>
+          </div>
+
+          {% if tab.id_card.file %}
+          <a
+            href="{{ tab.id_card.file.url }}"
+            class="btn btn-export"
+            style="margin-top: 16px"
+            download
+          >
+            📄 Download printable ID card
+          </a>
+          {% else %}
+          <div class="id-card-no-file">
+            📭 No printable file has been generated for this card yet. Contact
+            the registrar's office if you need one.
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="id-card-empty-state">
+          <div class="id-card-empty-state__icon">🪪</div>
+          <div class="id-card-empty-state__title">No ID card on record</div>
+          <div class="id-card-empty-state__text">
+            Your student ID card hasn't been issued yet. Visit the registrar's
+            office to have one processed.
+          </div>
+        </div>
+        <!-- prettier-ignore -->
+        {% endif %} 
+        {% endif %} 
+        {% if not tab.is_formset and not tab.is_readonly %} 
+        {{ tab.form.non_field_errors }}
         <div class="form-grid">
           {% for field in tab.form %} {% if field.name != 'profile_picture' %}
           <div class="form-group">
@@ -312,19 +603,21 @@
           {% endif %} {% endfor %}
         </div>
 
-        {% else %}
-        <!-- Render Emergency Contacts Management Formset fields dynamically -->
-        {{ tab.formset.management_form }} {{ tab.formset.non_form_errors }}
+        {% elif tab.is_formset %}
+
+        <!-- prettier-ignore -->
+        {{ tab.formset.management_form }}
+        {{ tab.formset.non_form_errors }}
 
         <div id="emergency-form-container">
           {% for form in tab.formset %}
           <div class="emergency-contact-row">
             <h4 class="contact-title">Contact #{{ forloop.counter }}</h4>
-            {{ form.id }}
+            {{ form.id }} {{ form.non_field_errors }}
             <div class="form-grid">
               <!-- prettier-ignore -->
-              {% for field in form.visible_fields %}
-               {% if field.name !=  'DELETE' %}
+              {% for field in form.visible_fields %} 
+              {% if field.name !=   'DELETE' %}
               <div class="form-group">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }} {{ field.errors }}
@@ -354,6 +647,33 @@
     </div>
   </form>
 </div>
+
+<!-- Reusable Blueprint for new dynamic emergency-contact rows -->
+<template id="empty-form-template">
+  <div class="emergency-contact-row">
+    <h4 class="contact-title">Contact #__prefix__</h4>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label> {{ emergency_formset.empty_form.name }}
+      </div>
+      <div class="form-group">
+        <label>Phone</label> {{ emergency_formset.empty_form.phone }}
+      </div>
+      <div class="form-group">
+        <label>Email</label> {{ emergency_formset.empty_form.email }}
+      </div>
+      <div class="form-group">
+        <label>Relationship</label>
+        {{ emergency_formset.empty_form.relationship }}
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        {{ emergency_formset.empty_form.address }}
+      </div>
+    </div>
+  </div>
+</template>
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // --- 1. Tab Switching Controller Logic ---
@@ -362,11 +682,9 @@
 
     tabButtons.forEach((btn) => {
       btn.addEventListener("click", function () {
-        // Deactivate old active targets
         tabButtons.forEach((b) => b.classList.remove("active"));
         tabContents.forEach((c) => c.classList.remove("active"));
 
-        // Assign active highlights to targets
         this.classList.add("active");
         const activeTabId = `tab-${this.getAttribute("data-tab")}`;
         document.getElementById(activeTabId).classList.add("active");
@@ -386,71 +704,81 @@
       ? parseInt(maxFormsManagement.value)
       : 4;
 
-    toggleButtonVisibility();
-
-    addBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      let currentFormCount = parseInt(totalFormsManagement.value);
-
-      if (currentFormCount >= maxForms) return;
-
-      // Extract template blueprint elements from HTML template tag
-      const templateHtml = document.getElementById(
-        "empty-form-template",
-      ).innerHTML;
-      const exactIndexHtml = templateHtml.replace(
-        /__prefix__/g,
-        currentFormCount,
-      );
-
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = exactIndexHtml;
-      const newRowNode = tempDiv.firstElementChild;
-
-      newRowNode.querySelector(".contact-title").textContent =
-        `Contact #${currentFormCount + 1}`;
-      container.appendChild(newRowNode);
-
-      totalFormsManagement.value = currentFormCount + 1;
+    if (addBtn && container && totalFormsManagement) {
       toggleButtonVisibility();
-    });
+
+      addBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        let currentFormCount = parseInt(totalFormsManagement.value);
+
+        if (currentFormCount >= maxForms) return;
+
+        const templateHtml = document.getElementById(
+          "empty-form-template",
+        ).innerHTML;
+        const exactIndexHtml = templateHtml.replace(
+          /__prefix__/g,
+          currentFormCount,
+        );
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = exactIndexHtml;
+        const newRowNode = tempDiv.firstElementChild;
+
+        newRowNode.querySelector(".contact-title").textContent =
+          `Contact #${currentFormCount + 1}`;
+        container.appendChild(newRowNode);
+
+        applyTextOnlyFilters(newRowNode);
+
+        totalFormsManagement.value = currentFormCount + 1;
+        toggleButtonVisibility();
+      });
+    }
 
     function toggleButtonVisibility() {
+      if (!addBtn || !totalFormsManagement) return;
       let activeFormCount = parseInt(totalFormsManagement.value);
-      if (activeFormCount >= maxForms) {
-        addBtn.style.display = "none";
-      } else {
-        addBtn.style.display = "inline-block";
-      }
+      addBtn.style.display =
+        activeFormCount >= maxForms ? "none" : "inline-block";
+    }
+
+    // --- 3. Text-only input filtering ---
+    // Belt-and-braces alongside each field's server-side clean_<field>()
+    // validator and the HTML `pattern` attribute: strips any character
+    // that isn't a letter, space, hyphen or apostrophe as the user types,
+    // rather than only complaining after submit.
+    function applyTextOnlyFilters(scope) {
+      scope.querySelectorAll(".text-only-input").forEach((input) => {
+        if (input.dataset.textOnlyBound) return;
+        input.dataset.textOnlyBound = "1";
+        input.addEventListener("input", function () {
+          const cleaned = this.value.replace(/[^A-Za-z' -]/g, "");
+          if (cleaned !== this.value) this.value = cleaned;
+        });
+      });
+    }
+    applyTextOnlyFilters(document);
+
+    // --- 4. Show/hide accommodation notes based on the checkbox ---
+    const accommodationCheckbox = document.getElementById(
+      "id_requires_special_accommodation",
+    );
+    const accommodationNotesField = document.getElementById(
+      "id_accommodation_notes",
+    );
+    if (accommodationCheckbox && accommodationNotesField) {
+      const notesGroup = accommodationNotesField.closest(".form-group");
+      const syncVisibility = () => {
+        if (notesGroup) {
+          notesGroup.style.display = accommodationCheckbox.checked
+            ? "flex"
+            : "none";
+        }
+      };
+      accommodationCheckbox.addEventListener("change", syncVisibility);
+      syncVisibility();
     }
   });
 </script>
-
-<!-- Reusable Blueprint for new dynamic tab inputs -->
-<template id="empty-form-template">
-  <div class="emergency-contact-row">
-    <h4 class="contact-title">Contact #__prefix__</h4>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Name</label> {{ emergency_formset.empty_form.name }}
-      </div>
-      <div class="form-group">
-        <label>Phone</label> {{ emergency_formset.empty_form.phone }}
-      </div>
-      <div class="form-group">
-        <label>Email</label> {{ emergency_formset.empty_form.email }}
-      </div>
-      <div class="form-group">
-        <label>Relationship</label>
-        <!-- prettier-ignore -->
-        {{ emergency_formset.empty_form.relationship  }}
-      </div>
-      <div class="form-group">
-        <label>Address</label>
-        <!-- prettier-ignore -->
-        {{ emergency_formset.empty_form.address }}
-      </div>
-    </div>
-  </div>
-</template>
 {% endblock %}

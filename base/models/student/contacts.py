@@ -66,12 +66,12 @@ class EmergencyContact(BaseModelMixin):
     )
     name = models.CharField(max_length=78)
     phone = models.CharField(max_length=78)
-    email = models.CharField(max_length=78)
+    email = models.CharField(max_length=78, null=True, blank=True)
     relationship = models.CharField(
         max_length=78,
         choices=RELATIONSHIP_CHOICES
     )
-    address = models.CharField(max_length=78, null=True)
+    address = models.CharField(max_length=78, null=True, blank=True)
     is_primary = models.BooleanField(default=False)
 
     class Meta:

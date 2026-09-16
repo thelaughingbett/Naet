@@ -137,7 +137,6 @@
 </div>
 
 {% endif %}
-
 <script>
   function setRating(key, value) {
     document.getElementById(`rating-${key}`).value = value;
@@ -146,17 +145,85 @@
     });
   }
 
-  // Each lecturer card submits its own form independently. The hidden
-  // "rating" input has no `required` effect since it's type="hidden",
-  // so guard it here instead.
+  // Submit each card over fetch instead of a full-page POST. A normal
+  // form submit reloads the whole page, which wipes every OTHER card's
+  // unsaved star rating and comment text.
   document.querySelectorAll("form[data-eval-form]").forEach((form) => {
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
       const ratingInput = form.querySelector('input[name="rating"]');
       if (!ratingInput.value) {
-        e.preventDefault();
         alert("Please select a star rating before submitting.");
+        return;
+      }
+
+      const btn = form.querySelector(".submit-btn");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Submitting…";
+
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          body: new FormData(form),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          alert(
+            data.message || "Could not submit evaluation. Please try again.",
+          );
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+
+        renderSubmitted(form, data);
+      } catch (err) {
+        alert("Network error — please try again.");
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     });
   });
+
+  function renderSubmitted(form, data) {
+    const card = form.closest(".eval-card");
+    const body = card.querySelector(".eval-body");
+    const header = card.querySelector(".eval-header");
+
+    if (!header.querySelector(".submitted-badge")) {
+      const badge = document.createElement("span");
+      badge.className = "submitted-badge";
+      badge.textContent = "✓ Submitted";
+      header.appendChild(badge);
+    }
+
+    const starsHtml = [1, 2, 3, 4, 5]
+      .map(
+        (i) =>
+          `<span class="star ${i <= data.rating ? "selected" : ""}">★</span>`,
+      )
+      .join("");
+
+    body.innerHTML = `
+      <div class="feedback-label">Rating</div>
+      <div class="rating-stars">${starsHtml}</div>
+      <div style="margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted)">
+        ${data.comments ? escapeHtml(data.comments) : "No additional comments."}
+      </div>
+      <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem">
+        ⭐ Rating: ${data.rating}/5 • Submitted on ${data.submitted_on}
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
 </script>
 {% endblock %}

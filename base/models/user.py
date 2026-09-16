@@ -24,9 +24,9 @@ class User(BaseModelMixin, AbstractBaseUser, PermissionsMixin):
     STAFF = 'staff'
     ADMIN = 'admin'
 
-    first_name = models.CharField(max_length=78, null=True)
-    last_name = models.CharField(max_length=78, null=True)
-    surname = models.CharField(max_length=78, null=True)
+    first_name = models.CharField(max_length=78, null=True, blank=True)
+    last_name = models.CharField(max_length=78, null=True, blank=True)
+    surname = models.CharField(max_length=78, null=True, blank=True)
 
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
 

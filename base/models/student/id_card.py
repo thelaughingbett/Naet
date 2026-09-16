@@ -19,7 +19,7 @@ class IDCard(BaseModelMixin):
     )
     card_number = models.CharField(max_length=30, unique=True)
     issued_date = models.DateField(auto_now_add=True)
-    expiry_date = models.DateField()
+    expiry_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     photo = models.ImageField(
         upload_to="registrar/id_photos/",

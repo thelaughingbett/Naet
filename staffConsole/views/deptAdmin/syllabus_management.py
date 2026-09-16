@@ -6,9 +6,7 @@ from base.models import (
     Curriculum,
 )
 
-
 from staffConsole.views.base import RoleRequiredMixin
-
 
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
@@ -33,8 +31,8 @@ class SyllabusSerializer(ModelSerializer):
             'created_at',
             'updated_at',
             'professor',
-            'syllabus',
-            'Tclass',
+            'course',
+            'classes',
             'weekly_allocated_slots'
         ]
 
@@ -54,16 +52,21 @@ class SyllabusSerializer(ModelSerializer):
         return f"{obj.session}"
 
     def get_class_name(self, obj):
-        return f"{obj.Tclass}"
+        """
+        A shared Curriculum slot can now serve several classes at once
+        via the `classes` M2M (CurriculumClass), not a single Tclass —
+        join them so the table cell still reads as one class label.
+        """
+        return ", ".join(c.class_name for c in obj.classes.all())
 
     def get_course_code(self, obj):
-        return obj.syllabus.course.course_code
+        return obj.course.course_code
 
     def get_course_name(self, obj):
-        return obj.syllabus.course.course_name
+        return obj.course.course_name
 
     def get_course_type(self, obj):
-        return obj.syllabus.course.course_type
+        return obj.course.course_type
 
     def get_enrolled(self, obj):
         return len(obj.enrollment_records.all())
@@ -75,7 +78,8 @@ class SyllabusSerializer(ModelSerializer):
         return obj.weekly_allocated_slots
 
     def get_id(self, obj):
-        return f"{obj.Tclass} - {obj.syllabus.course.course_code} "
+        class_names = ", ".join(c.class_name for c in obj.classes.all())
+        return f"{class_names} - {obj.course.course_code} "
 
 
 class SyllabusManagementView(RoleRequiredMixin, View):
@@ -91,7 +95,7 @@ class SyllabusManagementView(RoleRequiredMixin, View):
         dept = admin.department
 
         qs = Curriculum.objects.filter(
-            syllabus__course__department=dept,
+            course__department=dept,
             session=session
         )
 

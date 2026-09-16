@@ -54,7 +54,7 @@ class DeptAdminDashboardView(RoleRequiredMixin, View):
             workload = LecturerAssignment.objects.filter(
                 lecturer=lect,
                 curriculum__session=session,
-            ).select_related('curriculum__syllabus__course')
+            ).select_related('curriculum__course')
 
             row = {
                 'lec': lect.name,

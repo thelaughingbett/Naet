@@ -27,19 +27,18 @@ class DeptAdminTeachingLoadView(RoleRequiredMixin, View):
             department=dept
         ).select_related('user')
 
-        course_catalog = Syllabus.objects.filter(
-            course__department=dept
-        ).select_related('course', 'programme')
-
-        print(len((course_catalog)))
         # --- faculty workload ---
         faculty_workload = []
 
-        for lect in faculty[:5]:
+        for lect in faculty:
             workload = LecturerAssignment.objects.filter(
                 lecturer=lect,
                 curriculum__session=session,
-            ).select_related('curriculum__syllabus__course')
+            ).select_related(
+                'curriculum__course'
+            ).prefetch_related(
+                'curriculum__classes'
+            )
 
             row = {
                 'lec': lect.name,
@@ -51,10 +50,13 @@ class DeptAdminTeachingLoadView(RoleRequiredMixin, View):
             credits = 0
             checked = []
             for work in workload:
+                class_names = ", ".join(
+                    c.class_name for c in work.curriculum.classes.all()
+                )
                 course = {
                     'code': work.curriculum.course.course_code,
                     'name': work.curriculum.course.course_name,
-                    'class': str(work.curriculum.Tclass),
+                    'class': class_names,
                     'credits': work.curriculum.course.credits,
                     'id': str(work.record_id)
                 }
@@ -62,7 +64,6 @@ class DeptAdminTeachingLoadView(RoleRequiredMixin, View):
                 if work.curriculum.course in checked:
                     continue
                 credits += work.curriculum.course.credits
-
                 checked.append(work.curriculum.course)
 
             row['credits'] = credits

@@ -192,6 +192,63 @@
       .sidebar-hamburger {
         display: none;
       }
+
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--navy);
+        color: white;
+        padding: 0.7rem 1.3rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: 0.3s;
+        z-index: 2000;
+        font-size: 0.85rem;
+        font-family: var(--font);
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .toast.success {
+        background: var(--green);
+      }
+      .toast.warning {
+        background: #92400e;
+      }
+      .toast.info {
+        background: var(--navy);
+      }
+
+      /* ===== TOAST — content comes from Django messages, see script block ===== */
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--navy, #0a2540);
+        color: white;
+        padding: 0.7rem 1.3rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: 0.3s;
+        z-index: 2000;
+        font-size: 0.85rem;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .toast.success {
+        background: #1e6f3f;
+      }
+      .toast.warning {
+        background: #92400e;
+      }
     </style>
   </head>
   <body>
@@ -709,7 +766,7 @@
 
     {% else %} <br />
     {% block else %}{% endblock %} {% endif %}
-
+    <div class="toast" id="toast"></div>
     <script>
       function isMobile() {
         return window.innerWidth <= 768;
@@ -810,18 +867,24 @@
       const userSection = document.getElementById("userSection");
       const userToggle = document.getElementById("userCollapseToggle");
       if (userSection && userToggle) {
-        const isCollapsed =
-          localStorage.getItem("userSectionCollapsed") === "true";
+        // Default to collapsed: only stay expanded if the user previously
+        // toggled it open (localStorage explicitly says "false").
+        const stored = localStorage.getItem("userSectionCollapsed");
+        const isCollapsed = stored === null ? true : stored === "true";
         if (isCollapsed)
           userSection.classList.add("sidebar__user-section--collapsed");
         userToggle.addEventListener("click", (e) => {
           e.stopPropagation();
           userSection.classList.toggle("sidebar__user-section--collapsed");
-          localStorage.setItem(
-            "userSectionCollapsed",
-            userSection.classList.contains("sidebar__user-section--collapsed"),
-          );
         });
+      }
+
+      function showToast(message, type) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = "toast show" + (type ? " " + type : "");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => toast.classList.remove("show"), 3500);
       }
 
       // Online status / service worker

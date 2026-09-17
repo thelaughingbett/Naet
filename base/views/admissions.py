@@ -18,8 +18,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import datetime
 import types
 
-from django.http import JsonResponse
+from datetime import datetime, timedelta
 from django.utils import timezone
+
+from django.http import JsonResponse
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 
@@ -282,6 +284,12 @@ class HostelBookingView(
             current_allocation = (
                 HostelAllocation.objects
                 .filter(student=student, session=session, is_active=True)
+                # is_active is a separate flag from status — nothing in the
+                # model automatically flips it False when a booking is
+                # REJECTED or VACATED, so filtering on is_active alone can
+                # wrongly treat a dead allocation as "already booked" and
+                # block the student from rebooking.
+                .exclude(status__in=['REJECTED', 'VACATED'])
                 .select_related('room__hostel')
                 .first()
             )
@@ -308,6 +316,17 @@ class HostelBookingView(
                     'available_beds': room.capacity - room.allocations.filter(is_active=True).count(),
                 })
 
+        # Whether ANY room, across ANY hostel eligible for this student's
+        # gender, currently has a free bed. Drives whether the booking
+        # form is shown at all — the room grid stays visible either way,
+        # so a student can still see what's fully booked.
+        any_rooms_available = any(r['available'] for r in rooms_json)
+        earliest_move_in = timezone.now().date() + timedelta(days=3)
+
+        default_move_in_date = max(
+            session.start_date, earliest_move_in
+        ) if session and session.start_date else earliest_move_in
+
         context = {
             'student': student,
             'session': session,
@@ -315,7 +334,10 @@ class HostelBookingView(
             'hostels': hostels,
             'room_types': Room.ROOM_TYPE_CHOICES,
             'rooms_json': rooms_json,
+            'any_rooms_available': any_rooms_available,
+            'default_move_in_date': default_move_in_date,
         }
+
         return render(request, 'base/admissions/hostel_booking.html', context)
 
     def post(self, request):
@@ -331,7 +353,7 @@ class HostelBookingView(
 
         if HostelAllocation.objects.filter(
             student=student, session=session, is_active=True
-        ).exists():
+        ).exclude(status__in=['REJECTED', 'VACATED']).exists():
             return HttpResponse(
                 'You already have a hostel allocation for this session', status=400
             )
@@ -340,16 +362,37 @@ class HostelBookingView(
         if not room:
             return HttpResponse('Room not found', status=404)
 
+        if room.is_full:
+            return HttpResponse('That room is now full — please pick another', status=400)
+
+        move_in_date_raw = request.POST.get('move_in_date') or None
+        if move_in_date_raw:
+            try:
+                move_in_date = datetime.strptime(
+                    move_in_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                return HttpResponse('Invalid move-in date', status=400)
+
+            earliest_allowed = timezone.now().date() + timedelta(days=3)
+            if move_in_date < earliest_allowed:
+                return HttpResponse(
+                    f'Move-in date must be at least 3 days from today '
+                    f'(earliest: {earliest_allowed.strftime("%d %b %Y")}).',
+                    status=400
+                )
+        else:
+            move_in_date = None
+
         allocation = HostelAllocation(
             student=student,
             room=room,
             session=session,
-            move_in_date=request.POST.get('move_in_date') or None,
+            move_in_date=move_in_date,
             notes=request.POST.get('special_requests', '').strip(),
         )
 
         try:
-            allocation.full_clean()  # gender + capacity checks from clean()
+            allocation.full_clean()
         except ValidationError as e:
             return HttpResponse('; '.join(e.messages), status=400)
 

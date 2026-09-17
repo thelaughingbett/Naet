@@ -9,6 +9,94 @@
   href="{% static 'base/styles/admissions/hostel/index.css' %}"
 />
 <title>Hostel Booking</title>
+<style>
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 380px;
+    width: 100%;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: modalPop 0.2s ease-out;
+  }
+  @keyframes modalPop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    opacity: 0.5;
+  }
+  .modal-close:hover {
+    opacity: 1;
+  }
+  .modal-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+  }
+  .modal-box h3 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+  }
+  .modal-box p {
+    font-size: 0.85rem;
+    color: var(--text-muted, #6b7684);
+    margin: 0 0 18px;
+    line-height: 1.5;
+  }
+  .modal-box .btn-outline {
+    padding: 0.5rem 1.2rem;
+    border-radius: 40px;
+  }
+
+  .feature-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--navy, #0a2540);
+    color: white;
+    padding: 0.7rem 1.4rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: 0.25s ease;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  .feature-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
 {% endblock %} {% block body %}
 
 <div class="page-header">
@@ -20,6 +108,14 @@
   {% else %}
   <div class="status-chip" style="background: #fde2e2; color: #a33">
     Booking Period: Closed (no active session)
+  </div>
+  {% endif %} {% if current_allocation %}
+  <div class="status-chip" style="background: #e0e7ff; color: #3730a3">
+    ✅ Already Booked — {{ current_allocation.room.hostel.name }}
+  </div>
+  {% elif session and not any_rooms_available %}
+  <div class="status-chip" style="background: #fef3c7; color: #92400e">
+    ⚠️ All Rooms Currently Full
   </div>
   {% endif %}
 </div>
@@ -50,11 +146,12 @@
     <input type="number" id="priceFilter" placeholder="Any" min="0" />
   </div>
   <button class="btn-outline" id="filterBtn" type="button">
-    Apply Filters
+    Reset Filters
   </button>
 </div>
 
-<!-- Available Rooms Grid -->
+<!-- Available Rooms Grid — shown regardless of whether any room still
+     has free beds, so a student can see the full listing either way. -->
 <div id="roomsContainer" class="rooms-grid">
   <!-- populated from rooms-data below -->
 </div>
@@ -68,7 +165,7 @@
     <div class="card-header">🏷️ My Booking Status</div>
     <div class="card-body">
       <div class="current-booking">
-        <strong>Current Booking:</strong><br />
+        <strong>You have already booked a room.</strong><br />
         <span
           >🏠 <strong>{{ current_allocation.room.hostel.name }}</strong> – Room
           <!-- prettier-ignore -->
@@ -87,9 +184,19 @@
           semester</span
         ><br />
         {% endif %}
-        <span style="color: #1e6f3f"
-          >✅ Allocation confirmed for {{ current_allocation.session }}</span
+        <span
+          style="{% if current_allocation.status == 'APPROVED' %}color: #1e6f3f{% elif current_allocation.status == 'PENDING' %}color: #92400e{% else %}color: var(--text-muted){% endif %}"
         >
+          <!-- prettier-ignore -->
+          {% if current_allocation.status == 'APPROVED' %} 
+          ✅ Allocation
+          confirmed for {{ current_allocation.session }}
+          {% elif  current_allocation.status == 'PENDING' %}
+          ⏳ Awaiting warden approval   for {{ current_allocation.session }}
+          {% else %}
+          {{ current_allocation.get_status_display }} for {{  current_allocation.session }}
+          {% endif %}
+        </span>
       </div>
       {% if current_allocation.notes %}
       <hr style="margin: 1rem 0" />
@@ -108,7 +215,7 @@
           color: white;
           border: none;
         "
-        onclick="alert('Redirect to payment portal for hostel fees.')"
+        onclick="showToast('💰 Hostel fee payment is coming soon.', 'info')"
       >
         💰 Pay Hostel Fee
       </button>
@@ -124,6 +231,19 @@
       There is no active booking session right now. You're welcome to browse
       available rooms above, but check back once a new session opens to submit a
       booking.
+    </div>
+  </div>
+
+  {% elif not any_rooms_available %}
+  <!-- Session is open, but every eligible room is currently full — the
+       listing above still shows every hostel/room so the student can see
+       what's occupied, but there's nothing to actually book. -->
+  <div class="card" style="grid-column: 1 / -1">
+    <div class="card-header">🚫 No Rooms Available</div>
+    <div class="card-body" style="text-align: center; color: #92400e">
+      All rooms in hostels available to you are currently fully booked. Check
+      back later — a booking can free up if it's rejected or someone vacates —
+      or contact the hostel office directly.
     </div>
   </div>
 
@@ -152,7 +272,7 @@
             type="date"
             name="move_in_date"
             id="moveInDate"
-            value="{% if session.start_date %}{{ session.start_date|date:'Y-m-d' }}{% endif %}"
+            value="{% if default_move_in_date %}{{ default_move_in_date|date:'Y-m-d' }}{% endif %}"
           />
         </div>
         <div class="form-group">
@@ -164,14 +284,27 @@
             placeholder="Any special needs (e.g., accessibility, dietary...)"
           ></textarea>
         </div>
-        <button type="submit" class="btn-primary" id="confirmBookingBtn">
+        <button
+          type="submit"
+          class="btn-primary"
+          id="confirmBookingBtn"
+          disabled
+        >
           ✅ Confirm Booking
         </button>
+        <div
+          id="noRoomSelectedHint"
+          style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px"
+        >
+          Select a room from the listing above to enable booking.
+        </div>
       </form>
     </div>
   </div>
   {% endif %}
 </div>
+
+<div id="featureToast" class="feature-toast"></div>
 
 <script>
   (function () {
@@ -187,6 +320,23 @@
     const bookingSelect = document.getElementById("bookingRoomSelect");
     const bookingInput = document.getElementById("bookingRoomInput");
     const bookingForm = document.getElementById("hostelBookingForm");
+    const confirmBtn = document.getElementById("confirmBookingBtn");
+    const noRoomHint = document.getElementById("noRoomSelectedHint");
+
+    // Move-in date must be at least 3 days out — set as the input's floor
+    // and re-validate on submit. The server enforces this for real; this
+    // is just to stop an obviously-invalid pick before the round trip.
+    const moveInDateInput = document.getElementById("moveInDate");
+    if (moveInDateInput) {
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() + 3);
+      const minDateStr = minDate.toISOString().slice(0, 10);
+      moveInDateInput.min = minDateStr;
+
+      if (moveInDateInput.value && moveInDateInput.value < minDateStr) {
+        moveInDateInput.value = minDateStr;
+      }
+    }
 
     // Escape text before it's dropped into innerHTML, since hostel/room
     // names are admin-entered free text and could contain quotes/markup.
@@ -253,7 +403,8 @@
     }
 
     function selectRoomForBooking(id, name, hall) {
-      // Booking form isn't rendered when already booked or no active session.
+      // Booking form isn't rendered when already booked, no active
+      // session, or no rooms available at all.
       if (!bookingSelect || !bookingInput) return;
 
       let option = bookingSelect.querySelector(`option[value="${id}"]`);
@@ -265,6 +416,9 @@
       option.textContent = `${hall} - ${name}`;
       option.selected = true;
       bookingInput.value = id;
+
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (noRoomHint) noRoomHint.style.display = "none";
 
       document
         .querySelector(".booking-section")
@@ -285,18 +439,47 @@
 
     bookingSelect?.addEventListener("change", (e) => {
       bookingInput.value = e.target.value;
+      if (confirmBtn) confirmBtn.disabled = !e.target.value;
+      if (noRoomHint)
+        noRoomHint.style.display = e.target.value ? "none" : "block";
     });
 
     bookingForm?.addEventListener("submit", (e) => {
       if (!bookingInput.value) {
         e.preventDefault();
         alert("Please select a room from the available rooms first.");
+        return;
+      }
+      if (moveInDateInput && moveInDateInput.value < moveInDateInput.min) {
+        e.preventDefault();
+        alert(`Move-in date must be at least ${moveInDateInput.min} or later.`);
       }
     });
 
     filterBtn?.addEventListener("click", () => {
-      renderRooms(hallFilter.value, typeFilter.value, priceFilter.value);
+      if (hallFilter) hallFilter.value = "all";
+      if (typeFilter) typeFilter.value = "all";
+      if (priceFilter) priceFilter.value = "";
+      applyFilters();
     });
+
+    function applyFilters() {
+      renderRooms(hallFilter?.value, typeFilter?.value, priceFilter?.value);
+    }
+
+    hallFilter?.addEventListener("change", applyFilters);
+    typeFilter?.addEventListener("change", applyFilters);
+    priceFilter?.addEventListener("input", applyFilters);
+
+    let toastTimer = null;
+    window.showFeatureToast = function (message) {
+      const toast = document.getElementById("featureToast");
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 3000);
+    };
 
     // Initial render (no-op if roomsContainer doesn't exist on this page state)
     renderRooms();

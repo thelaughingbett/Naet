@@ -436,6 +436,15 @@ class ExamCardView(
     login_url = config("LOGIN_URL") + '?next=/admissions/exam-card/'
     redirect_field_name = config("REDIRECT_FIELD_NAME")
 
+    # Hard cap on total cards ever issued for one student in one session
+    # (active + superseded combined) — bounds unbounded regeneration abuse.
+    MAX_REGENERATIONS_PER_SESSION = 5
+
+    # Minimum gap between regenerations, to blunt rapid scripted hits —
+    # a legitimate student regenerating because of a genuine mistake
+    # doesn't need sub-minute retries.
+    REGENERATION_COOLDOWN_SECONDS = 60
+
     def _get_fee_account(self, student, session):
         """
         Returns (account, error_key) where error_key is None on success.
@@ -530,6 +539,9 @@ class ExamCardView(
             'session_b__curriculum__course',
         )
 
+    def _regeneration_count(self, student, session):
+        return ExamCard.objects.filter(student=student, session=session).count()
+
     def get(self, request):
         student = self.get_student(request)
         if not student:
@@ -584,6 +596,8 @@ class ExamCardView(
         card.last_printed_at = timezone.now()
         card.save(update_fields=['last_printed_at'])
 
+        regen_count = self._regeneration_count(student, session)
+
         return render(request, self.template_name, {
             'gate':          None,
             'student':       student,
@@ -595,6 +609,9 @@ class ExamCardView(
             'has_clashes':   clashes.exists(),
             'qr_payload':    card.qr_payload,
             'issued_at':     card.issued_at,
+            'regen_count':         regen_count,
+            'regen_max':           self.MAX_REGENERATIONS_PER_SESSION,
+            'regen_limit_reached': regen_count >= self.MAX_REGENERATIONS_PER_SESSION,
         })
 
     def post(self, request):
@@ -609,6 +626,33 @@ class ExamCardView(
         account, error = self._get_fee_account(student, session)
         if error:
             return JsonResponse({'success': False, 'message': 'Fee account not cleared.'}, status=403)
+
+        # ── hard cap ─────────────────────────────────────────────────────
+        existing_count = self._regeneration_count(student, session)
+        if existing_count >= self.MAX_REGENERATIONS_PER_SESSION:
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    f"You've reached the maximum of {self.MAX_REGENERATIONS_PER_SESSION} "
+                    f"serial regenerations for this session. Contact the exams office if "
+                    f"you need a further reissue."
+                ),
+            }, status=403)
+
+        # ── cooldown ─────────────────────────────────────────────────────
+        last_card = ExamCard.objects.filter(
+            student=student, session=session
+        ).order_by('-issued_at').first()
+
+        if last_card:
+            elapsed = (timezone.now() - last_card.issued_at).total_seconds()
+            if elapsed < self.REGENERATION_COOLDOWN_SECONDS:
+                retry_after = int(self.REGENERATION_COOLDOWN_SECONDS - elapsed)
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Please wait {retry_after}s before requesting another serial.",
+                    'retry_after': retry_after,
+                }, status=429)
 
         # deactivate existing card
         ExamCard.objects.filter(
@@ -626,10 +670,15 @@ class ExamCardView(
             is_active=True
         )
 
+        new_count = existing_count + 1
+
         return JsonResponse({
             'success':     True,
             'serial':      card.serial_number,
             'qr_payload':  card.qr_payload,
+            'regen_count':         new_count,
+            'regen_max':           self.MAX_REGENERATIONS_PER_SESSION,
+            'regen_limit_reached': new_count >= self.MAX_REGENERATIONS_PER_SESSION,
         })
 
 

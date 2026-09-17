@@ -53,7 +53,7 @@ body {
 .sidebar {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
   color: #eef2ff;
   display: flex;

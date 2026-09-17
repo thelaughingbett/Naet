@@ -11,6 +11,10 @@
    EXAM CARD — GATE SCREENS
    ============================================ */
 
+  .serial-meta {
+    padding-block: 0.4rem;
+  }
+
   /* ── Shared gate wrapper ── */
   .gate-card {
     max-width: 480px;
@@ -146,6 +150,22 @@
   .gate-card .btn--danger:hover {
     background: #b91c1c;
   }
+  .regen-status {
+    font-size: 0.72rem;
+    margin-top: 0.4rem;
+    min-height: 1em;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .regen-status.show {
+    opacity: 1;
+  }
+  .regen-status.warning {
+    color: #991b1b;
+  }
+  .regen-status.info {
+    color: var(--text-muted);
+  }
 
   /* ── Responsive ── */
   @media (max-width: 480px) {
@@ -249,10 +269,18 @@
         <div class="serial-number" id="serialNumber">
           {{ card.serial_number }}
         </div>
-        <button class="btn-regenerate" id="regenerateBtn" type="button">
+        <!-- prettier-ignore -->
+        <button
+          class="btn-regenerate"
+          id="regenerateBtn"
+          type="button"
+          
+        >
           ⟳ New serial
         </button>
+
         <div class="serial-meta">Issued: {{ issued_at|date:"d M Y H:i" }}</div>
+        <div class="regen-status" id="regenStatus"></div>
       </div>
 
       <div>
@@ -417,6 +445,21 @@
   }
 
   drawQR("qrCanvas", QR_PAYLOAD);
+  const regenStatus = document.getElementById("regenStatus");
+  let regenStatusTimer = null;
+
+  function flashRegenStatus(message, type = "info", persist = false) {
+    if (!regenStatus) return;
+    regenStatus.textContent = message;
+    regenStatus.className = `regen-status show ${type}`;
+
+    clearTimeout(regenStatusTimer);
+    if (!persist) {
+      regenStatusTimer = setTimeout(() => {
+        regenStatus.classList.remove("show");
+      }, 4000);
+    }
+  }
 
   document
     .getElementById("regenerateBtn")
@@ -426,22 +469,68 @@
       );
       if (!confirmed) return;
 
-      const res = await fetch(REGEN_URL, {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": CSRF_TOKEN,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
+      const btn = document.getElementById("regenerateBtn");
+      btn.disabled = true;
+      flashRegenStatus("Generating new serial…", "info", true);
 
-      if (data.success) {
-        document.getElementById("serialNumber").textContent = data.serial;
-        drawQR("qrCanvas", data.qr_payload);
-      } else {
-        alert(data.message || "Failed to regenerate. Please try again.");
+      try {
+        const res = await fetch(REGEN_URL, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": CSRF_TOKEN,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById("serialNumber").textContent = data.serial;
+          drawQR("qrCanvas", data.qr_payload);
+
+          if (data.regen_limit_reached) {
+            btn.disabled = true;
+            flashRegenStatus(
+              `⚠️ Maximum regenerations (${data.regen_max}) reached for this session. Contact the exams office for a reissue.`,
+              "warning",
+              true, // stays visible — this is a permanent state, not a blip
+            );
+          } else {
+            btn.disabled = false;
+            flashRegenStatus(
+              `Done — ${data.regen_count} of ${data.regen_max} regenerations used.`,
+              "info",
+            ); // fades after 4s
+          }
+        } else {
+          flashRegenStatus(
+            data.message || "Failed to regenerate. Please try again.",
+            "warning",
+            true,
+          );
+          if (res.status !== 403) btn.disabled = false;
+        }
+      } catch (err) {
+        flashRegenStatus("Network error — please try again.", "warning", true);
+        btn.disabled = false;
       }
     });
+  function showRegenLimitWarning(max) {
+    const serialArea = document.querySelector(".serial-area");
+    let warning = serialArea.querySelector(".regen-limit-warning");
+    if (!warning) {
+      warning = document.createElement("div");
+      warning.className = "regen-limit-warning";
+      serialArea.appendChild(warning);
+    }
+    warning.textContent = `⚠️ Maximum regenerations (${max}) reached for this session. Contact the exams office for a reissue.`;
+    const hint = serialArea.querySelector(".regen-count-hint");
+    if (hint) hint.remove();
+  }
+
+  function updateRegenCountHint(count, max) {
+    const hint = document.querySelector(".regen-count-hint");
+    if (hint) hint.textContent = `${count} of ${max} regenerations used`;
+  }
 
   document.getElementById("printBtn")?.addEventListener("click", () => {
     window.print();

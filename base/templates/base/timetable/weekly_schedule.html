@@ -7,26 +7,809 @@
 {% block head %}
 <link
   rel="stylesheet"
-  href="{% static 'base/styles/timetable/weekly-schedule/index.css' %}"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 />
-<title>Weekly Timetable</title>
+<title>Weekly Timetable · Naet</title>
+
 <style>
-  /* ========== RESPONSIVE & SCROLLABLE TIMETABLE (embedded) ========== */
-  /* Force horizontal scroll on the timetable container */
-  .timetable-container {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
+  /* ============================================
+     MOBILE APP-BAR (title + week nav, page-scoped)
+     ============================================ */
+  .tt-app-bar {
+    display: none;
+    background: linear-gradient(135deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    padding: 1rem 1.1rem;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    margin: -2rem -2rem 1.2rem;
   }
-  .timetable {
-    min-width: 700px; /* Ensures scroll appears when screen < 700px */
-    width: 100%;
-    border-collapse: collapse;
+  .tt-app-bar__title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+  }
+  .tt-week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 0.35rem;
+  }
+  .tt-week-nav__btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .tt-week-nav__btn:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .tt-week-nav__label {
+    flex: 1;
+    text-align: center;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+  .tt-week-nav__label small {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 500;
+    opacity: 0.7;
+    margin-top: 1px;
   }
 
+  /* ============================================
+     DESKTOP VIEW
+     ============================================ */
+  .desktop-view {
+    display: block;
+  }
+
+  .info-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.8rem;
+    flex-wrap: wrap;
+  }
+  .info-chip {
+    background: var(--white);
+    border-radius: 40px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  .week-nav-desktop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .week-nav-desktop__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .week-nav-desktop__controls button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text);
+    transition: 0.2s;
+  }
+  .week-nav-desktop__controls button:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .week-nav-desktop__controls button.active-btn {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .week-nav-desktop__date {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .week-nav-desktop__today {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+  }
+
+  .timetable-container {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: var(--shadow-sm);
+  }
+  .timetable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+  }
+  .timetable th,
+  .timetable td {
+    padding: 1rem 0.8rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .timetable th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  .time-col {
+    background: #fefefe;
+    font-weight: 500;
+    width: 100px;
+  }
+  .class-slot {
+    background: #fef9e8;
+    border-radius: 12px;
+    padding: 0.5rem;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .class-slot:hover {
+    background: #fef3c7;
+    transform: translateY(-1px);
+  }
+  .class-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--navy);
+  }
+  .class-detail {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .empty-slot {
+    color: #cbd5e1;
+    font-size: 0.7rem;
+  }
+  .lecture-badge {
+    background: var(--maroon);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  /* ============================================
+     MOBILE VIEW
+     ============================================ */
+  .mobile-view {
+    display: none;
+  }
+
+  .day-strip {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.2rem 0.1rem 0.6rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .day-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .day-chip {
+    flex: 0 0 auto;
+    min-width: 58px;
+    padding: 0.55rem 0.6rem;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    scroll-snap-align: start;
+    font-family: inherit;
+  }
+  .day-chip__name {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .day-chip__date {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 1px;
+  }
+  .day-chip__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--maroon);
+    margin: 4px auto 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .day-chip--has-classes .day-chip__dot {
+    opacity: 1;
+  }
+  .day-chip--today {
+    border-color: var(--navy);
+    background: #eef4fb;
+  }
+  .day-chip--today .day-chip__name {
+    color: var(--navy);
+  }
+  .day-chip--active {
+    background: var(--navy);
+    border-color: var(--navy);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(10, 37, 64, 0.25);
+  }
+  .day-chip--active .day-chip__name,
+  .day-chip--active .day-chip__date {
+    color: white;
+  }
+  .day-chip--active .day-chip__dot {
+    background: #fbbf24;
+  }
+
+  .class-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-bottom: 1rem;
+  }
+  .day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.2rem 0.2rem;
+  }
+  .day-heading__title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .day-heading__count {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+
+  .class-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 0.85rem 0.9rem 0.85rem 1.1rem;
+    display: flex;
+    gap: 0.85rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .class-card:active {
+    transform: scale(0.985);
+  }
+  .class-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--blue-card, #1f6392);
+  }
+  .class-card--attended::before {
+    background: #1e6f3f;
+  }
+  .class-card--missed::before {
+    background: #b91c1c;
+  }
+  .class-card--rescheduled::before {
+    background: #fbbf24;
+  }
+  .class-card--cancelled::before {
+    background: #991b1b;
+  }
+
+  .class-card__time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    flex-shrink: 0;
+    border-right: 1px dashed var(--border);
+    padding-right: 0.75rem;
+  }
+  .class-card__time-start {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .class-card__time-end {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .class-card__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .class-card__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+  }
+  .class-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+  .class-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+  .class-card__meta-item i {
+    font-size: 0.62rem;
+    color: var(--blue-card, #1f6392);
+    flex-shrink: 0;
+  }
+  .class-card__meta-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  .class-card__badges {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge--lecture {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .badge--attended {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .badge--missed {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .badge--rescheduled {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .badge--cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .badge--scheduled {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .empty-day,
+  .empty-page {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+  }
+  .empty-day__icon,
+  .empty-page__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 0.9rem;
+    color: var(--text-muted);
+  }
+  .empty-day__title,
+  .empty-page__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .empty-day__text,
+  .empty-page__text {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .empty-page {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    padding: 3.5rem 1.5rem;
+  }
+
+  /* ============================================
+     BOTTOM SHEET / MODAL
+     ============================================ */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .sheet {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    max-width: 560px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 1.75rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s ease;
+  }
+  .sheet-overlay.active .sheet {
+    transform: scale(1) translateY(0);
+  }
+  .sheet__handle {
+    display: none;
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.3rem auto 0.9rem;
+  }
+  .sheet__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .sheet__title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.25;
+  }
+  .sheet__subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .sheet__close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sheet__section-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0.5rem 0 0.6rem;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .info-tile {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.7rem;
+  }
+  .info-tile__label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+  }
+  .info-tile__value {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .history-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .history-item {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.7rem 0.8rem;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--border);
+  }
+  .history-item--attended {
+    border-left-color: #1e6f3f;
+  }
+  .history-item--missed {
+    border-left-color: #b91c1c;
+  }
+  .history-item--rescheduled {
+    border-left-color: #fbbf24;
+  }
+  .history-item--cancelled {
+    border-left-color: #991b1b;
+  }
+  .history-item__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+  .history-item--attended .history-item__icon {
+    color: #1e6f3f;
+  }
+  .history-item--missed .history-item__icon {
+    color: #b91c1c;
+  }
+  .history-item--rescheduled .history-item__icon {
+    color: #b45309;
+  }
+  .history-item--cancelled .history-item__icon {
+    color: #991b1b;
+  }
+  .history-item__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .history-item__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 3px;
+  }
+  .history-item__date {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .history-item__notes {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .history-item__notes strong {
+    color: var(--text);
+  }
+
+  .history-empty {
+    text-align: center;
+    padding: 1.8rem 1rem;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-bottom: 1rem;
+  }
+  .history-empty i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.4;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    transition:
+      transform 0.15s ease,
+      background 0.2s;
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn--primary {
+    background: var(--navy);
+    color: white;
+  }
+  .btn--success {
+    background: #1e6f3f;
+    color: white;
+  }
+  .btn--outline {
+    background: var(--white);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+    background: var(--white);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6874' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 2.4rem;
+  }
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .reschedule-fields {
+    display: none;
+    border-top: 1px dashed var(--border);
+    padding-top: 1rem;
+    margin-top: 0.25rem;
+  }
+  .reschedule-fields.active {
+    display: block;
+  }
+
+  .form-error {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    background: #fef2f2;
+    border-radius: 8px;
+    display: none;
+  }
+  .form-error.active {
+    display: block;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  /* ============================================
+     RESPONSIVE MORPH
+     ============================================ */
   @media (max-width: 1024px) {
-    .page-content {
-      padding: 1.5rem;
-    }
     .timetable th,
     .timetable td {
       padding: 0.8rem 0.6rem;
@@ -40,448 +823,197 @@
     }
   }
 
-  @media (max-width: 860px) {
-    .page-content {
-      padding: 1.2rem;
+  @media (max-width: 768px) {
+    .tt-app-bar {
+      display: block;
     }
-    .collapse-toggle {
+    .desktop-view {
       display: none;
     }
-    .page-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.8rem;
+    .mobile-view {
+      display: block;
     }
-    .page-title {
-      font-size: 1.3rem;
+    .sheet-overlay {
+      align-items: flex-end;
+      padding: 0;
     }
-    .week-selector {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.8rem;
+    .sheet {
+      max-width: 100%;
+      border-radius: 24px 24px 0 0;
+      max-height: 88vh;
+      padding: 0.6rem 1.1rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.4, 1.05);
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
     }
-    .info-bar {
-      gap: 0.6rem;
+    .sheet-overlay.active .sheet {
+      transform: translateY(0);
     }
-    .info-chip {
-      font-size: 0.7rem;
-      padding: 0.3rem 0.8rem;
-    }
-    .timetable th,
-    .timetable td {
-      padding: 0.6rem 0.4rem;
-      font-size: 0.75rem;
-    }
-    .class-slot {
-      padding: 0.3rem;
-    }
-    .class-title {
-      font-size: 0.7rem;
-    }
-    .class-detail {
-      font-size: 0.6rem;
-    }
-    .lecture-badge {
-      font-size: 0.55rem;
-      padding: 2px 5px;
-    }
-    .empty-slot {
-      font-size: 0.65rem;
+    .sheet__handle {
+      display: block;
     }
   }
 
-  @media (max-width: 480px) {
-    .page-title {
-      font-size: 1.2rem;
+  @media (max-width: 380px) {
+    .day-chip {
+      min-width: 52px;
+      padding: 0.5rem 0.5rem;
     }
-    .info-chip {
-      font-size: 0.65rem;
-      padding: 0.25rem 0.7rem;
+    .day-chip__date {
+      font-size: 0.95rem;
     }
-    .timetable th,
-    .timetable td {
-      padding: 0.4rem 0.3rem;
-      font-size: 0.7rem;
+    .class-card__time {
+      min-width: 52px;
+      padding-right: 0.6rem;
     }
-    .time-col {
-      width: 70px;
+    .class-card__time-start {
+      font-size: 0.85rem;
     }
-    .class-slot {
-      padding: 0.25rem;
-    }
-    .class-title {
-      font-size: 0.65rem;
-    }
-    .class-detail {
-      font-size: 0.55rem;
-      margin-top: 2px;
+    .class-card__title {
+      font-size: 0.82rem;
     }
   }
 </style>
-<style>
-  .exec-badge--Attended {
-    background: #dcfce7;
-    color: #166534;
-  }
-  .exec-badge--Scheduled {
-    background: #e0e7ff;
-    color: #3730a3;
-  }
-  .exec-badge--Missed {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-  .exec-badge--Rescheduled {
-    background: #fef3c7;
-    color: #92400e;
-  }
-  .exec-badge--Cancelled {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-  }
-  .modal-overlay.active {
-    display: flex;
-  }
-  .modal-box {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    max-width: 520px;
-    width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 1.75rem;
-    position: relative;
-    box-shadow: var(--shadow-sm);
-  }
-  .modal-close {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    opacity: 0.5;
-    color: var(--text);
-  }
-  .modal-close:hover {
-    opacity: 1;
-  }
-  .modal-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--navy);
-    margin: 0 0 2px;
-  }
-  .modal-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
-  }
-
-  /* history list */
-  .exec-history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 1.25rem;
-  }
-  .exec-history-empty {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-  .exec-item {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-  }
-  .exec-item-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-  .exec-date {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--text);
-  }
-  .exec-badge {
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 2px 9px;
-    border-radius: 999px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-  .exec-badge--Attended {
-    background: #dcfce7;
-    color: #166534;
-  }
-  .exec-badge--Scheduled {
-    background: #e0e7ff;
-    color: #3730a3;
-  }
-  .exec-badge--Postponed {
-    background: #fef9c3;
-    color: #854d0e;
-  }
-  .exec-badge--Rescheduled {
-    background: #fef3c7;
-    color: #92400e;
-  }
-  .exec-badge--Cancelled {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-  .exec-detail {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  .exec-detail strong {
-    color: var(--text);
-  }
-  .exec-notes {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-top: 6px;
-    font-style: italic;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-  }
-  .modal-box .btn {
-    padding: 0.65rem 1.1rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font);
-  }
-  .btn--primary {
-    background: var(--navy);
-    color: white;
-    flex: 1;
-  }
-  .btn--primary:hover {
-    background: #0d3060;
-  }
-  .btn--secondary {
-    background: var(--bg);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-  }
-
-  /* attendance form */
-  .form-group {
-    margin-bottom: 1rem;
-  }
-  .form-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .form-input,
-  .form-select,
-  .form-textarea {
-    width: 100%;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    font-family: var(--font);
-  }
-  .form-textarea {
-    resize: vertical;
-  }
-  .reschedule-fields {
-    display: none;
-    border-top: 1px dashed var(--border);
-    padding-top: 1rem;
-    margin-top: 0.25rem;
-  }
-  .reschedule-fields.active {
-    display: block;
-  }
-  .form-error {
-    color: #dc2626;
-    font-size: 0.78rem;
-    margin-top: 4px;
-    display: none;
-  }
-  .form-error.active {
-    display: block;
-  }
-
-  .week-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--white);
-    padding: 0.6rem 1.5rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .week-nav__controls {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-  }
-  .week-nav__controls button {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 0.3rem 0.8rem;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text);
-    transition: 0.2s;
-  }
-  .week-nav__controls button:hover {
-    background: rgba(0, 0, 0, 0.04);
-  }
-  .week-nav__controls button.active-btn {
-    background: var(--navy);
-    color: #fff;
-    border-color: var(--navy);
-  }
-  .week-nav__date {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--text);
-  }
-  .week-nav__today {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    background: rgba(0, 0, 0, 0.04);
-    padding: 0.2rem 0.8rem;
-    border-radius: 30px;
-  }
-</style>
-
 {% endblock %} {% block body %}
-<div class="page-header">
-  <h1 class="page-title">📅 Weekly Timetable</h1>
-</div>
+
+<header class="tt-app-bar">
+  <div class="tt-app-bar__title">📅 Weekly Timetable</div>
+  {% if has_slots %}
+  <div class="tt-week-nav">
+    <button
+      class="tt-week-nav__btn"
+      onclick="changeWeek(-1)"
+      aria-label="Previous week"
+    >
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <div
+      class="tt-week-nav__label"
+      id="mobileWeekLabel"
+      onclick="goToToday()"
+      title="Tap to jump to today"
+    >
+      This Week
+      <small id="mobileWeekSubLabel">Loading…</small>
+    </div>
+    <button
+      class="tt-week-nav__btn"
+      onclick="changeWeek(1)"
+      aria-label="Next week"
+    >
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+  {% endif %}
+</header>
 
 {% if has_slots %}
 
-<div class="info-bar">
-  <div class="info-chip">⏳ {{ session }}</div>
-  <div class="info-chip">🏫 {{ student.class_entered.programme }}</div>
-  <div class="info-chip">⏰ All times are EAT (UTC+3)</div>
-</div>
-
-<div class="week-nav">
-  <div class="week-nav__controls">
-    <button onclick="changeWeek(-1)">
-      <i class="fas fa-chevron-left"></i> Prev
-    </button>
-    <button class="active-btn" onclick="goToToday()">Today</button>
-    <button onclick="changeWeek(1)">
-      Next <i class="fas fa-chevron-right"></i>
-    </button>
+<!-- ============================================
+     DESKTOP VIEW
+     ============================================ -->
+<div class="desktop-view">
+  <div class="page-header">
+    <h1 class="page-title">📅 Weekly Timetable</h1>
   </div>
-  <div class="week-nav__date" id="weekDate"></div>
-  <div class="week-nav__today" id="todayLabel"></div>
+
+  <div class="info-bar">
+    <div class="info-chip">⏳ {{ session }}</div>
+    <div class="info-chip">🏫 {{ student.class_entered.programme }}</div>
+    <div class="info-chip">⏰ All times are EAT (UTC+3)</div>
+  </div>
+
+  <div class="week-nav-desktop">
+    <div class="week-nav-desktop__controls">
+      <button onclick="changeWeek(-1)">
+        <i class="fas fa-chevron-left"></i> Prev
+      </button>
+      <button class="active-btn" onclick="goToToday()">Today</button>
+      <button onclick="changeWeek(1)">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    <div class="week-nav-desktop__date" id="desktopWeekDate"></div>
+    <div class="week-nav-desktop__today" id="desktopTodayLabel"></div>
+  </div>
+
+  <div class="timetable-container">
+    <table class="timetable">
+      <thead>
+        <tr>
+          <th>Time</th>
+          {% for day in days %}
+          <th id="th-{{ day }}">{{ day }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot in timetable %}
+        <tr>
+          <td class="time-col">{{ slot.label }}</td>
+          {% for day in days %}
+          <!-- prettier-ignore -->
+          <td>
+            {% with entry=slot.days|dict_key:day %} {% if entry %}
+            <div
+              class="class-slot class-slot--clickable"
+              data-timetable-id="{{ entry.pk }}"
+              data-day="{{ day }}"
+              data-slot="{{ slot.value }}"
+              data-slot-label="{{ slot.label }}"
+              data-course-name="{{ entry.curriculum.course.course_name }}"
+              data-course-code="{{ entry.curriculum.course.course_code }}"
+              data-venue="{{ entry.venue.venue_name }}"
+              data-lecturer="{% for lecturer in entry.curriculum.professor.all %}{{ lecturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+            >
+              <div class="class-title">
+                {{ entry.curriculum.course.course_name }}
+              </div>
+              <div class="class-detail">
+                {{ entry.curriculum.course.course_code }} | {{ entry.venue.venue_name }}
+              </div>
+              <div class="class-detail">
+                👨‍🏫 {% for lecturer in entry.curriculum.professor.all %}
+                {{ lecturer.name }}
+                {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+              <span class="lecture-badge">Lecture</span>
+            </div>
+            {% else %}
+            <div class="empty-slot">— Free —</div>
+            {% endif %} {% endwith %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div
+    style="
+      margin-top: 1.5rem;
+      font-size: 0.7rem;
+      text-align: center;
+      color: var(--text-muted);
+    "
+  >
+    * Schedule is subject to change. Please check for updates regularly.
+  </div>
 </div>
 
-<div class="timetable-container">
-  <table class="timetable">
-    <thead>
-      <tr>
-        <th>Time</th>
-        {% for day in days %}
-        <th id="th-{{ day }}">{{ day }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for slot in timetable %}
-      <tr>
-        <td class="time-col">{{ slot.label }}</td>
-        {% for day in days %}
-        <!-- prettier-ignore -->
-        <td>
-          {% with entry=slot.days|dict_key:day %} {% if entry %}
-          <div
-            class="class-slot class-slot--clickable"
-            data-timetable-id="{{ entry.pk }}"
-            data-day="{{ day }}"
-            data-course-name="{{ entry.curriculum.course.course_name }}"
-            data-course-code="{{ entry.curriculum.course.course_code }}"
-            data-venue="{{ entry.venue.venue_name }}"
-          >
-            <div class="class-title">
-              {{ entry.curriculum.course.course_name }}
-            </div>
-            <div class="class-detail">
-              {{ entry.curriculum.course.course_code }} | {{ entry.venue.venue_name }}
-            </div>
-            <div class="class-detail">
-              👨‍🏫 {% for lecturer in entry.curriculum.professor.all %} 
-              {{  lecturer.name }} 
-              {% if not forloop.last %}, 
-              {% endif %} 
-              {% endfor  %}
-            </div>
-            <span class="lecture-badge"> Lecture </span>
-          </div>
-          {% else %}
-          <div class="empty-slot">— Free —</div>
-          {% endif %} {% endwith %}
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div
-  style="
-    margin-top: 1.5rem;
-    font-size: 0.7rem;
-    text-align: center;
-    color: var(--text-muted);
-  "
->
-  * Schedule is subject to change. Please check for updates regularly.
+<div class="mobile-view">
+  <div class="day-strip" id="dayStrip"></div>
+  <div class="class-list" id="classList"></div>
 </div>
 
 {% else %}
 
-<div
-  class="timetable-container"
-  style="text-align: center; padding: 60px 20px; opacity: 0.5"
->
-  <div style="font-size: 2.5rem; margin-bottom: 12px">📭</div>
-  <div style="font-weight: 600; margin-bottom: 6px">No timetable available</div>
-  <div style="font-size: 0.8rem">
+<div class="empty-page">
+  <div class="empty-page__icon">📭</div>
+  <div class="empty-page__title">No timetable available</div>
+  <div class="empty-page__text">
     {% if session %} A timetable has not been published for {{ session }} yet.
     {% else %} There is no active session at the moment. {% endif %}
     <br />Check back once the semester begins or contact your department.
@@ -489,33 +1021,71 @@
 </div>
 
 {% endif %}
-<!-- ── Execution History Modal ── -->
-<div class="modal-overlay" id="historyModalOverlay">
-  <div class="modal-box">
-    <button class="modal-close" id="historyModalClose">&times;</button>
-    <h3 class="modal-title" id="historyCourseName">Course Name</h3>
-    <div class="modal-subtitle" id="historyCourseMeta">CODE | Venue</div>
 
-    <div id="execHistoryList" class="exec-history-list">
-      <div class="exec-history-empty">Loading…</div>
-    </div>
+<!-- ── Details sheet: shown on clicking any class slot/card ── -->
+<div class="sheet-overlay" id="detailsSheet">
+  <div class="sheet">
+    <div class="sheet__handle"></div>
 
-    <div class="modal-actions">
-      <button class="btn btn--primary" id="openLogExecutionBtn">
-        ✅ Confirm Lecturer Attendance
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title" id="sheetCourseName">Course Name</div>
+        <div class="sheet__subtitle" id="sheetCourseMeta">CODE · Venue</div>
+      </div>
+      <button class="sheet__close" onclick="closeSheet('detailsSheet')">
+        <i class="fas fa-times"></i>
       </button>
     </div>
+
+    <div class="info-grid">
+      <div class="info-tile">
+        <div class="info-tile__label">Day</div>
+        <div class="info-tile__value" id="sheetDay">—</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile__label">Time</div>
+        <div class="info-tile__value" id="sheetTime">—</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile__label">Venue</div>
+        <div class="info-tile__value" id="sheetVenue">—</div>
+      </div>
+      <div class="info-tile">
+        <div class="info-tile__label">Lecturer</div>
+        <div class="info-tile__value" id="sheetLecturer">—</div>
+      </div>
+    </div>
+
+    <div class="sheet__section-label">
+      <i class="fas fa-history"></i> Execution History
+    </div>
+    <div id="sheetHistory">
+      <div class="history-empty">Loading…</div>
+    </div>
+
+    <button class="btn btn--success" onclick="openLogSheet()">
+      <i class="fas fa-check-circle"></i>
+      Confirm Lecturer Attendance
+    </button>
   </div>
 </div>
 
-<!-- ── Log Execution Modal (attendance / reschedule form) ── -->
-<div class="modal-overlay" id="logModalOverlay">
-  <div class="modal-box">
-    <button class="modal-close" id="logModalClose">&times;</button>
-    <h3 class="modal-title">Log Class Execution</h3>
-    <div class="modal-subtitle" id="logCourseMeta">CODE — Venue</div>
+<!-- ── Log execution sheet (attendance / reschedule form) ── -->
+<div class="sheet-overlay" id="logSheet">
+  <div class="sheet">
+    <div class="sheet__handle"></div>
 
-    <form id="logExecutionForm">
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Log Class Execution</div>
+        <div class="sheet__subtitle" id="logSheetMeta">CODE · Venue</div>
+      </div>
+      <button class="sheet__close" onclick="closeSheet('logSheet')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form id="logForm" onsubmit="submitLog(event)">
       <div class="form-group">
         <label class="form-label">Date</label>
         <input type="date" class="form-input" id="execDate" required />
@@ -525,17 +1095,12 @@
         <label class="form-label">What happened?</label>
         <select class="form-select" id="execStatus">
           <option value="Attended">✅ Class held — Attended</option>
-          <option value="Missed">⚠️ Lecturer didn't show — Missed</option>
-          <option value="Rescheduled">
-            🔁 Class was moved to another slot
-          </option>
-          <option value="Cancelled">
-            ❌ Cancelled / General University Holiday
-          </option>
+          <option value="Missed">⚠️ Lecturer didn't show</option>
+          <option value="Rescheduled">🔁 Moved to another slot</option>
+          <option value="Cancelled">❌ Cancelled / Holiday</option>
         </select>
       </div>
 
-      <!-- shown only when status == Rescheduled -->
       <div class="reschedule-fields" id="rescheduleFields">
         <div class="form-group">
           <!-- hardcode rather than expose a choice, since only a student is submitting this form -->
@@ -548,14 +1113,28 @@
         <div class="form-group">
           <label class="form-label">New Time Slot</label>
           <select class="form-select" id="rescheduledToTimeSlot">
-            <!-- TODO: populate from Timetable.TIME_SLOTS, e.g.
-                 {% for value, label in timetable_slot_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %} -->
+            <!--
+              Populate from the view's context, e.g. in WeeklyScheduleView.get():
+                'timetable_slot_choices': Timetable.TIME_SLOTS,
+              then here:
+                {% for value, label in timetable_slot_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              Left as a TODO placeholder — same gap as the original template.
+            -->
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">New Venue</label>
           <select class="form-select" id="rescheduledToVenue">
-            <!-- TODO: populate from Venue.objects.all(), passed in context -->
+            <!--
+              Populate from the view's context, e.g.:
+                'venues': Venue.objects.all(),
+              then here:
+                {% for venue in venues %}
+                  <option value="{{ venue.pk }}">{{ venue.venue_name }}</option>
+                {% endfor %}
+            -->
           </select>
         </div>
       </div>
@@ -566,284 +1145,442 @@
           class="form-textarea"
           id="execNotes"
           rows="3"
-          placeholder="Reason for cancellation/reschedule, or general remarks…"
+          placeholder="Add any remarks…"
         ></textarea>
       </div>
 
-      <div class="form-error" id="execFormError"></div>
+      <div class="form-error" id="formError"></div>
 
-      <div class="modal-actions">
-        <button type="submit" class="btn btn--primary">Submit</button>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary">
+          <i class="fas fa-paper-plane"></i> Submit
+        </button>
+        <button
+          type="button"
+          class="btn btn--outline"
+          onclick="closeSheet('logSheet')"
+        >
+          Cancel
+        </button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-      const EXEC_HISTORY_URL = "{% url 'execution-history' %}"; // TODO: add this URL name
-      const LOG_EXECUTION_URL = "{% url 'log-execution' %}"; // TODO: add this URL name
-      const CSRF_TOKEN = "{{ csrf_token }}";
+  const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
+  const LOG_EXECUTION_URL = "{% url 'log-execution' %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+  const HAS_SLOTS = {{ has_slots|yesno:"true,false" }};
 
-      const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
-      const DAY_LABELS = {
-        MON: "Monday",
-        TUE: "Tuesday",
-        WED: "Wednesday",
-        THU: "Thursday",
-        FRI: "Friday",
+  const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
+  const DAY_FULL = { MON: "Monday", TUE: "Tuesday", WED: "Wednesday", THU: "Thursday", FRI: "Friday" };
+  const DAY_SHORT = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri" };
+
+  // ── state ────────────────────────────────────────────────────────────────
+  let weekOffset = 0;
+  let activeDayIndex = 0;
+  let activeEntry = null; // the currently-open slot's data, from ENTRIES
+  let ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
+
+  // ── date helpers ─────────────────────────────────────────────────────────
+  function getWeekDates(offset) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dow = today.getDay();
+    const fromMon = dow === 0 ? 6 : dow - 1;
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - fromMon + offset * 7);
+    return DAYS.map((_, i) => {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      return d;
+    });
+  }
+  function isToday(date) {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return date.getTime() === t.getTime();
+  }
+  function getTodayIndex() {
+    const dates = getWeekDates(0);
+    const idx = dates.findIndex((d) => isToday(d));
+    return idx >= 0 ? idx : 0;
+  }
+  function fmtShort(d) {
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+  function fmtLong(d) {
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
+  function toISODate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  // ── build mobile data from the server-rendered desktop table ──────────────
+  // Single source of truth: the Django-rendered <div class="class-slot--clickable">
+  // elements already carry everything the mobile view needs via data-* attrs.
+  function buildEntries() {
+    ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
+    document.querySelectorAll(".class-slot--clickable").forEach((el) => {
+      const [start, end] = (el.dataset.slot || "").split("-");
+      const entry = {
+        id: el.dataset.timetableId,
+        day: el.dataset.day,
+        slot: el.dataset.slot,
+        slotLabel: el.dataset.slotLabel,
+        start: start || "",
+        end: end || "",
+        courseName: el.dataset.courseName,
+        courseCode: el.dataset.courseCode,
+        venue: el.dataset.venue,
+        lecturer: el.dataset.lecturer,
       };
-
-      let weekOffset = 0;
-
-      function getWeekDates(offset) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dow = today.getDay(); // 0=Sun
-        const fromMon = dow === 0 ? 6 : dow - 1;
-        const mon = new Date(today);
-        mon.setDate(today.getDate() - fromMon + offset * 7);
-
-        return DAYS.map((_, i) => {
-          const d = new Date(mon);
-          d.setDate(mon.getDate() + i);
-          return d;
-        });
+      if (ENTRIES_BY_DAY[entry.day]) {
+        ENTRIES_BY_DAY[entry.day].push(entry);
       }
+      el.addEventListener("click", () => openDetailsSheet(entry));
+    });
+    Object.values(ENTRIES_BY_DAY).forEach((list) =>
+      list.sort((a, b) => a.start.localeCompare(b.start)),
+    );
+  }
 
-      function isToday(date) {
-        const t = new Date();
-        t.setHours(0, 0, 0, 0);
-        return date.getTime() === t.getTime();
-      }
+  // ── week header (desktop + mobile) ─────────────────────────────────────────
+  function renderWeekHeaders() {
+    const dates = getWeekDates(weekOffset);
 
-      function fmtShort(d) {
-        return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-      }
-      function fmtLong(d) {
-        return d.toLocaleDateString("en-GB", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-      }
-      function toISODate(d) {
-        // local-date ISO string (YYYY-MM-DD), avoids UTC offset shifting the day
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
-      }
+    const desktopDate = document.getElementById("desktopWeekDate");
+    const desktopToday = document.getElementById("desktopTodayLabel");
+    if (desktopDate) desktopDate.textContent = `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+    if (desktopToday) {
+      desktopToday.textContent =
+        weekOffset === 0 ? `Today: ${fmtLong(new Date())}` : `Week of ${fmtShort(dates[0])}`;
+    }
 
-      function renderWeekHeader() {
-        const dates = getWeekDates(weekOffset);
+    DAYS.forEach((day, i) => {
+      const th = document.getElementById(`th-${day}`);
+      if (th) th.textContent = `${DAY_FULL[day]} ${fmtShort(dates[i])}`;
+    });
 
-        document.getElementById("weekDate").textContent =
-          `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+    const mobileLabel = document.getElementById("mobileWeekLabel");
+    const mobileSub = document.getElementById("mobileWeekSubLabel");
+    if (mobileLabel && mobileSub) {
+      const text =
+        weekOffset === 0 ? "This Week " :
+        weekOffset === -1 ? "Last Week " :
+        weekOffset === 1 ? "Next Week " :
+        `Week ${weekOffset > 0 ? "+" : ""}${weekOffset} `;
+      mobileLabel.childNodes[0].nodeValue = text;
+      mobileSub.textContent = `${fmtShort(dates[0])} – ${fmtShort(dates[4])}`;
+    }
+  }
 
-        const todayLocal = new Date();
-        todayLocal.setHours(0, 0, 0, 0);
-        const todayOnScreen = weekOffset === 0;
-        const todayDayIdx = DAYS.indexOf(
-          ["MON", "TUE", "WED", "THU", "FRI", "", ""][
-            todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
-          ],
-        );
+  // ── mobile day strip ────────────────────────────────────────────────────
+  function renderMobileDayStrip() {
+    const strip = document.getElementById("dayStrip");
+    if (!strip) return;
+    const dates = getWeekDates(weekOffset);
 
-        const todayLabel = document.getElementById("todayLabel");
-        if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
-          todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
-        } else {
-          todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
-        }
+    strip.innerHTML = DAYS.map((day, i) => {
+      const date = dates[i];
+      const hasClasses = (ENTRIES_BY_DAY[day] || []).length > 0;
+      const classes = [
+        "day-chip",
+        hasClasses ? "day-chip--has-classes" : "",
+        isToday(date) ? "day-chip--today" : "",
+        i === activeDayIndex ? "day-chip--active" : "",
+      ].filter(Boolean).join(" ");
 
-        DAYS.forEach((day, i) => {
-          const th = document.getElementById(`th-${day}`);
-          if (!th) return;
-          th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
-        });
-      }
+      return `
+        <button class="${classes}" type="button" onclick="selectDay(${i})">
+          <div class="day-chip__name">${DAY_SHORT[day]}</div>
+          <div class="day-chip__date">${date.getDate()}</div>
+          <div class="day-chip__dot"></div>
+        </button>`;
+    }).join("");
+  }
 
-      function changeWeek(delta) {
-        weekOffset += delta;
-        renderWeekHeader();
-      }
-      function goToToday() {
-        weekOffset = 0;
-        renderWeekHeader();
-      }
+  // ── mobile class list ───────────────────────────────────────────────────
+  function renderMobileClassList() {
+    const list = document.getElementById("classList");
+    if (!list) return;
 
-      // ── open history modal on slot click ─────────────────────────────────────
-      let activeTimetableId = null;
-      let activeDay = null;
+    const dates = getWeekDates(weekOffset);
+    const day = DAYS[activeDayIndex];
+    const date = dates[activeDayIndex];
+    const entries = ENTRIES_BY_DAY[day] || [];
 
-      document.querySelectorAll(".class-slot--clickable").forEach((slot) => {
-        slot.addEventListener("click", () => {
-          activeTimetableId = slot.dataset.timetableId;
-          activeDay = slot.dataset.day;
-          document.getElementById("historyCourseName").textContent =
-            slot.dataset.courseName;
-          document.getElementById("historyCourseMeta").textContent =
-            `${slot.dataset.courseCode} | ${slot.dataset.venue}`;
-          document.getElementById("logCourseMeta").textContent =
-            `${slot.dataset.courseCode} — ${slot.dataset.venue}`;
+    let html = `
+      <div class="day-heading">
+        <div class="day-heading__title">${DAY_FULL[day]}, ${fmtShort(date)}</div>
+        <div class="day-heading__count">${entries.length} ${entries.length === 1 ? "class" : "classes"}</div>
+      </div>`;
 
-          openModal("historyModalOverlay");
-          loadExecutionHistory(activeTimetableId);
-        });
+    if (entries.length === 0) {
+      html += `
+        <div class="empty-day">
+          <div class="empty-day__icon"><i class="fas fa-coffee"></i></div>
+          <div class="empty-day__title">No classes on ${DAY_FULL[day]}</div>
+          <div class="empty-day__text">Enjoy your free day! Pick another day from the strip above to see its schedule.</div>
+        </div>`;
+    } else {
+      entries.forEach((entry) => {
+        html += renderClassCard(entry);
       });
+    }
 
-      function openModal(id) {
-        document.getElementById(id).classList.add("active");
-      }
-      function closeModal(id) {
-        document.getElementById(id).classList.remove("active");
-      }
+    list.innerHTML = html;
 
-      document
-        .getElementById("historyModalClose")
-        .addEventListener("click", () => closeModal("historyModalOverlay"));
-      document
-        .getElementById("logModalClose")
-        .addEventListener("click", () => closeModal("logModalOverlay"));
-      [["historyModalOverlay"], ["logModalOverlay"]].forEach(([id]) => {
-        document.getElementById(id).addEventListener("click", (e) => {
-          if (e.target.id === id) closeModal(id);
-        });
+    list.querySelectorAll(".class-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const entry = entries.find((e) => e.id === card.dataset.id);
+        if (entry) openDetailsSheet(entry);
       });
+    });
+  }
 
-      // ── fetch + render history ────────────────────────────────────────────────
-      async function loadExecutionHistory(timetableId) {
-        const list = document.getElementById("execHistoryList");
-        list.innerHTML = `<div class="exec-history-empty">Loading…</div>`;
+  function renderClassCard(entry) {
+    return `
+      <div class="class-card" data-id="${entry.id}">
+        <div class="class-card__time">
+          <div class="class-card__time-start">${escapeHtml(entry.start)}</div>
+          <div class="class-card__time-end">${escapeHtml(entry.end)}</div>
+        </div>
+        <div class="class-card__body">
+          <div class="class-card__title">${escapeHtml(entry.courseName)}</div>
+          <div class="class-card__meta">
+            <span class="class-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(entry.courseCode)}</span></span>
+            <span class="class-card__meta-item"><i class="fas fa-map-marker-alt"></i><span>${escapeHtml(entry.venue)}</span></span>
+          </div>
+          <div class="class-card__meta" style="margin-top: 0.3rem;">
+            <span class="class-card__meta-item"><i class="fas fa-user-tie"></i><span>${escapeHtml(entry.lecturer)}</span></span>
+          </div>
+          <div class="class-card__badges">
+            <span class="badge badge--lecture">Lecture</span>
+          </div>
+        </div>
+      </div>`;
+  }
 
-        try {
-          const res = await fetch(
-            `${EXEC_HISTORY_URL}?timetable_id=${timetableId}`,
-          );
-          const data = await res.json();
+  function selectDay(index) {
+    if (index < 0 || index >= DAYS.length) return;
+    activeDayIndex = index;
+    renderMobileDayStrip();
+    renderMobileClassList();
+  }
 
-          if (!data.executions || data.executions.length === 0) {
-            list.innerHTML = `<div class="exec-history-empty">📭 No executions logged yet for this slot.</div>`;
-            return;
-          }
+  // ── week navigation ─────────────────────────────────────────────────────
+  function changeWeek(delta) {
+    weekOffset += delta;
+    if (weekOffset === 0) activeDayIndex = getTodayIndex();
+    renderWeekHeaders();
+    renderMobileDayStrip();
+    renderMobileClassList();
+  }
+  function goToToday() {
+    weekOffset = 0;
+    activeDayIndex = getTodayIndex();
+    renderWeekHeaders();
+    renderMobileDayStrip();
+    renderMobileClassList();
+  }
 
-          list.innerHTML = data.executions
-            .map((ex) => {
-              let detail = "";
-              if (ex.status === "Rescheduled") {
-                detail = `<div class="exec-detail">→ Moved to <strong>${ex.rescheduled_to_date || "—"}</strong> at <strong>${ex.rescheduled_to_time_slot || "—"}</strong>, <strong>${ex.rescheduled_to_venue || "—"}</strong></div>`;
-              } else if (ex.status === "Missed") {
-                detail = `<div class="exec-detail">Lecturer did not attend this session.</div>`;
-              } else if (ex.status === "Attended" && ex.class_representative) {
-                detail = `<div class="exec-detail">Confirmed by <strong>${ex.class_representative}</strong></div>`;
-              }
-              const notes = ex.notes
-                ? `<div class="exec-notes">"${ex.notes}"</div>`
-                : "";
+  // ── details sheet ────────────────────────────────────────────────────────
+  function openDetailsSheet(entry) {
+    activeEntry = entry;
 
-              return `
-            <div class="exec-item">
-              <div class="exec-item-top">
-                <span class="exec-date">${ex.calendar_date}</span>
-                <span class="exec-badge exec-badge--${ex.status}">${ex.status}</span>
-              </div>
-              ${detail}
-              ${notes}
-            </div>
-          `;
-            })
-            .join("");
-        } catch (err) {
-          list.innerHTML = `<div class="exec-history-empty">⚠️ Failed to load history. Try again.</div>`;
-        }
+    document.getElementById("sheetCourseName").textContent = entry.courseName;
+    document.getElementById("sheetCourseMeta").textContent = `${entry.courseCode} · ${entry.venue}`;
+    document.getElementById("sheetDay").textContent = DAY_FULL[entry.day] || entry.day;
+    document.getElementById("sheetTime").textContent = entry.slotLabel || entry.slot;
+    document.getElementById("sheetVenue").textContent = entry.venue;
+    document.getElementById("sheetLecturer").textContent = entry.lecturer || "—";
+
+    openSheet("detailsSheet");
+    loadExecutionHistory(entry.id);
+  }
+
+  async function loadExecutionHistory(timetableId) {
+    const container = document.getElementById("sheetHistory");
+    container.innerHTML = `<div class="history-empty">Loading…</div>`;
+
+    try {
+      const res = await fetch(`${EXEC_HISTORY_URL}?timetable_id=${timetableId}`);
+      const data = await res.json();
+
+      if (!data.executions || data.executions.length === 0) {
+        container.innerHTML = `
+          <div class="history-empty">
+            <i class="fas fa-inbox"></i>
+            No executions logged yet for this slot.
+          </div>`;
+        return;
       }
 
-      // ── open log-execution modal ────────────────────────────────────────────
-      document
-        .getElementById("openLogExecutionBtn")
-        .addEventListener("click", () => {
-          const dates = getWeekDates(weekOffset);
-          const dayIdx = DAYS.indexOf(activeDay);
-          const defaultDate = dayIdx >= 0 ? dates[dayIdx] : new Date();
-
-          document.getElementById("execDate").value = toISODate(defaultDate);
-          document.getElementById("execStatus").value = "Attended";
-          toggleStatusFields();
-          document.getElementById("execFormError").classList.remove("active");
-          closeModal("historyModalOverlay");
-          openModal("logModalOverlay");
-        });
-      document
-        .getElementById("execStatus")
-        .addEventListener("change", toggleStatusFields);
-
-      function toggleStatusFields() {
-        const status = document.getElementById("execStatus").value;
-        // prettier-ignore
-        //document.getElementById("attendedFields").style.display = ( status === "Attended" ? "block" : "none");
-        document
-        .getElementById("rescheduleFields")
-        .classList.toggle("active", status === "Rescheduled");
-      }
-
-      // ── submit ────────────────────────────────────────────────────────────────
-      document
-        .getElementById("logExecutionForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const errorBox = document.getElementById("execFormError");
-          errorBox.classList.remove("active");
-
-          const status = document.getElementById("execStatus").value;
-          const payload = {
-            timetable_id: activeTimetableId,
-            calendar_date: document.getElementById("execDate").value,
-            status: status,
-            notes: document.getElementById("execNotes").value.trim(),
-          };
-
-          if (status === "Rescheduled") {
-            payload.reschedule_requested_by_role = "STUDENT";
-            payload.rescheduled_to_date =
-              document.getElementById("rescheduledToDate").value;
-            payload.rescheduled_to_time_slot = document.getElementById(
-              "rescheduledToTimeSlot",
-            ).value;
-            payload.rescheduled_to_venue =
-              document.getElementById("rescheduledToVenue").value;
-          }
-
-          try {
-            const res = await fetch(LOG_EXECUTION_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": CSRF_TOKEN,
-              },
-              body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-
-            if (!data.success) {
-              errorBox.textContent = data.message || "Something went wrong.";
-              errorBox.classList.add("active");
-              return;
+      container.innerHTML = `
+        <div class="history-timeline">
+          ${data.executions.map((ex) => {
+            const statusKey = (ex.status || "").toLowerCase();
+            let detail = "";
+            if (ex.status === "Rescheduled") {
+              detail = `Moved to <strong>${escapeHtml(ex.rescheduled_to_date || "—")}</strong> at <strong>${escapeHtml(ex.rescheduled_to_time_slot || "—")}</strong> · <strong>${escapeHtml(ex.rescheduled_to_venue || "—")}</strong>`;
+            } else if (ex.status === "Missed") {
+              detail = "Lecturer did not attend.";
+            } else if (ex.status === "Attended" && ex.class_representative) {
+              detail = `Confirmed by <strong>${escapeHtml(ex.class_representative)}</strong>`;
+            } else if (ex.status === "Cancelled") {
+              detail = "Class was cancelled.";
             }
+            const notes = ex.notes
+              ? `<div class="history-item__notes" style="margin-top:4px;font-style:italic;">"${escapeHtml(ex.notes)}"</div>`
+              : "";
+            const icon =
+              ex.status === "Attended" ? "fa-check" :
+              ex.status === "Missed" ? "fa-times" :
+              ex.status === "Rescheduled" ? "fa-clock" : "fa-ban";
 
-            closeModal("logModalOverlay");
-            openModal("historyModalOverlay");
-            loadExecutionHistory(activeTimetableId);
-          } catch (err) {
-            errorBox.textContent = "Network error — please try again.";
-            errorBox.classList.add("active");
-          }
-        });
+            return `
+              <div class="history-item history-item--${statusKey}">
+                <div class="history-item__icon"><i class="fas ${icon}"></i></div>
+                <div class="history-item__body">
+                  <div class="history-item__top">
+                    <span class="history-item__date">${escapeHtml(ex.calendar_date)}</span>
+                    <span class="badge badge--${statusKey}">${escapeHtml(ex.status)}</span>
+                  </div>
+                  ${detail ? `<div class="history-item__notes">${detail}</div>` : ""}
+                  ${notes}
+                </div>
+              </div>`;
+          }).join("")}
+        </div>`;
+    } catch (err) {
+      container.innerHTML = `<div class="history-empty">⚠️ Failed to load history. Try again.</div>`;
+    }
+  }
 
+  // ── log execution sheet ──────────────────────────────────────────────────
+  function openLogSheet() {
+    if (!activeEntry) return;
+
+    document.getElementById("logSheetMeta").textContent = `${activeEntry.courseCode} · ${activeEntry.venue}`;
+
+    const dates = getWeekDates(weekOffset);
+    const dayIdx = DAYS.indexOf(activeEntry.day);
+    const defaultDate = dayIdx >= 0 ? dates[dayIdx] : new Date();
+    document.getElementById("execDate").value = toISODate(defaultDate);
+
+    document.getElementById("execStatus").value = "Attended";
+    toggleRescheduleFields();
+    document.getElementById("formError").classList.remove("active");
+
+    closeSheet("detailsSheet");
+    openSheet("logSheet");
+  }
+
+  function toggleRescheduleFields() {
+    const status = document.getElementById("execStatus").value;
+    document.getElementById("rescheduleFields").classList.toggle("active", status === "Rescheduled");
+  }
+  document.getElementById("execStatus").addEventListener("change", toggleRescheduleFields);
+
+  async function submitLog(e) {
+    e.preventDefault();
+    const errorBox = document.getElementById("formError");
+    errorBox.classList.remove("active");
+
+    if (!activeEntry) return;
+
+    const status = document.getElementById("execStatus").value;
+    const payload = {
+      timetable_id: activeEntry.id,
+      calendar_date: document.getElementById("execDate").value,
+      status: status,
+      notes: document.getElementById("execNotes").value.trim(),
+    };
+
+    if (status === "Rescheduled") {
+      payload.reschedule_requested_by_role = "STUDENT";
+      payload.rescheduled_to_date = document.getElementById("rescheduledToDate").value;
+      payload.rescheduled_to_time_slot = document.getElementById("rescheduledToTimeSlot").value;
+      payload.rescheduled_to_venue = document.getElementById("rescheduledToVenue").value;
+    }
+
+    try {
+      const res = await fetch(LOG_EXECUTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF_TOKEN },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        errorBox.textContent = data.message || "Something went wrong.";
+        errorBox.classList.add("active");
+        return;
+      }
+
+      closeSheet("logSheet");
+      openSheet("detailsSheet");
+      loadExecutionHistory(activeEntry.id);
+      // showToast() and #toast are provided globally by base/main.html.
+      if (typeof showToast === "function") showToast("✅ Execution logged", "success");
+    } catch (err) {
+      errorBox.textContent = "Network error — please try again.";
+      errorBox.classList.add("active");
+    }
+  }
+
+  // ── sheet controls ───────────────────────────────────────────────────────
+  function openSheet(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+  ["detailsSheet", "logSheet"].forEach((id) => {
+    document.getElementById(id).addEventListener("click", (e) => {
+      if (e.target.id === id) closeSheet(id);
+    });
+  });
+
+  // ── swipe between days on mobile ────────────────────────────────────────
+  let touchStartX = 0, touchStartY = 0;
+  const classListEl = document.getElementById("classList");
+  if (classListEl) {
+    classListEl.addEventListener("touchstart", (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    classListEl.addEventListener("touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0 && activeDayIndex < DAYS.length - 1) selectDay(activeDayIndex + 1);
+        else if (dx > 0 && activeDayIndex > 0) selectDay(activeDayIndex - 1);
+      }
+    }, { passive: true });
+  }
+
+  // ── init ──────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
-    {% if has_slots %}
-    renderWeekHeader();
-    {% endif %}
+    if (!HAS_SLOTS) return;
+    activeDayIndex = getTodayIndex();
+    buildEntries();
+    renderWeekHeaders();
+    renderMobileDayStrip();
+    renderMobileClassList();
   });
 </script>
 {% endblock %}

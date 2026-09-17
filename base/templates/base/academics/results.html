@@ -1,13 +1,607 @@
 <!-- prettier-ignore -->
 {% extends 'base/main.html' %} {% load static %} {% load humanize %}
- {% block head %}
+{% block head %}
 <link
   rel="stylesheet"
-  href="{% static 'base/styles/academics/results/index.css' %}"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 />
 <title>Results &amp; Transcript</title>
 <style>
-  .modal-overlay {
+  /* ============================================
+     MOBILE APP-BAR
+     ============================================ */
+  .app-bar {
+    display: none;
+    background: linear-gradient(135deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    padding: 1rem 1.1rem;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    margin: -2rem -2rem 1.2rem;
+  }
+  .app-bar__title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+  }
+  .app-bar__select {
+    position: relative;
+    margin-bottom: 0.7rem;
+  }
+  .app-bar__select::after {
+    content: "\f107";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+  }
+  .app-bar__select select {
+    width: 100%;
+    padding: 0.7rem 2.4rem 0.7rem 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: white;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  .app-bar__select select option {
+    background: var(--navy, #0a2540);
+    color: white;
+  }
+  .app-bar__stats {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .app-bar__stat {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.45rem 0.7rem;
+    text-align: center;
+  }
+  .app-bar__stat-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    font-weight: 700;
+  }
+  .app-bar__stat-value {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-top: 1px;
+  }
+
+  /* ============================================
+     DESKTOP VIEW
+     ============================================ */
+  .desktop-view {
+    display: block;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.8rem;
+    gap: 1rem;
+  }
+  .page-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .action-buttons {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .btn-secondary {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .btn-secondary:hover {
+    background: var(--bg);
+  }
+  .btn-secondary.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
+  .student-info-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: 1.2rem 1.8rem;
+    margin-bottom: 1.8rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border: 1px solid var(--border);
+  }
+  .info-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .info-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .info-value {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-top: 4px;
+  }
+
+  .semester-selector {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border: 1px solid var(--border);
+  }
+  .semester-selector label {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .semester-selector select {
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    font-family: inherit;
+    background: var(--white);
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .results-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 1.8rem;
+  }
+  .card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    background: #fefefe;
+  }
+  .grade-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .grade-table th,
+  .grade-table td {
+    padding: 1rem 1.2rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .grade-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+  .grade-table tbody tr.synthetic:not(.no-click) {
+    cursor: pointer;
+  }
+  .grade-table tbody tr.synthetic:not(.no-click):hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  .grade-table tbody tr.synthetic.bulk-selected {
+    background: #eef6ff;
+  }
+  .grade-table tbody tr.synthetic.bulk-selected:hover {
+    background: #e2f0ff;
+  }
+  .bulk-col,
+  .bulk-col-header {
+    display: none;
+    width: 34px;
+  }
+  .grade-table.bulk-mode-active .bulk-col,
+  .grade-table.bulk-mode-active .bulk-col-header {
+    display: table-cell;
+  }
+  .bulk-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .grade-point {
+    font-weight: 700;
+  }
+  .gpa-summary {
+    background: #f0f4f9;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .gpa-item {
+    text-align: right;
+  }
+  .gpa-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .gpa-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--maroon);
+  }
+
+  .transcript-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+  .transcript-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+  .stat-block {
+    text-align: center;
+    padding: 0.8rem;
+    background: var(--bg);
+    border-radius: var(--radius-md);
+  }
+  .stat-number {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+
+  /* ============================================
+     MOBILE VIEW
+     ============================================ */
+  .mobile-view {
+    display: none;
+  }
+  .mobile-summary {
+    margin: 0.9rem 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .mobile-summary-tile {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .mobile-summary-tile.highlight {
+    background: linear-gradient(135deg, #0a2540, #1f4e6e);
+    color: white;
+    border-color: var(--navy);
+  }
+  .mobile-summary-tile.highlight .mobile-summary-label {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .mobile-summary-tile.highlight .mobile-summary-value {
+    color: white;
+  }
+  .mobile-summary-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .mobile-summary-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .mobile-summary-value.small {
+    font-size: 0.85rem;
+  }
+
+  .mobile-actions-row {
+    margin: 0.6rem 1rem 0;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .mobile-action-btn {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.7rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: 0.2s;
+  }
+  .mobile-action-btn:active {
+    transform: scale(0.96);
+  }
+  .mobile-action-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
+  .course-list {
+    padding: 0.9rem 1rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .session-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0.3rem;
+    padding: 0.45rem 0.8rem;
+    background: linear-gradient(135deg, #0a2540, #1f4e6e);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .session-divider:first-child {
+    margin-top: 0.3rem;
+  }
+  .session-divider .session-divider__count {
+    margin-left: auto;
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+  }
+
+  .course-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 0.9rem 0.9rem 0.9rem 1.1rem;
+    display: flex;
+    gap: 0.85rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .course-card:active {
+    transform: scale(0.985);
+  }
+  .course-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--blue-card, #1f6392);
+  }
+  .course-card--A::before {
+    background: #16a34a;
+  }
+  .course-card--B::before {
+    background: #1f6392;
+  }
+  .course-card--C::before {
+    background: #d97706;
+  }
+  .course-card--D::before {
+    background: #ea580c;
+  }
+  .course-card--F::before {
+    background: #b91c1c;
+  }
+  .course-card--none::before {
+    background: #cbd5e1;
+  }
+  .course-card.bulk-selected {
+    background: #eef6ff;
+    border-color: #a8c8eb;
+  }
+  .course-card__check {
+    display: none;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: transparent;
+    transition: 0.2s;
+    z-index: 2;
+  }
+  .course-card.bulk-mode-active .course-card__check {
+    display: flex;
+  }
+  .course-card.bulk-selected .course-card__check {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: white;
+  }
+  .course-card__grade {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 62px;
+    flex-shrink: 0;
+    border-right: 1px dashed var(--border);
+    padding-right: 0.75rem;
+  }
+  .course-card__grade-letter {
+    font-size: 1.4rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--navy);
+  }
+  .course-card--A .course-card__grade-letter {
+    color: #16a34a;
+  }
+  .course-card--B .course-card__grade-letter {
+    color: #1f6392;
+  }
+  .course-card--C .course-card__grade-letter {
+    color: #d97706;
+  }
+  .course-card--D .course-card__grade-letter {
+    color: #ea580c;
+  }
+  .course-card--F .course-card__grade-letter {
+    color: #b91c1c;
+  }
+  .course-card--none .course-card__grade-letter {
+    color: #94a3b8;
+  }
+  .course-card__grade-pts {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .course-card__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .course-card__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+  }
+  .course-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+  .course-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+  .course-card__meta-item i {
+    font-size: 0.62rem;
+    color: var(--blue-card, #1f6392);
+    flex-shrink: 0;
+  }
+  .course-card__badges {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge--challenge {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .badge--published {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .badge--pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+  }
+  .empty-state__icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+  }
+  .empty-state__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .empty-state__text {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  /* ============================================
+     SHEET / MODAL (responsive: dialog on desktop,
+     bottom sheet on mobile — see breakpoint below)
+     ============================================ */
+  .sheet-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -17,22 +611,30 @@
     z-index: 1000;
     padding: 1rem;
   }
-  .modal-overlay.active {
+  .sheet-overlay.active {
     display: flex;
   }
-  .modal-box {
-    background: #fff;
-    border-radius: 10px;
-    max-width: 420px;
-    width: 90%;
-    max-height: 85vh;
+  .sheet {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    max-width: 480px;
+    width: 100%;
+    max-height: 88vh;
     overflow-y: auto;
-    padding: 24px;
+    padding: 1.75rem;
     position: relative;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
   }
-  .modal-box--wide {
+  .sheet--wide {
     max-width: 640px;
+  }
+  .sheet__handle {
+    display: none;
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.3rem auto 0.9rem;
   }
   .modal-close {
     position: absolute;
@@ -82,12 +684,6 @@
     border-radius: 6px;
     border: 1px solid #ccc;
     resize: vertical;
-  }
-  .grade-table tbody tr.synthetic:not(.no-click) {
-    cursor: pointer;
-  }
-  .grade-table tbody tr.synthetic:not(.no-click):hover {
-    background: rgba(0, 0, 0, 0.03);
   }
   .modal-file-list {
     display: flex;
@@ -252,8 +848,6 @@
     background: #dbeafe;
     color: #1e40af;
   }
-
-  /* ── req modal tabs ───────────────────────────────────────────── */
   .req-tabs {
     display: flex;
     gap: 6px;
@@ -363,75 +957,7 @@
     text-decoration: underline;
   }
 
-  /* ── bulk selection mode ──────────────────────────────────────── */
-  .bulk-col,
-  .bulk-col-header {
-    display: none;
-    width: 34px;
-  }
-  .grade-table.bulk-mode-active .bulk-col,
-  .grade-table.bulk-mode-active .bulk-col-header {
-    display: table-cell;
-  }
-  .grade-table.bulk-mode-active tbody tr.synthetic:not(.no-click) {
-    cursor: pointer;
-  }
-  .bulk-checkbox {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-  tr.synthetic.bulk-selected {
-    background: #eef6ff;
-  }
-  tr.synthetic.bulk-selected:hover {
-    background: #e2f0ff;
-  }
-
-  #bulkModeBtn.active {
-    background: var(--navy, #0a2540);
-    color: #fff;
-  }
-
-  /* floating selection bar */
-  .bulk-bar {
-    position: fixed;
-    left: 50%;
-    bottom: 22px;
-    transform: translateX(-50%) translateY(220%);
-    background: #0a2540;
-    color: #fff;
-    padding: 10px 14px 10px 18px;
-    border-radius: 40px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.85rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    z-index: 900;
-    transition: transform 0.2s ease;
-  }
-  .bulk-bar.show {
-    transform: translateX(-50%) translateY(0);
-  }
-  .bulk-bar button {
-    border: none;
-    border-radius: 30px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .bulk-bar .bulk-bar-continue {
-    background: #fff;
-    color: #0a2540;
-  }
-  .bulk-bar .bulk-bar-clear {
-    background: transparent;
-    color: #c0d9f0;
-  }
-
-  /* bulk modal */
+  /* ── bulk chips / kind toggle / per-item docs / results ─────────── */
   .bulk-chip-list {
     display: flex;
     flex-wrap: wrap;
@@ -501,7 +1027,6 @@
     background: #fdecea;
     color: #a32d2d;
   }
-
   .bulk-doc-item {
     border: 1px solid #e3e6ea;
     border-radius: 8px;
@@ -539,141 +1064,304 @@
   .bulk-doc-copy-btn:hover {
     background: #f5f7fb;
   }
+
+  /* ============================================
+     FLOATING BULK BAR
+     ============================================ */
+  .bulk-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%) translateY(220%);
+    background: #0a2540;
+    color: #fff;
+    padding: 10px 14px 10px 18px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 900;
+    transition:
+      transform 0.25s ease,
+      opacity 0.2s ease;
+    max-width: calc(100vw - 2rem);
+  }
+  .bulk-bar.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  /* Hidden while the bulk modal itself is open, so the two don't
+     visually collide. */
+  .bulk-bar.hidden-for-modal {
+    transform: translateX(-50%) translateY(220%);
+    pointer-events: none;
+    opacity: 0;
+  }
+  .bulk-bar button {
+    border: none;
+    border-radius: 30px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .bulk-bar .bulk-bar-continue {
+    background: #fff;
+    color: #0a2540;
+  }
+  .bulk-bar .bulk-bar-clear {
+    background: transparent;
+    color: #c0d9f0;
+  }
+
+  /* ============================================
+     RESPONSIVE MORPH
+     ============================================ */
+  @media (max-width: 1024px) {
+    .grade-table th,
+    .grade-table td {
+      padding: 0.8rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .app-bar {
+      display: block;
+    }
+    .desktop-view {
+      display: none;
+    }
+    .mobile-view {
+      display: block;
+    }
+
+    .sheet-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .sheet {
+      max-width: 100%;
+      border-radius: 24px 24px 0 0;
+      max-height: 88vh;
+      padding: 0.6rem 1.1rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+    }
+    .sheet__handle {
+      display: block;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .course-card__grade {
+      min-width: 54px;
+      padding-right: 0.6rem;
+    }
+    .course-card__grade-letter {
+      font-size: 1.25rem;
+    }
+    .course-card__title {
+      font-size: 0.82rem;
+    }
+  }
 </style>
 {% endblock %} {% block body %}
-<div class="page-header">
-  <h1 class="page-title">📊 Results &amp; Transcript</h1>
-  <div class="action-buttons">
-    <button class="btn-secondary" id="bulkModeBtn">
-      <span class="btn-label">🧾 Bulk Request</span>
-    </button>
-    <button class="btn-secondary" id="historyBtn">
-      <span class="btn-label">📁 My Requests</span>
-    </button>
-    <button class="btn-secondary" id="printBtn">
-      <span class="btn-label">🖨️ Print / Download</span>
-    </button>
-    <button class="btn-secondary" id="refreshBtn">
-      <span class="btn-label">⟳ Refresh</span>
-    </button>
-  </div>
-</div>
 
-<!-- Student info -->
-<div class="student-info-card">
-  <div class="info-item">
-    <span class="info-label">Student Name</span>
-    <span class="info-value">{{ student.user.half_name }}</span>
-  </div>
-  <div class="info-item">
-    <span class="info-label">Reg No.</span>
-    <span class="info-value">{{ student.registration_number|upper }}</span>
-  </div>
-  <div class="info-item">
-    <span class="info-label">Programme</span>
-    <span class="info-value">{{ student.class_entered.programme }}</span>
-  </div>
-  <div class="info-item">
-    <span class="info-label">Academic Year</span>
-    <span class="info-value">{{ session.academic_year }}</span>
-  </div>
-</div>
-
-<!-- Semester selector -->
-<div class="semester-selector">
-  <label>📅 Select Semester:</label>
-  <select id="semesterSelect">
-    <option value="all">All Semesters</option>
-    {% for ses in sessions %}
-    <!-- prettier-ignore -->
-    <option value="{{ ses }}" {% if ses == session %}selected{% endif %}>
-      {{ ses }}{% if ses.is_active %} (Current){% endif %}
-    </option>
-    {% endfor %}
-  </select>
-</div>
-
-<!-- Results Table & GPA -->
-<div class="results-card" id="resultsCard">
-  <div class="card-header">📋 Semester Results</div>
-
+<!-- Mobile app-bar: title + semester select + live GPA/CGPA/Credits -->
+<header class="app-bar">
+  <div class="app-bar__title">📊 Results &amp; Transcript</div>
   {% if enrollment_rows %}
-  <table class="grade-table" id="gradeTable">
-    <thead>
-      <tr id="resultsTheadRow">
-        <th class="bulk-col-header"></th>
-        <th>Unit Code</th>
-        <th>Unit Name</th>
-        <th>Credits</th>
-        <th>CAT</th>
-        <th>Exam</th>
-        <th>Total</th>
-        <th>Grade</th>
-      </tr>
-    </thead>
-    <tbody id="resultsBody" data-activesession="{{ session }}">
-      {% for row in enrollment_rows %}
-      <tr
-        data-session="{{ row.session }}"
-        data-coursecode="{{ row.course_code }}"
-        data-coursename="{{ row.course_name }}"
-        data-credits="{{ row.credits }}"
-        data-cat="{{ row.cat }}"
-        data-exam="{{ row.exam }}"
-        data-haspublished="{{ row.has_published|yesno:'true,false' }}"
-        data-hasopenchallenge="{{ row.has_open_challenge|yesno:'true,false' }}"
-      >
-        <td>{{ row.course_code }}</td>
-        <td>{{ row.course_name }}</td>
-        <td>{{ row.credits }}</td>
-        <td class="cat-score">{{ row.cat }}</td>
-        <td class="exam-score">{{ row.exam }}</td>
-        <td class="total-score">—</td>
-        <td class="grade-point">—</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div class="gpa-summary" id="gpaSummary"></div>
-
-  {% else %}
-  <div style="text-align: center; padding: 40px 20px; opacity: 0.5">
-    <div style="font-size: 2rem; margin-bottom: 8px">📭</div>
-    <div style="font-weight: 500; margin-bottom: 4px">No results yet</div>
-    <div style="font-size: 0.8rem">
-      Results for {{ session }} will appear here once published.
+  <div class="app-bar__select">
+    <select id="mobileSemesterSelect" aria-label="Select semester"></select>
+  </div>
+  <div class="app-bar__stats">
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">GPA</div>
+      <div class="app-bar__stat-value" id="mobileGpa">—</div>
+    </div>
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">CGPA</div>
+      <div class="app-bar__stat-value" id="mobileCgpa">—</div>
+    </div>
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">Credits</div>
+      <div class="app-bar__stat-value" id="mobileCredits">—</div>
     </div>
   </div>
   {% endif %}
-</div>
+</header>
 
-<!-- Cumulative Transcript -->
-<div class="transcript-card" id="transcriptCard">
-  <div class="card-header">🎓 Cumulative Transcript Summary</div>
-  <div class="transcript-grid">
-    <div class="stat-block">
-      <div class="stat-number" id="totalCredits">0</div>
-      <div class="info-label">Credits Attempted</div>
+{% if enrollment_rows %}
+
+<!-- ============================================
+     DESKTOP VIEW
+     ============================================ -->
+<div class="desktop-view">
+  <div class="page-header">
+    <h1 class="page-title">📊 Results &amp; Transcript</h1>
+    <div class="action-buttons">
+      <button class="btn-secondary" id="bulkModeBtn">
+        <i class="fas fa-list-check"></i>
+        <span class="btn-label">Bulk Request</span>
+      </button>
+      <button class="btn-secondary" id="historyBtn">
+        <i class="fas fa-folder"></i>
+        <span class="btn-label">My Requests</span>
+      </button>
+      <button class="btn-secondary" id="printBtn">
+        <i class="fas fa-print"></i>
+        <span class="btn-label">Print / Download</span>
+      </button>
+      <button class="btn-secondary" id="refreshBtn">
+        <i class="fas fa-rotate"></i>
+        <span class="btn-label">Refresh</span>
+      </button>
     </div>
-    <div class="stat-block">
-      <div class="stat-number" id="totalPoints">0.00</div>
-      <div class="info-label">Total Grade Points</div>
+  </div>
+
+  <div class="student-info-card">
+    <div class="info-item">
+      <span class="info-label">Student Name</span>
+      <span class="info-value">{{ student.user.half_name }}</span>
     </div>
-    <div class="stat-block">
-      <div class="stat-number" id="cgpa">0.00</div>
-      <div class="info-label">CGPA</div>
+    <div class="info-item">
+      <span class="info-label">Reg No.</span>
+      <span class="info-value">{{ student.registration_number|upper }}</span>
     </div>
-    <div class="stat-block">
-      <div class="stat-number" id="classification">—</div>
-      <div class="info-label">Classification</div>
+    <div class="info-item">
+      <span class="info-label">Programme</span>
+      <span class="info-value">{{ student.class_entered.programme }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Academic Year</span>
+      <span class="info-value">{{ session.academic_year }}</span>
+    </div>
+  </div>
+
+  <div class="semester-selector">
+    <label>📅 Select Semester:</label>
+    <select id="semesterSelect">
+      <option value="all">All Semesters</option>
+      {% for ses in sessions %}
+      <!-- prettier-ignore -->
+      <option value="{{ ses }}" {% if ses == session %}selected{% endif %}>
+        {{ ses }}{% if ses.is_active %} (Current){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="results-card" id="resultsCard">
+    <div class="card-header">📋 Semester Results</div>
+    <table class="grade-table" id="gradeTable">
+      <thead>
+        <tr id="resultsTheadRow">
+          <th class="bulk-col-header"></th>
+          <th>Unit Code</th>
+          <th>Unit Name</th>
+          <th>Credits</th>
+          <th>CAT</th>
+          <th>Exam</th>
+          <th>Total</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody" data-activesession="{{ session }}">
+        {% for row in enrollment_rows %}
+        <tr
+          data-session="{{ row.session }}"
+          data-coursecode="{{ row.course_code }}"
+          data-coursename="{{ row.course_name }}"
+          data-credits="{{ row.credits }}"
+          data-cat="{{ row.cat }}"
+          data-exam="{{ row.exam }}"
+          data-haspublished="{{ row.has_published|yesno:'true,false' }}"
+          data-hasopenchallenge="{{ row.has_open_challenge|yesno:'true,false' }}"
+        >
+          <td>{{ row.course_code }}</td>
+          <td>{{ row.course_name }}</td>
+          <td>{{ row.credits }}</td>
+          <td class="cat-score">{{ row.cat }}</td>
+          <td class="exam-score">{{ row.exam }}</td>
+          <td class="total-score">—</td>
+          <td class="grade-point">—</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="gpa-summary" id="gpaSummary"></div>
+  </div>
+
+  <div class="transcript-card" id="transcriptCard">
+    <div class="card-header">🎓 Cumulative Transcript Summary</div>
+    <div class="transcript-grid">
+      <div class="stat-block">
+        <div class="stat-number" id="totalCredits">0</div>
+        <div class="info-label">Credits Attempted</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-number" id="totalPoints">0.00</div>
+        <div class="info-label">Total Grade Points</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-number" id="cgpa">0.00</div>
+        <div class="info-label">CGPA</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-number" id="classification">—</div>
+        <div class="info-label">Classification</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Result Action Modal -->
-<div class="modal-overlay" id="resultModalOverlay">
-  <div class="modal-box" id="resultModalBox">
+<div class="mobile-view">
+  <div class="mobile-summary">
+    <div class="mobile-summary-tile highlight">
+      <div class="mobile-summary-label">Current GPA</div>
+      <div class="mobile-summary-value" id="mobileSummaryGpa">—</div>
+    </div>
+    <div class="mobile-summary-tile">
+      <div class="mobile-summary-label">Classification</div>
+      <div class="mobile-summary-value small" id="mobileSummaryClass">—</div>
+    </div>
+  </div>
+
+  <div class="mobile-actions-row">
+    <button class="mobile-action-btn" id="mobileBulkBtn">
+      <i class="fas fa-list-check"></i>
+      <span class="btn-label">Bulk Request</span>
+    </button>
+    <button class="mobile-action-btn" id="mobileHistoryBtn">
+      <i class="fas fa-folder"></i>
+      <span class="btn-label">My Requests</span>
+    </button>
+    <button class="mobile-action-btn" id="mobilePrintBtn">
+      <i class="fas fa-print"></i>
+    </button>
+  </div>
+
+  <div class="course-list" id="courseList"></div>
+</div>
+
+{% else %}
+
+<div class="empty-state">
+  <div class="empty-state__icon">📭</div>
+  <div class="empty-state__title">No results yet</div>
+  <div class="empty-state__text">
+    Results for {{ session }} will appear here once published.
+  </div>
+</div>
+
+{% endif %}
+
+<!-- Result Action Sheet -->
+<div class="sheet-overlay" id="resultModalOverlay">
+  <div class="sheet" id="resultModalBox">
+    <div class="sheet__handle"></div>
     <button class="modal-close" id="resultModalClose">&times;</button>
 
     <div class="modal-header">
@@ -715,7 +1403,6 @@
         </button>
       </div>
 
-      <!-- Panel shown when an action is chosen -->
       <div
         id="modalActionPanel"
         class="modal-action-panel"
@@ -767,9 +1454,10 @@
   </div>
 </div>
 
-<!-- Requisition History Modal -->
-<div class="modal-overlay" id="reqModalOverlay">
-  <div class="modal-box modal-box--wide">
+<!-- Requisition History Sheet -->
+<div class="sheet-overlay" id="reqModalOverlay">
+  <div class="sheet sheet--wide">
+    <div class="sheet__handle"></div>
     <button class="modal-close" id="reqModalClose">&times;</button>
 
     <div class="modal-header">
@@ -810,9 +1498,10 @@
   </button>
 </div>
 
-<!-- Bulk Request Modal -->
-<div class="modal-overlay" id="bulkModalOverlay">
-  <div class="modal-box modal-box--wide">
+<!-- Bulk Request Sheet -->
+<div class="sheet-overlay" id="bulkModalOverlay">
+  <div class="sheet sheet--wide">
+    <div class="sheet__handle"></div>
     <button class="modal-close" id="bulkModalClose">&times;</button>
 
     <div class="modal-header">
@@ -907,12 +1596,9 @@
   const CSRF_TOKEN = "{{ csrf_token }}";
 
   // ── button busy-state helpers ─────────────────────────────────────────────
-  // Every click that does real work flips the button into .is-busy (spinner,
-  // pointer-events off) so a slow network can't be mistaken for a dead button
-  // or produce a double-submit.
   function setBusy(btn) {
     if (!btn) return false;
-    if (btn.classList.contains("is-busy")) return false; // already in flight
+    if (btn.classList.contains("is-busy")) return false;
     btn.classList.add("is-busy");
     btn.classList.remove("is-done");
     btn.disabled = true;
@@ -927,8 +1613,6 @@
       setTimeout(() => btn.classList.remove("is-done"), 2000);
     }
   }
-  // For instant, non-network actions: still flash a brief busy state so the
-  // click always has a visible consequence.
   function flashBusy(btn, fn, ms = 260) {
     if (!setBusy(btn)) return;
     setTimeout(() => {
@@ -962,7 +1646,8 @@
     return 0.0;
   }
 
-  // ── build data structure from rendered rows ───────────────────────────────
+  // ── build data structure from rendered rows (single source of truth
+  //    for both the desktop table and the mobile card list) ─────────────────
   let semesterData = {};
 
   function buildSemesterData() {
@@ -1000,20 +1685,50 @@
     allRows.forEach((r) => (r.style.display = "none"));
   }
 
-  // ── render one semester (or all) ──────────────────────────────────────────
-  function renderSemester(semKey) {
+  function coursesForSemester(semKey) {
+    if (semKey === "all") {
+      const out = [];
+      for (const { merged } of Object.values(semesterData)) out.push(...merged);
+      return out;
+    }
+    return semesterData[semKey]?.merged ?? [];
+  }
+
+  // ── shared bulk-selectable row/card interaction binder ────────────────────
+  function bindResultInteraction(el, idx) {
+    el.addEventListener("click", (e) => {
+      if (bulkMode) {
+        if (e.target.classList.contains("bulk-checkbox")) {
+          setRowSelected(idx, e.target.checked, el);
+        } else {
+          setRowSelected(idx, !bulkSelected.has(idx), el);
+        }
+        return;
+      }
+      openResultModal(window.currentRowData[idx]);
+    });
+  }
+
+  // ── render both views from one semester key ────────────────────────────────
+  function renderResults(semKey) {
+    const coursesToShow = coursesForSemester(semKey);
+    window.currentRowData = {};
+    coursesToShow.forEach((c, i) => {
+      window.currentRowData[i] = {
+        ...c,
+        grade: c.hasPublished ? letterGrade(c.total) : "—",
+      };
+    });
+
+    renderDesktopTable(coursesToShow, semKey);
+    renderMobileCourseList(coursesToShow, semKey);
+    renderGPA(coursesToShow);
+  }
+
+  function renderDesktopTable(coursesToShow, semKey) {
     const tbody = document.getElementById("resultsBody");
     if (!tbody) return;
     tbody.querySelectorAll("tr.synthetic").forEach((r) => r.remove());
-
-    let coursesToShow = [];
-    if (semKey === "all") {
-      for (const { merged } of Object.values(semesterData)) {
-        coursesToShow.push(...merged);
-      }
-    } else {
-      coursesToShow = semesterData[semKey]?.merged ?? [];
-    }
 
     if (!coursesToShow.length) {
       tbody.insertAdjacentHTML(
@@ -1024,15 +1739,26 @@
            </td>
          </tr>`,
       );
-      renderGPA([]);
       return;
     }
 
-    window.currentRowData = {};
+    const allMode = semKey === "all";
+    let lastSession = null;
 
     coursesToShow.forEach((c, i) => {
-      const grade = c.hasPublished ? letterGrade(c.total) : "—";
-      window.currentRowData[i] = { ...c, grade };
+      if (allMode && c.session !== lastSession) {
+        lastSession = c.session;
+        tbody.insertAdjacentHTML(
+          "beforeend",
+          `<tr class="synthetic no-click" style="background:#eef4fb;">
+             <td colspan="8" style="padding:0.6rem 1.2rem;font-weight:700;color:var(--navy);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;">
+               ${escapeHtml(c.session)}
+             </td>
+           </tr>`,
+        );
+      }
+
+      const row = window.currentRowData[i];
       const selectedClass = bulkSelected.has(i) ? " bulk-selected" : "";
       tbody.insertAdjacentHTML(
         "beforeend",
@@ -1047,34 +1773,118 @@
           <td>${c.cat.toFixed(1)}</td>
           <td>${c.exam.toFixed(1)}</td>
           <td>${c.hasPublished ? c.total.toFixed(1) : "—"}</td>
-          <td>${grade}</td>
+          <td>${row.grade}</td>
         </tr>
       `,
       );
     });
 
-    renderGPA(coursesToShow);
-
     tbody.querySelectorAll("tr.synthetic:not(.no-click)").forEach((row) => {
-      row.addEventListener("click", (e) => {
-        const idx = Number(row.dataset.rowIndex);
-        if (bulkMode) {
-          // Anywhere on the row toggles selection while bulk mode is on —
-          // the checkbox itself firing 'change' would double-toggle, so
-          // let its own click bubble here and just read its resulting state.
-          if (e.target.classList.contains("bulk-checkbox")) {
-            setRowSelected(idx, e.target.checked, row);
-          } else {
-            setRowSelected(idx, !bulkSelected.has(idx), row);
-          }
-          return;
-        }
-        openResultModal(window.currentRowData[idx]);
-      });
+      const idx = Number(row.dataset.rowIndex);
+      bindResultInteraction(row, idx);
     });
   }
 
-  // ── GPA for the currently displayed set ──────────────────────────────────
+  function renderMobileCourseList(coursesToShow, semKey) {
+    const list = document.getElementById("courseList");
+    if (!list) return;
+
+    if (!coursesToShow.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">📭</div>
+          <div class="empty-state__title">No results yet</div>
+          <div class="empty-state__text">Results for this semester will appear here once published.</div>
+        </div>`;
+      return;
+    }
+
+    const allMode = semKey === "all";
+    let html = "";
+
+    if (allMode) {
+      const grouped = {};
+      coursesToShow.forEach((c, i) => {
+        if (!grouped[c.session]) grouped[c.session] = [];
+        grouped[c.session].push(i);
+      });
+      Object.entries(grouped).forEach(([sessionName, indices]) => {
+        html += `
+          <div class="session-divider">
+            <i class="fas fa-calendar-alt"></i>
+            ${escapeHtml(sessionName)}
+            <span class="session-divider__count">${indices.length} ${indices.length === 1 ? "unit" : "units"}</span>
+          </div>`;
+        indices.forEach((i) => {
+          html += renderCourseCard(window.currentRowData[i], i);
+        });
+      });
+    } else {
+      html += `
+        <div class="list-heading" style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.2rem 0.2rem;">
+          <div style="font-size:0.95rem;font-weight:800;color:var(--navy);">${escapeHtml(semKey)}</div>
+          <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);background:var(--white);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:20px;">
+            ${coursesToShow.length} ${coursesToShow.length === 1 ? "unit" : "units"}
+          </div>
+        </div>`;
+      coursesToShow.forEach((c, i) => {
+        html += renderCourseCard(window.currentRowData[i], i);
+      });
+    }
+
+    list.innerHTML = html;
+
+    list.querySelectorAll(".course-card").forEach((card) => {
+      const idx = Number(card.dataset.rowIndex);
+      bindResultInteraction(card, idx);
+    });
+  }
+
+  function renderCourseCard(row, idx) {
+    const gradeClass = row.hasPublished ? row.grade : "none";
+    const gpaPts = row.hasPublished ? gradePoint(row.total).toFixed(1) : "—";
+    const selected = bulkSelected.has(idx);
+    const classes =
+      `course-card course-card--${gradeClass}` +
+      (selected ? " bulk-selected" : "") +
+      (bulkMode ? " bulk-mode-active" : "");
+
+    const badges = [];
+    badges.push(
+      row.hasPublished
+        ? `<span class="badge badge--published">Published</span>`
+        : `<span class="badge badge--pending">Pending</span>`,
+    );
+    if (row.hasOpenChallenge) {
+      badges.push(
+        `<span class="badge badge--challenge">⚠️ Challenge open</span>`,
+      );
+    }
+
+    return `
+      <div class="${classes}" data-row-index="${idx}">
+        <div class="course-card__check"><i class="fas fa-check"></i></div>
+        <div class="course-card__grade">
+          <div class="course-card__grade-letter">${row.grade}</div>
+          <div class="course-card__grade-pts">${gpaPts} GP</div>
+        </div>
+        <div class="course-card__body">
+          <div class="course-card__title">${escapeHtml(row.name)}</div>
+          <div class="course-card__meta">
+            <span class="course-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(row.code)}</span></span>
+            <span class="course-card__meta-item"><i class="fas fa-graduation-cap"></i><span>${row.credits} credits</span></span>
+          </div>
+          <div class="course-card__meta" style="margin-top:0.3rem;">
+            <span class="course-card__meta-item"><i class="fas fa-pen"></i><span>CAT ${row.cat.toFixed(1)}</span></span>
+            <span class="course-card__meta-item"><i class="fas fa-file-alt"></i><span>Exam ${row.exam.toFixed(1)}</span></span>
+            <span class="course-card__meta-item"><i class="fas fa-calculator"></i><span>Total ${row.hasPublished ? row.total.toFixed(1) : "—"}</span></span>
+          </div>
+          <div class="course-card__badges">${badges.join("")}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── GPA for the currently displayed set (updates BOTH views' stats) ───────
   function renderGPA(courses) {
     const graded = courses.filter((c) => c.hasPublished);
     const credits = graded.reduce((s, c) => s + c.credits, 0);
@@ -1085,14 +1895,20 @@
     const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
 
     const box = document.getElementById("gpaSummary");
-    if (!box) return;
-    box.innerHTML = `
-      <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
-      <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
-    `;
+    if (box) {
+      box.innerHTML = `
+        <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
+        <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
+      `;
+    }
+
+    const mobileGpa = document.getElementById("mobileGpa");
+    const mobileSummaryGpa = document.getElementById("mobileSummaryGpa");
+    if (mobileGpa) mobileGpa.textContent = gpa;
+    if (mobileSummaryGpa) mobileSummaryGpa.textContent = gpa;
   }
 
-  // ── cumulative across ALL semesters ──────────────────────────────────────
+  // ── cumulative across ALL semesters (both views) ──────────────────────────
   function calculateCumulative() {
     const seen = {};
     let totalCredits = 0,
@@ -1123,10 +1939,26 @@
               ? "Pass"
               : "Probation";
 
-    document.getElementById("totalCredits").innerText = totalCredits;
-    document.getElementById("totalPoints").innerText = totalPoints.toFixed(2);
-    document.getElementById("cgpa").innerText = cgpa;
-    document.getElementById("classification").innerText = cls;
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+    setText("totalCredits", totalCredits);
+    setText("totalPoints", totalPoints.toFixed(2));
+    setText("cgpa", cgpa);
+    setText("classification", cls);
+    setText("mobileCgpa", cgpa);
+    setText("mobileCredits", totalCredits);
+    setText("mobileSummaryClass", cls);
+  }
+
+  // ── semester select: keep desktop + mobile selects in sync ─────────────────
+  function selectSemester(value) {
+    const desktopSelect = document.getElementById("semesterSelect");
+    const mobileSelect = document.getElementById("mobileSemesterSelect");
+    if (desktopSelect) desktopSelect.value = value;
+    if (mobileSelect) mobileSelect.value = value;
+    renderResults(value);
   }
 
   // ── result action modal ───────────────────────────────────────────────────
@@ -1168,11 +2000,11 @@
     pendingFiles = [];
     renderFileList();
 
-    document.getElementById("resultModalOverlay").classList.add("active");
+    openSheet("resultModalOverlay");
   }
 
   function closeResultModal() {
-    document.getElementById("resultModalOverlay").classList.remove("active");
+    closeSheet("resultModalOverlay");
     activeResultRow = null;
     pendingFiles = [];
   }
@@ -1186,7 +2018,6 @@
       if (e.target.id === "resultModalOverlay") closeResultModal();
     });
 
-  // Mirrors ComplaintDocument.clean()'s allowed_extensions — keep in sync.
   const ALLOWED_DOC_EXTENSIONS = [
     ".pdf",
     ".png",
@@ -1265,14 +2096,11 @@
       typeGroup.style.display = "none";
       label.textContent = "Reason for challenging this result:";
     } else {
-      // kind === "requisition" — resit / supplementary / missing marks /
-      // special exam all share one form; the type select decides which.
       typeGroup.style.display = "block";
       label.textContent = "Reason for this request:";
     }
 
     panel.style.display = "flex";
-
     pendingFiles = [];
     document.getElementById("modalFileError").style.display = "none";
     document.getElementById("modalFormMessage").className =
@@ -1291,7 +2119,7 @@
       flashBusy(this, () => showActionPanel("requisition"));
     });
 
-  // ── submit ────────────────────────────────────────────────────────────────
+  // ── submit single ────────────────────────────────────────────────────────
   document
     .getElementById("modalActionSubmit")
     .addEventListener("click", async function () {
@@ -1363,7 +2191,7 @@
 
   // ── history modal: two independent tabs, two data shapes ──────────────────
   function closeReqModal() {
-    document.getElementById("reqModalOverlay").classList.remove("active");
+    closeSheet("reqModalOverlay");
   }
   document
     .getElementById("reqModalClose")
@@ -1371,8 +2199,6 @@
   document.getElementById("reqModalOverlay").addEventListener("click", (e) => {
     if (e.target.id === "reqModalOverlay") closeReqModal();
   });
-
-  let reqModalCourseCode = null;
 
   function setReqTab(tabName) {
     document.querySelectorAll(".req-tab-btn").forEach((btn) => {
@@ -1385,7 +2211,6 @@
       .getElementById("requestsPanel")
       .classList.toggle("active", tabName === "requests");
   }
-
   document.querySelectorAll(".req-tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => setReqTab(btn.dataset.reqtab));
   });
@@ -1429,7 +2254,6 @@
   }
 
   async function openReqModal(courseCode, defaultTab = "disputes") {
-    reqModalCourseCode = courseCode;
     const title = document.getElementById("reqModalTitle");
     const subtitle = document.getElementById("reqModalSubtitle");
 
@@ -1438,12 +2262,9 @@
       ? "Disputes and academic requisitions for this unit"
       : "Disputes and academic requisitions";
 
-    document.getElementById("reqModalOverlay").classList.add("active");
+    openSheet("reqModalOverlay");
     setReqTab(defaultTab);
 
-    // Both tabs' data is fetched up front rather than lazily on tab
-    // click — the person who just submitted a request wants to switch
-    // tabs and see it immediately, not trigger another loading spinner.
     await Promise.all([loadDisputes(courseCode), loadRequisitions(courseCode)]);
   }
 
@@ -1451,9 +2272,6 @@
     const s = r.snapshot || {};
     const fmt = (v) => (v === null || v === undefined ? "—" : v.toFixed(1));
 
-    // Scores as they stood when the challenge was filed — deliberately
-    // the frozen snapshot, not the live marks, which may since have
-    // been corrected in response to this very challenge.
     const scores =
       s.total !== null && s.total !== undefined
         ? `<div class="req-scores">
@@ -1575,16 +2393,22 @@
       </div>`;
   }
 
+  async function handleHistoryClick(btn) {
+    if (!setBusy(btn)) return;
+    try {
+      await openReqModal(null, "disputes");
+      clearBusy(btn, { done: true });
+    } catch (e) {
+      clearBusy(btn);
+    }
+  }
+  document.getElementById("historyBtn").addEventListener("click", function () {
+    handleHistoryClick(this);
+  });
   document
-    .getElementById("historyBtn")
-    .addEventListener("click", async function () {
-      if (!setBusy(this)) return;
-      try {
-        await openReqModal(null, "disputes");
-        clearBusy(this, { done: true });
-      } catch (e) {
-        clearBusy(this);
-      }
+    .getElementById("mobileHistoryBtn")
+    .addEventListener("click", function () {
+      handleHistoryClick(this);
     });
 
   document
@@ -1605,18 +2429,20 @@
   // ── bulk selection mode ─────────────────────────────────────────────────
   let bulkMode = false;
   let bulkSelected = new Set(); // row indices from window.currentRowData
+  let bulkModalOpen = false;
 
-  function setRowSelected(idx, selected, rowEl) {
-    if (selected) {
-      bulkSelected.add(idx);
-    } else {
-      bulkSelected.delete(idx);
-    }
-    if (rowEl) {
-      rowEl.classList.toggle("bulk-selected", selected);
-      const cb = rowEl.querySelector(".bulk-checkbox");
+  function setRowSelected(idx, selected, el) {
+    if (selected) bulkSelected.add(idx);
+    else bulkSelected.delete(idx);
+
+    // Keep every element for this idx in sync — desktop row AND mobile
+    // card can both be present in the DOM depending on viewport.
+    document.querySelectorAll(`[data-row-index="${idx}"]`).forEach((match) => {
+      match.classList.toggle("bulk-selected", selected);
+      const cb = match.querySelector(".bulk-checkbox");
       if (cb) cb.checked = selected;
-    }
+    });
+
     updateBulkBar();
   }
 
@@ -1624,37 +2450,49 @@
     const bar = document.getElementById("bulkBar");
     const count = document.getElementById("bulkBarCount");
     count.textContent = `${bulkSelected.size} selected`;
-    bar.classList.toggle("show", bulkMode && bulkSelected.size > 0);
+    const shouldShow = bulkMode && bulkSelected.size > 0 && !bulkModalOpen;
+    bar.classList.toggle("show", shouldShow);
+    bar.classList.toggle("hidden-for-modal", bulkModalOpen);
   }
 
-  document.getElementById("bulkModeBtn").addEventListener("click", function () {
+  function toggleBulkMode() {
     bulkMode = !bulkMode;
-    this.classList.toggle("active", bulkMode);
+    if (!bulkMode) bulkSelected.clear();
+    updateBulkBar();
+
+    document
+      .getElementById("bulkModeBtn")
+      ?.classList.toggle("active", bulkMode);
+    document
+      .getElementById("mobileBulkBtn")
+      ?.classList.toggle("active", bulkMode);
     document
       .getElementById("gradeTable")
       ?.classList.toggle("bulk-mode-active", bulkMode);
-    if (!bulkMode) {
-      bulkSelected.clear();
-    }
-    updateBulkBar();
+
     const select = document.getElementById("semesterSelect");
-    if (select) renderSemester(select.value);
-  });
+    renderResults(select ? select.value : "all");
+  }
+  document
+    .getElementById("bulkModeBtn")
+    .addEventListener("click", toggleBulkMode);
+  document
+    .getElementById("mobileBulkBtn")
+    .addEventListener("click", toggleBulkMode);
 
   document.getElementById("bulkBarClear").addEventListener("click", () => {
     bulkSelected.clear();
     updateBulkBar();
     const select = document.getElementById("semesterSelect");
-    if (select) renderSemester(select.value);
+    renderResults(select ? select.value : "all");
   });
-
   document
     .getElementById("bulkBarContinue")
     .addEventListener("click", openBulkModal);
 
   // ── bulk modal ───────────────────────────────────────────────────────────
   let bulkKind = "challenge";
-  let bulkFilesByIdx = new Map(); // idx (from currentRowData) -> File[]
+  let bulkFilesByIdx = new Map();
 
   function renderBulkChips() {
     const list = document.getElementById("bulkChipList");
@@ -1675,15 +2513,11 @@
         renderBulkChips();
         renderBulkPerItemDocs();
         updateBulkBar();
-        // keep the underlying table row's checkbox in sync if it's on screen
-        const row = document.querySelector(
-          `tr.synthetic[data-row-index="${idx}"]`,
-        );
-        if (row) {
-          row.classList.remove("bulk-selected");
-          const cb = row.querySelector(".bulk-checkbox");
+        document.querySelectorAll(`[data-row-index="${idx}"]`).forEach((el) => {
+          el.classList.remove("bulk-selected");
+          const cb = el.querySelector(".bulk-checkbox");
           if (cb) cb.checked = false;
-        }
+        });
         if (bulkSelected.size === 0) closeBulkModal();
       });
     });
@@ -1700,7 +2534,6 @@
     document.getElementById("bulkTypeGroup").style.display =
       kind === "requisition" ? "block" : "none";
   }
-
   document
     .getElementById("bulkKindChallenge")
     .addEventListener("click", () => setBulkKind("challenge"));
@@ -1763,10 +2596,6 @@
         if (sourceFiles.length === 0) return;
         indices.forEach((idx) => {
           if (idx === sourceIdx) return;
-          // Copy references to the same File objects rather than re-reading
-          // input elements — each File can be attached to multiple form
-          // submissions safely since browsers treat File objects as
-          // immutable, read-only blobs.
           bulkFilesByIdx.set(idx, [...sourceFiles]);
           renderBulkFileList(idx);
         });
@@ -1837,13 +2666,17 @@
     document.getElementById("bulkResultsList").innerHTML = "";
     renderBulkChips();
     renderBulkPerItemDocs();
-    document.getElementById("bulkModalOverlay").classList.add("active");
+
+    bulkModalOpen = true;
+    updateBulkBar();
+    openSheet("bulkModalOverlay");
   }
 
   function closeBulkModal() {
-    document.getElementById("bulkModalOverlay").classList.remove("active");
+    closeSheet("bulkModalOverlay");
+    bulkModalOpen = false;
+    updateBulkBar();
   }
-
   document
     .getElementById("bulkModalClose")
     .addEventListener("click", closeBulkModal);
@@ -1884,9 +2717,6 @@
       if (bulkKind === "requisition") {
         formData.append("type", document.getElementById("bulkType").value);
       }
-      // Each item's documents are keyed by its position in `items` above
-      // (documents__0 belongs to items[0], etc.), not by the row index —
-      // the backend zips items[] and these keys together positionally.
       selectedIndices.forEach((idx, pos) => {
         const files = bulkFilesByIdx.get(idx) || [];
         files.forEach((file) => formData.append(`documents__${pos}`, file));
@@ -1916,9 +2746,6 @@
 
         clearBusy(this, { done: data.success });
 
-        // Drop only the successfully-filed items from selection — anything
-        // that failed (already open, not enrolled, etc.) stays selected so
-        // the student can see it in the chip list and retry or drop it.
         const succeededCodes = new Set(
           (data.results || [])
             .filter((r) => r.success)
@@ -1930,7 +2757,7 @@
         });
         updateBulkBar();
         const select = document.getElementById("semesterSelect");
-        if (select) renderSemester(select.value);
+        renderResults(select ? select.value : "all");
       } catch (err) {
         msgBox.textContent = "Network error — please try again.";
         msgBox.className = "modal-form-message error";
@@ -1938,34 +2765,59 @@
       }
     });
 
+  // ── sheet controls ───────────────────────────────────────────────────────
+  function openSheet(id) {
+    document.getElementById(id).classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  // ── print / refresh (shared desktop + mobile handlers) ─────────────────────
+  document.getElementById("printBtn")?.addEventListener("click", function () {
+    flashBusy(this, () => window.print());
+  });
+  document
+    .getElementById("mobilePrintBtn")
+    ?.addEventListener("click", function () {
+      flashBusy(this, () => window.print());
+    });
+  document.getElementById("refreshBtn")?.addEventListener("click", function () {
+    if (!setBusy(this)) return;
+    // Results are server-rendered; a real refetch needs a page load.
+    window.location.reload();
+  });
+
+  // ── semester select wiring ──────────────────────────────────────────────
+  document
+    .getElementById("semesterSelect")
+    ?.addEventListener("change", (e) => selectSemester(e.target.value));
+  document
+    .getElementById("mobileSemesterSelect")
+    ?.addEventListener("change", (e) => selectSemester(e.target.value));
+
   // ── init ──────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     const body = document.getElementById("resultsBody");
-    if (body) {
-      buildSemesterData();
-      calculateCumulative();
+    if (!body) return;
 
-      const activeSession = body.dataset.activesession;
-      const select = document.getElementById("semesterSelect");
+    buildSemesterData();
+    calculateCumulative();
 
-      const match = [...select.options].find((o) => o.value === activeSession);
-      select.value = match ? activeSession : "all";
+    const activeSession = body.dataset.activesession;
+    const sessionKeys = Object.keys(semesterData);
 
-      renderSemester(select.value);
-      select.addEventListener("change", (e) => renderSemester(e.target.value));
+    // Populate the mobile select to mirror the server-rendered desktop one.
+    const mobileSelect = document.getElementById("mobileSemesterSelect");
+    if (mobileSelect) {
+      const desktopSelect = document.getElementById("semesterSelect");
+      mobileSelect.innerHTML = desktopSelect ? desktopSelect.innerHTML : "";
     }
-  });
 
-  document.getElementById("printBtn").addEventListener("click", function () {
-    flashBusy(this, () => window.print());
-  });
-
-  document.getElementById("refreshBtn").addEventListener("click", function () {
-    if (!setBusy(this)) return;
-    // A real refetch of published results needs a page load — results are
-    // server-rendered, so re-deriving from the existing DOM would just
-    // recompute the same numbers.
-    window.location.reload();
+    const match = sessionKeys.includes(activeSession) ? activeSession : "all";
+    selectSemester(match);
   });
 </script>
 {% endblock %}

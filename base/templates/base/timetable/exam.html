@@ -536,21 +536,6 @@
   </div>
 </div>
 
-<!--
-  Data blob for JS — built here in the template rather than in the view,
-  since this template's view wasn't available to check/modify. If a
-  view later gets touched for this page, move this serialization there
-  instead (cleaner: business logic doesn't belong in a template).
-
-  NOTE: `invigilators` is a pre-joined STRING (not an array) rather than
-  per-venue structured data. This mirrors a pre-existing quirk already
-  present in the old template's own invigilator cell (doc 74): with
-  multiple venues, invigilator names across different venues run
-  together without a separating comma between venue groups. Not a
-  regression introduced here — flagging it as a known minor display
-  issue, fixable later with a model-level `all_invigilator_names`
-  property that returns a clean, deduplicated, properly-joined string.
--->
 <script id="examSessionsData" type="application/json">
   [
     {% for exam in exam_sessions %}

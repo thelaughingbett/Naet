@@ -18,7 +18,8 @@ from ..base import BaseModelMixin
 # --- LOGICAL CHOICES ---------------------------------------------------
 
 COMPLAINT_CATEGORY_CHOICES = [
-    ('Academic', 'Academic (Missing Marks, Exam Appeals, Lecturer Issues)'),
+    ('Academic', 'Academic ( Lecturer Issues)'),
+    ('Results', 'Results Dispute (Grade Challenge,)'),
     ('Harassment', 'Harassment / Gender-Based Violence (Strict Confidentiality)'),
     ('Administrative', 'Administrative (Finance Portal, Admissions, Registration)'),
     ('Facilities', 'Facilities & Accommodation (Hostel Damage, Wi-Fi, Water)'),
@@ -66,6 +67,7 @@ LEVEL_CHOICES = [
 
 ESCALATION_PATHS = {
     'Academic':       ['Department', 'School', 'StudentAffairs', 'Division', 'Senate'],
+    'Results':        ['Department', 'School', 'Division', 'Senate'],
     'Facilities':     ['School', 'StudentAffairs', 'Senate'],
     'Administrative': ['School', 'StudentAffairs', 'Senate'],
     'Catering':       ['School', 'StudentAffairs', 'Senate'],
@@ -78,6 +80,10 @@ ESCALATION_PATHS = {
 
 SLA_HOURS_BY_CATEGORY = {
     'Academic':       {'default': 72},
+    # Tighter at Department level: the lecturer/HOD holds the mark sheet
+    # and can verify in a day. Longer once it reaches Division, where a
+    # Senate-ratified mark change is a formal process.
+    'Results':        {'default': 72, 'Department': 24, 'Division': 120},
     'Facilities':     {'default': 48},
     'Administrative': {'default': 48},
     'Catering':       {'default': 24},
@@ -86,6 +92,10 @@ SLA_HOURS_BY_CATEGORY = {
 }
 
 PRIORITY_ORDER = ['Low', 'Medium', 'High', 'Critical']
+
+RESULT_ACTION_CHOICES = [
+    ('challenge', 'Challenge Result / Grade Appeal'),
+]
 
 
 def get_sla_hours(category, level):
@@ -216,6 +226,59 @@ class Complaint(BaseModelMixin):
         help_text="Official closure summary"
     )
 
+    # --- results dispute linkage (category == 'Results') ---------------
+
+    challenged_enrollment = models.ForeignKey(
+        'Enrollment',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='complaints',
+        help_text="The unit registration this grievance concerns."
+    )
+
+    challenged_result = models.ForeignKey(
+        'Result',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='complaints',
+        help_text="Optional: the specific CAT/Exam row disputed, when the "
+        "student is challenging one component rather than the unit total."
+    )
+
+    result_action = models.CharField(
+        max_length=20,
+        choices=RESULT_ACTION_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    # Frozen at submission. The whole purpose of a challenge is that the
+    # score may change; without a snapshot, an escalated case read at
+    # Senate level would show the corrected score and lose the record of
+    # what was actually disputed.
+    snapshot_cat = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    snapshot_exam = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    snapshot_total = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    snapshot_grade = models.CharField(max_length=2, blank=True)
+    snapshot_taken_at = models.DateTimeField(null=True, blank=True)
+
     history = HistoricalRecords()
 
     date_opened = models.DateTimeField(auto_now_add=True)
@@ -264,19 +327,97 @@ class Complaint(BaseModelMixin):
         if self.category == 'Harassment' and self.priority != 'Critical':
             self.priority = 'Critical'
 
+        if self.category == 'Results':
+            if not self.challenged_enrollment_id:
+                raise ValidationError({
+                    'challenged_enrollment': "A results dispute must reference the unit being disputed."
+                })
+            if not self.result_action:
+                raise ValidationError({
+                    'result_action': "Specify whether this is a challenge, resit request, or missing-marks report."
+                })
+        elif self.challenged_enrollment_id or self.challenged_result_id:
+            raise ValidationError(
+                "Only a 'Results' grievance should carry a result reference."
+            )
+
+        # The student can only dispute their own enrollment — without this,
+        # a crafted POST could attach someone else's marks to a complaint and
+        # expose them to every officer in the escalation chain.
+        if (
+            self.challenged_enrollment_id
+            and self.challenged_enrollment.student_id != self.student_id
+        ):
+            raise ValidationError({
+                'challenged_enrollment': "You can only dispute your own results."
+            })
+
+        if (
+            self.challenged_result_id
+            and self.challenged_result.enrollment_id != self.challenged_enrollment_id
+        ):
+            raise ValidationError({
+                'challenged_result': "The disputed result doesn't belong to the referenced unit registration."
+            })
+
+    def _take_result_snapshot(self):
+        """Freeze the disputed scores as they stood when the student filed."""
+        from base.models import Result
+
+        published = Result.objects.filter(
+            enrollment_id=self.challenged_enrollment_id,
+            type__in=['C', 'E'],
+            state='published',
+        ).order_by('record_id')
+
+        scores = {r.type: r.score for r in published}
+        cat = scores.get('C')
+        exam = scores.get('E')
+
+        self.snapshot_cat = cat
+        self.snapshot_exam = exam
+        if cat is not None or exam is not None:
+            total = (cat or 0) + (exam or 0)
+            self.snapshot_total = total
+            self.snapshot_grade = (
+                'A' if total >= 70 else
+                'B' if total >= 60 else
+                'C' if total >= 50 else
+                'D' if total >= 40 else 'F'
+            )
+        self.snapshot_taken_at = timezone.now()
+
     def save(self, *args, **kwargs):
         if self.status == 'Resolved' and not self.date_resolved:
             self.date_resolved = timezone.now()
         elif self.status != 'Resolved':
             self.date_resolved = None
 
-        if self._state.adding and not self.current_level:
+        is_new = self._state.adding
+
+        if is_new and not self.current_level:
             self.current_level = self.escalation_path[0]
             self.sla_due_at = timezone.now() + timezone.timedelta(
                 hours=get_sla_hours(self.category, self.current_level)
             )
 
+        if is_new and self.category == 'Results' and self.challenged_enrollment_id:
+            self._take_result_snapshot()
+
         super().save(*args, **kwargs)
+
+        # Mark the underlying results as disputed so the student's results
+        # page and any staff results-review UI both reflect that this grade
+        # is under formal challenge rather than settled.
+        if is_new and self.result_action == 'challenge' and self.challenged_enrollment_id:
+            from base.models import Result
+            qs = Result.objects.filter(
+                enrollment_id=self.challenged_enrollment_id,
+                state='published',
+            )
+            if self.challenged_result_id:
+                qs = qs.filter(pk=self.challenged_result_id)
+            qs.update(state='disputed')
 
     def _bump_priority(self):
         idx = PRIORITY_ORDER.index(self.priority)
@@ -342,6 +483,38 @@ class Complaint(BaseModelMixin):
 
     def __str__(self):
         return f"[{self.category}] {self.subject[:30]}... ({self.status})"
+
+    @property
+    def result_dispute_context(self):
+        """Everything a reviewing officer needs, without re-deriving it per view."""
+        if self.category != 'Results' or not self.challenged_enrollment_id:
+            return None
+
+        enr = self.challenged_enrollment
+        course = enr.curriculum.course
+
+        return {
+            'course_code':    course.course_code,
+            'course_name':    course.course_name,
+            'credits':        course.credits,
+            'session':        str(enr.curriculum.session),
+            'lecturers': [
+                a.lecturer.name
+                for a in enr.curriculum.lecturer_assignments.select_related('lecturer__user')
+            ],
+            'action':         self.get_result_action_display(),
+            'at_filing': {
+                'cat':   self.snapshot_cat,
+                'exam':  self.snapshot_exam,
+                'total': self.snapshot_total,
+                'grade': self.snapshot_grade,
+                'as_of': self.snapshot_taken_at,
+            },
+            'current': [
+                {'type': r.get_type_display(), 'score': r.score, 'state': r.state}
+                for r in enr.results.filter(type__in=['C', 'E']).order_by('record_id')
+            ],
+        }
 
 
 class ComplaintEscalationHistory(models.Model):

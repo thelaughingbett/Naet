@@ -13,7 +13,10 @@
 # limitations under the License.
 
 
-from django.core.exceptions import ValidationError
+import json
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET, require_POST
+from django.core.exceptions import ValidationError, PermissionDenied
 from decouple import config
 
 from django.http import JsonResponse
@@ -32,6 +35,11 @@ from base.models import (
     Enrollment,
     Result,
     Syllabus,
+    Student,
+    Complaint,
+    ComplaintDocument,
+    AcademicRequisition,
+    RequisitionDocument
 )
 from .base import (
     StudentProfileRequiredMixin,
@@ -358,6 +366,16 @@ class ResultsView(
 
             enrollment_ids = [e.record_id for e in enrollments]
 
+            open_challenge_enrollment_ids = set(
+                Complaint.objects.filter(
+                    challenged_enrollment_id__in=enrollment_ids,
+                    category='Results',
+                    result_action='challenge',
+                ).exclude(
+                    status='Resolved'
+                ).values_list('challenged_enrollment_id', flat=True)
+            )
+
             # Only PUBLISHED CAT/Exam results — draft/submitted/disputed
             # results shouldn't display as a real score, and per the
             # requirement here, shouldn't count toward GPA either.
@@ -387,6 +405,7 @@ class ResultsView(
                     'cat': bucket.get('C', 0),
                     'exam': bucket.get('E', 0),
                     'has_published': has_published,
+                    'has_open_challenge': enr.record_id in open_challenge_enrollment_ids,
                 })
 
         context = {
@@ -396,3 +415,301 @@ class ResultsView(
             'sessions': sessions,
         }
         return render(request, 'base/academics/results.html', context)
+
+
+# ── shared helpers ───────────────────────────────────────────────────────────
+
+def _resolve_enrollment(student, course_code, session_str):
+    """
+    Scoped to this student's own, non-dropped enrollments. Returns None
+    rather than raising — callers turn that into a clean 404-style
+    message instead of a validation error.
+    """
+    enr_qs = Enrollment.objects.filter(
+        student=student,
+        curriculum__course__course_code=course_code,
+    ).exclude(
+        status__in=['dropped', 'rejected']
+    ).select_related('curriculum__course', 'curriculum__session')
+
+    if session_str:
+        return next(
+            (e for e in enr_qs if str(e.curriculum.session) == session_str), None
+        )
+    return enr_qs.order_by('-curriculum__session__start_date').first()
+
+
+def _attach_documents(request, doc_model, **base_kwargs):
+    """
+    doc_model is ComplaintDocument or RequisitionDocument — both share
+    the same shape (file + clean()'s extension check), just different
+    parent FK names, which base_kwargs supplies.
+    """
+    for f in request.FILES.getlist("documents"):
+        doc = doc_model(file=f, **base_kwargs)
+        doc.full_clean()  # re-enforces the allowed-extension list server-side
+        doc.save()
+
+
+def _flatten_errors(e):
+    messages_out = []
+    for field, errs in getattr(e, "message_dict", {"__all__": e.messages}).items():
+        messages_out.extend(errs)
+    return " ".join(messages_out)
+
+
+# ── grade challenges (Complaint) ─────────────────────────────────────────────
+
+@login_required
+@require_GET
+def result_challenge_history(request):
+    """JSON history of grade-challenge complaints for the signed-in student."""
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        return JsonResponse({"items": []})
+
+    qs = Complaint.objects.filter(
+        student=student,
+        category='Results',
+        result_action='challenge',
+    ).select_related(
+        'challenged_enrollment__curriculum__course',
+        'challenged_enrollment__curriculum__session',
+    ).prefetch_related(
+        'documents', 'escalation_history'
+    ).order_by('-date_opened')
+
+    course_code = request.GET.get('course_code')
+    if course_code:
+        qs = qs.filter(
+            challenged_enrollment__curriculum__course__course_code=course_code
+        )
+
+    items = []
+    for c in qs:
+        enr = c.challenged_enrollment
+        course = enr.curriculum.course if enr else None
+        items.append({
+            "id":            str(c.record_id),
+            "status":        c.status,
+            "status_label":  c.get_status_display(),
+            "level_label":   c.get_current_level_display() if c.current_level else "—",
+            "date_opened":   c.date_opened.strftime("%d %b %Y, %H:%M"),
+            "sla_due_at":    c.sla_due_at.strftime("%d %b %Y, %H:%M") if c.sla_due_at else None,
+            "date_resolved": c.date_resolved.strftime("%d %b %Y, %H:%M") if c.date_resolved else None,
+            "resolution":    c.resolution_remarks or "",
+            "description":   c.description,
+            "course_code":   course.course_code if course else "—",
+            "course_name":   course.course_name if course else "—",
+            "session":       str(enr.curriculum.session) if enr else "—",
+            # Frozen at filing — deliberately not the live marks, which
+            # may since have been corrected in response to this challenge.
+            "snapshot": {
+                "cat":   float(c.snapshot_cat) if c.snapshot_cat is not None else None,
+                "exam":  float(c.snapshot_exam) if c.snapshot_exam is not None else None,
+                "total": float(c.snapshot_total) if c.snapshot_total is not None else None,
+                "grade": c.snapshot_grade or "—",
+            },
+            "documents": [
+                {"name": d.original_name, "url": d.file.url} for d in c.documents.all()
+            ],
+            "escalations": [
+                {
+                    "from":      e.escalated_from_level,
+                    "to":        e.escalated_to_level,
+                    "automatic": e.is_automatic,
+                    "reason":    e.reason_for_escalation,
+                    "date":      e.date_escalated.strftime("%d %b %Y, %H:%M"),
+                }
+                for e in c.escalation_history.all()
+            ],
+        })
+
+    return JsonResponse({"items": items})
+
+
+@login_required
+@require_POST
+def submit_result_challenge(request):
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        raise PermissionDenied("Only students can file result challenges.")
+
+    course_code = (request.POST.get("course_code") or "").strip()
+    session_str = (request.POST.get("session") or "").strip()
+    reason = (request.POST.get("reason") or "").strip()
+
+    if not reason:
+        return JsonResponse(
+            {"success": False, "message": "Please give a reason for this request."},
+            status=400,
+        )
+
+    enrollment = _resolve_enrollment(student, course_code, session_str)
+    if not enrollment:
+        return JsonResponse(
+            {"success": False, "message": "You aren't registered for that unit."},
+            status=404,
+        )
+
+    existing = Complaint.objects.filter(
+        student=student, category='Results', result_action='challenge',
+        challenged_enrollment=enrollment,
+    ).exclude(status='Resolved').first()
+    if existing:
+        return JsonResponse(
+            {"success": False, "message": "You already have an open challenge for this unit."},
+            status=409,
+        )
+
+    course = enrollment.curriculum.course
+    complaint = Complaint(
+        student=student,
+        category='Results',
+        result_action='challenge',
+        challenged_enrollment=enrollment,
+        subject=f"Grade challenge — {course.course_code} {course.course_name}"[
+            :255],
+        description=reason,
+        priority='Medium',
+    )
+
+    try:
+        with transaction.atomic():
+            complaint.full_clean()
+            complaint.save()
+            _attach_documents(
+                request, ComplaintDocument,
+                complaint=complaint,
+                uploaded_by_role='student',
+                uploaded_by_user=request.user,
+            )
+    except ValidationError as e:
+        return JsonResponse({"success": False, "message": _flatten_errors(e)}, status=400)
+
+    return JsonResponse({
+        "success": True,
+        "message": "Your challenge has been logged and routed for review.",
+        "level": complaint.get_current_level_display(),
+    })
+
+
+# ── academic requisitions (resit / supplementary / missing marks / special exam) ─
+
+@login_required
+@require_GET
+def requisition_history(request):
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        return JsonResponse({"items": []})
+
+    qs = AcademicRequisition.objects.filter(
+        student=student,
+    ).select_related(
+        'enrollment__curriculum__course',
+        'enrollment__curriculum__session',
+        'scheduled_venue',
+        'hod_reviewed_by', 'approved_by',
+    ).prefetch_related('documents').order_by('-requested_at')
+
+    course_code = request.GET.get('course_code')
+    if course_code:
+        qs = qs.filter(enrollment__curriculum__course__course_code=course_code)
+
+    items = []
+    for r in qs:
+        course = r.enrollment.curriculum.course
+        items.append({
+            "id":            str(r.record_id),
+            "type":          r.type,
+            "type_label":    r.get_type_display(),
+            "status":        r.status,
+            "status_label":  r.get_status_display(),
+            "date_opened":   r.requested_at.strftime("%d %b %Y, %H:%M"),
+            "reason":        r.reason,
+            "course_code":   course.course_code,
+            "course_name":   course.course_name,
+            "session":       str(r.enrollment.curriculum.session),
+            "hod": {
+                "by":      r.hod_reviewed_by.half_name if r.hod_reviewed_by else None,
+                "at":      r.hod_reviewed_at.strftime("%d %b %Y, %H:%M") if r.hod_reviewed_at else None,
+                "remarks": r.hod_remarks or "",
+            },
+            "registrar": {
+                "by":      r.approved_by.half_name if r.approved_by else None,
+                "at":      r.approved_at.strftime("%d %b %Y, %H:%M") if r.approved_at else None,
+                "remarks": r.registrar_remarks or "",
+            },
+            "fee": {
+                "required": r.fee_required,
+                "amount":   float(r.fee_amount) if r.fee_amount is not None else None,
+                "paid":     r.fee_paid,
+                "paid_at":  r.fee_paid_at.strftime("%d %b %Y, %H:%M") if r.fee_paid_at else None,
+            },
+            "schedule": {
+                "date":      r.scheduled_date.strftime("%d %b %Y") if r.scheduled_date else None,
+                "time_slot": r.scheduled_time_slot,
+                "venue":     r.scheduled_venue.venue_name if r.scheduled_venue else None,
+            },
+            "completed_at": r.completed_at.strftime("%d %b %Y, %H:%M") if r.completed_at else None,
+            "documents": [
+                {"name": d.original_name, "url": d.file.url} for d in r.documents.all()
+            ],
+        })
+
+    return JsonResponse({"items": items})
+
+
+@login_required
+@require_POST
+def submit_requisition(request):
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        raise PermissionDenied("Only students can file academic requisitions.")
+
+    course_code = (request.POST.get("course_code") or "").strip()
+    session_str = (request.POST.get("session") or "").strip()
+    req_type = (request.POST.get("type") or "").strip()
+    reason = (request.POST.get("reason") or "").strip()
+
+    valid_types = {c[0]
+                   for c in AcademicRequisition._meta.get_field('type').choices}
+    if req_type not in valid_types:
+        return JsonResponse({"success": False, "message": "Unknown request type."}, status=400)
+    if not reason:
+        return JsonResponse(
+            {"success": False, "message": "Please give a reason for this request."},
+            status=400,
+        )
+
+    enrollment = _resolve_enrollment(student, course_code, session_str)
+    if not enrollment:
+        return JsonResponse(
+            {"success": False, "message": "You aren't registered for that unit."},
+            status=404,
+        )
+
+    requisition = AcademicRequisition(
+        student=student,
+        enrollment=enrollment,
+        type=req_type,
+        reason=reason,
+    )
+
+    try:
+        with transaction.atomic():
+            requisition.full_clean()  # also enforces the one-open-request-per-type rule
+            requisition.save()
+            _attach_documents(
+                request, RequisitionDocument,
+                requisition=requisition,
+                uploaded_by_user=request.user,
+            )
+    except ValidationError as e:
+        return JsonResponse({"success": False, "message": _flatten_errors(e)}, status=400)
+
+    return JsonResponse({
+        "success": True,
+        "message": "Your request has been submitted for HOD review.",
+        "status": requisition.get_status_display(),
+    })

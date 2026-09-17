@@ -32,10 +32,16 @@ from .programme import Programme, Tclass  # noqa: F401
 from .session import Session  # noqa: F401
 from .course import Course  # noqa: F401
 
+# --- Requisitions -----------------------------------------------------------
+
+from .requisitions import RequisitionDocument, AcademicRequisition
+
 __all__ = [
     'UNESCO_ISCED_FIELDS',
     'Institution', 'School', 'Department',
     'Programme', 'Tclass',
     'Session',
     'Course',
+    'RequisitionDocument',
+    'AcademicRequisition'
 ]

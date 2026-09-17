@@ -5,7 +5,7 @@
   rel="stylesheet"
   href="{% static 'base/styles/academics/results/index.css' %}"
 />
-<title>Results & Transcript</title>
+<title>Results &amp; Transcript</title>
 <style>
   .modal-overlay {
     display: none;
@@ -15,6 +15,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    padding: 1rem;
   }
   .modal-overlay.active {
     display: flex;
@@ -24,9 +25,14 @@
     border-radius: 10px;
     max-width: 420px;
     width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
     padding: 24px;
     position: relative;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  .modal-box--wide {
+    max-width: 640px;
   }
   .modal-close {
     position: absolute;
@@ -111,13 +117,265 @@
     color: #c0392b;
     font-size: 0.82rem;
   }
+  .modal-form-message {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    border-radius: 6px;
+    display: none;
+  }
+  .modal-form-message.error {
+    display: block;
+    background: #fdecea;
+    color: #a32d2d;
+  }
+  .modal-form-message.success {
+    display: block;
+    background: #e6f7ed;
+    color: #1e7e34;
+  }
+
+  /* ── universal button busy state ───────────────────────────────── */
+  .is-busy {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.75;
+    cursor: progress !important;
+  }
+  .is-busy > .btn-label {
+    visibility: hidden;
+  }
+  .is-busy::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 15px;
+    height: 15px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(0, 0, 0, 0.18);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: btn-spin 0.65s linear infinite;
+  }
+  @keyframes btn-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .is-done::after {
+    content: "✓";
+    margin-left: 6px;
+    color: #1e7e34;
+    font-weight: 700;
+  }
+  .modal-action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed !important;
+  }
+  .modal-action-btn.has-open-item {
+    background: #fef3c7;
+    border-color: #f3d38a;
+    color: #92400e;
+  }
+
+  /* ── requisition history ──────────────────────────────────────── */
+  .req-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .req-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    opacity: 0.55;
+    font-size: 0.88rem;
+  }
+  .req-item {
+    border: 1px solid #e3e6ea;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .req-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .req-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .req-badge {
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .req-badge--Open {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .req-badge--In_Progress {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .req-badge--Escalated {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .req-badge--Resolved {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .req-badge--pending {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .req-badge--hod_approved {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .req-badge--approved {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .req-badge--rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .req-badge--completed {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  /* ── req modal tabs ───────────────────────────────────────────── */
+  .req-tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid #e3e6ea;
+    margin-top: 10px;
+  }
+  .req-tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #6b7684;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    position: relative;
+    bottom: -1px;
+  }
+  .req-tab-btn.active {
+    color: #1f6392;
+    border-bottom-color: #1f6392;
+  }
+  .req-tab-panel {
+    display: none;
+  }
+  .req-tab-panel.active {
+    display: block;
+  }
+  .req-stage {
+    font-size: 0.78rem;
+    margin-top: 8px;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.03);
+  }
+  .req-stage strong {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.6;
+    margin-bottom: 2px;
+  }
+  .req-fee {
+    font-size: 0.78rem;
+    margin-top: 6px;
+  }
+  .req-fee.unpaid {
+    color: #991b1b;
+  }
+  .req-fee.paid {
+    color: #166534;
+  }
+  .req-schedule {
+    font-size: 0.78rem;
+    margin-top: 6px;
+    background: #eef6ff;
+    color: #1f6392;
+    border-radius: 6px;
+    padding: 6px 9px;
+  }
+  .req-meta {
+    font-size: 0.78rem;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+  .req-scores {
+    font-size: 0.78rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    padding: 6px 9px;
+    margin-top: 8px;
+  }
+  .req-reason {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.75;
+    margin-top: 6px;
+  }
+  .req-resolution {
+    font-size: 0.8rem;
+    margin-top: 6px;
+    padding: 6px 9px;
+    background: #e6f7ed;
+    border-radius: 6px;
+    color: #1e7e34;
+  }
+  .req-chain {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 6px;
+    padding-left: 10px;
+    border-left: 2px solid #e3e6ea;
+  }
+  .req-docs {
+    font-size: 0.76rem;
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .req-docs a {
+    color: #1f6392;
+    text-decoration: none;
+  }
+  .req-docs a:hover {
+    text-decoration: underline;
+  }
 </style>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📊 Results &amp; Transcript</h1>
   <div class="action-buttons">
-    <button class="btn-secondary" id="printBtn">🖨️ Print / Download</button>
-    <button class="btn-secondary" id="refreshBtn">⟳ Refresh</button>
+    <button class="btn-secondary" id="historyBtn">
+      <span class="btn-label">📁 My Requests</span>
+    </button>
+    <button class="btn-secondary" id="printBtn">
+      <span class="btn-label">🖨️ Print / Download</span>
+    </button>
+    <button class="btn-secondary" id="refreshBtn">
+      <span class="btn-label">⟳ Refresh</span>
+    </button>
   </div>
 </div>
 
@@ -156,7 +414,6 @@
 </div>
 
 <!-- Results Table & GPA -->
-<!-- Results Table & GPA -->
 <div class="results-card" id="resultsCard">
   <div class="card-header">📋 Semester Results</div>
 
@@ -183,6 +440,7 @@
         data-cat="{{ row.cat }}"
         data-exam="{{ row.exam }}"
         data-haspublished="{{ row.has_published|yesno:'true,false' }}"
+        data-hasopenchallenge="{{ row.has_open_challenge|yesno:'true,false' }}"
       >
         <td>{{ row.course_code }}</td>
         <td>{{ row.course_name }}</td>
@@ -264,19 +522,38 @@
 
       <div class="modal-actions">
         <button class="btn-secondary modal-action-btn btn" id="challengeBtn">
-          ⚠️ Challenge This Result
+          <span class="btn-label">⚠️ Challenge This Result</span>
         </button>
-        <button class="btn-secondary modal-action-btn btn" id="resitBtn">
-          🔁 Request Resit / Supplementary
+        <button class="btn-secondary modal-action-btn btn" id="requisitionBtn">
+          <span class="btn-label"
+            >🔁 Resit / Supplementary / Other Request</span
+          >
+        </button>
+        <button class="btn-secondary modal-action-btn btn" id="unitHistoryBtn">
+          <span class="btn-label">📁 Requests for this unit</span>
         </button>
       </div>
 
-      <!-- Placeholder panel, shown when an action is chosen -->
+      <!-- Panel shown when an action is chosen -->
       <div
         id="modalActionPanel"
         class="modal-action-panel"
         style="display: none"
       >
+        <div id="modalActionTypeGroup" style="display: none">
+          <label class="info-label">Request type</label>
+          <select id="modalActionType">
+            <option value="resit">Resit Examination</option>
+            <option value="supplementary">Supplementary Examination</option>
+            <option value="missing_marks">
+              Missing / Unpublished Marks Investigation
+            </option>
+            <option value="special_exam">
+              Special Sit-in Exam (Missed for Valid Reason)
+            </option>
+          </select>
+        </div>
+
         <label id="modalActionLabel" class="info-label"></label>
         <textarea
           id="modalActionReason"
@@ -299,17 +576,98 @@
           class="modal-file-error"
           style="display: none"
         ></div>
+        <div id="modalFormMessage" class="modal-form-message"></div>
 
         <button class="btn-secondary btn" id="modalActionSubmit">
-          Submit Request
+          <span class="btn-label">Submit Request</span>
         </button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Requisition History Modal -->
+<div class="modal-overlay" id="reqModalOverlay">
+  <div class="modal-box modal-box--wide">
+    <button class="modal-close" id="reqModalClose">&times;</button>
+
+    <div class="modal-header">
+      <h3 id="reqModalTitle">My Requests</h3>
+      <span id="reqModalSubtitle" class="modal-subtitle">
+        Disputes and academic requisitions
+      </span>
+    </div>
+
+    <div class="req-tabs">
+      <button type="button" class="req-tab-btn active" data-reqtab="disputes">
+        Disputes
+      </button>
+      <button type="button" class="req-tab-btn" data-reqtab="requests">
+        Requests
+      </button>
+    </div>
+
+    <div id="disputesPanel" class="req-tab-panel active">
+      <div id="disputesList" class="req-list">
+        <div class="req-empty">Loading…</div>
+      </div>
+    </div>
+    <div id="requestsPanel" class="req-tab-panel">
+      <div id="requestsList" class="req-list">
+        <div class="req-empty">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-    // ── grade helpers ─────────────────────────────────────────────────────────────
+  const CHALLENGE_HISTORY_URL = "{% url 'result-challenge-history' %}";
+  const CHALLENGE_SUBMIT_URL = "{% url 'submit-result-challenge' %}";
+  const REQUISITION_HISTORY_URL = "{% url 'requisition-history' %}";
+  const REQUISITION_SUBMIT_URL = "{% url 'submit-requisition' %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+
+  // ── button busy-state helpers ─────────────────────────────────────────────
+  // Every click that does real work flips the button into .is-busy (spinner,
+  // pointer-events off) so a slow network can't be mistaken for a dead button
+  // or produce a double-submit.
+  function setBusy(btn) {
+    if (!btn) return false;
+    if (btn.classList.contains("is-busy")) return false; // already in flight
+    btn.classList.add("is-busy");
+    btn.classList.remove("is-done");
+    btn.disabled = true;
+    return true;
+  }
+  function clearBusy(btn, { done = false } = {}) {
+    if (!btn) return;
+    btn.classList.remove("is-busy");
+    btn.disabled = false;
+    if (done) {
+      btn.classList.add("is-done");
+      setTimeout(() => btn.classList.remove("is-done"), 2000);
+    }
+  }
+  // For instant, non-network actions: still flash a brief busy state so the
+  // click always has a visible consequence.
+  function flashBusy(btn, fn, ms = 260) {
+    if (!setBusy(btn)) return;
+    setTimeout(() => {
+      try {
+        fn();
+      } finally {
+        clearBusy(btn, { done: true });
+      }
+    }, ms);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  // ── grade helpers ─────────────────────────────────────────────────────────
   function letterGrade(total) {
     if (total >= 70) return "A";
     if (total >= 60) return "B";
@@ -325,30 +683,33 @@
     return 0.0;
   }
 
-  // ── build data structure from rendered rows ───────────────────────────────────
-  // Rows already arrive pre-merged (one per enrollment) from the server,
-  // so this only needs to group by session — no CAT/Exam merging here.
+  // ── build data structure from rendered rows ───────────────────────────────
   let semesterData = {};
 
   function buildSemesterData() {
-    const allRows = [...document.querySelectorAll("#resultsBody tr")];
-    const grouped = {}; // { session: [course, course, ...] }
+    const allRows = [
+      ...document.querySelectorAll("#resultsBody tr:not(.synthetic)"),
+    ];
+    const grouped = {};
 
     allRows.forEach((row) => {
       const ses = row.dataset.session;
       const cat = parseFloat(row.dataset.cat) || 0;
       const exam = parseFloat(row.dataset.exam) || 0;
       const hasPublished = row.dataset.haspublished === "true";
+      const hasOpenChallenge = row.dataset.hasopenchallenge === "true";
 
       if (!grouped[ses]) grouped[ses] = [];
       grouped[ses].push({
         code: row.dataset.coursecode,
         name: row.dataset.coursename,
         credits: parseInt(row.dataset.credits) || 0,
+        session: ses,
         cat,
         exam,
         total: cat + exam,
         hasPublished,
+        hasOpenChallenge,
       });
     });
 
@@ -360,9 +721,10 @@
     allRows.forEach((r) => (r.style.display = "none"));
   }
 
-  // ── render one semester (or all) ──────────────────────────────────────────────
+  // ── render one semester (or all) ──────────────────────────────────────────
   function renderSemester(semKey) {
     const tbody = document.getElementById("resultsBody");
+    if (!tbody) return;
     tbody.querySelectorAll("tr.synthetic").forEach((r) => r.remove());
 
     let coursesToShow = [];
@@ -390,16 +752,14 @@
     window.currentRowData = {};
 
     coursesToShow.forEach((c, i) => {
-      // A currently-enrolled course with no published results shouldn't
-      // show a misleading "F" from a 0 total — flag it as still in progress.
       const grade = c.hasPublished ? letterGrade(c.total) : "—";
       window.currentRowData[i] = { ...c, grade };
       tbody.insertAdjacentHTML(
         "beforeend",
         `
         <tr class="synthetic" data-row-index="${i}">
-          <td>${c.code}</td>
-          <td>${c.name}</td>
+          <td>${escapeHtml(c.code)}</td>
+          <td>${escapeHtml(c.name)}</td>
           <td>${c.credits}</td>
           <td>${c.cat.toFixed(1)}</td>
           <td>${c.exam.toFixed(1)}</td>
@@ -420,9 +780,7 @@
     });
   }
 
-  // ── GPA for the currently displayed set ──────────────────────────────────────
-  // Only units with a published result contribute — an enrolled-but-
-  // ungraded course shouldn't drag the semester GPA toward 0.
+  // ── GPA for the currently displayed set ──────────────────────────────────
   function renderGPA(courses) {
     const graded = courses.filter((c) => c.hasPublished);
     const credits = graded.reduce((s, c) => s + c.credits, 0);
@@ -432,16 +790,15 @@
     );
     const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
 
-    document.getElementById("gpaSummary").innerHTML = `
+    const box = document.getElementById("gpaSummary");
+    if (!box) return;
+    box.innerHTML = `
       <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
       <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
     `;
   }
 
-  // ── cumulative across ALL semesters ──────────────────────────────────────────
-  // Same rule: a course only counts once it has a published result. A
-  // currently-taken unit with zero results doesn't touch the CGPA at all
-  // — it neither helps nor hurts until it's actually graded.
+  // ── cumulative across ALL semesters ──────────────────────────────────────
   function calculateCumulative() {
     const seen = {};
     let totalCredits = 0,
@@ -477,201 +834,508 @@
     document.getElementById("cgpa").innerText = cgpa;
     document.getElementById("classification").innerText = cls;
   }
-          let activeResultRow = null; // holds the course data currently open in the modal
 
-          function openResultModal(course) {
-            activeResultRow = course;
+  // ── result action modal ───────────────────────────────────────────────────
+  let activeResultRow = null;
+  let pendingFiles = [];
 
-            document.getElementById("modalUnitName").textContent = course.name;
-            document.getElementById("modalUnitCode").textContent = course.code;
-            document.getElementById("modalCat").textContent = course.cat.toFixed(1);
-            document.getElementById("modalExam").textContent = course.exam.toFixed(1);
-            document.getElementById("modalTotal").textContent = course.total.toFixed(1);
-            document.getElementById("modalGrade").textContent = course.grade;
+  function openResultModal(course) {
+    activeResultRow = course;
 
-            document.getElementById("modalActionPanel").style.display = "none";
-            document.getElementById("modalActionReason").value = "";
+    document.getElementById("modalUnitName").textContent = course.name;
+    document.getElementById("modalUnitCode").textContent =
+      `${course.code} · ${course.session}`;
+    document.getElementById("modalCat").textContent = course.cat.toFixed(1);
+    document.getElementById("modalExam").textContent = course.exam.toFixed(1);
+    document.getElementById("modalTotal").textContent = course.hasPublished
+      ? course.total.toFixed(1)
+      : "—";
+    document.getElementById("modalGrade").textContent = course.grade;
 
-            document.getElementById("resultModalOverlay").classList.add("active");
-          }
+    const challengeBtn = document.getElementById("challengeBtn");
+    const challengeLabel = challengeBtn.querySelector(".btn-label");
+    if (course.hasOpenChallenge) {
+      challengeBtn.disabled = true;
+      challengeBtn.classList.add("has-open-item");
+      challengeLabel.textContent = "🔒 Open Challenge Filed";
+      challengeBtn.title =
+        "You already have a challenge in review for this unit.";
+    } else {
+      challengeBtn.disabled = false;
+      challengeBtn.classList.remove("has-open-item");
+      challengeLabel.textContent = "⚠️ Challenge This Result";
+      challengeBtn.removeAttribute("title");
+    }
 
-          function closeResultModal() {
-        document.getElementById("resultModalOverlay").classList.remove("active");
-        activeResultRow = null;
-        pendingFiles = [];
+    document.getElementById("modalActionPanel").style.display = "none";
+    document.getElementById("modalActionReason").value = "";
+    document.getElementById("modalFormMessage").className =
+      "modal-form-message";
+    pendingFiles = [];
+    renderFileList();
+
+    document.getElementById("resultModalOverlay").classList.add("active");
+  }
+
+  function closeResultModal() {
+    document.getElementById("resultModalOverlay").classList.remove("active");
+    activeResultRow = null;
+    pendingFiles = [];
+  }
+
+  document
+    .getElementById("resultModalClose")
+    .addEventListener("click", closeResultModal);
+  document
+    .getElementById("resultModalOverlay")
+    .addEventListener("click", (e) => {
+      if (e.target.id === "resultModalOverlay") closeResultModal();
+    });
+
+  // Mirrors ComplaintDocument.clean()'s allowed_extensions — keep in sync.
+  const ALLOWED_DOC_EXTENSIONS = [
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".heic",
+    ".doc",
+    ".docx",
+  ];
+  const MAX_FILE_SIZE_MB = 25;
+
+  function extOf(filename) {
+    const i = filename.lastIndexOf(".");
+    return i === -1 ? "" : filename.slice(i).toLowerCase();
+  }
+
+  function renderFileList() {
+    const list = document.getElementById("modalFileList");
+    list.innerHTML = "";
+    pendingFiles.forEach((file, idx) => {
+      list.insertAdjacentHTML(
+        "beforeend",
+        `<div class="modal-file-item">
+           <span>📎 ${escapeHtml(file.name)} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+           <button type="button" class="remove-file" data-idx="${idx}">&times;</button>
+         </div>`,
+      );
+    });
+    list.querySelectorAll(".remove-file").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        pendingFiles.splice(Number(btn.dataset.idx), 1);
+        renderFileList();
+      });
+    });
+  }
+
+  document
+    .getElementById("modalActionFiles")
+    .addEventListener("change", (e) => {
+      const errorBox = document.getElementById("modalFileError");
+      errorBox.style.display = "none";
+
+      const incoming = Array.from(e.target.files);
+      const rejected = [];
+
+      incoming.forEach((file) => {
+        const ext = extOf(file.name);
+        if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
+          rejected.push(`${file.name} (unsupported type)`);
+          return;
+        }
+        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+          rejected.push(`${file.name} (over ${MAX_FILE_SIZE_MB}MB)`);
+          return;
+        }
+        pendingFiles.push(file);
+      });
+
+      if (rejected.length) {
+        errorBox.textContent = `Skipped: ${rejected.join(", ")}. Allowed: ${ALLOWED_DOC_EXTENSIONS.join(", ")}.`;
+        errorBox.style.display = "block";
       }
 
-          document
-            .getElementById("resultModalClose")
-            .addEventListener("click", closeResultModal);
-          document
-            .getElementById("resultModalOverlay")
-            .addEventListener("click", (e) => {
-              if (e.target.id === "resultModalOverlay") closeResultModal();
-            });
+      e.target.value = "";
+      renderFileList();
+    });
 
-          // Mirrors ComplaintDocument.clean()'s allowed_extensions — keep these two in sync.
-          const ALLOWED_DOC_EXTENSIONS = [
-            ".pdf",
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".webp",
-            ".heic",
-            ".doc",
-            ".docx",
-          ];
-          const MAX_FILE_SIZE_MB = 25; // matches the "limit size e.g 25mbs" note in ComplaintDocument.clean()
+  function showActionPanel(kind) {
+    const panel = document.getElementById("modalActionPanel");
+    const label = document.getElementById("modalActionLabel");
+    const typeGroup = document.getElementById("modalActionTypeGroup");
+    panel.dataset.actionKind = kind;
 
-          let pendingFiles = []; // File objects staged for the currently open modal action
+    if (kind === "challenge") {
+      typeGroup.style.display = "none";
+      label.textContent = "Reason for challenging this result:";
+    } else {
+      // kind === "requisition" — resit / supplementary / missing marks /
+      // special exam all share one form; the type select decides which.
+      typeGroup.style.display = "block";
+      label.textContent = "Reason for this request:";
+    }
 
-          function extOf(filename) {
-            const i = filename.lastIndexOf(".");
-            return i === -1 ? "" : filename.slice(i).toLowerCase();
-          }
+    panel.style.display = "flex";
 
-          function renderFileList() {
-            const list = document.getElementById("modalFileList");
-            list.innerHTML = "";
-            pendingFiles.forEach((file, idx) => {
-              list.insertAdjacentHTML(
-                "beforeend",
-                `<div class="modal-file-item">
-                     <span>📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                     <button type="button" class="remove-file" data-idx="${idx}">&times;</button>
-                   </div>`,
-              );
-            });
-            list.querySelectorAll(".remove-file").forEach((btn) => {
-              btn.addEventListener("click", () => {
-                pendingFiles.splice(Number(btn.dataset.idx), 1);
-                renderFileList();
-              });
-            });
-          }
+    pendingFiles = [];
+    document.getElementById("modalFileError").style.display = "none";
+    document.getElementById("modalFormMessage").className =
+      "modal-form-message";
+    renderFileList();
+  }
 
-          document
-            .getElementById("modalActionFiles")
-            .addEventListener("change", (e) => {
-              const errorBox = document.getElementById("modalFileError");
-              errorBox.style.display = "none";
+  document
+    .getElementById("challengeBtn")
+    .addEventListener("click", function () {
+      flashBusy(this, () => showActionPanel("challenge"));
+    });
+  document
+    .getElementById("requisitionBtn")
+    .addEventListener("click", function () {
+      flashBusy(this, () => showActionPanel("requisition"));
+    });
 
-              const incoming = Array.from(e.target.files);
-              const rejected = [];
+  // ── submit ────────────────────────────────────────────────────────────────
+  document
+    .getElementById("modalActionSubmit")
+    .addEventListener("click", async function () {
+      const kind =
+        document.getElementById("modalActionPanel").dataset.actionKind;
+      const reason = document.getElementById("modalActionReason").value.trim();
+      const msgBox = document.getElementById("modalFormMessage");
+      msgBox.className = "modal-form-message";
 
-              incoming.forEach((file) => {
-                const ext = extOf(file.name);
-                if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
-                  rejected.push(`${file.name} (unsupported type)`);
-                  return;
-                }
-                if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-                  rejected.push(`${file.name} (over ${MAX_FILE_SIZE_MB}MB)`);
-                  return;
-                }
-                pendingFiles.push(file);
-              });
+      if (!reason) {
+        msgBox.textContent = "Please provide a reason before submitting.";
+        msgBox.className = "modal-form-message error";
+        return;
+      }
 
-              if (rejected.length) {
-                errorBox.textContent = `Skipped: ${rejected.join(", ")}. Allowed: ${ALLOWED_DOC_EXTENSIONS.join(", ")}.`;
-                errorBox.style.display = "block";
-              }
+      if (!setBusy(this)) return;
 
-              e.target.value = ""; // allow re-selecting the same file if removed then re-added
-              renderFileList();
-            });
+      const formData = new FormData();
+      formData.append("course_code", activeResultRow.code);
+      formData.append("session", activeResultRow.session);
+      formData.append("reason", reason);
+      pendingFiles.forEach((file) => formData.append("documents", file));
 
-          function showActionPanel(kind) {
-            const panel = document.getElementById("modalActionPanel");
-            const label = document.getElementById("modalActionLabel");
-            panel.dataset.actionKind = kind;
-            label.textContent =
-              kind === "challenge"
-                ? "Reason for challenging this result:"
-                : "Reason for requesting a resit/supplementary:";
-            panel.style.display = "flex";
+      const isChallenge = kind === "challenge";
+      const submitUrl = isChallenge
+        ? CHALLENGE_SUBMIT_URL
+        : REQUISITION_SUBMIT_URL;
+      if (!isChallenge) {
+        formData.append(
+          "type",
+          document.getElementById("modalActionType").value,
+        );
+      }
 
-            pendingFiles = [];
-            document.getElementById("modalFileError").style.display = "none";
-            renderFileList();
-          }
+      try {
+        const res = await fetch(submitUrl, {
+          method: "POST",
+          headers: { "X-CSRFToken": CSRF_TOKEN },
+          body: formData,
+        });
+        const data = await res.json();
 
-          document
-            .getElementById("challengeBtn")
-            .addEventListener("click", () => showActionPanel("challenge"));
+        if (!data.success) {
+          msgBox.textContent = data.message || "Something went wrong.";
+          msgBox.className = "modal-form-message error";
+          clearBusy(this);
+          return;
+        }
 
-          document
-            .getElementById("resitBtn")
-            .addEventListener("click", () => showActionPanel("resit"));
+        msgBox.textContent = isChallenge
+          ? `${data.message} Now with: ${data.level}.`
+          : `${data.message} Status: ${data.status}.`;
+        msgBox.className = "modal-form-message success";
+        clearBusy(this, { done: true });
 
-          document.getElementById("modalActionSubmit").addEventListener("click", () => {
-            const kind = document.getElementById("modalActionPanel").dataset.actionKind;
-            const reason = document.getElementById("modalActionReason").value.trim();
+        setTimeout(() => {
+          closeResultModal();
+          openReqModal(
+            activeResultRow ? activeResultRow.code : null,
+            isChallenge ? "disputes" : "requests",
+          );
+        }, 900);
+      } catch (err) {
+        msgBox.textContent = "Network error — please try again.";
+        msgBox.className = "modal-form-message error";
+        clearBusy(this);
+      }
+    });
 
-            if (!reason) {
-              alert("Please provide a reason before submitting.");
-              return;
-            }
+  // ── history modal: two independent tabs, two data shapes ──────────────────
+  function closeReqModal() {
+    document.getElementById("reqModalOverlay").classList.remove("active");
+  }
+  document
+    .getElementById("reqModalClose")
+    .addEventListener("click", closeReqModal);
+  document.getElementById("reqModalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "reqModalOverlay") closeReqModal();
+  });
 
-            const formData = new FormData();
-            formData.append("course_code", activeResultRow.code);
-            formData.append("action", kind); // 'challenge' | 'resit'
-            formData.append("reason", reason);
-            pendingFiles.forEach((file) => formData.append("documents", file));
+  let reqModalCourseCode = null;
 
-        {% comment "Optional Note: Disabled this section during debugging" %}
-          // TODO: replace with real POST once backend endpoint exists, e.g.:
-            // fetch("{% url 'results:submit_result_action' %}", {
-            //   method: "POST",
-            //   headers: { "X-CSRFToken": getCookie("csrftoken") }, // no Content-Type — browser sets multipart boundary
-            //   body: formData,
-            // }).then(...)
-        {% endcomment %}
+  function setReqTab(tabName) {
+    document.querySelectorAll(".req-tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.reqtab === tabName);
+    });
+    document
+      .getElementById("disputesPanel")
+      .classList.toggle("active", tabName === "disputes");
+    document
+      .getElementById("requestsPanel")
+      .classList.toggle("active", tabName === "requests");
+  }
 
+  document.querySelectorAll(".req-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setReqTab(btn.dataset.reqtab));
+  });
 
+  async function loadDisputes(courseCode) {
+    const list = document.getElementById("disputesList");
+    list.innerHTML = `<div class="req-empty">Loading…</div>`;
+    const url = courseCode
+      ? `${CHALLENGE_HISTORY_URL}?course_code=${encodeURIComponent(courseCode)}`
+      : CHALLENGE_HISTORY_URL;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.items || data.items.length === 0) {
+        list.innerHTML = `<div class="req-empty">📭 No grade challenges filed yet.</div>`;
+        return;
+      }
+      list.innerHTML = data.items.map(renderDisputeItem).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="req-empty">⚠️ Couldn't load your challenges. Try again.</div>`;
+    }
+  }
 
+  async function loadRequisitions(courseCode) {
+    const list = document.getElementById("requestsList");
+    list.innerHTML = `<div class="req-empty">Loading…</div>`;
+    const url = courseCode
+      ? `${REQUISITION_HISTORY_URL}?course_code=${encodeURIComponent(courseCode)}`
+      : REQUISITION_HISTORY_URL;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.items || data.items.length === 0) {
+        list.innerHTML = `<div class="req-empty">📭 No requisitions filed yet.</div>`;
+        return;
+      }
+      list.innerHTML = data.items.map(renderRequisitionItem).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="req-empty">⚠️ Couldn't load your requests. Try again.</div>`;
+    }
+  }
 
-            console.log("Result action submitted:", {
-              course_code: activeResultRow.code,
-              action: kind,
-              reason,
-              files: pendingFiles.map((f) => f.name),
-            });
+  async function openReqModal(courseCode, defaultTab = "disputes") {
+    reqModalCourseCode = courseCode;
+    const title = document.getElementById("reqModalTitle");
+    const subtitle = document.getElementById("reqModalSubtitle");
 
-            alert("✅ Your request has been recorded (backend wiring pending).");
-            closeResultModal();
-          });
-          // ── init ──────────────────────────────────────────────────────────────────────
-          document.addEventListener("DOMContentLoaded", () => {
-            buildSemesterData();
-            calculateCumulative();
+    title.textContent = courseCode ? `Requests — ${courseCode}` : "My Requests";
+    subtitle.textContent = courseCode
+      ? "Disputes and academic requisitions for this unit"
+      : "Disputes and academic requisitions";
 
-            const activeSession =
-              document.getElementById("resultsBody").dataset.activesession;
-            const select = document.getElementById("semesterSelect");
+    document.getElementById("reqModalOverlay").classList.add("active");
+    setReqTab(defaultTab);
 
-            // Pre-select the active session if it exists in the dropdown
-            const match = [...select.options].find((o) => o.value === activeSession);
-            if (match) {
-              select.value = activeSession;
-            } else {
-              select.value = "all";
-            }
+    // Both tabs' data is fetched up front rather than lazily on tab
+    // click — the person who just submitted a request wants to switch
+    // tabs and see it immediately, not trigger another loading spinner.
+    await Promise.all([loadDisputes(courseCode), loadRequisitions(courseCode)]);
+  }
 
-            renderSemester(select.value);
+  function renderDisputeItem(r) {
+    const s = r.snapshot || {};
+    const fmt = (v) => (v === null || v === undefined ? "—" : v.toFixed(1));
 
-            select.addEventListener("change", (e) => renderSemester(e.target.value));
-          });
+    // Scores as they stood when the challenge was filed — deliberately
+    // the frozen snapshot, not the live marks, which may since have
+    // been corrected in response to this very challenge.
+    const scores =
+      s.total !== null && s.total !== undefined
+        ? `<div class="req-scores">
+             At filing — CAT <strong>${fmt(s.cat)}</strong> ·
+             Exam <strong>${fmt(s.exam)}</strong> ·
+             Total <strong>${fmt(s.total)}</strong> ·
+             Grade <strong>${escapeHtml(s.grade)}</strong>
+           </div>`
+        : "";
 
-          document
-            .getElementById("printBtn")
-            .addEventListener("click", () =>
-              alert("📄 PDF transcript download coming soon."),
-            );
-          document.getElementById("refreshBtn").addEventListener("click", () => {
-            buildSemesterData();
-            calculateCumulative();
-            renderSemester(document.getElementById("semesterSelect").value);
-          });
+    const chain = (r.escalations || []).length
+      ? `<div class="req-chain">${r.escalations
+          .map(
+            (e) =>
+              `↑ ${escapeHtml(e.from)} → ${escapeHtml(e.to)} · ${escapeHtml(e.date)}${
+                e.automatic ? " (auto — SLA expired)" : ""
+              }`,
+          )
+          .join("<br>")}</div>`
+      : "";
+
+    const docs = (r.documents || []).length
+      ? `<div class="req-docs">${r.documents
+          .map(
+            (d) =>
+              `<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">📎 ${escapeHtml(d.name)}</a>`,
+          )
+          .join("")}</div>`
+      : "";
+
+    const resolution = r.resolution
+      ? `<div class="req-resolution">✔ ${escapeHtml(r.resolution)}</div>`
+      : "";
+
+    return `
+      <div class="req-item">
+        <div class="req-item-top">
+          <span class="req-title">Grade Challenge — ${escapeHtml(r.course_code)}</span>
+          <span class="req-badge req-badge--${escapeHtml(r.status)}">${escapeHtml(r.status_label)}</span>
+        </div>
+        <div class="req-meta">
+          ${escapeHtml(r.course_name)} · ${escapeHtml(r.session)}<br>
+          Filed ${escapeHtml(r.date_opened)} · Currently with <strong>${escapeHtml(r.level_label)}</strong>
+          ${r.sla_due_at && !r.date_resolved ? ` · due ${escapeHtml(r.sla_due_at)}` : ""}
+          ${r.date_resolved ? ` · closed ${escapeHtml(r.date_resolved)}` : ""}
+        </div>
+        ${scores}
+        <div class="req-reason">"${escapeHtml(r.description)}"</div>
+        ${docs}
+        ${chain}
+        ${resolution}
+      </div>`;
+  }
+
+  function renderRequisitionItem(r) {
+    const docs = (r.documents || []).length
+      ? `<div class="req-docs">${r.documents
+          .map(
+            (d) =>
+              `<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">📎 ${escapeHtml(d.name)}</a>`,
+          )
+          .join("")}</div>`
+      : "";
+
+    const hodStage =
+      r.hod && r.hod.by
+        ? `<div class="req-stage"><strong>HOD</strong>
+           ${escapeHtml(r.hod.by)} · ${escapeHtml(r.hod.at)}
+           ${r.hod.remarks ? `<br>"${escapeHtml(r.hod.remarks)}"` : ""}
+         </div>`
+        : "";
+
+    const registrarStage =
+      r.registrar && r.registrar.by
+        ? `<div class="req-stage"><strong>Registrar, Academic Affairs</strong>
+           ${escapeHtml(r.registrar.by)} · ${escapeHtml(r.registrar.at)}
+           ${r.registrar.remarks ? `<br>"${escapeHtml(r.registrar.remarks)}"` : ""}
+         </div>`
+        : "";
+
+    const fee =
+      r.fee && r.fee.required
+        ? `<div class="req-fee ${r.fee.paid ? "paid" : "unpaid"}">
+           ${r.fee.amount !== null ? `Fee: KES ${r.fee.amount.toLocaleString()}` : "Fee: to be set on approval"}
+           — ${r.fee.paid ? `paid ${escapeHtml(r.fee.paid_at)}` : "unpaid"}
+         </div>`
+        : "";
+
+    const schedule =
+      r.schedule && r.schedule.date
+        ? `<div class="req-schedule">
+           📅 Scheduled ${escapeHtml(r.schedule.date)}
+           ${r.schedule.time_slot ? `· ${escapeHtml(r.schedule.time_slot)}` : ""}
+           ${r.schedule.venue ? `· ${escapeHtml(r.schedule.venue)}` : ""}
+         </div>`
+        : "";
+
+    const completed = r.completed_at
+      ? `<div class="req-resolution">✔ Completed ${escapeHtml(r.completed_at)}</div>`
+      : "";
+
+    return `
+      <div class="req-item">
+        <div class="req-item-top">
+          <span class="req-title">${escapeHtml(r.type_label)} — ${escapeHtml(r.course_code)}</span>
+          <span class="req-badge req-badge--${escapeHtml(r.status)}">${escapeHtml(r.status_label)}</span>
+        </div>
+        <div class="req-meta">
+          ${escapeHtml(r.course_name)} · ${escapeHtml(r.session)}<br>
+          Filed ${escapeHtml(r.date_opened)}
+        </div>
+        <div class="req-reason">"${escapeHtml(r.reason)}"</div>
+        ${docs}
+        ${hodStage}
+        ${registrarStage}
+        ${fee}
+        ${schedule}
+        ${completed}
+      </div>`;
+  }
+
+  document
+    .getElementById("historyBtn")
+    .addEventListener("click", async function () {
+      if (!setBusy(this)) return;
+      try {
+        await openReqModal(null, "disputes");
+        clearBusy(this, { done: true });
+      } catch (e) {
+        clearBusy(this);
+      }
+    });
+
+  document
+    .getElementById("unitHistoryBtn")
+    .addEventListener("click", async function () {
+      if (!activeResultRow) return;
+      if (!setBusy(this)) return;
+      const code = activeResultRow.code;
+      try {
+        closeResultModal();
+        await openReqModal(code, "disputes");
+        clearBusy(this, { done: true });
+      } catch (e) {
+        clearBusy(this);
+      }
+    });
+
+  // ── init ──────────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+    const body = document.getElementById("resultsBody");
+    if (body) {
+      buildSemesterData();
+      calculateCumulative();
+
+      const activeSession = body.dataset.activesession;
+      const select = document.getElementById("semesterSelect");
+
+      const match = [...select.options].find((o) => o.value === activeSession);
+      select.value = match ? activeSession : "all";
+
+      renderSemester(select.value);
+      select.addEventListener("change", (e) => renderSemester(e.target.value));
+    }
+  });
+
+  document.getElementById("printBtn").addEventListener("click", function () {
+    flashBusy(this, () => window.print());
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", function () {
+    if (!setBusy(this)) return;
+    // A real refetch of published results needs a page load — results are
+    // server-rendered, so re-deriving from the existing DOM would just
+    // recompute the same numbers.
+    window.location.reload();
+  });
 </script>
 {% endblock %}

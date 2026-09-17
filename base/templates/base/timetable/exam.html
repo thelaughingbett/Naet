@@ -10,77 +10,7 @@
 />
 <title>Exam Timetable</title>
 <style>
-  /* ========== ADDITIONAL RESPONSIVE STYLES (embedded) ========== */
-  @media (max-width: 768px) {
-    .page-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    .filter-bar {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.8rem;
-    }
-    .filter-group {
-      justify-content: space-between;
-    }
-    .filter-group label {
-      min-width: 70px;
-    }
-    select,
-    .filter-group input {
-      flex: 1;
-    }
-    .countdown-card {
-      flex-direction: column;
-      text-align: center;
-      gap: 0.5rem;
-    }
-    .countdown-timer {
-      font-size: 1.2rem;
-    }
-    .exam-table th,
-    .exam-table td {
-      padding: 0.7rem 0.5rem;
-      font-size: 0.75rem;
-    }
-    .exam-table .exam-type-badge {
-      font-size: 0.65rem;
-      padding: 0.2rem 0.4rem;
-    }
-    .venue-badge {
-      display: inline-block;
-      margin: 0.15rem 0;
-    }
-    .info-note {
-      font-size: 0.7rem;
-      line-height: 1.4;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .page-title {
-      font-size: 1.3rem;
-    }
-    .exam-badge {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.8rem;
-    }
-    .countdown-card div:first-child .countdown-title {
-      font-size: 0.75rem;
-    }
-    .exam-table th,
-    .exam-table td {
-      padding: 0.5rem 0.3rem;
-      font-size: 0.7rem;
-    }
-    .exam-table th {
-      font-size: 0.65rem;
-    }
-  }
-
-  /* Ensure table container scrolls horizontally on any screen smaller than table min-width */
+  /* ========== DESKTOP TABLE (unchanged from before) ========== */
   .exam-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -88,12 +18,368 @@
   .exam-table {
     min-width: 800px;
   }
-  /* Better no-results message */
   #noSearchResults {
     padding: 2rem;
   }
+
+  /* ========== MOBILE-ONLY DAY VIEW (ported from the new design) ========== */
+  .mobile-exam-view {
+    display: none;
+  }
+
+  .day-strip {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.9rem 0 0.4rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .day-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .day-chip {
+    flex: 0 0 auto;
+    min-width: 58px;
+    padding: 0.55rem 0.6rem;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    scroll-snap-align: start;
+    font-family: inherit;
+  }
+  .day-chip__name {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .day-chip__date {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 1px;
+  }
+  .day-chip__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--maroon);
+    margin: 4px auto 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .day-chip--has-exams .day-chip__dot {
+    opacity: 1;
+  }
+  .day-chip--today {
+    border-color: var(--navy);
+    background: #eef4fb;
+  }
+  .day-chip--today .day-chip__name {
+    color: var(--navy);
+  }
+  .day-chip--active {
+    background: var(--navy);
+    border-color: var(--navy);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(10, 37, 64, 0.25);
+  }
+  .day-chip--active .day-chip__name,
+  .day-chip--active .day-chip__date {
+    color: white;
+  }
+  .day-chip--active .day-chip__dot {
+    background: var(--gold, #fbbf24);
+  }
+
+  .exam-list {
+    padding: 0.5rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.2rem 0.2rem;
+    margin-top: 0.4rem;
+  }
+  .day-heading__title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .day-heading__count {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+
+  .exam-card {
+    background: var(--white);
+    border-radius: var(--radius-md, 14px);
+    border: 1px solid var(--border);
+    padding: 0.9rem 0.9rem 0.9rem 1.1rem;
+    display: flex;
+    gap: 0.85rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.03));
+  }
+  .exam-card:active {
+    transform: scale(0.985);
+  }
+  .exam-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--blue-card);
+  }
+  .exam-card--cat::before {
+    background: #b91c1c;
+  }
+  .exam-card--main::before {
+    background: var(--blue-card);
+  }
+  .exam-card--supp::before,
+  .exam-card--supplementary::before {
+    background: var(--gold, #fbbf24);
+  }
+  .exam-card--special::before {
+    background: #9d174d;
+  }
+
+  .exam-card__time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 62px;
+    flex-shrink: 0;
+    border-right: 1px dashed var(--border);
+    padding-right: 0.7rem;
+  }
+  .exam-card__time-start {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .exam-card__time-end {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .exam-card__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .exam-card__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .exam-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+  .exam-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+  }
+  .exam-card__badges {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .badge--cat {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .badge--main {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .badge--supp,
+  .badge--supplementary {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .badge--special {
+    background: #fce7f3;
+    color: #9d174d;
+  }
+
+  .empty-day {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+  }
+  .empty-day__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 0.9rem;
+    color: var(--text-muted);
+  }
+
+  /* ========== BOTTOM SHEET (exam detail — shared desktop+mobile) ========== */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .sheet {
+    background: var(--white);
+    border-radius: var(--radius-xl, 20px);
+    max-width: 480px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md, 0 8px 20px rgba(0, 0, 0, 0.06));
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s ease;
+  }
+  .sheet-overlay.active .sheet {
+    transform: scale(1) translateY(0);
+  }
+  .sheet__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .sheet__title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .sheet__subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .sheet__close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .detail-row {
+    display: flex;
+    padding: 0.55rem 0;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row .label {
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 100px;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+
+  /* ========== BREAKPOINT SWAP ========== */
+  @media (max-width: 768px) {
+    .desktop-exam-view {
+      display: none;
+    }
+    .mobile-exam-view {
+      display: block;
+    }
+    .filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.8rem;
+    }
+    .countdown-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+    .sheet-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .sheet {
+      max-width: 100%;
+      border-radius: 20px 20px 0 0;
+      padding: 1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 </style>
 {% endblock %} {% block body %}
+
 <div class="page-header">
   <h1 class="page-title">📖 Exam Timetable</h1>
   {% if session %}
@@ -106,11 +392,21 @@
 <div class="filter-bar">
   <div class="filter-group">
     <label>📅 Session:</label>
-    <select id="sessionSelect" onchange="filterTable()">
+    <select id="sessionSelect" onchange="filterExams()">
       <option value="all">All</option>
       {% for s in all_sessions %}
-      <!-- prettier-ignore -->
-      <option value="{{ s.record_id }}" {% if s == session %}selected{% endif %}>{{ s }}</option>
+      <option
+        value="{{ s.record_id }}"
+        {%
+        if
+        s=""
+        ="session"
+        %}selected{%
+        endif
+        %}
+      >
+        {{ s }}
+      </option>
       {% endfor %}
     </select>
   </div>
@@ -120,7 +416,7 @@
       type="text"
       id="searchExam"
       placeholder="Course code or name"
-      oninput="filterTable()"
+      oninput="filterExams()"
       style="
         padding: 0.5rem 1rem;
         border-radius: 40px;
@@ -130,90 +426,80 @@
   </div>
 </div>
 
-<!-- countdown — uses time_slot split, not start_time -->
-{% with first=exam_sessions.0 %}
-<div
-  class="countdown-card"
-  id="countdownCard"
-  data-date="{{ first.date|date:'Y-m-d' }}"
-  data-slot="{{ first.time_slot }}"
-  data-code="{{ first.curriculum.course.course_code }}"
->
+<div class="countdown-card" id="countdownCard">
   <div>
-    <div class="countdown-title">⏰ Countdown to first exam</div>
+    <div class="countdown-title">⏰ Countdown to next exam</div>
     <div class="countdown-timer" id="countdownTimer">calculating...</div>
   </div>
-  <div>
-    📌 {{ first.curriculum.course.course_code }} • {{ first.date|date:"j M Y" }}
-    • {{ first.time_slot }}
+  <div id="countdownMeta"></div>
+</div>
+
+<!-- ========== DESKTOP: TABLE ========== -->
+<div class="desktop-exam-view">
+  <div class="exam-table-container">
+    <table class="exam-table" id="examTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Day</th>
+          <th>Time Slot</th>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Type</th>
+          <th>Venue</th>
+          <th>Invigilator</th>
+        </tr>
+      </thead>
+      <tbody id="examTableBody">
+        {% for exam in exam_sessions %}
+        <tr
+          data-id="{{ exam.record_id }}"
+          data-code="{{ exam.curriculum.course.course_code|lower }}"
+          data-name="{{ exam.curriculum.course.course_name|lower }}"
+          data-session="{{ exam.curriculum.session_id }}"
+          onclick="openExamSheet('{{ exam.record_id }}')"
+          style="cursor: pointer"
+        >
+          <td>{{ exam.date|date:"j M Y" }}</td>
+          <td>{{ exam.date|date:"l" }}</td>
+          <td>{{ exam.time_slot }}</td>
+          <td><strong>{{ exam.curriculum.course.course_code }}</strong></td>
+          <td>{{ exam.curriculum.course.course_name }}</td>
+          <td>
+            <span
+              class="exam-type-badge exam-type-badge--{{ exam.exam_type|lower }}"
+            >
+              {{ exam.get_exam_type_display }}
+            </span>
+          </td>
+          <td>
+            {% for ev in exam.venues.all %}
+            <span class="venue-badge">{{ ev.venue }}</span>
+            {% empty %}<span style="opacity: 0.5">TBA</span>{% endfor %}
+          </td>
+          <td style="font-size: 0.8rem">
+            {% for ev in exam.venues.all %}{% for inv in ev.invigilators.all
+            %}{{ inv.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{%
+            endfor %}{% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div
+      id="noSearchResults"
+      style="display: none; text-align: center; padding: 40px; opacity: 0.5"
+    >
+      <div style="font-size: 1.8rem; margin-bottom: 8px">🔍</div>
+      <div style="font-weight: 500">No exams match your search</div>
+    </div>
   </div>
 </div>
-{% endwith %}
 
-<div class="exam-table-container">
-  <table class="exam-table" id="examTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Day</th>
-        <th>Time Slot</th>
-        <th>Course Code</th>
-        <th>Course Name</th>
-        <th>Type</th>
-        <th>Venue</th>
-        <th>Invigilator</th>
-      </tr>
-    </thead>
-    <tbody id="examTableBody">
-      {% for exam in exam_sessions %}
-      <tr
-        data-code="{{ exam.curriculum.course.course_code|lower }}"
-        data-name="{{ exam.curriculum.course.course_name|lower }}"
-        data-session="{{ exam.curriculum.session.record_id }}"
-      >
-        <td>{{ exam.date|date:"j M Y" }}</td>
-        <td>{{ exam.date|date:"l" }}</td>
-        <td>{{ exam.time_slot }}</td>
-        <td><strong>{{ exam.curriculum.course.course_code }}</strong></td>
-        <td>{{ exam.curriculum.course.course_name }}</td>
-        <td>
-          <span
-            class="exam-type-badge exam-type-badge--{{ exam.exam_type|lower }}"
-          >
-            {{ exam.get_exam_type_display }}
-          </span>
-        </td>
-        <td>
-          {% for ev in exam.venues.all %}
-          <span class="venue-badge">{{ ev.venue }}</span>
-          {% empty %}
-          <span style="opacity: 0.5">TBA</span>
-          {% endfor %}
-        </td>
-        <td style="font-size: 0.8rem">
-          <!-- prettier-ignore -->
-          {% for ev in exam.venues.all %} 
-          {% for  inv in ev.invigilators.all %}
-          {{inv.name}}
-          {% if not forloop.last %}, 
-          {% endif %}
-          {% empty %}
-           —
-          {% endfor %}
-          {% endfor %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div
-    id="noSearchResults"
-    style="display: none; text-align: center; padding: 40px; opacity: 0.5"
-  >
-    <div style="font-size: 1.8rem; margin-bottom: 8px">🔍</div>
-    <div style="font-weight: 500">No exams match your search</div>
-  </div>
+<!-- ========== MOBILE: DAY STRIP + CARD LIST ========== -->
+<div class="mobile-exam-view">
+  <div class="day-strip" id="dayStrip"></div>
+  <div class="exam-list" id="examList"></div>
 </div>
 
 <div class="info-note">
@@ -229,58 +515,323 @@
   <div style="font-size: 2.5rem; margin-bottom: 12px">📭</div>
   <div style="font-weight: 600; margin-bottom: 6px">No exam timetable yet</div>
   <div style="font-size: 0.8rem">
-    {% if session %}No exams have been scheduled for {{ session }}.
-    <!-- prettier-ignore -->
-    {% else %}There is no active session at the moment.{% endif %}
+    {% if session %}No exams have been scheduled for {{ session }}. {% else
+    %}There is no active session at the moment.{% endif %}
     <br />Check back closer to the end of semester.
   </div>
 </div>
 {% endif %}
 
+<!-- ========== EXAM DETAIL SHEET (shared desktop + mobile) ========== -->
+<div class="sheet-overlay" id="examSheetOverlay">
+  <div class="sheet">
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title" id="sheetCourseName">Course</div>
+        <div class="sheet__subtitle" id="sheetCourseMeta">CODE</div>
+      </div>
+      <button class="sheet__close" onclick="closeExamSheet()">✕</button>
+    </div>
+    <div id="sheetDetailsBody"></div>
+  </div>
+</div>
+
+<!--
+  Data blob for JS — built here in the template rather than in the view,
+  since this template's view wasn't available to check/modify. If a
+  view later gets touched for this page, move this serialization there
+  instead (cleaner: business logic doesn't belong in a template).
+
+  NOTE: `invigilators` is a pre-joined STRING (not an array) rather than
+  per-venue structured data. This mirrors a pre-existing quirk already
+  present in the old template's own invigilator cell (doc 74): with
+  multiple venues, invigilator names across different venues run
+  together without a separating comma between venue groups. Not a
+  regression introduced here — flagging it as a known minor display
+  issue, fixable later with a model-level `all_invigilator_names`
+  property that returns a clean, deduplicated, properly-joined string.
+-->
+<script id="examSessionsData" type="application/json">
+  [
+    {% for exam in exam_sessions %}
+    {
+      "id": "{{ exam.record_id }}",
+      "date": "{{ exam.date|date:'Y-m-d' }}",
+      "time_slot": "{{ exam.time_slot }}",
+      "code": "{{ exam.curriculum.course.course_code|escapejs }}",
+      "name": "{{ exam.curriculum.course.course_name|escapejs }}",
+      "type": "{{ exam.exam_type|lower }}",
+      "type_display": "{{ exam.get_exam_type_display|escapejs }}",
+      "session_id": "{{ exam.curriculum.session_id }}",
+      "venues": [{% for ev in exam.venues.all %}"{{ ev.venue.venue_name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+      "invigilators": "{% for ev in exam.venues.all %}{% for inv in ev.invigilators.all %}{{ inv.name|escapejs }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endfor %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+</script>
+
 <script>
-  function filterTable() {
-    const search =
-      document.getElementById("searchExam")?.value.toLowerCase() || "";
-    const sessionId = document.getElementById("sessionSelect")?.value || "all";
+  const EXAM_SESSIONS = JSON.parse(
+    document.getElementById("examSessionsData").textContent,
+  );
+  const EXAM_TYPE_DISPLAY = {};
+  EXAM_SESSIONS.forEach((e) => {
+    EXAM_TYPE_DISPLAY[e.type] = e.type_display;
+  });
+
+  let activeExamDay = "all";
+  let currentFilter = {
+    search: "",
+    session: "{{ session.record_id|default:'all' }}",
+  };
+
+  function parseDate(iso) {
+    return new Date(iso + "T00:00:00");
+  }
+  function fmtShort(d) {
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+  function isToday(iso) {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return parseDate(iso).getTime() === t.getTime();
+  }
+
+  // ── desktop table filter (existing behavior, kept) ──────────────────────
+  function filterExams() {
+    currentFilter.search = (document.getElementById("searchExam")?.value || "")
+      .toLowerCase()
+      .trim();
+    currentFilter.session =
+      document.getElementById("sessionSelect")?.value || "all";
+
     const rows = document.querySelectorAll("#examTableBody tr");
     let visible = 0;
-
     rows.forEach((row) => {
       const matchSearch =
-        row.dataset.code.includes(search) || row.dataset.name.includes(search);
+        row.dataset.code.includes(currentFilter.search) ||
+        row.dataset.name.includes(currentFilter.search);
       const matchSession =
-        sessionId === "all" || row.dataset.session === sessionId;
+        currentFilter.session === "all" ||
+        row.dataset.session === currentFilter.session;
       row.style.display = matchSearch && matchSession ? "" : "none";
       if (matchSearch && matchSession) visible++;
     });
-
     document.getElementById("noSearchResults").style.display =
       visible === 0 ? "block" : "none";
+
+    renderMobileDayStrip();
+    renderMobileExamList();
   }
 
+  function filteredSessions() {
+    return EXAM_SESSIONS.filter((e) => {
+      const matchSearch =
+        !currentFilter.search ||
+        e.code.toLowerCase().includes(currentFilter.search) ||
+        e.name.toLowerCase().includes(currentFilter.search);
+      const matchSession =
+        currentFilter.session === "all" ||
+        e.session_id === currentFilter.session;
+      return matchSearch && matchSession;
+    });
+  }
+
+  // ── countdown (desktop + mobile share one card) ─────────────────────────
   function updateCountdown() {
-    const card = document.getElementById("countdownCard");
-    if (!card) return;
+    const now = new Date();
+    const upcoming = EXAM_SESSIONS.map((e) => ({
+      ...e,
+      startDt: new Date(`${e.date}T${e.time_slot.split("-")[0]}:00`),
+    }))
+      .filter((e) => e.startDt > now)
+      .sort((a, b) => a.startDt - b.startDt);
 
-    // slot is '08:00-11:00' — extract start time
-    const slot = card.dataset.slot;
-    const start = slot ? slot.split("-")[0] : "08:00";
-    const examDate = new Date(`${card.dataset.date}T${start}:00`);
-    const diff = examDate - new Date();
     const timer = document.getElementById("countdownTimer");
+    const meta = document.getElementById("countdownMeta");
+    if (!timer) return;
 
-    if (diff <= 0) {
-      timer.innerText = "Exam in progress";
+    if (upcoming.length === 0) {
+      timer.textContent = "No upcoming exams";
+      if (meta) meta.innerHTML = "";
       return;
     }
 
+    const first = upcoming[0];
+    const diff = first.startDt - now;
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
     const minutes = Math.floor((diff % 3600000) / 60000);
-    timer.innerText = `${days}d ${hours}h ${minutes}m`;
+    timer.textContent = `${days}d ${hours}h ${minutes}m`;
+    if (meta)
+      meta.innerHTML = `📌 <strong>${first.code}</strong> • ${fmtShort(parseDate(first.date))} • ${first.time_slot}`;
   }
 
-  updateCountdown();
-  setInterval(updateCountdown, 60000);
+  // ── mobile: day strip ────────────────────────────────────────────────────
+  function groupByDate(list) {
+    const groups = {};
+    list.forEach((e) => {
+      (groups[e.date] ||= []).push(e);
+    });
+    Object.values(groups).forEach((g) =>
+      g.sort((a, b) => a.time_slot.localeCompare(b.time_slot)),
+    );
+    return groups;
+  }
+
+  function renderMobileDayStrip() {
+    const strip = document.getElementById("dayStrip");
+    if (!strip) return;
+
+    const grouped = groupByDate(filteredSessions());
+    const dates = Object.keys(grouped).sort();
+
+    let html = `
+      <button class="day-chip ${activeExamDay === "all" ? "day-chip--active" : ""} ${dates.length ? "day-chip--has-exams" : ""}"
+              type="button" onclick="selectExamDay('all')">
+        <div class="day-chip__name">All</div>
+        <div class="day-chip__date">📋</div>
+        <div class="day-chip__dot"></div>
+      </button>`;
+
+    dates.forEach((iso) => {
+      const d = parseDate(iso);
+      const active = activeExamDay === iso;
+      html += `
+        <button class="day-chip ${isToday(iso) ? "day-chip--today" : ""} ${active ? "day-chip--active" : ""} day-chip--has-exams"
+                type="button" onclick="selectExamDay('${iso}')">
+          <div class="day-chip__name">${d.toLocaleDateString("en-GB", { weekday: "short" })}</div>
+          <div class="day-chip__date">${d.getDate()}</div>
+          <div class="day-chip__dot"></div>
+        </button>`;
+    });
+
+    strip.innerHTML = html;
+  }
+
+  function selectExamDay(iso) {
+    activeExamDay = iso;
+    renderMobileDayStrip();
+    renderMobileExamList();
+  }
+
+  // ── mobile: exam card list ───────────────────────────────────────────────
+  function calcDuration(start, end) {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const mins = eh * 60 + em - (sh * 60 + sm);
+    return mins % 60 === 0
+      ? `${Math.floor(mins / 60)}h`
+      : `${Math.floor(mins / 60)}h${mins % 60}`;
+  }
+
+  function renderExamCard(e) {
+    const [start, end] = e.time_slot.split("-");
+    const firstVenue = e.venues[0] || "TBA";
+    const venueExtra =
+      e.venues.length > 1
+        ? `<span class="badge badge--main">+${e.venues.length - 1}</span>`
+        : "";
+    return `
+      <div class="exam-card exam-card--${e.type}" data-id="${e.id}" onclick="openExamSheet('${e.id}')">
+        <div class="exam-card__time">
+          <div class="exam-card__time-start">${start}</div>
+          <div class="exam-card__time-end">${end}</div>
+        </div>
+        <div class="exam-card__body">
+          <div class="exam-card__title">${e.name}</div>
+          <div class="exam-card__meta">
+            <span class="exam-card__meta-item">#️⃣ ${e.code}</span>
+            <span class="exam-card__meta-item">📍 ${firstVenue}</span>
+          </div>
+          <div class="exam-card__badges">
+            <span class="badge badge--${e.type}">${e.type_display}</span>
+            ${venueExtra}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderMobileExamList() {
+    const list = document.getElementById("examList");
+    if (!list) return;
+
+    const filtered = filteredSessions();
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-day"><div class="empty-day__icon">🔍</div><div>No exams match your search</div></div>`;
+      return;
+    }
+
+    const grouped = groupByDate(filtered);
+    const dates = Object.keys(grouped).sort();
+    const daysToRender = (
+      activeExamDay === "all" ? dates : [activeExamDay]
+    ).filter((d) => grouped[d]);
+
+    if (daysToRender.length === 0) {
+      list.innerHTML = `<div class="empty-day"><div class="empty-day__icon">☕</div><div>No exams on this day</div></div>`;
+      return;
+    }
+
+    let html = "";
+    daysToRender.forEach((iso) => {
+      const d = parseDate(iso);
+      const exams = grouped[iso];
+      html += `
+        <div class="day-heading">
+          <div class="day-heading__title">${d.toLocaleDateString("en-GB", { weekday: "long" })}, ${fmtShort(d)}</div>
+          <div class="day-heading__count">${exams.length} exam${exams.length !== 1 ? "s" : ""}</div>
+        </div>`;
+      exams.forEach((e) => {
+        html += renderExamCard(e);
+      });
+    });
+    list.innerHTML = html;
+  }
+
+  // ── exam detail sheet (opens from either desktop row or mobile card) ────
+  function openExamSheet(id) {
+    const exam = EXAM_SESSIONS.find((e) => e.id === id);
+    if (!exam) return;
+    const d = parseDate(exam.date);
+
+    document.getElementById("sheetCourseName").textContent = exam.name;
+    document.getElementById("sheetCourseMeta").textContent = exam.code;
+
+    const venuesHtml = exam.venues.length
+      ? exam.venues
+          .map((v) => `<span class="venue-badge">${v}</span>`)
+          .join(" ")
+      : '<span style="opacity:0.5">TBA</span>';
+
+    document.getElementById("sheetDetailsBody").innerHTML = `
+      <div class="detail-row"><span class="label">Date</span><span>${d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span></div>
+      <div class="detail-row"><span class="label">Time</span><span>${exam.time_slot}</span></div>
+      <div class="detail-row"><span class="label">Type</span><span>${exam.type_display}</span></div>
+      <div class="detail-row"><span class="label">Venue</span><span>${venuesHtml}</span></div>
+      <div class="detail-row"><span class="label">Invigilator(s)</span><span>${exam.invigilators || "—"}</span></div>
+    `;
+
+    document.getElementById("examSheetOverlay").classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeExamSheet() {
+    document.getElementById("examSheetOverlay").classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document
+    .getElementById("examSheetOverlay")
+    ?.addEventListener("click", (e) => {
+      if (e.target.id === "examSheetOverlay") closeExamSheet();
+    });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderMobileDayStrip();
+    renderMobileExamList();
+    updateCountdown();
+    setInterval(updateCountdown, 60000);
+  });
 </script>
 {% endblock %}

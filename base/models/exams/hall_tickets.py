@@ -52,7 +52,14 @@ class ExamCard(BaseModelMixin):
     Serial number and QR payload are generated once and reused —
     regenerating creates a new ExamCard record (old one is superseded).
 
-    A student can only have ONE active card per session.
+    A student can only have ONE active card per session — enforced as a
+    partial unique constraint on is_active=True, NOT a plain
+    unique_together on all three fields. A plain unique_together would
+    also cap inactive rows at one per (student, session), which breaks
+    the moment a student regenerates their card a second time (the
+    deactivate step would try to insert a second (student, session,
+    False) row and collide with the historical one from the first
+    regeneration).
     """
 
     student = models.ForeignKey(
@@ -78,7 +85,13 @@ class ExamCard(BaseModelMixin):
     )
 
     class Meta:
-        unique_together = ('student', 'session', 'is_active')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'session'],
+                condition=models.Q(is_active=True),
+                name='unique_active_examcard_per_student_session',
+            )
+        ]
         ordering = ['-issued_at']
 
     def __str__(self):
@@ -86,8 +99,6 @@ class ExamCard(BaseModelMixin):
 
     @classmethod
     def generate_serial(cls):
-        # TODO : change this to a strategy
-        """UNI-2026-XXXX-XXXX format, guaranteed unique."""
         import random
         from datetime import datetime
 
@@ -101,5 +112,4 @@ class ExamCard(BaseModelMixin):
 
     @property
     def qr_payload(self):
-        """String encoded into the QR — verifiable at exam halls."""
         return f"{self.student.registration_number}|{self.serial_number}|{self.session}"

@@ -18,7 +18,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import datetime
 import types
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 
 from django.http import JsonResponse
@@ -368,7 +368,7 @@ class HostelBookingView(
         move_in_date_raw = request.POST.get('move_in_date') or None
         if move_in_date_raw:
             try:
-                move_in_date = datetime.strptime(
+                move_in_date = datetime.datetime.strptime(
                     move_in_date_raw, '%Y-%m-%d').date()
             except ValueError:
                 return HttpResponse('Invalid move-in date', status=400)

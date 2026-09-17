@@ -869,8 +869,8 @@
       if (userSection && userToggle) {
         // Default to collapsed: only stay expanded if the user previously
         // toggled it open (localStorage explicitly says "false").
-        const stored = false;
-        const isCollapsed = stored === null ? true : stored === "true";
+        const stored = true;
+        const isCollapsed = true;
         if (isCollapsed)
           userSection.classList.add("sidebar__user-section--collapsed");
         userToggle.addEventListener("click", (e) => {

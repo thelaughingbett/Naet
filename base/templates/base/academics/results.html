@@ -362,11 +362,191 @@
   .req-docs a:hover {
     text-decoration: underline;
   }
+
+  /* ── bulk selection mode ──────────────────────────────────────── */
+  .bulk-col,
+  .bulk-col-header {
+    display: none;
+    width: 34px;
+  }
+  .grade-table.bulk-mode-active .bulk-col,
+  .grade-table.bulk-mode-active .bulk-col-header {
+    display: table-cell;
+  }
+  .grade-table.bulk-mode-active tbody tr.synthetic:not(.no-click) {
+    cursor: pointer;
+  }
+  .bulk-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  tr.synthetic.bulk-selected {
+    background: #eef6ff;
+  }
+  tr.synthetic.bulk-selected:hover {
+    background: #e2f0ff;
+  }
+
+  #bulkModeBtn.active {
+    background: var(--navy, #0a2540);
+    color: #fff;
+  }
+
+  /* floating selection bar */
+  .bulk-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%) translateY(220%);
+    background: #0a2540;
+    color: #fff;
+    padding: 10px 14px 10px 18px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 900;
+    transition: transform 0.2s ease;
+  }
+  .bulk-bar.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  .bulk-bar button {
+    border: none;
+    border-radius: 30px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bulk-bar .bulk-bar-continue {
+    background: #fff;
+    color: #0a2540;
+  }
+  .bulk-bar .bulk-bar-clear {
+    background: transparent;
+    color: #c0d9f0;
+  }
+
+  /* bulk modal */
+  .bulk-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 14px;
+  }
+  .bulk-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eef6ff;
+    color: #1f6392;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 4px 6px 4px 10px;
+    border-radius: 30px;
+  }
+  .bulk-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #1f6392;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  .bulk-kind-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .bulk-kind-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #e3e6ea;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #6b7684;
+  }
+  .bulk-kind-btn.active {
+    border-color: #1f6392;
+    color: #1f6392;
+    background: #eef6ff;
+  }
+  .bulk-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .bulk-result-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.78rem;
+    padding: 6px 9px;
+    border-radius: 6px;
+  }
+  .bulk-result-item.ok {
+    background: #e6f7ed;
+    color: #1e7e34;
+  }
+  .bulk-result-item.fail {
+    background: #fdecea;
+    color: #a32d2d;
+  }
+
+  .bulk-doc-item {
+    border: 1px solid #e3e6ea;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .bulk-doc-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .bulk-doc-item-code {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #1f6392;
+  }
+  .bulk-doc-item-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .bulk-doc-add-btn,
+  .bulk-doc-copy-btn {
+    background: none;
+    border: 1px solid #e3e6ea;
+    border-radius: 30px;
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #6b7684;
+  }
+  .bulk-doc-add-btn:hover,
+  .bulk-doc-copy-btn:hover {
+    background: #f5f7fb;
+  }
 </style>
 {% endblock %} {% block body %}
 <div class="page-header">
   <h1 class="page-title">📊 Results &amp; Transcript</h1>
   <div class="action-buttons">
+    <button class="btn-secondary" id="bulkModeBtn">
+      <span class="btn-label">🧾 Bulk Request</span>
+    </button>
     <button class="btn-secondary" id="historyBtn">
       <span class="btn-label">📁 My Requests</span>
     </button>
@@ -420,7 +600,8 @@
   {% if enrollment_rows %}
   <table class="grade-table" id="gradeTable">
     <thead>
-      <tr>
+      <tr id="resultsTheadRow">
+        <th class="bulk-col-header"></th>
         <th>Unit Code</th>
         <th>Unit Name</th>
         <th>Credits</th>
@@ -620,11 +801,109 @@
   </div>
 </div>
 
+<!-- Floating bulk-selection bar -->
+<div class="bulk-bar" id="bulkBar">
+  <span id="bulkBarCount">0 selected</span>
+  <button type="button" class="bulk-bar-clear" id="bulkBarClear">Clear</button>
+  <button type="button" class="bulk-bar-continue" id="bulkBarContinue">
+    Continue →
+  </button>
+</div>
+
+<!-- Bulk Request Modal -->
+<div class="modal-overlay" id="bulkModalOverlay">
+  <div class="modal-box modal-box--wide">
+    <button class="modal-close" id="bulkModalClose">&times;</button>
+
+    <div class="modal-header">
+      <h3>Bulk Request</h3>
+      <span class="modal-subtitle">
+        One reason, filed separately against each unit below
+      </span>
+    </div>
+
+    <div id="bulkChipList" class="bulk-chip-list"></div>
+
+    <div id="bulkFormArea">
+      <div class="bulk-kind-toggle">
+        <button
+          type="button"
+          class="bulk-kind-btn active"
+          id="bulkKindChallenge"
+        >
+          ⚠️ Challenge
+        </button>
+        <button type="button" class="bulk-kind-btn" id="bulkKindRequisition">
+          🔁 Requisition
+        </button>
+      </div>
+
+      <div id="bulkTypeGroup" style="display: none; margin-bottom: 10px">
+        <label class="info-label">Request type</label>
+        <select id="bulkType">
+          <option value="resit">Resit Examination</option>
+          <option value="supplementary">Supplementary Examination</option>
+          <option value="missing_marks">
+            Missing / Unpublished Marks Investigation
+          </option>
+          <option value="special_exam">
+            Special Sit-in Exam (Missed for Valid Reason)
+          </option>
+        </select>
+      </div>
+
+      <label class="info-label">Reason (applies to every unit selected)</label>
+      <textarea
+        id="bulkReason"
+        rows="3"
+        placeholder="e.g. These units still show no CAT/Exam marks weeks after the exam period ended..."
+        style="
+          width: 100%;
+          padding: 8px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+          resize: vertical;
+          margin-top: 6px;
+        "
+      ></textarea>
+
+      <label class="info-label" style="margin-top: 10px; display: block">
+        Supporting documents
+        <span style="opacity: 0.6"
+          >(optional — each unit can carry its own)</span
+        >
+      </label>
+      <div id="bulkPerItemDocs" style="margin-top: 6px"></div>
+      <div
+        id="bulkFileError"
+        class="modal-file-error"
+        style="display: none"
+      ></div>
+      <div id="bulkFormMessage" class="modal-form-message"></div>
+
+      <button
+        class="btn-secondary btn"
+        id="bulkSubmitBtn"
+        style="margin-top: 12px; width: 100%"
+      >
+        <span class="btn-label">Submit All</span>
+      </button>
+    </div>
+
+    <div
+      id="bulkResultsList"
+      class="bulk-results-list"
+      style="display: none"
+    ></div>
+  </div>
+</div>
+
 <script>
   const CHALLENGE_HISTORY_URL = "{% url 'result-challenge-history' %}";
   const CHALLENGE_SUBMIT_URL = "{% url 'submit-result-challenge' %}";
   const REQUISITION_HISTORY_URL = "{% url 'requisition-history' %}";
   const REQUISITION_SUBMIT_URL = "{% url 'submit-requisition' %}";
+  const BULK_SUBMIT_URL = "{% url 'submit-bulk-request' %}";
   const CSRF_TOKEN = "{{ csrf_token }}";
 
   // ── button busy-state helpers ─────────────────────────────────────────────
@@ -740,7 +1019,7 @@
       tbody.insertAdjacentHTML(
         "beforeend",
         `<tr class="synthetic no-click">
-           <td colspan="7" style="text-align:center; padding:24px; opacity:0.5">
+           <td colspan="8" style="text-align:center; padding:24px; opacity:0.5">
              No results for this semester.
            </td>
          </tr>`,
@@ -754,10 +1033,14 @@
     coursesToShow.forEach((c, i) => {
       const grade = c.hasPublished ? letterGrade(c.total) : "—";
       window.currentRowData[i] = { ...c, grade };
+      const selectedClass = bulkSelected.has(i) ? " bulk-selected" : "";
       tbody.insertAdjacentHTML(
         "beforeend",
         `
-        <tr class="synthetic" data-row-index="${i}">
+        <tr class="synthetic${selectedClass}" data-row-index="${i}">
+          <td class="bulk-col">
+            <input type="checkbox" class="bulk-checkbox" data-idx="${i}" ${bulkSelected.has(i) ? "checked" : ""}>
+          </td>
           <td>${escapeHtml(c.code)}</td>
           <td>${escapeHtml(c.name)}</td>
           <td>${c.credits}</td>
@@ -773,8 +1056,19 @@
     renderGPA(coursesToShow);
 
     tbody.querySelectorAll("tr.synthetic:not(.no-click)").forEach((row) => {
-      row.addEventListener("click", () => {
-        const idx = row.dataset.rowIndex;
+      row.addEventListener("click", (e) => {
+        const idx = Number(row.dataset.rowIndex);
+        if (bulkMode) {
+          // Anywhere on the row toggles selection while bulk mode is on —
+          // the checkbox itself firing 'change' would double-toggle, so
+          // let its own click bubble here and just read its resulting state.
+          if (e.target.classList.contains("bulk-checkbox")) {
+            setRowSelected(idx, e.target.checked, row);
+          } else {
+            setRowSelected(idx, !bulkSelected.has(idx), row);
+          }
+          return;
+        }
         openResultModal(window.currentRowData[idx]);
       });
     });
@@ -1304,6 +1598,342 @@
         await openReqModal(code, "disputes");
         clearBusy(this, { done: true });
       } catch (e) {
+        clearBusy(this);
+      }
+    });
+
+  // ── bulk selection mode ─────────────────────────────────────────────────
+  let bulkMode = false;
+  let bulkSelected = new Set(); // row indices from window.currentRowData
+
+  function setRowSelected(idx, selected, rowEl) {
+    if (selected) {
+      bulkSelected.add(idx);
+    } else {
+      bulkSelected.delete(idx);
+    }
+    if (rowEl) {
+      rowEl.classList.toggle("bulk-selected", selected);
+      const cb = rowEl.querySelector(".bulk-checkbox");
+      if (cb) cb.checked = selected;
+    }
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    const bar = document.getElementById("bulkBar");
+    const count = document.getElementById("bulkBarCount");
+    count.textContent = `${bulkSelected.size} selected`;
+    bar.classList.toggle("show", bulkMode && bulkSelected.size > 0);
+  }
+
+  document.getElementById("bulkModeBtn").addEventListener("click", function () {
+    bulkMode = !bulkMode;
+    this.classList.toggle("active", bulkMode);
+    document
+      .getElementById("gradeTable")
+      ?.classList.toggle("bulk-mode-active", bulkMode);
+    if (!bulkMode) {
+      bulkSelected.clear();
+    }
+    updateBulkBar();
+    const select = document.getElementById("semesterSelect");
+    if (select) renderSemester(select.value);
+  });
+
+  document.getElementById("bulkBarClear").addEventListener("click", () => {
+    bulkSelected.clear();
+    updateBulkBar();
+    const select = document.getElementById("semesterSelect");
+    if (select) renderSemester(select.value);
+  });
+
+  document
+    .getElementById("bulkBarContinue")
+    .addEventListener("click", openBulkModal);
+
+  // ── bulk modal ───────────────────────────────────────────────────────────
+  let bulkKind = "challenge";
+  let bulkFilesByIdx = new Map(); // idx (from currentRowData) -> File[]
+
+  function renderBulkChips() {
+    const list = document.getElementById("bulkChipList");
+    list.innerHTML = [...bulkSelected]
+      .map((idx) => {
+        const c = window.currentRowData[idx];
+        if (!c) return "";
+        return `<span class="bulk-chip">${escapeHtml(c.code)}
+          <button type="button" class="bulk-chip-remove" data-idx="${idx}">&times;</button>
+        </span>`;
+      })
+      .join("");
+    list.querySelectorAll(".bulk-chip-remove").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.idx);
+        bulkSelected.delete(idx);
+        bulkFilesByIdx.delete(idx);
+        renderBulkChips();
+        renderBulkPerItemDocs();
+        updateBulkBar();
+        // keep the underlying table row's checkbox in sync if it's on screen
+        const row = document.querySelector(
+          `tr.synthetic[data-row-index="${idx}"]`,
+        );
+        if (row) {
+          row.classList.remove("bulk-selected");
+          const cb = row.querySelector(".bulk-checkbox");
+          if (cb) cb.checked = false;
+        }
+        if (bulkSelected.size === 0) closeBulkModal();
+      });
+    });
+  }
+
+  function setBulkKind(kind) {
+    bulkKind = kind;
+    document
+      .getElementById("bulkKindChallenge")
+      .classList.toggle("active", kind === "challenge");
+    document
+      .getElementById("bulkKindRequisition")
+      .classList.toggle("active", kind === "requisition");
+    document.getElementById("bulkTypeGroup").style.display =
+      kind === "requisition" ? "block" : "none";
+  }
+
+  document
+    .getElementById("bulkKindChallenge")
+    .addEventListener("click", () => setBulkKind("challenge"));
+  document
+    .getElementById("bulkKindRequisition")
+    .addEventListener("click", () => setBulkKind("requisition"));
+
+  function renderBulkPerItemDocs() {
+    const container = document.getElementById("bulkPerItemDocs");
+    const indices = [...bulkSelected];
+
+    container.innerHTML = indices
+      .map((idx) => {
+        const c = window.currentRowData[idx];
+        if (!c) return "";
+        return `
+          <div class="bulk-doc-item" data-idx="${idx}">
+            <div class="bulk-doc-item-top">
+              <span class="bulk-doc-item-code">${escapeHtml(c.code)}</span>
+              <div class="bulk-doc-item-actions">
+                <button type="button" class="bulk-doc-copy-btn" data-idx="${idx}">Apply to all</button>
+                <button type="button" class="bulk-doc-add-btn" data-idx="${idx}">+ Add files</button>
+              </div>
+            </div>
+            <input
+              type="file"
+              class="bulk-doc-file-input"
+              data-idx="${idx}"
+              multiple
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.doc,.docx"
+              style="display: none"
+            />
+            <div class="modal-file-list" id="bulkFileList_${idx}"></div>
+          </div>`;
+      })
+      .join("");
+
+    indices.forEach((idx) => renderBulkFileList(idx));
+
+    container.querySelectorAll(".bulk-doc-add-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        container
+          .querySelector(`.bulk-doc-file-input[data-idx="${btn.dataset.idx}"]`)
+          ?.click();
+      });
+    });
+
+    container.querySelectorAll(".bulk-doc-file-input").forEach((input) => {
+      input.addEventListener("change", (e) => {
+        const idx = Number(e.target.dataset.idx);
+        addBulkFiles(idx, Array.from(e.target.files));
+        e.target.value = "";
+      });
+    });
+
+    container.querySelectorAll(".bulk-doc-copy-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sourceIdx = Number(btn.dataset.idx);
+        const sourceFiles = bulkFilesByIdx.get(sourceIdx) || [];
+        if (sourceFiles.length === 0) return;
+        indices.forEach((idx) => {
+          if (idx === sourceIdx) return;
+          // Copy references to the same File objects rather than re-reading
+          // input elements — each File can be attached to multiple form
+          // submissions safely since browsers treat File objects as
+          // immutable, read-only blobs.
+          bulkFilesByIdx.set(idx, [...sourceFiles]);
+          renderBulkFileList(idx);
+        });
+      });
+    });
+  }
+
+  function addBulkFiles(idx, incoming) {
+    const errorBox = document.getElementById("bulkFileError");
+    errorBox.style.display = "none";
+    const rejected = [];
+    const current = bulkFilesByIdx.get(idx) || [];
+
+    incoming.forEach((file) => {
+      const ext = extOf(file.name);
+      if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
+        rejected.push(`${file.name} (unsupported type)`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        rejected.push(`${file.name} (over ${MAX_FILE_SIZE_MB}MB)`);
+        return;
+      }
+      current.push(file);
+    });
+
+    bulkFilesByIdx.set(idx, current);
+
+    if (rejected.length) {
+      errorBox.textContent = `Skipped: ${rejected.join(", ")}. Allowed: ${ALLOWED_DOC_EXTENSIONS.join(", ")}.`;
+      errorBox.style.display = "block";
+    }
+    renderBulkFileList(idx);
+  }
+
+  function renderBulkFileList(idx) {
+    const list = document.getElementById(`bulkFileList_${idx}`);
+    if (!list) return;
+    const files = bulkFilesByIdx.get(idx) || [];
+    list.innerHTML = files
+      .map(
+        (file, fidx) => `
+          <div class="modal-file-item">
+            <span>📎 ${escapeHtml(file.name)} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+            <button type="button" class="remove-file" data-idx="${idx}" data-fidx="${fidx}">&times;</button>
+          </div>`,
+      )
+      .join("");
+    list.querySelectorAll(".remove-file").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const files = bulkFilesByIdx.get(idx) || [];
+        files.splice(Number(btn.dataset.fidx), 1);
+        bulkFilesByIdx.set(idx, files);
+        renderBulkFileList(idx);
+      });
+    });
+  }
+
+  function openBulkModal() {
+    if (bulkSelected.size === 0) return;
+    setBulkKind("challenge");
+    bulkFilesByIdx = new Map();
+    document.getElementById("bulkReason").value = "";
+    document.getElementById("bulkFileError").style.display = "none";
+    document.getElementById("bulkFormMessage").className = "modal-form-message";
+    document.getElementById("bulkFormArea").style.display = "block";
+    document.getElementById("bulkResultsList").style.display = "none";
+    document.getElementById("bulkResultsList").innerHTML = "";
+    renderBulkChips();
+    renderBulkPerItemDocs();
+    document.getElementById("bulkModalOverlay").classList.add("active");
+  }
+
+  function closeBulkModal() {
+    document.getElementById("bulkModalOverlay").classList.remove("active");
+  }
+
+  document
+    .getElementById("bulkModalClose")
+    .addEventListener("click", closeBulkModal);
+  document.getElementById("bulkModalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "bulkModalOverlay") closeBulkModal();
+  });
+
+  document
+    .getElementById("bulkSubmitBtn")
+    .addEventListener("click", async function () {
+      const reason = document.getElementById("bulkReason").value.trim();
+      const msgBox = document.getElementById("bulkFormMessage");
+      msgBox.className = "modal-form-message";
+
+      if (!reason) {
+        msgBox.textContent = "Please provide a reason before submitting.";
+        msgBox.className = "modal-form-message error";
+        return;
+      }
+      if (bulkSelected.size === 0) {
+        msgBox.textContent = "No units selected.";
+        msgBox.className = "modal-form-message error";
+        return;
+      }
+
+      if (!setBusy(this)) return;
+
+      const selectedIndices = [...bulkSelected];
+      const items = selectedIndices.map((idx) => {
+        const c = window.currentRowData[idx];
+        return { course_code: c.code, session: c.session };
+      });
+
+      const formData = new FormData();
+      formData.append("kind", bulkKind);
+      formData.append("reason", reason);
+      formData.append("items", JSON.stringify(items));
+      if (bulkKind === "requisition") {
+        formData.append("type", document.getElementById("bulkType").value);
+      }
+      // Each item's documents are keyed by its position in `items` above
+      // (documents__0 belongs to items[0], etc.), not by the row index —
+      // the backend zips items[] and these keys together positionally.
+      selectedIndices.forEach((idx, pos) => {
+        const files = bulkFilesByIdx.get(idx) || [];
+        files.forEach((file) => formData.append(`documents__${pos}`, file));
+      });
+
+      try {
+        const res = await fetch(BULK_SUBMIT_URL, {
+          method: "POST",
+          headers: { "X-CSRFToken": CSRF_TOKEN },
+          body: formData,
+        });
+        const data = await res.json();
+
+        const resultsBox = document.getElementById("bulkResultsList");
+        resultsBox.innerHTML = (data.results || [])
+          .map(
+            (r) => `
+              <div class="bulk-result-item ${r.success ? "ok" : "fail"}">
+                <span>${r.success ? "✔" : "✖"} ${escapeHtml(r.course_code)}</span>
+                <span>${escapeHtml(r.message)}</span>
+              </div>`,
+          )
+          .join("");
+        resultsBox.style.display = "flex";
+        resultsBox.style.flexDirection = "column";
+        document.getElementById("bulkFormArea").style.display = "none";
+
+        clearBusy(this, { done: data.success });
+
+        // Drop only the successfully-filed items from selection — anything
+        // that failed (already open, not enrolled, etc.) stays selected so
+        // the student can see it in the chip list and retry or drop it.
+        const succeededCodes = new Set(
+          (data.results || [])
+            .filter((r) => r.success)
+            .map((r) => r.course_code),
+        );
+        [...bulkSelected].forEach((idx) => {
+          const c = window.currentRowData[idx];
+          if (c && succeededCodes.has(c.code)) bulkSelected.delete(idx);
+        });
+        updateBulkBar();
+        const select = document.getElementById("semesterSelect");
+        if (select) renderSemester(select.value);
+      } catch (err) {
+        msgBox.textContent = "Network error — please try again.";
+        msgBox.className = "modal-form-message error";
         clearBusy(this);
       }
     });

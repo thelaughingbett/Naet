@@ -713,3 +713,157 @@ def submit_requisition(request):
         "message": "Your request has been submitted for HOD review.",
         "status": requisition.get_status_display(),
     })
+
+
+@login_required
+@require_POST
+def submit_bulk_request(request):
+    """
+    Files the same kind of request — a grade challenge, or one
+    AcademicRequisition type — across several units in one submission.
+    Each item is validated and saved independently: one unit already
+    having an open request, or the student not being enrolled in it,
+    doesn't block the rest from going through.
+    """
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        raise PermissionDenied("Only students can file requests.")
+
+    kind = (request.POST.get("kind") or "").strip()
+    reason = (request.POST.get("reason") or "").strip()
+    req_type = (request.POST.get("type") or "").strip()
+
+    if kind not in ("challenge", "requisition"):
+        return JsonResponse({"success": False, "message": "Unknown request kind."}, status=400)
+    if not reason:
+        return JsonResponse(
+            {"success": False, "message": "Please give a reason for this request."},
+            status=400,
+        )
+    if kind == "requisition":
+        valid_types = {c[0]
+                       for c in AcademicRequisition._meta.get_field('type').choices}
+        if req_type not in valid_types:
+            return JsonResponse({"success": False, "message": "Unknown request type."}, status=400)
+
+    try:
+        items = json.loads(request.POST.get("items") or "[]")
+    except json.JSONDecodeError:
+        items = []
+
+    if not items:
+        return JsonResponse({"success": False, "message": "No units were selected."}, status=400)
+    if len(items) > 20:
+        # A sane ceiling — no student's real course load gets anywhere
+        # near this, and it bounds how much one request can write.
+        return JsonResponse(
+            {"success": False, "message": "You can request up to 20 units at once."},
+            status=400,
+        )
+
+    results = []
+    for item in items:
+        course_code = (item.get("course_code") or "").strip()
+        session_str = (item.get("session") or "").strip()
+
+        # Files for this item arrive keyed by its position in `items`,
+        # not by course code — the frontend zips them together the same way.
+        item_files = request.FILES.getlist(f"documents__{i}")
+
+        enrollment = _resolve_enrollment(student, course_code, session_str)
+        if not enrollment:
+            results.append({
+                "course_code": course_code or "?",
+                "success": False,
+                "message": "You aren't registered for that unit.",
+            })
+            continue
+
+        course = enrollment.curriculum.course
+
+        try:
+            with transaction.atomic():
+                if kind == "challenge":
+                    existing = Complaint.objects.filter(
+                        student=student, category='Results', result_action='challenge',
+                        challenged_enrollment=enrollment,
+                    ).exclude(status='Resolved').exists()
+
+                    if existing:
+                        raise ValidationError("Already has an open challenge.")
+
+                    obj = Complaint(
+                        student=student,
+                        category='Results',
+                        result_action='challenge',
+                        challenged_enrollment=enrollment,
+                        subject=f"Grade challenge — {course.course_code} {course.course_name}"[
+                            :255],
+                        description=reason,
+                        priority='Medium',
+                    )
+                    obj.full_clean()
+                    obj.save()
+
+                    for f in item_files:
+                        doc = ComplaintDocument(
+                            complaint=obj, file=f,
+                            uploaded_by_role='student', uploaded_by_user=request.user,
+                        )
+                        doc.full_clean()
+                        doc.save()
+
+                    results.append({
+                        "course_code": course.course_code,
+                        "success": True,
+                        "message": f"Filed — with {obj.get_current_level_display()}.",
+                    })
+
+                else:
+                    existing = AcademicRequisition.objects.filter(
+                        student=student,
+                        enrollment=enrollment,
+                        type=req_type,
+                    ).exclude(
+                        status__in=['rejected', 'completed']
+                    ).exists()
+
+                    if existing:
+                        raise ValidationError(
+                            "Already has an open request of this type.")
+
+                    obj = AcademicRequisition(
+                        student=student,
+                        enrollment=enrollment,
+                        type=req_type,
+                        reason=reason,
+                    )
+                    obj.full_clean()
+                    obj.save()
+
+                    for f in item_files:
+                        doc = RequisitionDocument(
+                            requisition=obj, file=f, uploaded_by_user=request.user,
+                        )
+                        doc.full_clean()
+                        doc.save()
+
+                    results.append({
+                        "course_code": course.course_code,
+                        "success": True,
+                        "message": f"Filed — status {obj.get_status_display()}.",
+                    })
+
+        except ValidationError as e:
+            results.append({
+                "course_code": course.course_code,
+                "success": False,
+                "message": _flatten_errors(e) if hasattr(e, "message_dict") else "; ".join(e.messages) if hasattr(e, "messages") else str(e),
+            })
+
+    succeeded = sum(1 for r in results if r["success"])
+    return JsonResponse({
+        "success": succeeded > 0,
+        "results": results,
+        "summary": f"{succeeded} of {len(results)} request(s) filed successfully.",
+    })

@@ -444,7 +444,9 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .news-card:hover {
@@ -460,7 +462,7 @@ body {
   font-size: 0.65rem;
   font-weight: 600;
   border-radius: 20px;
-  margin: 0.8rem 1rem 0;
+  margin: 0.8rem 1rem;
 }
 
 .news-title {
@@ -513,4 +515,4 @@ body {
     flex-direction: column;
     align-items: stretch;
   }
-}/*# sourceMappingURL=index.css.map */
+} /*# sourceMappingURL=index.css.map */

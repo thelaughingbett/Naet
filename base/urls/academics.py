@@ -1,7 +1,14 @@
 from django.urls import path
 
-from base.views import (CurriculumView, UnitRegistrationView, ResultsView, DropElectiveUnitView,
-                        result_challenge_history, submit_result_challenge,    requisition_history, submit_requisition)
+from base.views import (
+    CurriculumView,
+    UnitRegistrationView,
+    ResultsView,
+    DropElectiveUnitView,
+    result_challenge_history, submit_result_challenge,    requisition_history,
+    submit_requisition,
+    submit_bulk_request
+)
 
 urlpatterns = [
     path(
@@ -43,5 +50,10 @@ urlpatterns = [
         'results/requisition/',
         submit_requisition,
         name='submit-requisition'
+    ),
+    path(
+        'results/bulk/',
+        submit_bulk_request,
+        name='submit-bulk-request'
     ),
 ]

@@ -1,6 +1,8 @@
 {% extends 'base/main.html' %} {% block body %}
 <style>
-  /* Base Container Layout */
+  /* ============================================
+     DESKTOP STYLES (unchanged from the working template)
+     ============================================ */
   .settings-container {
     font-family: var(--font);
     color: var(--text);
@@ -12,7 +14,6 @@
     box-shadow: var(--shadow-md);
   }
 
-  /* Notifications Styling */
   .alert {
     padding: 12px 20px;
     border-radius: var(--radius-sm);
@@ -35,7 +36,6 @@
     border: 1px solid #cfe3f5;
   }
 
-  /* 🏛️ Top Tab Navigation Styling */
   .tabs-navigation {
     display: flex;
     gap: 8px;
@@ -75,7 +75,6 @@
     color: #a12a2a;
   }
 
-  /* Form Section Visibility Logic */
   .form-tab-content {
     display: none;
   }
@@ -84,7 +83,6 @@
     animation: fadeIn 0.3s ease-in-out;
   }
 
-  /* Form Layout Fields Layout */
   fieldset {
     border: none;
     padding: 0;
@@ -104,7 +102,6 @@
     margin-bottom: 20px;
   }
 
-  /* Input Styling using Theme Variables */
   .form-group {
     display: flex;
     flex-direction: column;
@@ -126,6 +123,7 @@
     background-color: var(--white);
     color: var(--text);
     transition: var(--transition);
+    width: 100%;
   }
   .form-group input:focus,
   .form-group select:focus {
@@ -140,6 +138,153 @@
     font-size: 12px;
     color: #a12a2a;
   }
+
+  /* ============================================
+     PROFILE PHOTO UPLOADER — styled wrapper around the
+     REAL {{ tab.form.profile_picture }} field. The Django-rendered
+     <input type="file"> is visually hidden (not removed) so it
+     still submits normally; JS only handles preview/drag-drop.
+     ============================================ */
+  .profile-avatar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 3px solid var(--white);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: 0.2s;
+  }
+  .avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .avatar-preview.changed {
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(30, 111, 63, 0.12);
+  }
+
+  .file-upload {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+  }
+  .file-upload input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .file-upload__label {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s;
+    width: 100%;
+  }
+  .file-upload__label:hover,
+  .file-upload__label:focus-within {
+    border-color: var(--blue-card);
+    background: rgba(31, 99, 146, 0.03);
+  }
+  .file-upload.dragover .file-upload__label {
+    border-color: var(--green);
+    background: rgba(30, 111, 63, 0.05);
+  }
+  .file-upload__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #eef4fb;
+    color: var(--blue-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .file-upload__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .file-upload__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.3;
+  }
+  .file-upload__hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+  .file-upload__filename {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--blue-card);
+    word-break: break-all;
+    margin-top: 4px;
+    display: none;
+  }
+  .file-upload.has-file .file-upload__title {
+    color: var(--green);
+  }
+  .file-upload.has-file .file-upload__filename {
+    display: block;
+  }
+  .file-upload.has-file .file-upload__icon {
+    background: #e6f7ed;
+    color: var(--green);
+  }
+  .file-upload__clear {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+    flex-shrink: 0;
+  }
+  .file-upload__clear:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+  .file-upload.has-file .file-upload__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .read-only-box {
     padding: 12px;
     background-color: rgba(0, 0, 0, 0.02);
@@ -155,7 +300,6 @@
     cursor: not-allowed;
   }
 
-  /* Emergency Contacts Sections */
   .emergency-contact-row {
     background-color: var(--white);
     padding: 20px;
@@ -174,7 +318,6 @@
     margin-bottom: 16px;
   }
 
-  /* Buttons Theme Overlays */
   .btn {
     font-family: var(--font);
     font-weight: 600;
@@ -203,6 +346,7 @@
   .btn-secondary:hover {
     background-color: rgba(31, 99, 146, 0.05);
   }
+
   .id-card-panel {
     max-width: 480px;
   }
@@ -258,6 +402,7 @@
     font-size: 11px;
     opacity: 0.7;
     margin-top: 6px;
+    flex-wrap: wrap;
   }
   .id-card-visual__status {
     position: absolute;
@@ -276,7 +421,6 @@
   .status-pill--inactive {
     background: rgba(255, 255, 255, 0.15);
   }
-
   .id-card-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -297,7 +441,6 @@
     font-size: 14px;
     color: var(--text);
   }
-
   .id-card-no-file {
     margin-top: 16px;
     padding: 12px 16px;
@@ -307,7 +450,6 @@
     font-size: 13px;
     color: var(--text-muted);
   }
-
   .id-card-empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -327,7 +469,7 @@
     max-width: 340px;
     margin: 0 auto;
   }
-  /* 🔒 Constant Sticky Footer Styling */
+
   .form-actions {
     margin-top: 30px;
     padding-top: 20px;
@@ -335,7 +477,6 @@
     display: flex;
     justify-content: flex-end;
   }
-
   .delete-checkbox {
     margin-top: 10px;
     background: #fff5f5;
@@ -343,7 +484,6 @@
     border-radius: var(--radius-sm);
   }
 
-  /* Animations */
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -377,14 +517,181 @@
     text-decoration: none;
     box-shadow: var(--shadow-sm);
   }
-
   .btn-export:hover {
     background-color: var(--bg);
     border-color: var(--text-muted);
     color: var(--navy);
     transform: translateY(-1px);
   }
+
+  /* ============================================
+     MOBILE-ONLY ADDITIONS (app-bar tab strip + submit bar)
+     ============================================ */
+  .settings-app-bar {
+    display: none;
+  }
+  .mobile-submit-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    z-index: 40;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  }
+  .mobile-submit-bar__label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .mobile-submit-bar__value {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .mobile-submit-bar .btn-primary {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .settings-app-bar {
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(135deg, #0a2b3e 0%, #07212f 100%);
+      color: #eef2ff;
+      padding: 0.9rem 1rem 0.9rem 4.2rem;
+      border-radius: 0 0 24px 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    }
+    .settings-app-bar__title {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 0.85rem;
+    }
+    .settings-app-bar__tabs {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 0.2rem;
+      scrollbar-width: none;
+    }
+    .settings-app-bar__tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .app-bar-tab {
+      flex: 0 0 auto;
+      padding: 0.45rem 0.85rem;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.75);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
+      position: relative;
+    }
+    .app-bar-tab.active {
+      background: white;
+      color: var(--navy);
+      border-color: white;
+    }
+    .app-bar-tab.has-errors::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fca5a5;
+    }
+
+    .tabs-navigation {
+      display: none !important;
+    }
+    .settings-header-actions .btn-export {
+      display: none;
+    }
+    .form-actions {
+      display: none;
+    }
+    .mobile-submit-bar {
+      display: flex;
+    }
+
+    .settings-container {
+      padding: 1rem;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+      max-width: 100%;
+      padding-bottom: 6rem;
+    }
+    legend {
+      font-size: 1rem;
+      margin-bottom: 0.7rem;
+    }
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .emergency-contact-row {
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .emergency-contact-row h4 {
+      font-size: 0.88rem;
+      margin-bottom: 12px;
+    }
+    .id-card-info-grid {
+      grid-template-columns: 1fr;
+    }
+    .profile-avatar-wrapper {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+    .avatar-preview {
+      margin: 0 auto;
+    }
+    .file-upload {
+      min-width: 0;
+    }
+  }
 </style>
+
+<!-- MOBILE APP BAR — mirrors the real tabs_config, no fabricated tabs -->
+<header class="settings-app-bar">
+  <div class="settings-app-bar__title">⚙️ Settings</div>
+  <div class="settings-app-bar__tabs" id="mobileTabsStrip">
+    {% for tab in tabs_config %}
+    <button
+      type="button"
+      class="app-bar-tab {% if tab.id == active_tab %}active{% endif %} {% if tab.has_errors %}has-errors{% endif %}"
+      data-tab="{{ tab.id }}"
+    >
+      {{ tab.title }}
+    </button>
+    {% endfor %}
+  </div>
+</header>
 
 <div class="settings-container">
   {% if messages %}
@@ -393,18 +700,14 @@
     <div class="alert alert-success">{{ message }}</div>
     {% endfor %}
   </div>
-  {% endif %}
   <!-- prettier-ignore -->
-  {% if tabs_config %} 
-   {% for tab in tabs_config %}
-   {% if tab.has_errors %}
+  {% endif %} {% if tabs_config %} {% for tab in tabs_config %} {% if  tab.has_errors %}
   <div class="alert alert-danger">
     There are errors in the "{{ tab.title }}" tab — please review and fix them
     before saving.
   </div>
   {% endif %} {% endfor %} {% endif %}
 
-  <!-- 🏛️ Navigation Tabs Header -->
   <div
     class="settings-header-actions"
     style="
@@ -416,30 +719,22 @@
       gap: 16px;
     "
   >
-    <!-- 🏛️ DYNAMIC TABS HEADER GENERATION -->
     <div
       class="tabs-navigation"
+      id="desktopTabsStrip"
       style="margin-bottom: 0; border-bottom: none; display: flex; gap: 8px"
     >
-      <!-- prettier-ignore -->
-
-      <div
-        class="tabs-navigation"
-        style="margin-bottom: 0; border-bottom: none; display: flex; gap: 8px"
+      {% for tab in tabs_config %}
+      <button
+        type="button"
+        class="tab-btn {% if tab.id == active_tab %}active{% endif %} {% if tab.has_errors %}has-errors{% endif %}"
+        data-tab="{{ tab.id }}"
       >
-        {% for tab in tabs_config %}
-        <button
-          type="button"
-          class="tab-btn {% if tab.id == active_tab %}active{% endif %} {% if tab.has_errors %}has-errors{% endif %}"
-          data-tab="{{ tab.id }}"
-        >
-          {{ tab.title }}
-        </button>
-        {% endfor %}
-      </div>
+        {{ tab.title }}
+      </button>
+      {% endfor %}
     </div>
 
-    <!-- Export Action -->
     <a
       href="{% url 'data-export' %}"
       class="btn btn-export"
@@ -449,7 +744,13 @@
     </a>
   </div>
 
-  <form action="" method="post" enctype="multipart/form-data" novalidate>
+  <form
+    id="settingsForm"
+    action=""
+    method="post"
+    enctype="multipart/form-data"
+    novalidate
+  >
     {% csrf_token %} {% for tab in tabs_config %}
     <div
       id="tab-{{ tab.id }}"
@@ -457,47 +758,56 @@
     >
       <fieldset>
         <legend>{{ tab.legend }}</legend>
+
         <!-- prettier-ignore -->
         {% if not tab.is_formset and not tab.is_readonly and tab.id == 'general'  %}
         <div class="profile-avatar-wrapper">
-          {% if request.user.profile_picture %}
-          <img
-            src="{{ request.user.profile_picture.url }}"
-            alt="Profile Photo"
-            style="height: 100px; width: 100px; border-radius: 50%"
-          />
-          {% else %}
-          <div
-            style="
-              height: 100px;
-              width: 100px;
-              border-radius: 50%;
-              background: var(--border);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 2rem;
-              color: var(--text-muted);
-            "
-          >
-            {{ request.user.first_name|first|upper }}
+          <div class="avatar-preview" id="avatarPreview">
+            {% if request.user.profile_picture %}
+            <img
+              src="{{ request.user.profile_picture.url }}"
+              alt="Profile Photo"
+            />
+            {% else %} {{ request.user.first_name|first|upper }} {% endif %}
           </div>
-          {% endif %}
-          <div class="form-group">
-            <label>Update Profile Photo</label>
+
+          <div class="file-upload" id="profileUpload">
             {{ tab.form.profile_picture }}
+            <label for="id_profile_picture" class="file-upload__label">
+              <div class="file-upload__icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+              <div class="file-upload__body">
+                <div class="file-upload__title">Upload a profile photo</div>
+                <div class="file-upload__hint">PNG, JPG or WebP</div>
+                <div
+                  class="file-upload__filename"
+                  id="fileUploadFilename"
+                ></div>
+              </div>
+              <button
+                type="button"
+                class="file-upload__clear"
+                id="fileUploadClear"
+                title="Remove selected file"
+                aria-label="Remove selected file"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </label>
           </div>
         </div>
-        {% endif %}
         <!-- prettier-ignore -->
+        {% endif %}
         {% if not tab.is_formset and not tab.is_readonly and tab.id == 'medical' %}
         <div class="alert alert-info">
           Your medical information is confidential — it's only visible to campus
           clinic staff and the Dean of Students, and is used for care, exam
           exemptions, and accommodation planning.
         </div>
-        {% endif %}
         <!-- prettier-ignore -->
+        {% endif %} 
+
         {% if tab.is_readonly and tab.id == 'id_card' %}
         {% if tab.id_card %}
         <div class="id-card-panel">
@@ -510,8 +820,7 @@
               {% else %}
               <div class="id-card-visual__photo-placeholder">
                 <!-- prettier-ignore -->
-                {{ request.user.first_name|first|upper }}
-                {{request.user.last_name|first|upper }}
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
               </div>
               {% endif %}
             </div>
@@ -592,7 +901,7 @@
         <!-- prettier-ignore -->
         {% endif %} 
         {% endif %} 
-        {% if not tab.is_formset and not tab.is_readonly %} 
+        {% if not tab.is_formset and not tab.is_readonly %}
         {{ tab.form.non_field_errors }}
         <div class="form-grid">
           {% for field in tab.form %} {% if field.name != 'profile_picture' %}
@@ -603,10 +912,9 @@
           {% endif %} {% endfor %}
         </div>
 
-        {% elif tab.is_formset %}
-
         <!-- prettier-ignore -->
-        {{ tab.formset.management_form }}
+        {% elif tab.is_formset %} 
+        {{ tab.formset.management_form }} 
         {{ tab.formset.non_form_errors }}
 
         <div id="emergency-form-container">
@@ -617,7 +925,7 @@
             <div class="form-grid">
               <!-- prettier-ignore -->
               {% for field in form.visible_fields %} 
-              {% if field.name !=   'DELETE' %}
+              {% if field.name !=  'DELETE' %}
               <div class="form-group">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }} {{ field.errors }}
@@ -641,14 +949,23 @@
     </div>
     {% endfor %}
 
-    <!-- 🔒 Constant Footer Block outside individual tabs -->
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save Settings</button>
     </div>
   </form>
 </div>
 
-<!-- Reusable Blueprint for new dynamic emergency-contact rows -->
+<!-- MOBILE SUBMIT BAR — submits the REAL form via form= attribute -->
+<div class="mobile-submit-bar" id="mobileSubmitBar">
+  <div>
+    <div class="mobile-submit-bar__label">Editing</div>
+    <div class="mobile-submit-bar__value" id="mobileActiveTabName">—</div>
+  </div>
+  <button type="submit" form="settingsForm" class="btn btn-primary">
+    Save Settings
+  </button>
+</div>
+
 <template id="empty-form-template">
   <div class="emergency-contact-row">
     <h4 class="contact-title">Contact #__prefix__</h4>
@@ -667,8 +984,7 @@
         {{ emergency_formset.empty_form.relationship }}
       </div>
       <div class="form-group">
-        <label>Address</label>
-        {{ emergency_formset.empty_form.address }}
+        <label>Address</label> {{ emergency_formset.empty_form.address }}
       </div>
     </div>
   </div>
@@ -676,22 +992,54 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // --- 1. Tab Switching Controller Logic ---
-    const tabButtons = document.querySelectorAll(".tab-btn");
+    // --- 1. Tab switching — now syncs BOTH desktop tab-btn and mobile app-bar-tab ---
+    const desktopTabs = document.querySelectorAll("#desktopTabsStrip .tab-btn");
+    const mobileTabs = document.querySelectorAll(
+      "#mobileTabsStrip .app-bar-tab",
+    );
     const tabContents = document.querySelectorAll(".form-tab-content");
+    const mobileActiveTabName = document.getElementById("mobileActiveTabName");
 
-    tabButtons.forEach((btn) => {
+    function setActiveTab(tabId) {
+      desktopTabs.forEach((b) =>
+        b.classList.toggle("active", b.dataset.tab === tabId),
+      );
+      mobileTabs.forEach((b) =>
+        b.classList.toggle("active", b.dataset.tab === tabId),
+      );
+      tabContents.forEach((c) =>
+        c.classList.toggle("active", c.id === "tab-" + tabId),
+      );
+
+      const activeBtn = document.querySelector(
+        `#desktopTabsStrip .tab-btn[data-tab="${tabId}"]`,
+      );
+      if (mobileActiveTabName && activeBtn)
+        mobileActiveTabName.textContent = activeBtn.textContent.trim();
+
+      const activeMobileTab = document.querySelector(
+        `#mobileTabsStrip .app-bar-tab[data-tab="${tabId}"]`,
+      );
+      if (activeMobileTab) {
+        activeMobileTab.scrollIntoView({
+          inline: "center",
+          block: "nearest",
+          behavior: "smooth",
+        });
+      }
+    }
+
+    [...desktopTabs, ...mobileTabs].forEach((btn) => {
       btn.addEventListener("click", function () {
-        tabButtons.forEach((b) => b.classList.remove("active"));
-        tabContents.forEach((c) => c.classList.remove("active"));
-
-        this.classList.add("active");
-        const activeTabId = `tab-${this.getAttribute("data-tab")}`;
-        document.getElementById(activeTabId).classList.add("active");
+        setActiveTab(this.dataset.tab);
       });
     });
 
-    // --- 2. Dynamic Emergency Row Formset Logic ---
+    // Initialize the mobile label to whichever tab server-rendered as active
+    const initialActive = document.querySelector(".form-tab-content.active");
+    if (initialActive) setActiveTab(initialActive.id.replace("tab-", ""));
+
+    // --- 2. Dynamic Emergency Row Formset Logic (unchanged) ---
     const addBtn = document.getElementById("add-contact-btn");
     const container = document.getElementById("emergency-form-container");
     const totalFormsManagement = document.getElementById(
@@ -710,7 +1058,6 @@
       addBtn.addEventListener("click", function (e) {
         e.preventDefault();
         let currentFormCount = parseInt(totalFormsManagement.value);
-
         if (currentFormCount >= maxForms) return;
 
         const templateHtml = document.getElementById(
@@ -743,11 +1090,7 @@
         activeFormCount >= maxForms ? "none" : "inline-block";
     }
 
-    // --- 3. Text-only input filtering ---
-    // Belt-and-braces alongside each field's server-side clean_<field>()
-    // validator and the HTML `pattern` attribute: strips any character
-    // that isn't a letter, space, hyphen or apostrophe as the user types,
-    // rather than only complaining after submit.
+    // --- 3. Text-only input filtering (unchanged) ---
     function applyTextOnlyFilters(scope) {
       scope.querySelectorAll(".text-only-input").forEach((input) => {
         if (input.dataset.textOnlyBound) return;
@@ -760,7 +1103,7 @@
     }
     applyTextOnlyFilters(document);
 
-    // --- 4. Show/hide accommodation notes based on the checkbox ---
+    // --- 4. Accommodation notes toggle (unchanged) ---
     const accommodationCheckbox = document.getElementById(
       "id_requires_special_accommodation",
     );
@@ -770,14 +1113,111 @@
     if (accommodationCheckbox && accommodationNotesField) {
       const notesGroup = accommodationNotesField.closest(".form-group");
       const syncVisibility = () => {
-        if (notesGroup) {
+        if (notesGroup)
           notesGroup.style.display = accommodationCheckbox.checked
             ? "flex"
             : "none";
-        }
       };
       accommodationCheckbox.addEventListener("change", syncVisibility);
       syncVisibility();
+    }
+
+    // --- 5. Styled profile photo uploader wrapping the REAL file input ---
+    const photoInput = document.getElementById("id_profile_picture");
+    const wrapper = document.getElementById("profileUpload");
+    const preview = document.getElementById("avatarPreview");
+    const filenameEl = document.getElementById("fileUploadFilename");
+    const clearBtn = document.getElementById("fileUploadClear");
+    const titleEl = wrapper?.querySelector(".file-upload__title");
+    const hintEl = wrapper?.querySelector(".file-upload__hint");
+    const MAX_SIZE_MB = 5;
+
+    if (photoInput && wrapper && preview) {
+      const defaultTitle = "Upload a profile photo";
+      const defaultHint = "PNG, JPG or WebP";
+      const initialPreviewHtml = preview.innerHTML;
+
+      function resetVisualState() {
+        wrapper.classList.remove("has-file");
+        preview.classList.remove("changed");
+        preview.innerHTML = initialPreviewHtml;
+        if (filenameEl) filenameEl.textContent = "";
+        if (titleEl) titleEl.textContent = defaultTitle;
+        if (hintEl) hintEl.textContent = defaultHint;
+      }
+
+      function applyFile(file) {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          alert("Please choose an image file.");
+          photoInput.value = "";
+          return;
+        }
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+          alert(`Image must be under ${MAX_SIZE_MB}MB.`);
+          photoInput.value = "";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.innerHTML = `<img src="${e.target.result}" alt="Profile preview">`;
+          preview.classList.add("changed");
+        };
+        reader.readAsDataURL(file);
+
+        if (filenameEl) filenameEl.textContent = file.name;
+        if (titleEl) titleEl.textContent = "Photo ready to save";
+        if (hintEl) hintEl.textContent = "Click to replace";
+        wrapper.classList.add("has-file");
+      }
+
+      photoInput.addEventListener("change", function () {
+        const file = this.files && this.files[0];
+        if (!file) {
+          resetVisualState();
+          return;
+        }
+        applyFile(file);
+      });
+
+      if (clearBtn) {
+        clearBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          photoInput.value = "";
+          resetVisualState();
+        });
+      }
+
+      ["dragenter", "dragover"].forEach((ev) => {
+        wrapper.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          wrapper.classList.add("dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((ev) => {
+        wrapper.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          wrapper.classList.remove("dragover");
+        });
+      });
+      wrapper.addEventListener("drop", (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          photoInput.files = dt.files;
+        } catch (err) {
+          // Some browsers block programmatic DataTransfer assignment —
+          // preview still updates via applyFile(), but the dropped file
+          // won't actually be attached to the real input in that case.
+        }
+        applyFile(file);
+      });
     }
   });
 </script>

@@ -10,19 +10,6 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
 />
 
-<!--
-  NOTE ON THIS RECONCILIATION:
-  The mobile view here is NOT a second render of the data — it mirrors
-  the real, server-rendered desktop DOM (see renderMobileAvailable(),
-  renderMobileEnrolled() below, which read #unitsBody's checkboxes and
-  #myUnitsTable's rows directly). That's deliberately kept as-is; it's
-  a better pattern than duplicating render logic, since there's no way
-  for the two views to drift out of sync. What's added here from the
-  redesigned mockup is purely presentational: a sticky app-bar with
-  live stats, and a drag-handle on the mobile sheet. Renamed
-  .desktop-reg-view/.mobile-reg-view to .desktop-view/.mobile-view to
-  match the convention used on the results and timetable pages.
--->
 <style>
   .unit-row--clickable {
     cursor: pointer;
@@ -429,6 +416,9 @@
     .app-bar {
       display: block;
     }
+    .info-cards {
+      display: none;
+    }
     .desktop-view {
       display: none;
     }
@@ -494,9 +484,8 @@
 <div class="messages">
   {% for message in messages %}
   <div class="message message--{{ message.tags }}">
-    <!-- prettier-ignnore -->
-    {% if message.tags == 'success' %} ✅{% elif message.tags == 'error' %} ⚠️
-    {% elif message.tags == 'warning' %} ⏳{% else %}ℹ️{% endif %} {{ message }}
+    {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}⚠️ {%
+    elif message.tags == 'warning' %}⏳{% else %}ℹ️{% endif %} {{ message }}
   </div>
   {% endfor %}
 </div>
@@ -554,13 +543,17 @@
               data-coursecode="{{ unit.course.course_code|upper }}"
             >
               <td class="checkbox-col">
-                <!-- prettier-ignore -->
                 <input
                   type="checkbox"
                   name="curriculum_ids"
                   value="{{ unit.record_id }}"
                   data-id="{{ unit.record_id }}"
-                  {% if already_full %}disabled{% endif %}
+                  {%
+                  if
+                  already_full
+                  %}disabled{%
+                  endif
+                  %}
                 />
               </td>
               <td class="unit-code">{{ unit.course.course_code|upper }}</td>
@@ -646,9 +639,8 @@
         <div class="empty-icon">📭</div>
         <div class="empty-title">No elective units available</div>
         <div class="empty-text">
-          <!-- prettier-ignore -->
-          {% if not session %} There is no active session at the moment.
-           {% elif  already_full %} You've already registered the maximum number of
+          {% if not session %} There is no active session at the moment. {% elif
+          already_full %} You've already registered the maximum number of
           electives for this session. {% else %} No elective courses have been
           assigned to your class for {{ session }} yet. {% endif %}
           <br />Contact your department if you think this is a mistake.
@@ -677,7 +669,7 @@
       <div id="formMessage" class="form-message"></div>
       <div class="credit-hint">
         <!-- prettier-ignore -->
-        Minimum: {{ min_credits|default:7 }} credits | Maximum: {{  max_credits|default:21 }} credits
+        Minimum: {{ min_credits|default:7 }} credits | Maximum: {{ max_credits|default:21 }} credits
       </div>
       <div class="approval-hint">
         ℹ️ Elective registrations require department approval.

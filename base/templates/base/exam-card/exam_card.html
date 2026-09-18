@@ -1,11 +1,22 @@
 <!-- prettier-ignore -->
 {% extends 'base/main.html' %}
-{% load static %} {% load humanize %}
+{% load static humanize %}
+
 {% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
 <link
   rel="stylesheet"
   href="{% static 'base/styles/academics/exam-card/index.css' %}"
 />
+
 <style>
   /* ============================================
    EXAM CARD — GATE SCREENS
@@ -176,228 +187,454 @@
   }
 </style>
 <title>Exam Card — {{ session }}</title>
-{% endblock %} {% block body %} {% if gate == 'no_session' %}
-<div class="gate-card">
-  <div class="gate-icon">📅</div>
-  <h2 class="gate-title">No Active Session</h2>
-  <p class="gate-text">
-    There is no active academic session at the moment. Exam cards will be
-    available once a session is activated.
-  </p>
-  <a href="{% url 'base-index' %}" class="btn btn--primary"
-    >Back to Dashboard</a
-  >
-</div>
-{% elif gate == 'no_structure' %}
-<div class="gate-card">
-  <div class="gate-icon">⚙️</div>
-  <h2 class="gate-title">Fee Structure Not Set</h2>
-  <p class="gate-text">
-    No fee structure has been configured for your class
-    <!-- prettier-ignore -->
-    ({{ student.class_entered }}) in {{ session }}. Contact the finance office.
-  </p>
-  <a href="{% url 'base-dashboard' %}" class="btn btn--secondary"
-    >Back to Dashboard</a
-  >
-</div>
-{% elif gate == 'no_account' %}
-<div class="gate-card">
-  <div class="gate-icon">💳</div>
-  <h2 class="gate-title">Fee Account Not Found</h2>
-  <p class="gate-text">
-    You do not have a fee account for {{ session }}. Visit the financials
-    section to set one up or contact the finance office.
-  </p>
-  <a href="{% url 'base-fee-statement' %}" class="btn btn--primary"
-    >Go to Financials</a
-  >
-</div>
-{% elif gate == 'not_cleared' %}
-<div class="gate-card gate-card--warning">
-  <div class="gate-icon">⛔</div>
-  <h2 class="gate-title">Exam Card Not Available</h2>
-  <p class="gate-text">
-    Your exam card cannot be issued because you have an outstanding fee balance.
-    Clear your fees to access your admit card.
-  </p>
-
-  <div class="balance-box">
-    <div class="balance-row">
-      <span>Outstanding Balance</span>
-      <strong>KES {{ balance|intcomma }}</strong>
-    </div>
-    <div class="balance-row balance-row--sub">
-      <span>Fee deadline</span>
-      <span>{{ days_remaining }}</span>
-    </div>
+{% endblock %} {% block body %}
+<div class="exam-page">
+  {% if gate == 'no_session' %}
+  <div class="gate-card">
+    <div class="gate-icon">📅</div>
+    <h2 class="gate-title">No Active Session</h2>
+    <p class="gate-text">
+      There is no active academic session at the moment. Exam cards will be
+      available once a session is activated.
+    </p>
+    <a href="{% url 'base-index' %}" class="btn btn--primary"
+      >Back to Dashboard</a
+    >
   </div>
 
-  <a href="{% url 'base-fee-statement' %}" class="btn btn--danger">
-    💰 Pay Fees Now
-  </a>
-  <a href="{% url 'base-index' %}" class="btn btn--secondary"
-    >Back to Dashboard</a
-  >
-</div>
-{% elif gate == 'no_exams' %}
-<div class="gate-card">
-  <div class="gate-icon">📭</div>
-  <h2 class="gate-title">No Exam Schedule Yet</h2>
-  <p class="gate-text">
-    Your fees are cleared but no exam sessions have been scheduled for your
-    enrolled units in {{ session }} yet. Check back later or contact your
-    department.
-  </p>
-  <a href="{% url 'base-index' %}" class="btn btn--secondary"
-    >Back to Dashboard</a
-  >
-</div>
-{% else %}
+  {% elif gate == 'no_structure' %}
+  <div class="gate-card">
+    <div class="gate-icon">⚙️</div>
+    <h2 class="gate-title">Fee Structure Not Set</h2>
+    <p class="gate-text">
+      <!-- prettier-ignore -->
+      No fee structure has been configured for your class ({{  student.class_entered }}) in {{ session }}. Contact the finance office.
+    </p>
+    <a href="{% url 'base-dashboard' %}" class="btn btn--secondary"
+      >Back to Dashboard</a
+    >
+  </div>
 
-<div class="exam-card" id="examCard">
-  <div class="card-body">
-    {# ── Top row: QR + serial + print ── #}
-    <div class="top-row">
-      <div class="qr-area">
-        <canvas id="qrCanvas" width="100" height="100"></canvas>
-        <span>Scan to verify</span>
+  {% elif gate == 'no_account' %}
+  <div class="gate-card">
+    <div class="gate-icon">💳</div>
+    <h2 class="gate-title">Fee Account Not Found</h2>
+    <p class="gate-text">
+      You do not have a fee account for {{ session }}. Visit the financials
+      section to set one up or contact the finance office.
+    </p>
+    <a href="{% url 'base-fee-statement' %}" class="btn btn--primary"
+      >Go to Financials</a
+    >
+  </div>
+
+  {% elif gate == 'not_cleared' %}
+  <div class="gate-card gate-card--warning">
+    <div class="gate-icon">⛔</div>
+    <h2 class="gate-title">Exam Card Not Available</h2>
+    <p class="gate-text">
+      Your exam card cannot be issued because you have an outstanding fee
+      balance. Clear your fees to access your admit card.
+    </p>
+
+    <div class="balance-box">
+      <div class="balance-row">
+        <span>Outstanding Balance</span>
+        <strong>KES {{ balance|intcomma }}</strong>
+      </div>
+      <div class="balance-row balance-row--sub">
+        <span>Fee deadline</span>
+        <span>{{ days_remaining }}</span>
+      </div>
+    </div>
+
+    <a href="{% url 'base-fee-statement' %}" class="btn btn--danger"
+      >💰 Pay Fees Now</a
+    >
+    <a href="{% url 'base-index' %}" class="btn btn--secondary"
+      >Back to Dashboard</a
+    >
+  </div>
+
+  {% elif gate == 'no_exams' %}
+  <div class="gate-card">
+    <div class="gate-icon">📭</div>
+    <h2 class="gate-title">No Exam Schedule Yet</h2>
+    <p class="gate-text">
+      Your fees are cleared but no exam sessions have been scheduled for your
+      enrolled units in {{ session }} yet. Check back later or contact your
+      department.
+    </p>
+    <a href="{% url 'base-index' %}" class="btn btn--secondary"
+      >Back to Dashboard</a
+    >
+  </div>
+
+  {% else %}
+
+  <!-- =========================================================
+         DESKTOP / TABLET EXAM CARD
+         ========================================================= -->
+  <section class="desktop-view">
+    <div class="exam-card" id="examCard">
+      <div class="card-body">
+        <div class="top-row">
+          <div class="qr-area">
+            <canvas id="qrCanvas" width="100" height="100"></canvas>
+            <span>Scan to verify</span>
+          </div>
+
+          <div class="serial-area">
+            <div class="serial-label">Serial Number</div>
+            <div class="serial-number" id="serialNumber">
+              {{ card.serial_number }}
+            </div>
+
+            <button class="btn-regenerate" id="regenerateBtn" type="button">
+              ⟳ New serial
+            </button>
+
+            <div class="serial-meta">
+              Issued: {{ issued_at|date:"d M Y H:i" }}
+            </div>
+            <div class="regen-status" id="regenStatus"></div>
+          </div>
+
+          <div>
+            <button
+              class="btn-print"
+              id="printBtn"
+              type="button"
+              onclick="window.print()"
+            >
+              🖨️ Print Card
+            </button>
+          </div>
+        </div>
+
+        {% if has_clashes %}
+        <div class="clash-warning">
+          ⚠️ <strong>Exam clash detected</strong> — contact your department
+          immediately. {% for clash in clashes %}
+          <div class="clash-row">
+            {{ clash.session_a.curriculum.syllabus.course.course_code }} clashes
+            with {{ clash.session_b.curriculum.syllabus.course.course_code }} on
+            <!-- prettier-ignore -->
+            {{ clash.session_a.date|date:"d M Y" }} at {{ clash.session_a.time_slot }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="info-layout">
+          <div class="student-photo">
+            {% if student.photo %}
+            <img
+              src="{{ student.photo.url }}"
+              alt="{{ student.user.full_name }}"
+            />
+            {% else %}
+            <span class="student-photo__fallback">
+              {{ student.user.full_name|slice:":1"|upper }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Student Name</div>
+              <div class="info-value">{{ student.user.full_name }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label">Registration No.</div>
+              <div class="info-value mono">
+                {{ student.registration_number|upper }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label">Programme</div>
+              <div class="info-value">
+                {{ student.class_entered.programme.programme_name }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label">Session</div>
+              <div class="info-value">{{ session }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label">Class</div>
+              <div class="info-value">
+                {{ student.class_entered.class_name }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label">Fee Status</div>
+              <div class="info-value cleared-badge">✅ Cleared</div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="schedule-title">📅 Examination Schedule</h3>
+
+        <div class="table-scroll">
+          <table class="exam-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Time Slot</th>
+                <th>Venue</th>
+                <th>Invigilator</th>
+                <th class="sig-col">Signature</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for exam in exam_schedule %}
+              <tr>
+                <td>{{ exam.date|date:"d M Y" }}</td>
+                <td class="mono">
+                  {{ exam.curriculum.course.course_code|upper }}
+                </td>
+                <td>{{ exam.curriculum.course.course_name }}</td>
+                <td class="mono">{{ exam.time_slot }}</td>
+                <td>
+                  <!-- prettier-ignore -->
+                  {% for ev in exam.venues.all %} 
+                  {{ ev.venue.venue_name }}
+                  {% if not forloop.last %}, {% endif %} {% empty %} TBA {% endfor %}
+                </td>
+                <td>
+                  <!-- prettier-ignore -->
+                  {% for ev in exam.venues.all %}
+                  {% for inv in ev.invigilators.all %}
+                  {{ inv.user.full_name }}
+                  {% if not forloop.last %}, 
+                  {% endif %} {% empty %} TBA {% endfor %}
+                  {% if not forloop.last %}<br />
+                  <!-- prettier-ignore -->
+                  {% endif %} {% empty %} TBA {% endfor %}
+                </td>
+                <td class="sig-col">
+                  <div class="sig-line"></div>
+                  <div class="sig-hint"></div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer-note">
+          📌 <strong>Per-exam signature required:</strong>
+          Invigilator must sign and stamp next to each exam after verifying
+          student ID.
+          <br />
+          📌 This card must be presented at every exam hall. No entry without a
+          valid admit card and student ID.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+         MOBILE EXAM CARD
+         ========================================================= -->
+  <section class="mobile-view">
+    <div class="mobile-actions-row">
+      <button class="mobile-action-btn" id="mobileRegenBtn" type="button">
+        <i class="fas fa-sync-alt"></i>
+        New Serial
+      </button>
+
+      <button
+        class="mobile-action-btn mobile-action-btn--primary"
+        id="mobilePrintBtn"
+        type="button"
+      >
+        <i class="fas fa-print"></i>
+        Print
+      </button>
+    </div>
+
+    <div class="mobile-hero">
+      <div class="mobile-hero__qr">
+        <canvas id="mobileQrCanvas" width="80" height="80"></canvas>
       </div>
 
-      <div class="serial-area">
-        <div class="serial-label">Serial Number</div>
-        <div class="serial-number" id="serialNumber">
+      <div class="mobile-hero__body">
+        <div class="mobile-hero__label">Serial Number</div>
+        <div class="mobile-hero__serial" id="mobileSerial">
           {{ card.serial_number }}
         </div>
-        <!-- prettier-ignore -->
-        <button
-          class="btn-regenerate"
-          id="regenerateBtn"
-          type="button"
-          
-        >
-          ⟳ New serial
-        </button>
-
-        <div class="serial-meta">Issued: {{ issued_at|date:"d M Y H:i" }}</div>
-        <div class="regen-status" id="regenStatus"></div>
-      </div>
-
-      <div>
-        <button class="btn-print" id="printBtn" type="button">
-          🖨️ Print Card
-        </button>
+        <div class="mobile-hero__meta" id="mobileIssuedAt">
+          Issued: {{ issued_at|date:"d M Y H:i" }}
+        </div>
+        <div class="mobile-hero__status" id="mobileRegenStatus">✅ Active</div>
       </div>
     </div>
 
     {% if has_clashes %}
-    <div class="clash-warning">
-      ⚠️ <strong>Exam clash detected</strong> — contact your department
-      immediately. {% for clash in clashes %}
-      <div class="clash-row">
+    <div class="mobile-clash">
+      <strong>⚠️ Exam clash detected</strong>
+      Contact your department immediately. {% for clash in clashes %}
+      <div class="mobile-clash__row">
         <!-- prettier-ignore -->
-        {{ clash.session_a.curriculum.syllabus.course.course_code }} clashes with
-        {{ clash.session_b.curriculum.syllabus.course.course_code }} on 
-        {{  clash.session_a.date|date:"d M Y" }} at {{ clash.session_a.time_slot }}
+        {{ clash.session_a.curriculum.syllabus.course.course_code }} vs {{ clash.session_b.curriculum.syllabus.course.course_code }}
+         — {{ clash.session_a.date|date:"d M Y" }} at {{ clash.session_a.time_slot }}
       </div>
       {% endfor %}
     </div>
     {% endif %}
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">Student Name</div>
-        <div class="info-value">{{ student.user.full_name }}</div>
+
+    <div class="mobile-identity">
+      <div class="student-photo student-photo--mobile">
+        {% if student.photo %}
+        <img src="{{ student.photo.url }}" alt="{{ student.user.full_name }}" />
+        {% else %}
+        <span class="student-photo__fallback">
+          {{ student.user.full_name|slice:":1"|upper }}
+        </span>
+        {% endif %}
       </div>
-      <div class="info-item">
-        <div class="info-label">Registration No.</div>
-        <div class="info-value mono">
+
+      <div class="mobile-identity__body">
+        <div class="mobile-identity__name">{{ student.user.full_name }}</div>
+        <div class="mobile-identity__reg">
           {{ student.registration_number|upper }}
         </div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Programme</div>
-        <div class="info-value">
+        <div class="mobile-identity__programme">
           {{ student.class_entered.programme.programme_name }}
         </div>
       </div>
-      <div class="info-item">
-        <div class="info-label">Session</div>
-        <div class="info-value">{{ session }}</div>
+    </div>
+
+    <div class="mobile-info-card">
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Student</span>
+        <span class="mobile-info-value">{{ student.user.full_name }}</span>
       </div>
-      <div class="info-item">
-        <div class="info-label">Class</div>
-        <div class="info-value">{{ student.class_entered.class_name }}</div>
+
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Reg No.</span>
+        <span class="mobile-info-value mono">
+          {{ student.registration_number|upper }}
+        </span>
       </div>
-      <div class="info-item">
-        <div class="info-label">Fee Status</div>
-        <div class="info-value cleared-badge">✅ Cleared</div>
+
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Programme</span>
+        <span class="mobile-info-value">
+          {{ student.class_entered.programme.programme_name }}
+        </span>
+      </div>
+
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Session</span>
+        <span class="mobile-info-value">{{ session }}</span>
+      </div>
+
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Class</span>
+        <span class="mobile-info-value"
+          >{{ student.class_entered.class_name }}</span
+        >
+      </div>
+
+      <div class="mobile-info-row">
+        <span class="mobile-info-label">Fee Status</span>
+        <span class="mobile-info-value cleared">✅ Cleared</span>
       </div>
     </div>
 
-    <h3 class="schedule-title">📅 Examination Schedule</h3>
+    <div class="mobile-section">
+      <div class="mobile-section__title">
+        Examination Schedule
+        <span class="mobile-section__count">{{ exam_schedule|length }}</span>
+      </div>
+    </div>
 
-    <table class="exam-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Course Code</th>
-          <th>Course Name</th>
-          <th>Time Slot</th>
-          <th>Venue</th>
-          <th>Invigilator</th>
-          <th class="sig-col">Signature</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for exam in exam_schedule %}
-        <tr>
-          <td>{{ exam.date|date:"d M Y" }}</td>
-          <td class="mono">{{ exam.curriculum.course.course_code|upper }}</td>
-          <td>{{ exam.curriculum.course.course_name }}</td>
-          <td class="mono">{{ exam.time_slot }}</td>
-          <td>
-            <!-- prettier-ignore -->
-            {% for ev in exam.venues.all %} {{ ev.venue.venue_name }}
-            {% if not forloop.last %}, {% endif %} {% empty %} TBA {% endfor %}
-          </td>
-          <td>
-            <!-- prettier-ignore -->
-            {% for ev in exam.venues.all %} 
-            {% for inv in ev.invigilators.all %}
-            {{ inv.user.full_name }}
-            {% if not forloop.last %},
-             {% endif %} 
-             {% empty %} TBA {% endfor %}
-              {% if not forloop.last %}
-            <br />{% endif %} {% empty %} TBA {% endfor %}
-          </td>
-          <td class="sig-col">
-            <div class="sig-line"></div>
-            <div class="sig-hint"></div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="exam-list">
+      {% for exam in exam_schedule %}
+      <article class="exam-card-item">
+        <div class="exam-card-item__top">
+          <div class="exam-card-item__code">
+            {{ exam.curriculum.course.course_code|upper }}
+          </div>
+          <div class="exam-card-item__date">{{ exam.date|date:"d M Y" }}</div>
+        </div>
 
-    <div class="footer-note">
-      📌 <strong>Per-exam signature required:</strong> Invigilator must sign and
-      stamp next to each exam after verifying student ID.<br />
+        <div class="exam-card-item__name">
+          {{ exam.curriculum.course.course_name }}
+        </div>
+
+        <div class="exam-card-item__meta">
+          <span class="exam-card-item__meta-item">
+            <i class="fas fa-clock"></i>
+            <span>{{ exam.time_slot }}</span>
+          </span>
+
+          <span class="exam-card-item__meta-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>
+              <!-- prettier-ignore -->
+              {% for ev in exam.venues.all %}
+              {{ ev.venue.venue_name }}
+              {% if  not forloop.last %}, {% endif %} {% empty %} TBA {% endfor %}
+            </span>
+          </span>
+
+          <span class="exam-card-item__meta-item">
+            <i class="fas fa-user-tie"></i>
+            <span>
+              <!-- prettier-ignore -->
+              {% for ev in exam.venues.all %}
+              {% for inv in ev.invigilators.all %} {{ inv.user.full_name }} {% if not forloop.last %}, {% endif %}
+              {% empty %} TBA {% endfor %} {% if not forloop.last %},
+              {% endif %} {% empty %} TBA {% endfor %}
+            </span>
+          </span>
+        </div>
+
+        <div class="exam-card-item__sig">
+          <span class="exam-card-item__sig-label">Signature</span>
+          <span class="exam-card-item__sig-line"></span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="mobile-note">
+      📌 <strong>Per-exam signature required.</strong>
+      Invigilator must sign next to each exam after verifying your ID.
+      <br /><br />
       📌 This card must be presented at every exam hall. No entry without a
       valid admit card and student ID.
     </div>
-  </div>
+
+    <div class="mobile-bottom-spacer"></div>
+  </section>
+  {% endif %}
 </div>
 
 <script>
-  const QR_PAYLOAD = "{{ qr_payload }}";
+  const QR_PAYLOAD = "{{ qr_payload|escapejs }}";
   const REGEN_URL = "{% url 'base-exam-card' %}";
   const CSRF_TOKEN = "{{ csrf_token }}";
 
   function drawQR(canvasId, data) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
+    if (!canvas || !data) return;
+
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     const size = canvas.width;
     const blockSize = size / 8;
 
@@ -413,7 +650,7 @@
     ctx.fillStyle = "#111";
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        const val = (hash + i * 7 + j * 3) % 3;
+        const val = Math.abs((hash + i * 7 + j * 3) % 3);
         if (val === 0) {
           ctx.fillRect(
             i * blockSize,
@@ -429,9 +666,13 @@
       [0, 0],
       [size - blockSize * 3, 0],
       [0, size - blockSize * 3],
-    ].forEach(([x, y]) => {
+    ].forEach(function (pos) {
+      const x = pos[0];
+      const y = pos[1];
+
       ctx.fillStyle = "#111";
       ctx.fillRect(x, y, blockSize * 3, blockSize * 3);
+
       ctx.fillStyle = "white";
       ctx.fillRect(
         x + blockSize * 0.5,
@@ -439,102 +680,172 @@
         blockSize * 2,
         blockSize * 2,
       );
+
       ctx.fillStyle = "#111";
       ctx.fillRect(x + blockSize, y + blockSize, blockSize, blockSize);
     });
   }
 
-  drawQR("qrCanvas", QR_PAYLOAD);
   const regenStatus = document.getElementById("regenStatus");
+  const mobileRegenStatus = document.getElementById("mobileRegenStatus");
   let regenStatusTimer = null;
 
-  function flashRegenStatus(message, type = "info", persist = false) {
-    if (!regenStatus) return;
-    regenStatus.textContent = message;
-    regenStatus.className = `regen-status show ${type}`;
+  function flashRegenStatus(message, type, persist) {
+    type = type || "info";
+    persist = !!persist;
+
+    if (regenStatus) {
+      regenStatus.textContent = message;
+      regenStatus.className = "regen-status show " + type;
+    }
+
+    if (mobileRegenStatus) {
+      mobileRegenStatus.textContent = message;
+      mobileRegenStatus.className =
+        "mobile-hero__status" + (type === "warning" ? " warning" : "");
+    }
 
     clearTimeout(regenStatusTimer);
+
     if (!persist) {
-      regenStatusTimer = setTimeout(() => {
-        regenStatus.classList.remove("show");
+      regenStatusTimer = setTimeout(function () {
+        if (regenStatus) regenStatus.classList.remove("show");
+        if (mobileRegenStatus) {
+          mobileRegenStatus.textContent = "✅ Active";
+          mobileRegenStatus.className = "mobile-hero__status";
+        }
       }, 4000);
     }
   }
 
-  document
-    .getElementById("regenerateBtn")
-    ?.addEventListener("click", async () => {
-      const confirmed = confirm(
-        "Generate a new serial number? The old serial will be deactivated.",
-      );
-      if (!confirmed) return;
+  window.regenerateSerial = async function (btn) {
+    if (btn && btn.disabled) return;
 
-      const btn = document.getElementById("regenerateBtn");
-      btn.disabled = true;
-      flashRegenStatus("Generating new serial…", "info", true);
+    const confirmed = window.confirm(
+      "Generate a new serial number? The old serial will be deactivated.",
+    );
 
-      try {
-        const res = await fetch(REGEN_URL, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": CSRF_TOKEN,
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await res.json();
+    if (!confirmed) return;
 
-        if (data.success) {
-          document.getElementById("serialNumber").textContent = data.serial;
-          drawQR("qrCanvas", data.qr_payload);
+    if (btn) btn.disabled = true;
+    flashRegenStatus("Generating new serial…", "info", true);
 
-          if (data.regen_limit_reached) {
-            btn.disabled = true;
-            flashRegenStatus(
-              `⚠️ Maximum regenerations (${data.regen_max}) reached for this session. Contact the exams office for a reissue.`,
-              "warning",
-              true, // stays visible — this is a permanent state, not a blip
-            );
-          } else {
-            btn.disabled = false;
-            flashRegenStatus(
-              `Done — ${data.regen_count} of ${data.regen_max} regenerations used.`,
-              "info",
-            ); // fades after 4s
-          }
-        } else {
-          flashRegenStatus(
-            data.message || "Failed to regenerate. Please try again.",
-            "warning",
-            true,
-          );
-          if (res.status !== 403) btn.disabled = false;
-        }
-      } catch (err) {
-        flashRegenStatus("Network error — please try again.", "warning", true);
-        btn.disabled = false;
+    try {
+      const response = await fetch(REGEN_URL, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": CSRF_TOKEN,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({}),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      let data;
+
+      if (contentType.indexOf("application/json") !== -1) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(
+          "Server returned " +
+            response.status +
+            " instead of JSON: " +
+            text.slice(0, 200),
+        );
       }
-    });
-  function showRegenLimitWarning(max) {
-    const serialArea = document.querySelector(".serial-area");
-    let warning = serialArea.querySelector(".regen-limit-warning");
-    if (!warning) {
-      warning = document.createElement("div");
-      warning.className = "regen-limit-warning";
-      serialArea.appendChild(warning);
+
+      if (!response.ok || !data.success) {
+        flashRegenStatus(
+          data.message || "Failed to regenerate. Please try again.",
+          "warning",
+          true,
+        );
+
+        if (btn && response.status !== 403) btn.disabled = false;
+        return;
+      }
+
+      const serial = document.getElementById("serialNumber");
+      const mobileSerial = document.getElementById("mobileSerial");
+
+      if (serial) serial.textContent = data.serial;
+      if (mobileSerial) mobileSerial.textContent = data.serial;
+
+      drawQR("qrCanvas", data.qr_payload);
+      drawQR("mobileQrCanvas", data.qr_payload);
+
+      if (data.regen_limit_reached) {
+        flashRegenStatus(
+          "⚠️ Maximum regenerations (" +
+            data.regen_max +
+            ") reached for this session. Contact the exams office for a reissue.",
+          "warning",
+          true,
+        );
+        if (btn) btn.disabled = true;
+      } else {
+        flashRegenStatus(
+          "Done — " +
+            data.regen_count +
+            " of " +
+            data.regen_max +
+            " regenerations used.",
+          "info",
+          false,
+        );
+        if (btn) btn.disabled = false;
+      }
+    } catch (error) {
+      console.error("Exam card serial regeneration failed:", error);
+      flashRegenStatus(
+        "Could not generate a new serial. Check your connection and try again.",
+        "warning",
+        true,
+      );
+      if (btn) btn.disabled = false;
     }
-    warning.textContent = `⚠️ Maximum regenerations (${max}) reached for this session. Contact the exams office for a reissue.`;
-    const hint = serialArea.querySelector(".regen-count-hint");
-    if (hint) hint.remove();
+  };
+
+  function initExamCard() {
+    drawQR("qrCanvas", QR_PAYLOAD);
+    drawQR("mobileQrCanvas", QR_PAYLOAD);
+
+    const regenerateBtn = document.getElementById("regenerateBtn");
+    const mobileRegenBtn = document.getElementById("mobileRegenBtn");
+    const printBtn = document.getElementById("printBtn");
+    const mobilePrintBtn = document.getElementById("mobilePrintBtn");
+
+    if (regenerateBtn) {
+      regenerateBtn.addEventListener("click", function () {
+        window.regenerateSerial(this);
+      });
+    }
+
+    if (mobileRegenBtn) {
+      mobileRegenBtn.addEventListener("click", function () {
+        window.regenerateSerial(this);
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.print();
+      });
+    }
+
+    if (mobilePrintBtn) {
+      mobilePrintBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.print();
+      });
+    }
   }
 
-  function updateRegenCountHint(count, max) {
-    const hint = document.querySelector(".regen-count-hint");
-    if (hint) hint.textContent = `${count} of ${max} regenerations used`;
-  }
-
-  document.getElementById("printBtn")?.addEventListener("click", () => {
-    window.print();
-  });
+  document.addEventListener("DOMContentLoaded", initExamCard);
 </script>
-
-{% endif %} {% endblock %}
+{% endblock %}

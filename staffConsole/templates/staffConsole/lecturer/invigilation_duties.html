@@ -1,33 +1,153 @@
 <!-- prettier-ignore -->
 {% extends 'staffConsole/lecturer/shell.html' %}
-{% load static %}
+
 {% block head %}
 <title>Invigilation Duties · Lecturer · Naet</title>
-
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  /* Works with the existing shell.html (sidebar + #hamburgerBtn toggle + showToast).
+     Tokens and helpers the design needs but the shell does not define: */
   :root {
-    --navy: #0a2540;
-    --navy-light: #1a3a5c;
-    --maroon: #9e2a2b;
-    --maroon-hover: #b13e3f;
-    --blue-card: #1f6392;
-    --green: #1e6f3f;
-    --gold: #fbbf24;
-    --font: "Inter", "Segoe UI", sans-serif;
-    --text: #1e293b;
-    --text-muted: #5a6874;
-    --border: #e9edf2;
-    --bg: #f1f5f9;
-    --white: #ffffff;
-    --radius: 14px;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  /* the shell's toast sits invisible at the bottom edge; never let it swallow taps */
+  .toast {
+    pointer-events: none;
+  }
+
+  .main-content {
+    min-width: 0; /* lets the table scroll inside its wrapper instead of stretching the page */
+  }
+
+  /* ============================================
+     MOBILE APP BAR
+     ============================================ */
+  .app-bar {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(135deg, #0a2b3e 0%, #07212f 100%);
+    color: #eef2ff;
+    padding: calc(0.9rem + var(--safe-top, 0px)) 1rem 0.9rem;
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .app-bar__top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  /* id="hamburgerBtn" is what shell.html's script binds to */
+  .app-bar__menu {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: 0.2s;
+  }
+
+  .app-bar__menu:active {
+    transform: scale(0.94);
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .app-bar__menu span {
+    display: block;
+    width: 20px;
+    height: 2.5px;
+    background: white;
+    border-radius: 4px;
+  }
+
+  .app-bar__title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    min-width: 0;
+  }
+
+  .app-bar__title-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .app-bar__session {
+    margin-left: auto;
+    max-width: 42%;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-bar__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .app-bar__stat {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.5rem;
+    text-align: center;
+  }
+
+  .app-bar__stat-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    font-weight: 700;
+  }
+
+  .app-bar__stat-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-top: 2px;
+    line-height: 1.1;
+  }
+
+  /* ============================================
+     DESKTOP VIEW
+     ============================================ */
+  .desktop-view {
+    display: block;
   }
 
   .topbar {
@@ -38,39 +158,35 @@
     flex-wrap: wrap;
     gap: 1rem;
   }
+
   .topbar__left {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
   }
-  .topbar__hamburger {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    color: var(--navy);
-    cursor: pointer;
-    padding: 0.3rem;
-  }
+
   .topbar__title {
     font-size: 1.6rem;
     font-weight: 800;
+    color: var(--navy);
     display: flex;
     align-items: center;
     gap: 0.6rem;
   }
+
   .topbar__badge {
     background: var(--navy);
     color: white;
-    padding: 0.2rem 0.9rem;
+    padding: 0.25rem 0.9rem;
     border-radius: 40px;
     font-size: 0.7rem;
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
   }
+
   .topbar__actions {
     display: flex;
     gap: 0.6rem;
@@ -78,101 +194,102 @@
   }
 
   .btn {
-    padding: 0.35rem 1rem;
+    padding: 0.45rem 1rem;
     border: none;
     border-radius: 40px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: 0.2s;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     font-family: inherit;
   }
-  .btn-primary {
-    background: var(--navy);
-    color: white;
-  }
-  .btn-primary:hover {
-    background: var(--navy-light);
-  }
+
   .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text);
   }
+
   .btn-outline:hover {
     background: var(--bg);
   }
+
   .btn-sm {
-    padding: 0.2rem 0.7rem;
-    font-size: 0.65rem;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.68rem;
     border-radius: 30px;
     border: 1px solid var(--border);
     background: var(--white);
     cursor: pointer;
     transition: 0.2s;
     font-family: inherit;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
   }
+
   .btn-sm:hover {
     background: var(--bg);
-    border-color: #cbd5e1;
   }
+
   .btn-sm.primary {
     background: var(--navy);
     color: white;
     border-color: var(--navy);
-  }
-  .btn-sm.primary:hover {
-    background: var(--navy-light);
   }
 
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.2rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
+
   .stat-card {
     background: var(--white);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     padding: 1.2rem 1.2rem 1rem;
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     transition:
       transform 0.2s,
       box-shadow 0.2s;
-    position: relative;
   }
+
   .stat-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
   }
+
   .stat-card__number {
     font-size: 1.8rem;
     font-weight: 800;
     line-height: 1.2;
     margin-bottom: 0.1rem;
+    color: var(--navy);
   }
+
   .stat-card__label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     color: var(--text-muted);
     letter-spacing: 0.4px;
     margin-top: 0.2rem;
+    font-weight: 700;
   }
+
   .stat-card__sub {
     font-size: 0.6rem;
     color: var(--text-muted);
     margin-top: 0.15rem;
   }
+
   .stat-card__icon {
     float: right;
     font-size: 1.6rem;
@@ -180,18 +297,29 @@
     margin-top: -0.2rem;
   }
 
+  .stat-card__icon.is-gold {
+    color: var(--gold);
+  }
+  .stat-card__icon.is-green {
+    color: var(--green);
+  }
+  .stat-card__icon.is-blue {
+    color: var(--blue-card);
+  }
+
   .filter-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.8rem;
     margin-bottom: 1.5rem;
     background: var(--white);
     padding: 0.8rem 1.2rem;
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     align-items: center;
   }
+
   .filter-bar__input {
     flex: 1;
     min-width: 180px;
@@ -204,94 +332,118 @@
     border: 1px solid var(--border);
     transition: 0.2s;
   }
+
   .filter-bar__input:focus-within {
     border-color: var(--navy);
-    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
   }
+
   .filter-bar__input i {
     color: var(--text-muted);
   }
+
   .filter-bar__input input {
     border: none;
     background: transparent;
     padding: 0.5rem 0;
-    font-family: var(--font);
-    font-size: 0.8rem;
+    font-family: inherit;
+    font-size: 0.82rem;
     width: 100%;
     outline: none;
     color: var(--text);
   }
+
   .filter-bar__filters {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
     align-items: center;
   }
+
   .filter-bar__filters select {
-    padding: 0.4rem 1rem;
+    padding: 0.45rem 1rem;
     border-radius: 40px;
     border: 1px solid var(--border);
     background: var(--bg);
-    font-family: var(--font);
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--text);
     outline: none;
     cursor: pointer;
   }
-  .filter-bar__filters select:focus {
-    border-color: var(--navy);
-  }
 
   .table-wrapper {
     background: var(--white);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
   }
+
   .table-scroll {
     overflow-x: auto;
   }
+
   .duties-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
+
   .duties-table th {
     background: var(--bg);
     padding: 0.8rem 1rem;
     text-align: left;
     font-weight: 700;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
+
   .duties-table td {
     padding: 0.7rem 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
+
   .duties-table tr:last-child td {
     border-bottom: none;
   }
+
   .duties-table tr:hover td {
     background: #f8fafc;
+  }
+
+  .duties-table .cell-date {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .duties-table .cell-course-code {
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+
+  .duties-table .cell-course-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
 
   .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.15rem 0.6rem;
+    padding: 0.2rem 0.65rem;
     border-radius: 30px;
-    font-size: 0.6rem;
-    font-weight: 700;
+    font-size: 0.62rem;
+    font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
+
   .status-badge.upcoming {
     background: #dbeafe;
     color: #1e40af;
@@ -307,12 +459,15 @@
 
   .type-badge {
     font-size: 0.6rem;
-    font-weight: 700;
-    padding: 0.1rem 0.5rem;
+    font-weight: 800;
+    padding: 0.15rem 0.55rem;
     border-radius: 30px;
     text-transform: uppercase;
     display: inline-block;
+    background: var(--bg);
+    color: var(--text-muted);
   }
+
   .type-badge.CAT {
     background: #e0e7ff;
     color: #3730a3;
@@ -334,102 +489,388 @@
     color: #065f46;
   }
 
-  .duties-table .actions-cell {
+  .table-footer {
+    padding: 0.8rem 1.2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state__icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .empty-state__title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .empty-state__text {
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .page-empty {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ============================================
+     MOBILE VIEW
+     ============================================ */
+  .mobile-view {
+    display: none;
+  }
+
+  .mobile-search {
+    margin: 0.9rem 1rem 0;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .mobile-search__input {
+    position: relative;
+    flex: 1;
+  }
+
+  .mobile-search__input i {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    pointer-events: none;
+  }
+
+  .mobile-search__input input {
+    width: 100%;
+    padding: 0.7rem 0.9rem 0.7rem 2.2rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.82rem;
+    outline: none;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-search__input input:focus {
+    border-color: var(--navy);
+  }
+
+  .mobile-search__filter-btn {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.7rem 0.9rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .mobile-search__filter-btn:active {
+    transform: scale(0.96);
+  }
+
+  .mobile-search__filter-btn .dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--maroon);
+    display: none;
+  }
+
+  .mobile-search__filter-btn.has-filters .dot {
+    display: block;
+  }
+
+  .duty-list {
+    padding: 0.8rem 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .duty-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 0.9rem 0.9rem 0.9rem 1.1rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .duty-card:active {
+    transform: scale(0.985);
+    box-shadow: var(--shadow-md);
+  }
+
+  .duty-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--blue-card);
+  }
+
+  .duty-card.status-upcoming::before {
+    background: #1f6392;
+  }
+  .duty-card.status-ongoing::before {
+    background: #b45309;
+  }
+  .duty-card.status-completed::before {
+    background: #1e6f3f;
+  }
+
+  .duty-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .duty-card__date {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .duty-card__date-main {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+
+  .duty-card__time {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .duty-card__badges {
     display: flex;
     gap: 0.3rem;
     flex-wrap: wrap;
-  }
-  .duties-table .actions-cell .btn-sm {
-    padding: 0.15rem 0.5rem;
-    font-size: 0.6rem;
+    justify-content: flex-end;
   }
 
-  .modal-overlay {
+  .duty-card__course {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+  }
+
+  .duty-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .duty-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .duty-card__meta-item i {
+    font-size: 0.6rem;
+    color: var(--blue-card);
+    flex-shrink: 0;
+  }
+
+  .duty-card__actions {
+    display: flex;
+    gap: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .duty-card__action {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: 0.2s;
+  }
+
+  .duty-card__action:active {
+    transform: scale(0.96);
+    background: var(--bg);
+  }
+
+  .duty-card__action.primary {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
+  .mobile-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .mobile-empty__icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .mobile-empty__title {
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+
+  .mobile-empty__text {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  /* ============================================
+     MODAL / SHEET
+     Desktop: centred dialog. Mobile: bottom sheet.
+     ============================================ */
+  .sheet-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    display: none;
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
   }
-  .modal-overlay.active {
-    display: flex;
-  }
-  .modal-overlay.active .modal {
-    animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  }
-  @keyframes modalFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+
+  .sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
   }
 
-  .modal {
+  .sheet {
     background: var(--white);
-    border-radius: var(--radius);
-    max-width: 560px;
+    border-radius: var(--radius-xl);
+    max-width: 500px;
     width: 100%;
-    max-height: 90vh;
+    max-height: 88vh;
     overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    padding: 0;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s ease;
   }
-  .modal__header {
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+
+  .sheet-overlay.active .sheet {
+    transform: scale(1) translateY(0);
+  }
+
+  .sheet__handle {
+    display: none;
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.3rem auto 0.9rem;
+  }
+
+  .sheet__header {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    background: var(--white);
-    border-radius: var(--radius) var(--radius) 0 0;
-    z-index: 2;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
   }
-  .modal__header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
+
+  .sheet__title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.25;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
-  .modal__close {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
+
+  .sheet__subtitle {
+    font-size: 0.72rem;
     color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .sheet__close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.2rem 0.4rem;
-    border-radius: 8px;
+    flex-shrink: 0;
     transition: 0.2s;
   }
-  .modal__close:hover {
-    background: var(--bg);
-    color: var(--text);
-  }
-  .modal__body {
-    padding: 1.5rem;
-  }
-  .modal__footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.6rem;
-    background: var(--bg);
-    border-radius: 0 0 var(--radius) var(--radius);
+
+  .sheet__close:active {
+    transform: scale(0.9);
+    background: var(--border);
   }
 
   .detail-row {
@@ -438,436 +879,762 @@
     border-bottom: 1px solid var(--border);
     font-size: 0.85rem;
   }
+
   .detail-row:last-child {
     border-bottom: none;
   }
+
   .detail-row__label {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-muted);
-    width: 120px;
+    min-width: 110px;
     flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
+
   .detail-row__value {
     flex: 1;
     color: var(--text);
+    word-break: break-word;
   }
 
-  .toast {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+  .detail-row__value .muted {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .sheet-form-group {
+    margin-top: 0.9rem;
+  }
+
+  .sheet-form-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+  }
+
+  .sheet-form-group select {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    background: var(--white);
+  }
+
+  .sheet-form-group select:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+
+  .sheet-submit {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: none;
     background: var(--navy);
     color: white;
-    padding: 0.7rem 1.3rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 0.3s;
-    z-index: 2000;
-    font-size: 0.85rem;
-    font-family: var(--font);
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .toast.success {
-    background: var(--green);
-  }
-  .toast.warning {
-    background: #92400e;
-  }
-  .toast.info {
-    background: var(--navy);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
+  .sheet-submit:active {
+    transform: scale(0.98);
+  }
+
+  .sheet-submit--outline {
+    background: var(--white);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  /* ============================================
+     RESPONSIVE MORPH
+     ============================================ */
   @media (max-width: 1024px) {
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
     }
   }
+
   @media (max-width: 768px) {
-    .topbar__hamburger {
+    .desktop-view {
+      display: none;
+    }
+
+    .mobile-view {
       display: block;
     }
-    .topbar__title {
-      font-size: 1.2rem;
+
+    .app-bar {
+      display: block;
     }
-    .filter-bar {
-      flex-direction: column;
-      align-items: stretch;
+
+    /* full-bleed: the app bar and mobile cards manage their own padding */
+    .main-content {
+      padding: 0;
     }
-    .stats-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
+
+    .page-empty {
+      margin: 1rem;
     }
-    .duties-table th,
-    .duties-table td {
-      padding: 0.5rem 0.7rem;
+
+    .sheet-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .sheet {
+      max-width: 100%;
+      border-radius: 24px 24px 0 0;
+      max-height: 88vh;
+      padding: 0.6rem 1.1rem calc(1.2rem + var(--safe-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.4, 1.05);
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .sheet-overlay.active .sheet {
+      transform: translateY(0);
+    }
+
+    .sheet__handle {
+      display: block;
     }
   }
-  @media (max-width: 480px) {
-    .stats-grid {
-      grid-template-columns: 1fr;
-    }
-    .topbar__actions {
-      width: 100%;
-    }
-    .topbar__actions .btn {
-      flex: 1;
-      justify-content: center;
-    }
-    .duties-table {
-      font-size: 0.7rem;
-    }
-    .detail-row {
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-    .detail-row__label {
-      width: auto;
+
+  @media (min-width: 769px) {
+    .mobile-view {
+      display: none !important;
     }
   }
 </style>
-{% endblock %} {% block content %}
-
-<div class="topbar">
-  <div class="topbar__left">
-    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
-      <i class="fas fa-bars"></i>
-    </button>
-    <h1 class="topbar__title">
-      <i class="fas fa-user-shield"></i> Invigilation Duties
-    </h1>
-    {% if session %}
-    <span class="topbar__badge"
-      ><i class="fas fa-calendar"></i> {{ session }}</span
+{% endblock head %} {% block content %}
+<!-- ================= MOBILE APP BAR (menu + title + session + stats) ================= -->
+<header class="app-bar">
+  <div class="app-bar__top">
+    <button
+      class="app-bar__menu"
+      id="hamburgerBtn"
+      type="button"
+      aria-label="Open menu"
     >
+      <span></span><span></span><span></span>
+    </button>
+    <div class="app-bar__title">
+      <div class="app-bar__title-icon">🛡️</div>
+      <span>Invigilation</span>
+    </div>
+    {% if session %}
+    <span class="app-bar__session">{{ session }}</span>
     {% endif %}
   </div>
-  <div class="topbar__actions">
-    <button class="btn btn-outline" onclick="window.print()">
-      <i class="fas fa-print"></i> Print
+
+  <div class="app-bar__stats">
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">Total</div>
+      <div class="app-bar__stat-value">{{ stat_total|default:0 }}</div>
+    </div>
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">Upcoming</div>
+      <div class="app-bar__stat-value">{{ stat_upcoming|default:0 }}</div>
+    </div>
+    <div class="app-bar__stat">
+      <div class="app-bar__stat-label">Done</div>
+      <div class="app-bar__stat-value">{{ stat_completed|default:0 }}</div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= DESKTOP VIEW ================= -->
+<div class="desktop-view" id="desktopView">
+  <div class="topbar">
+    <div class="topbar__left">
+      <h1 class="topbar__title">
+        <i class="fas fa-user-shield"></i> Invigilation Duties
+      </h1>
+      {% if session %}
+      <span class="topbar__badge"
+        ><i class="fas fa-calendar"></i> {{ session }}</span
+      >
+      {% endif %}
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn-outline" type="button" onclick="window.print()">
+        <i class="fas fa-print"></i> Print
+      </button>
+    </div>
+  </div>
+
+  {% if session %}
+  <div class="stats-grid">
+    <div class="stat-card">
+      <i class="fas fa-tasks stat-card__icon"></i>
+      <div class="stat-card__number">{{ stat_total }}</div>
+      <div class="stat-card__label">Total Duties</div>
+      <div class="stat-card__sub">{{ session }}</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-clock stat-card__icon is-gold"></i>
+      <div class="stat-card__number">{{ stat_upcoming }}</div>
+      <div class="stat-card__label">Upcoming</div>
+      <div class="stat-card__sub">Scheduled for future or current dates</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-check-circle stat-card__icon is-green"></i>
+      <div class="stat-card__number">{{ stat_completed }}</div>
+      <div class="stat-card__label">Completed</div>
+      <div class="stat-card__sub">Already invigilated</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-map-marker-alt stat-card__icon is-blue"></i>
+      <div class="stat-card__number">{{ stat_venues }}</div>
+      <div class="stat-card__label">Venues</div>
+      <div class="stat-card__sub">Different exam locations</div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-bar__input">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="desktopSearch"
+        placeholder="Search by course code or title…"
+      />
+    </div>
+    <div class="filter-bar__filters">
+      <select id="desktopStatusFilter" aria-label="Filter by status">
+        <option value="all">All Status</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="ongoing">Ongoing</option>
+        <option value="completed">Completed</option>
+      </select>
+      <select id="desktopTypeFilter" aria-label="Filter by type">
+        <option value="all">All Types</option>
+        <option value="CAT">CAT</option>
+        <option value="MAIN">Main Exam</option>
+        <option value="SUPP">Supplementary</option>
+        <option value="SPECIAL">Special / Supplementary</option>
+        <option value="PRACTICAL">Practical</option>
+      </select>
+      <button class="btn-sm" type="button" data-action="reset-filters">
+        <i class="fas fa-undo"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table class="duties-table" id="dutiesTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Course</th>
+            <th>Venue</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="dutiesTableBody">
+          <!-- Rendered by JS from the duties data below -->
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="dutyCount">Showing 0 duties</span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ================= MOBILE VIEW ================= -->
+{% if session %}
+<div class="mobile-view" id="mobileView">
+  <div class="mobile-search">
+    <div class="mobile-search__input">
+      <i class="fas fa-search"></i>
+      <input type="text" id="mobileSearch" placeholder="Search duties…" />
+    </div>
+    <button
+      class="mobile-search__filter-btn"
+      id="mobileFilterBtn"
+      type="button"
+      aria-label="Filters"
+      data-action="open-filters"
+    >
+      <i class="fas fa-filter"></i>
+      <span class="dot"></span>
     </button>
   </div>
-</div>
 
-{% if not session %}
-<div class="card" style="text-align: center; padding: 48px 24px">
-  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
-  <div style="font-weight: 600; margin-bottom: 6px">No active session</div>
-  <div style="font-size: 0.85rem; color: var(--text-muted)">
-    There is no active academic session right now.
-  </div>
-</div>
-
-{% else %}
-<div class="stats-grid">
-  <div class="stat-card">
-    <i class="fas fa-tasks stat-card__icon"></i>
-    <div class="stat-card__number" id="statTotal">{{ stat_total }}</div>
-    <div class="stat-card__label">Total Duties</div>
-    <div class="stat-card__sub">{{ session }}</div>
-  </div>
-  <div class="stat-card">
-    <i class="fas fa-clock stat-card__icon" style="color: var(--gold)"></i>
-    <div class="stat-card__number" id="statUpcoming">{{ stat_upcoming }}</div>
-    <div class="stat-card__label">Upcoming</div>
-    <div class="stat-card__sub">Scheduled for future or current dates</div>
-  </div>
-  <div class="stat-card">
-    <i
-      class="fas fa-check-circle stat-card__icon"
-      style="color: var(--green)"
-    ></i>
-    <div class="stat-card__number" id="statCompleted">{{ stat_completed }}</div>
-    <div class="stat-card__label">Completed</div>
-    <div class="stat-card__sub">Already invigilated</div>
-  </div>
-  <div class="stat-card">
-    <i
-      class="fas fa-map-marker-alt stat-card__icon"
-      style="color: var(--blue-card)"
-    ></i>
-    <div class="stat-card__number" id="statVenues">{{ stat_venues }}</div>
-    <div class="stat-card__label">Venues</div>
-    <div class="stat-card__sub">Different exam locations</div>
-  </div>
-</div>
-
-<div class="filter-bar">
-  <div class="filter-bar__input">
-    <i class="fas fa-search"></i>
-    <input
-      type="text"
-      id="dutySearch"
-      placeholder="Search by course code or title…"
-      onkeyup="filterDuties()"
-    />
-  </div>
-  <div class="filter-bar__filters">
-    <select id="statusFilter" onchange="filterDuties()">
-      <option value="all">All Status</option>
-      <option value="upcoming">Upcoming</option>
-      <option value="ongoing">Ongoing</option>
-      <option value="completed">Completed</option>
-    </select>
-    <select id="typeFilter" onchange="filterDuties()">
-      <option value="all">All Types</option>
-      <option value="CAT">CAT</option>
-      <option value="MAIN">Main Exam</option>
-      <option value="SUPP">Supplementary</option>
-      <option value="SPECIAL">Special / Supplementary</option>
-      <option value="PRACTICAL">Practical</option>
-    </select>
-    <button class="btn-sm" onclick="resetFilters()">
-      <i class="fas fa-undo"></i> Reset
-    </button>
-  </div>
-</div>
-
-<div class="table-wrapper">
-  <div class="table-scroll">
-    <table class="duties-table" id="dutiesTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Course</th>
-          <th>Venue</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="dutiesTableBody">
-        <!-- Rendered by JS from DUTIES -->
-      </tbody>
-    </table>
-  </div>
-  <div
-    class="table-footer"
-    style="
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.8rem 1.2rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    "
-  >
-    <span id="dutyCount">Showing 0 duties</span>
+  <div class="duty-list" id="dutyList">
+    <!-- Rendered by JS from the duties data below -->
   </div>
 </div>
 {% endif %}
 
-<div class="modal-overlay" id="viewModal">
-  <div class="modal">
-    <div class="modal__header">
-      <h2>
-        <i class="fas fa-clipboard-list" style="color: var(--navy)"></i>
-        Invigilation Details
-      </h2>
-      <button class="modal__close" onclick="closeModal('viewModal')">
-        &times;
+<!-- ================= EMPTY STATE (both views) ================= -->
+{% if not session %}
+<div class="page-empty empty-state">
+  <div class="empty-state__icon">📭</div>
+  <div class="empty-state__title">No active session</div>
+  <div class="empty-state__text">
+    There is no active academic session right now.
+  </div>
+</div>
+{% endif %}
+
+<!-- ================= SHEETS ================= -->
+<div class="sheet-overlay" id="viewModal">
+  <div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="viewSheetTitle"
+  >
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title" id="viewSheetTitle">
+          <i class="fas fa-clipboard-list" style="color: var(--navy)"></i>
+          Invigilation Details
+        </div>
+        <div class="sheet__subtitle" id="sheetDutyMeta"></div>
+      </div>
+      <button
+        class="sheet__close"
+        type="button"
+        data-close="viewModal"
+        aria-label="Close"
+      >
+        <i class="fas fa-times"></i>
       </button>
     </div>
-    <div class="modal__body" id="viewModalBody">
-      <!-- Filled dynamically -->
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn-outline" onclick="closeModal('viewModal')">
-        Close
-      </button>
-    </div>
+    <div id="viewModalBody"></div>
   </div>
 </div>
 
+{% if session %}
+<div class="sheet-overlay" id="filterModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Filter duties">
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Filter Duties</div>
+        <div class="sheet__subtitle">Narrow down the schedule</div>
+      </div>
+      <button
+        class="sheet__close"
+        type="button"
+        data-close="filterModal"
+        aria-label="Close"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="sheet-form-group">
+      <label for="mStatusFilter">Status</label>
+      <select id="mStatusFilter">
+        <option value="all">All Status</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="ongoing">Ongoing</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
+
+    <div class="sheet-form-group">
+      <label for="mTypeFilter">Type</label>
+      <select id="mTypeFilter">
+        <option value="all">All Types</option>
+        <option value="CAT">CAT</option>
+        <option value="MAIN">Main Exam</option>
+        <option value="SUPP">Supplementary</option>
+        <option value="SPECIAL">Special / Supplementary</option>
+        <option value="PRACTICAL">Practical</option>
+      </select>
+    </div>
+
+    <button class="sheet-submit" type="button" data-action="apply-filters">
+      <i class="fas fa-check"></i> Apply Filters
+    </button>
+    <button
+      class="sheet-submit sheet-submit--outline"
+      type="button"
+      data-action="reset-filters-close"
+      style="margin-top: 0.6rem"
+    >
+      <i class="fas fa-undo"></i> Reset
+    </button>
+  </div>
+</div>
+{% endif %}
+
 <div class="toast" id="toast"></div>
 
+{% if session %}{{ duties_json|json_script:"dutiesData" }}{% endif %}
+
 <script>
-  // ============================================
-  // SERVER DATA
-  // ============================================
-  let currentDuties = {{ duties_json|safe }};
-  let filteredDuties = [...currentDuties];
+  (function () {
+    "use strict";
 
-  // ============================================
-  // RENDER
-  // ============================================
-  function getStatusBadge(status) {
-    const map = {
-      'upcoming':  '<span class="status-badge upcoming"><i class="fas fa-clock"></i> Upcoming</span>',
-      'ongoing':   '<span class="status-badge ongoing"><i class="fas fa-spinner fa-spin"></i> Ongoing</span>',
-      'completed': '<span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span>',
-    };
-    return map[status] || status;
-  }
+    const $ = (id) => document.getElementById(id);
 
-  function getTypeBadge(type, typeDisplay) {
-    return `<span class="type-badge ${type}">${typeDisplay || type}</span>`;
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str ?? '';
-    return div.innerHTML;
-  }
-
-  function renderDuties(dutyList) {
-    const tbody = document.getElementById('dutiesTableBody');
-    if (!tbody) return;
-
-    if (dutyList.length === 0) {
-      tbody.innerHTML =
-        `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No invigilation duties found matching your filters.</td></tr>`;
-      document.getElementById('dutyCount').textContent = 'Showing 0 duties';
-      return;
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s ?? "";
+      return d.innerHTML;
     }
 
-    let html = '';
-    dutyList.forEach((d, index) => {
-      html += `
-        <tr data-duty-id="${d.id}">
-          <td>${index + 1}</td>
-          <td><span style="font-weight:600;">${d.date}</span></td>
-          <td>${d.time}</td>
-          <td>
-            <div>
-              <div style="font-weight:600;font-size:0.8rem;">${escapeHtml(d.course_code)}</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);">${escapeHtml(d.course_title)} · ${escapeHtml(d.class_name)}</div>
+    // ─── Data ────────────────────────────────────────────────────────────────
+    // duties_json may arrive as a list or as an already-encoded JSON string;
+    // json_script safely embeds it either way, so accept both.
+    function loadDuties() {
+      const el = $("dutiesData");
+      if (!el) return [];
+      try {
+        let v = JSON.parse(el.textContent);
+        if (typeof v === "string") v = v.trim() ? JSON.parse(v) : [];
+        return Array.isArray(v) ? v : [];
+      } catch (err) {
+        console.error("Could not read duties data", err);
+        return [];
+      }
+    }
+
+    const duties = loadDuties().map((d) => ({
+      id: String(d.id),
+      date: d.date ?? "",
+      time: d.time ?? "",
+      course_code: d.course_code ?? "",
+      course_title: d.course_title ?? "",
+      class_name: d.class_name ?? "",
+      venue: d.venue ?? "",
+      type: String(d.type ?? "")
+        .trim()
+        .toUpperCase(),
+      type_display: d.type_display || d.type || "",
+      status: String(d.status ?? "")
+        .trim()
+        .toLowerCase(),
+      students: d.students ?? 0,
+      instructions: d.instructions ?? "",
+    }));
+
+    // ─── Formatting ──────────────────────────────────────────────────────────
+    const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+    function parseIso(s) {
+      const m = ISO.exec(String(s).trim());
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    }
+
+    // ISO dates get a friendly format; anything else is shown as the server sent it
+    function formatDate(s) {
+      const d = parseIso(s);
+      return d
+        ? d.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        : String(s);
+    }
+
+    function cardDate(s) {
+      const d = parseIso(s);
+      if (!d) return String(s);
+      return `${d.toLocaleDateString("en-GB", { weekday: "long" })}, ${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+    }
+
+    const STATUS_BADGES = {
+      upcoming:
+        '<span class="status-badge upcoming"><i class="fas fa-clock"></i> Upcoming</span>',
+      ongoing:
+        '<span class="status-badge ongoing"><i class="fas fa-spinner fa-spin"></i> Ongoing</span>',
+      completed:
+        '<span class="status-badge completed"><i class="fas fa-check-circle"></i> Completed</span>',
+    };
+
+    const statusBadge = (s) =>
+      STATUS_BADGES[s] || `<span class="status-badge">${escapeHtml(s)}</span>`;
+
+    const typeBadge = (type, display) =>
+      `<span class="type-badge ${type.replace(/[^A-Z0-9_-]/g, "")}">${escapeHtml(display || type)}</span>`;
+
+    const plural = (n) => `${n} ${n === 1 ? "duty" : "duties"}`;
+
+    // ─── Filters (one state shared by table, cards and both sets of controls)
+    const DEFAULTS = { q: "", status: "all", type: "all" };
+    const filters = { ...DEFAULTS };
+
+    const CONTROLS = {
+      q: ["desktopSearch", "mobileSearch"],
+      status: ["desktopStatusFilter", "mStatusFilter"],
+      type: ["desktopTypeFilter", "mTypeFilter"],
+    };
+
+    function matches(d) {
+      const q = filters.q.trim().toLowerCase();
+      return (
+        (!q ||
+          d.course_code.toLowerCase().includes(q) ||
+          d.course_title.toLowerCase().includes(q)) &&
+        (filters.status === "all" || d.status === filters.status) &&
+        (filters.type === "all" || d.type === filters.type)
+      );
+    }
+
+    function syncControls() {
+      Object.entries(CONTROLS).forEach(([key, ids]) => {
+        ids.forEach((id) => {
+          const el = $(id);
+          if (el && el.value !== filters[key]) el.value = filters[key];
+        });
+      });
+    }
+
+    // ─── Render ──────────────────────────────────────────────────────────────
+    function emptyMessage() {
+      return duties.length === 0
+        ? {
+            title: "No invigilation duties",
+            text: "You have no invigilation duties assigned this session.",
+          }
+        : {
+            title: "No invigilation duties found",
+            text: "Try adjusting your search or filters.",
+          };
+    }
+
+    function renderTable(rows) {
+      const tbody = $("dutiesTableBody");
+      if (!tbody) return;
+
+      if (rows.length === 0) {
+        const m = emptyMessage();
+        tbody.innerHTML = `
+          <tr><td colspan="8">
+            <div class="empty-state">
+              <div class="empty-state__icon">📭</div>
+              <div class="empty-state__title">${m.title}</div>
+              <div class="empty-state__text">${m.text}</div>
             </div>
-          </td>
-          <td>${escapeHtml(d.venue)}</td>
-          <td>${getTypeBadge(d.type, d.type_display)}</td>
-          <td>${getStatusBadge(d.status)}</td>
-          <td>
-            <div class="actions-cell">
-              <button class="btn-sm primary" onclick="openViewModal('${d.id}')" title="View Details">
+          </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows
+        .map(
+          (d, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><span class="cell-date">${escapeHtml(formatDate(d.date))}</span></td>
+            <td>${escapeHtml(d.time)}</td>
+            <td>
+              <div class="cell-course-code">${escapeHtml(d.course_code)}</div>
+              <div class="cell-course-sub">${escapeHtml(d.course_title)} · ${escapeHtml(d.class_name)}</div>
+            </td>
+            <td>${escapeHtml(d.venue)}</td>
+            <td>${typeBadge(d.type, d.type_display)}</td>
+            <td>${statusBadge(d.status)}</td>
+            <td>
+              <button class="btn-sm primary" type="button" data-view="${escapeHtml(d.id)}" title="View details">
                 <i class="fas fa-eye"></i> View
               </button>
+            </td>
+          </tr>`,
+        )
+        .join("");
+    }
+
+    function renderCards(rows) {
+      const list = $("dutyList");
+      if (!list) return;
+
+      if (rows.length === 0) {
+        const m = emptyMessage();
+        list.innerHTML = `
+          <div class="mobile-empty">
+            <div class="mobile-empty__icon">📭</div>
+            <div class="mobile-empty__title">${m.title}</div>
+            <div class="mobile-empty__text">${m.text}</div>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = rows
+        .map(
+          (d) => `
+          <div class="duty-card status-${escapeHtml(d.status)}" data-duty-id="${escapeHtml(d.id)}">
+            <div class="duty-card__top">
+              <div class="duty-card__date">
+                <div class="duty-card__date-main">${escapeHtml(cardDate(d.date))}</div>
+                <div class="duty-card__time"><i class="fas fa-clock" style="font-size:.6rem"></i> ${escapeHtml(d.time)}</div>
+              </div>
+              <div class="duty-card__badges">
+                ${typeBadge(d.type, d.type_display)}
+                ${statusBadge(d.status)}
+              </div>
             </div>
-          </td>
-        </tr>
-      `;
+            <div class="duty-card__course">${escapeHtml(d.course_title)}</div>
+            <div class="duty-card__meta">
+              <span class="duty-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(d.course_code)}</span></span>
+              <span class="duty-card__meta-item"><i class="fas fa-map-marker-alt"></i><span>${escapeHtml(d.venue)}</span></span>
+              <span class="duty-card__meta-item"><i class="fas fa-users"></i><span>${escapeHtml(d.students)} students</span></span>
+            </div>
+            <div class="duty-card__actions">
+              <button class="duty-card__action primary" type="button" data-view="${escapeHtml(d.id)}">
+                <i class="fas fa-eye"></i> View Details
+              </button>
+            </div>
+          </div>`,
+        )
+        .join("");
+    }
+
+    function render() {
+      const rows = duties.filter(matches);
+      renderTable(rows);
+      renderCards(rows);
+
+      const count = $("dutyCount");
+      if (count) count.textContent = `Showing ${plural(rows.length)}`;
+
+      $("mobileFilterBtn")?.classList.toggle(
+        "has-filters",
+        filters.status !== "all" || filters.type !== "all",
+      );
+    }
+
+    function setFilters(next) {
+      Object.assign(filters, next);
+      syncControls();
+      render();
+    }
+
+    // ─── Sheets ──────────────────────────────────────────────────────────────
+    function openSheet(id) {
+      $(id).classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeSheet(id) {
+      $(id).classList.remove("active");
+      if (!document.querySelector(".sheet-overlay.active"))
+        document.body.style.overflow = "";
+    }
+
+    document.querySelectorAll(".sheet-overlay").forEach((o) => {
+      o.addEventListener("click", (e) => {
+        if (e.target === o) closeSheet(o.id);
+      });
     });
 
-    tbody.innerHTML = html;
-    document.getElementById('dutyCount').textContent = `Showing ${dutyList.length} duties`;
-  }
-
-  // ============================================
-  // FILTER
-  // ============================================
-  function filterDuties() {
-    const search = document.getElementById('dutySearch')?.value.toLowerCase() || '';
-    const status = document.getElementById('statusFilter')?.value || 'all';
-    const type   = document.getElementById('typeFilter')?.value || 'all';
-
-    filteredDuties = currentDuties.filter(d => {
-      const matchSearch = d.course_code.toLowerCase().includes(search) ||
-        d.course_title.toLowerCase().includes(search);
-      const matchStatus = status === 'all' || d.status === status;
-      const matchType = type === 'all' || d.type === type;
-      return matchSearch && matchStatus && matchType;
-    });
-
-    renderDuties(filteredDuties);
-  }
-
-  function resetFilters() {
-    const searchEl = document.getElementById('dutySearch');
-    const statusEl = document.getElementById('statusFilter');
-    const typeEl   = document.getElementById('typeFilter');
-    if (searchEl) searchEl.value = '';
-    if (statusEl) statusEl.value = 'all';
-    if (typeEl) typeEl.value = 'all';
-    filterDuties();
-  }
-
-  // ============================================
-  // VIEW MODAL
-  // ============================================
-  function openViewModal(dutyId) {
-    const duty = currentDuties.find(d => d.id === dutyId);
-    if (!duty) return;
-
-    const body = document.getElementById('viewModalBody');
-    body.innerHTML = `
-      <div class="detail-row">
-        <span class="detail-row__label">Course</span>
-        <span class="detail-row__value"><strong>${escapeHtml(duty.course_code)}</strong> — ${escapeHtml(duty.course_title)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Class</span>
-        <span class="detail-row__value">${escapeHtml(duty.class_name)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Date &amp; Time</span>
-        <span class="detail-row__value">${duty.date} · ${duty.time}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Venue</span>
-        <span class="detail-row__value">${escapeHtml(duty.venue)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Type</span>
-        <span class="detail-row__value">${escapeHtml(duty.type_display)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Status</span>
-        <span class="detail-row__value">${duty.status}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Students</span>
-        <span class="detail-row__value">${duty.students} enrolled</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-row__label">Special Instructions</span>
-        <span class="detail-row__value">${duty.instructions ? escapeHtml(duty.instructions) : 'No special instructions provided.'}</span>
-      </div>
-    `;
-
-    openModal('viewModal');
-  }
-
-  // ============================================
-  // MODAL HELPERS
-  // ============================================
-  function openModal(id) {
-    document.getElementById(id).classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-    document.body.style.overflow = '';
-  }
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', function (e) {
-      if (e.target === this) {
-        this.classList.remove('active');
-        document.body.style.overflow = '';
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document
+          .querySelectorAll(".sheet-overlay.active")
+          .forEach((o) => closeSheet(o.id));
       }
     });
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
-      document.body.style.overflow = '';
+
+    function openViewSheet(dutyId) {
+      const d = duties.find((x) => x.id === String(dutyId));
+      if (!d) return;
+
+      $("sheetDutyMeta").textContent =
+        `${d.course_code} · ${formatDate(d.date)}`;
+      $("viewModalBody").innerHTML = `
+        <div class="detail-row"><span class="detail-row__label">Course</span>
+          <span class="detail-row__value"><strong>${escapeHtml(d.course_code)}</strong> — ${escapeHtml(d.course_title)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Class</span>
+          <span class="detail-row__value">${escapeHtml(d.class_name)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Date</span>
+          <span class="detail-row__value">${escapeHtml(formatDate(d.date))}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Time</span>
+          <span class="detail-row__value">${escapeHtml(d.time)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Venue</span>
+          <span class="detail-row__value">${escapeHtml(d.venue)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Type</span>
+          <span class="detail-row__value">${typeBadge(d.type, d.type_display)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Status</span>
+          <span class="detail-row__value">${statusBadge(d.status)}</span></div>
+        <div class="detail-row"><span class="detail-row__label">Students</span>
+          <span class="detail-row__value">${escapeHtml(d.students)} enrolled</span></div>
+        <div class="detail-row"><span class="detail-row__label">Instructions</span>
+          <span class="detail-row__value">${d.instructions ? escapeHtml(d.instructions) : '<span class="muted">No special instructions provided.</span>'}</span></div>`;
+
+      openSheet("viewModal");
     }
-  });
 
-  // ============================================
-  // INIT
-  // ============================================
-  document.addEventListener('DOMContentLoaded', () => {
-    renderDuties(currentDuties);
-  });
+    // ─── Events ──────────────────────────────────────────────────────────────
+    [
+      ["desktopSearch", "q", "input"],
+      ["mobileSearch", "q", "input"],
+      ["desktopStatusFilter", "status", "change"],
+      ["desktopTypeFilter", "type", "change"],
+    ].forEach(([id, key, evt]) => {
+      $(id)?.addEventListener(evt, (e) =>
+        setFilters({ [key]: e.target.value }),
+      );
+    });
+
+    document.addEventListener("click", (e) => {
+      const closer = e.target.closest("[data-close]");
+      if (closer) return closeSheet(closer.dataset.close);
+
+      const view = e.target.closest("[data-view]");
+      if (view) return openViewSheet(view.dataset.view);
+
+      const action = e.target.closest("[data-action]");
+      if (action) {
+        switch (action.dataset.action) {
+          case "reset-filters":
+            return setFilters(DEFAULTS);
+          case "open-filters":
+            syncControls();
+            return openSheet("filterModal");
+          case "apply-filters":
+            setFilters({
+              status: $("mStatusFilter").value,
+              type: $("mTypeFilter").value,
+            });
+            closeSheet("filterModal");
+            return showToast("Filters applied", "info");
+          case "reset-filters-close":
+            setFilters(DEFAULTS);
+            closeSheet("filterModal");
+            return showToast("Filters reset", "info");
+        }
+      }
+
+      // tapping anywhere on a mobile card opens its details
+      const card = e.target.closest(".duty-card");
+      if (card) openViewSheet(card.dataset.dutyId);
+    });
+
+    // ─── Init ────────────────────────────────────────────────────────────────
+    render();
+  })();
 </script>
-
-{% endblock %}
+{% endblock content %}

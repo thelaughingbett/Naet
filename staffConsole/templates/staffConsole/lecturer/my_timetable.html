@@ -4,6 +4,23 @@
 {% block head %}
 <title>My Timetable · Lecturer · Naet</title>
 
+<!--
+  NOTE ON THIS RECONCILIATION:
+  The shell (staffConsole/lecturer/shell.html) is untouched — it already
+  owns the sidebar, the inline #hamburgerBtn wiring, and the global
+  showToast() function (this page still supplies its own #toast element,
+  since the shell defines the function but not the DOM node). The
+  mockup's standalone sidebar/drawer/floating-hamburger/app-bar are NOT
+  reproduced; this page's real topbar + week-nav already serve that role
+  and are unchanged.
+
+  What's added: a mobile day-strip + class-card list, rendered from the
+  SAME real GRID_ROWS/EXAM_LIST already loaded from grid_rows_json/
+  exam_list_json (no second fetch, no mocked data), and a responsive
+  bottom-sheet treatment for the existing real #entryModal — same ids,
+  same openEntryModal()/loadExecutionHistory() functions, no duplicate
+  modal.
+-->
 <style>
   /* ============================================
            RESET & VARIABLES
@@ -31,9 +48,11 @@
     --white: #ffffff;
     --radius: 14px;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
     --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   body {
     font-family: var(--font);
@@ -44,205 +63,7 @@
   }
 
   /* ============================================
-           SIDEBAR
-           ============================================ */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: var(--sidebar-w);
-    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
-    color: #eef2ff;
-    display: flex;
-    flex-direction: column;
-    z-index: 100;
-    transition: transform 0.3s ease;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-  }
-  .sidebar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .sidebar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-  }
-
-  .sidebar__brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 1.2rem 1.2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
-    min-height: var(--topnav-h);
-  }
-  .sidebar__brand-icon {
-    font-size: 1.6rem;
-    flex-shrink: 0;
-  }
-  .sidebar__brand-text {
-    font-weight: 800;
-    font-size: 1.1rem;
-    background: linear-gradient(120deg, #fff, #c0d9f0);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    white-space: nowrap;
-  }
-
-  .sidebar__nav {
-    flex: 1;
-    padding: 0.6rem 0.6rem;
-    overflow-y: auto;
-  }
-  .sidebar__item {
-    margin-bottom: 2px;
-  }
-
-  .sidebar__link,
-  .sidebar__link--toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.5rem 0.9rem;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.78);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    cursor: pointer;
-    white-space: nowrap;
-    border: none;
-    background: transparent;
-    width: 100%;
-    font-family: inherit;
-    text-align: left;
-  }
-  .sidebar__link:hover,
-  .sidebar__link--toggle:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
-  }
-  .sidebar__link.active,
-  .sidebar__link--toggle.active {
-    background: var(--maroon);
-    color: white;
-    box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
-  }
-  .sidebar__link i,
-  .sidebar__link--toggle i {
-    width: 20px;
-    text-align: center;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-  }
-  .sidebar__chevron {
-    margin-left: auto;
-    transition: transform 0.2s;
-    font-size: 0.7rem;
-  }
-  .sidebar__item--open .sidebar__chevron {
-    transform: rotate(180deg);
-  }
-
-  .sidebar__submenu {
-    list-style: none;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    margin: 0 0.5rem 0 0.5rem;
-  }
-  .sidebar__submenu--open {
-    max-height: 600px;
-  }
-  .sidebar__sublink {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.4rem 0.9rem 0.4rem 2.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    font-size: 0.76rem;
-    font-weight: 400;
-    transition: 0.2s;
-    border-radius: 6px;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    width: 100%;
-    text-align: left;
-    font-family: inherit;
-  }
-  .sidebar__sublink:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: white;
-  }
-  .sidebar__sublink.active {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .sidebar__sublink .badge {
-    margin-left: auto;
-    background: var(--maroon);
-    color: white;
-    font-size: 0.55rem;
-    padding: 0.1rem 0.5rem;
-    border-radius: 30px;
-    font-weight: 600;
-  }
-
-  .sidebar__footer {
-    padding: 1rem 1.2rem;
-    font-size: 0.62rem;
-    color: rgba(255, 255, 255, 0.3);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  /* ============================================
-           MOBILE OVERLAY
-           ============================================ */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 90;
-    opacity: 0;
-    visibility: hidden;
-    transition: 0.2s;
-  }
-  .sidebar-overlay.active {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  /* ============================================
-           MAIN CONTENT
-           ============================================ */
-  .main-content {
-    margin-left: var(--sidebar-w);
-    flex: 1;
-    min-height: 100vh;
-    transition: margin-left 0.3s ease;
-    padding: 1.8rem 2rem 2rem;
-    background: var(--bg);
-  }
-
-  /* ============================================
-           TOP BAR
+           TOP BAR (real, unchanged)
            ============================================ */
   .topbar {
     display: flex;
@@ -311,13 +132,6 @@
   .btn-primary:hover {
     background: var(--navy-light);
   }
-  .btn-success {
-    background: var(--green);
-    color: white;
-  }
-  .btn-success:hover {
-    background: #14532d;
-  }
   .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
@@ -326,37 +140,9 @@
   .btn-outline:hover {
     background: var(--bg);
   }
-  .btn-sm {
-    padding: 0.2rem 0.7rem;
-    font-size: 0.65rem;
-    border-radius: 30px;
-    border: 1px solid var(--border);
-    background: var(--white);
-    cursor: pointer;
-    transition: 0.2s;
-    font-family: inherit;
-    font-weight: 500;
-    color: var(--text);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .btn-sm:hover {
-    background: var(--bg);
-    border-color: #cbd5e1;
-  }
-  .btn-sm.primary {
-    background: var(--navy);
-    color: white;
-    border-color: var(--navy);
-  }
-  .btn-sm.primary:hover {
-    background: var(--navy-light);
-  }
 
   /* ============================================
-           WEEK NAVIGATION
+           WEEK NAVIGATION (real, unchanged)
            ============================================ */
   .week-nav {
     display: flex;
@@ -397,9 +183,6 @@
     color: white;
     border-color: var(--navy);
   }
-  .week-nav__controls button.primary:hover {
-    background: var(--navy-light);
-  }
   .week-nav__date {
     font-weight: 600;
     font-size: 0.85rem;
@@ -414,11 +197,11 @@
   }
 
   /* ============================================
-           TIMETABLE GRID
+           DESKTOP TIMETABLE GRID (real, unchanged)
            ============================================ */
-  /* ============================================
-         TIMETABLE GRID
-         ============================================ */
+  .desktop-view {
+    display: block;
+  }
   .timetable-wrapper {
     background: var(--white);
     border-radius: var(--radius);
@@ -434,7 +217,7 @@
   .timetable-grid {
     width: 100%;
     border-collapse: collapse;
-    min-width: 760px; /* comfortable fixed size — never shrinks below this */
+    min-width: 760px;
     table-layout: fixed;
   }
   .timetable-grid th {
@@ -457,7 +240,7 @@
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
     vertical-align: top;
-    height: 92px; /* was 72px — more room for a readable course block */
+    height: 92px;
     min-height: 92px;
     position: relative;
   }
@@ -496,7 +279,6 @@
     background: #f8fafc;
   }
 
-  /* ===== Course Block ===== */
   .course-block {
     background: #eef2ff;
     border-radius: 8px;
@@ -593,8 +375,284 @@
   }
 
   /* ============================================
-         MODAL
-         ============================================ */
+           MOBILE VIEW — day-strip + class cards,
+           rendered from the SAME real GRID_ROWS/EXAM_LIST
+           ============================================ */
+  .mobile-view {
+    display: none;
+  }
+
+  .day-strip {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.2rem 0 0.6rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .day-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .day-chip {
+    flex: 0 0 auto;
+    min-width: 58px;
+    padding: 0.55rem 0.6rem;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    scroll-snap-align: start;
+    font-family: inherit;
+  }
+  .day-chip__name {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .day-chip__date {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 1px;
+  }
+  .day-chip__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--maroon);
+    margin: 4px auto 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .day-chip--has-items .day-chip__dot {
+    opacity: 1;
+  }
+  .day-chip--today {
+    border-color: var(--navy);
+    background: #eef4fb;
+  }
+  .day-chip--today .day-chip__name {
+    color: var(--navy);
+  }
+  .day-chip--active {
+    background: var(--navy);
+    border-color: var(--navy);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(10, 37, 64, 0.25);
+  }
+  .day-chip--active .day-chip__name,
+  .day-chip--active .day-chip__date {
+    color: white;
+  }
+  .day-chip--active .day-chip__dot {
+    background: var(--gold);
+  }
+
+  .class-list {
+    padding: 0.5rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.2rem 0.2rem;
+    margin-top: 0.4rem;
+  }
+  .day-heading__title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .day-heading__count {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+
+  .class-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 0.9rem 0.9rem 0.9rem 1.1rem;
+    display: flex;
+    gap: 0.85rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .class-card:active {
+    transform: scale(0.985);
+    box-shadow: var(--shadow-md);
+  }
+  .class-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--blue-card);
+  }
+  .class-card.color-1::before {
+    background: #1f6392;
+  }
+  .class-card.color-2::before {
+    background: #1e6f3f;
+  }
+  .class-card.color-3::before {
+    background: #9e2a2b;
+  }
+  .class-card.color-4::before {
+    background: #b45309;
+  }
+  .class-card.color-5::before {
+    background: #6b21a8;
+  }
+  .class-card--exam::before {
+    background: var(--maroon);
+  }
+
+  .class-card__time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    flex-shrink: 0;
+    border-right: 1px dashed var(--border);
+    padding-right: 0.75rem;
+  }
+  .class-card__time-start {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .class-card__time-end {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .class-card__time-ampm {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 20px;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .class-card__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .class-card__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .class-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+  .class-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+  .class-card__meta-item i {
+    font-size: 0.62rem;
+    color: var(--blue-card);
+    flex-shrink: 0;
+  }
+  .class-card__badges {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge--lecture {
+    background: #eef4fb;
+    color: var(--navy);
+  }
+  .badge--invig {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .empty-day {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+  }
+  .empty-day__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 0.9rem;
+    color: var(--text-muted);
+  }
+  .empty-day__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .empty-day__text {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  /* ============================================
+           MODAL — real, with a responsive bottom-sheet
+           treatment added for mobile (same ids, same JS)
+           ============================================ */
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -614,6 +672,99 @@
   }
   .modal-overlay.active .modal {
     animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    padding: 0;
+  }
+  .modal__handle {
+    display: none;
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.6rem auto 0;
+  }
+  .modal__header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    border-radius: var(--radius) var(--radius) 0 0;
+    z-index: 2;
+  }
+  .modal__header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .modal__close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  .modal__close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal__body {
+    padding: 1.5rem;
+  }
+  .modal__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    background: var(--bg);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .detail-row {
+    display: flex;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-row__label {
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .detail-row__value {
+    flex: 1;
+    color: var(--text);
   }
 
   .exec-history-divider {
@@ -696,124 +847,6 @@
     margin-top: 6px;
     font-style: italic;
   }
-  @keyframes modalFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-  .modal {
-    background: var(--white);
-    border-radius: var(--radius);
-    max-width: 480px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    padding: 0;
-  }
-  .modal__header {
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    background: var(--white);
-    border-radius: var(--radius) var(--radius) 0 0;
-    z-index: 2;
-  }
-  .modal__header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-  .modal__close {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 0.2rem 0.4rem;
-    border-radius: 8px;
-    transition: 0.2s;
-  }
-  .modal__close:hover {
-    background: var(--bg);
-    color: var(--text);
-  }
-  .modal__body {
-    padding: 1.5rem;
-  }
-  .modal__footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.6rem;
-    background: var(--bg);
-    border-radius: 0 0 var(--radius) var(--radius);
-  }
-  .detail-row {
-    display: flex;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-  }
-  .detail-row:last-child {
-    border-bottom: none;
-  }
-  .detail-row__label {
-    font-weight: 600;
-    color: var(--text-muted);
-    width: 100px;
-    flex-shrink: 0;
-  }
-  .detail-row__value {
-    flex: 1;
-    color: var(--text);
-  }
-
-  /* ============================================
-           TOAST
-           ============================================ */
-  .toast {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: var(--navy);
-    color: white;
-    padding: 0.7rem 1.3rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 0.3s;
-    z-index: 2000;
-    font-size: 0.85rem;
-    font-family: var(--font);
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .toast.success {
-    background: var(--green);
-  }
-  .toast.warning {
-    background: #92400e;
-  }
-  .toast.info {
-    background: var(--navy);
-  }
 
   /* ============================================
            RESPONSIVE
@@ -827,24 +860,8 @@
     .topbar__hamburger {
       display: block;
     }
-    .sidebar {
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      width: var(--sidebar-w) !important;
-    }
-    .sidebar.open {
-      transform: translateX(0);
-    }
-    .main-content {
-      margin-left: 0 !important;
-      padding: 1rem;
-    }
     .topbar__title {
       font-size: 1.2rem;
-    }
-    .sidebar-overlay.active {
-      opacity: 1;
-      visibility: visible;
     }
     .week-nav {
       flex-direction: column;
@@ -855,97 +872,38 @@
       justify-content: center;
       flex-wrap: wrap;
     }
-    .timetable-grid {
-      min-width: 500px;
-      font-size: 0.7rem;
+
+    .desktop-view {
+      display: none;
     }
-    .timetable-grid th {
-      font-size: 0.6rem;
-      padding: 0.5rem 0.2rem;
+    .mobile-view {
+      display: block;
     }
-    .timetable-grid td {
-      height: 56px;
-      min-height: 56px;
-      padding: 0.15rem;
+
+    /* Modal becomes a bottom sheet */
+    .modal-overlay {
+      align-items: flex-end;
+      padding: 0;
     }
-    .timetable-grid .time-label {
-      height: 56px;
-      min-height: 56px;
-      font-size: 0.6rem;
+    .modal {
+      max-width: 100%;
+      border-radius: 24px 24px 0 0;
+      max-height: 88vh;
+      transform: translateY(0);
     }
-    .course-block {
-      min-height: 48px;
-      padding: 0.2rem 0.3rem;
+    .modal__handle {
+      display: block;
     }
-    .course-block .code {
-      font-size: 0.6rem;
-    }
-    .course-block .title {
-      font-size: 0.55rem;
-    }
-    .course-block .meta {
-      font-size: 0.5rem;
-    }
-    .course-block .tag {
-      font-size: 0.45rem;
-      padding: 0.05rem 0.3rem;
-    }
-    .empty-cell {
-      min-height: 48px;
-      font-size: 0.5rem;
+    .modal__header {
+      border-radius: 0;
     }
   }
-  @media (max-width: 480px) {
-    .topbar__actions {
-      width: 100%;
+  @media (min-width: 769px) {
+    .mobile-view {
+      display: none !important;
     }
-    .topbar__actions .btn {
-      flex: 1;
-      justify-content: center;
-    }
-    .timetable-grid {
-      min-width: 400px;
-      font-size: 0.6rem;
-    }
-    .timetable-grid th {
-      font-size: 0.5rem;
-      padding: 0.3rem 0.1rem;
-    }
-    .timetable-grid td {
-      height: 44px;
-      min-height: 44px;
-      padding: 0.1rem;
-    }
-    .timetable-grid .time-label {
-      height: 44px;
-      min-height: 44px;
-      font-size: 0.5rem;
-    }
-    .course-block {
-      min-height: 38px;
-      padding: 0.15rem 0.2rem;
-      border-left-width: 3px;
-    }
-    .course-block .code {
-      font-size: 0.5rem;
-    }
-    .course-block .title {
-      font-size: 0.45rem;
-    }
-    .course-block .meta {
-      font-size: 0.4rem;
-      gap: 0.15rem;
-    }
-    .course-block .meta i {
-      font-size: 0.4rem;
-    }
-    .course-block .tag {
-      font-size: 0.4rem;
-      padding: 0.05rem 0.2rem;
-    }
-    .empty-cell {
-      min-height: 38px;
-      font-size: 0.4rem;
+    .desktop-view {
+      display: block;
     }
   }
 </style>
@@ -1007,45 +965,58 @@
   <div class="week-nav__today" id="todayLabel"></div>
 </div>
 
-<div class="timetable-wrapper">
-  <div class="timetable-scroll">
-    <table class="timetable-grid" id="timetableGrid">
-      <thead>
-        <tr>
-          <th></th>
-          {% for day in days %}
-          <th id="th-{{ day }}">{{ day }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
+<!-- ============================================
+     DESKTOP VIEW — real, unchanged
+     ============================================ -->
+<div class="desktop-view">
+  <div class="timetable-wrapper">
+    <div class="timetable-scroll">
+      <table class="timetable-grid" id="timetableGrid">
+        <thead>
+          <tr>
+            <th></th>
+            {% for day in days %}
+            <th id="th-{{ day }}">{{ day }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
 
-      <tbody>
-        {% for row in grid_rows %} {% with start=row.time|slice:":5" %}
-        <tr>
-          <td class="time-label">
-            <span>{{ start }}</span>
+        <tbody>
+          {% for row in grid_rows %} {% with start=row.time|slice:":5" %}
+          <tr>
+            <td class="time-label">
+              <span>{{ start }}</span>
+              <span class="ampm" data-time="{{ row.time }}"></span>
+            </td>
 
-            <span class="ampm" data-time="{{ row.time }}"></span>
-          </td>
-
-          {% for day in days %}
-
-          <td
-            id="cell-{{ day }}-{{ forloop.parentloop.counter0 }}"
-            class="tt-cell"
-            data-day="{{ day }}"
-            data-row="{{ forloop.parentloop.counter0 }}"
-          ></td>
-          {% endfor %}
-        </tr>
-        {% endwith %} {% endfor %}
-      </tbody>
-    </table>
+            {% for day in days %}
+            <td
+              id="cell-{{ day }}-{{ forloop.parentloop.counter0 }}"
+              class="tt-cell"
+              data-day="{{ day }}"
+              data-row="{{ forloop.parentloop.counter0 }}"
+            ></td>
+            {% endfor %}
+          </tr>
+          {% endwith %} {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+</div>
+
+<!-- ============================================
+     MOBILE VIEW — rendered from the SAME real
+     GRID_ROWS/EXAM_LIST as the desktop table above
+     ============================================ -->
+<div class="mobile-view">
+  <div class="day-strip" id="dayStrip"></div>
+  <div class="class-list" id="classList"></div>
 </div>
 
 <div class="modal-overlay" id="entryModal">
   <div class="modal">
+    <div class="modal__handle"></div>
     <div class="modal__header">
       <h2 id="entryModalTitle">
         <i class="fas fa-book" style="color: var(--navy)"></i> Class Details
@@ -1074,163 +1045,331 @@
 <div class="toast" id="toast"></div>
 
 <script>
-      // Recurring lecture grid from server
-      // Structure: [ { time, label, days: { MON: slot|null, TUE: slot|null, … } } ]
-      const GRID_ROWS = {{ grid_rows_json|safe }};
+  // Recurring lecture grid from server
+  // Structure: [ { time, label, days: { MON: slot|null, TUE: slot|null, … } } ]
+  const GRID_ROWS = {{ grid_rows_json|safe }};
 
-      // Date-specific exam/invigilation duties
-      // Structure: [ { date, time_slot, code, name, exam_type, venue, class_name, color, tag, tag_class } ]
-      const EXAM_LIST = {{ exam_list_json|safe }};
+  // Date-specific exam/invigilation duties
+  // Structure: [ { date, time_slot, code, name, exam_type, venue, class_name, color, tag, tag_class } ]
+  const EXAM_LIST = {{ exam_list_json|safe }};
 
-      const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
-      const DAY_LABELS = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday' };
+  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+  const DAY_LABELS = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday' };
+  const DAY_SHORT  = { MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri' };
 
-      // ── week state ────────────────────────────────────────────────────────────
-      let weekOffset = 0;
+  // ── week + mobile-day state ─────────────────────────────────────────────────
+  let weekOffset = 0;
+  let activeDayIndex = 0;
 
-      function getWeekDates(offset) {
-        const today   = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dow     = today.getDay();                      // 0=Sun
-        const fromMon = (dow === 0) ? 6 : dow - 1;
-        const mon     = new Date(today);
-        mon.setDate(today.getDate() - fromMon + offset * 7);
+  function getWeekDates(offset) {
+    const today   = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dow     = today.getDay();                      // 0=Sun
+    const fromMon = (dow === 0) ? 6 : dow - 1;
+    const mon     = new Date(today);
+    mon.setDate(today.getDate() - fromMon + offset * 7);
 
-        return DAYS.map((_, i) => {
-          const d = new Date(mon);
-          d.setDate(mon.getDate() + i);
-          return d;
-        });
-      }
+    return DAYS.map((_, i) => {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      return d;
+    });
+  }
 
-      function isToday(date) {
-        const t = new Date(); t.setHours(0,0,0,0);
-        return date.getTime() === t.getTime();
-      }
+  function isToday(date) {
+    const t = new Date(); t.setHours(0,0,0,0);
+    return date.getTime() === t.getTime();
+  }
 
-      function fmtShort(d) {
-        return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-      }
-      function fmtLong(d) {
-        return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-      }
+  function getTodayIndex() {
+    const dates = getWeekDates(0);
+    const idx = dates.findIndex((d) => isToday(d));
+    return idx >= 0 ? idx : 0;
+  }
 
-      // ── render ────────────────────────────────────────────────────────────────
-      function renderTimetable() {
-        const dates = getWeekDates(weekOffset);
+  function fmtShort(d) {
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  }
+  function fmtLong(d) {
+    return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  function toISODate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  function splitTime(timeStr) {
+    const [start, end] = timeStr.split('-');
+    return { start, end };
+  }
+  function startHourAmPm(timeStr) {
+    const h = parseInt(timeStr.split('-')[0].slice(0, 2), 10);
+    return h >= 12 ? 'PM' : 'AM';
+  }
 
-        // Update week header label
-        document.getElementById('weekDate').textContent =
-          `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+  // ── render desktop grid (real, unchanged) ───────────────────────────────────
+  function renderTimetable() {
+    const dates = getWeekDates(weekOffset);
 
-        const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
-        const todayOnScreen = weekOffset === 0;
+    document.getElementById('weekDate').textContent =
+      `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
 
-        // Update "Today" pill
-        const todayLabel = document.getElementById('todayLabel');
-        const todayDayIdx = DAYS.indexOf(['MON','TUE','WED','THU','FRI','',''][
-          todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
-        ]);
-        if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
-          todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
-        } else {
-          todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
-        }
+    const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
+    const todayOnScreen = weekOffset === 0;
 
-        // Update column headers + today highlight
-        DAYS.forEach((day, i) => {
-          const th = document.getElementById(`th-${day}`);
-          if (!th) return;
-          th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
-          th.className   = (isToday(dates[i])) ? 'th-today' : '';
-        });
-
-        // Build a lookup of exam duties for this displayed week
-        // exam: { "2026-06-30|08:00-11:00": slotObj }
-        const examLookup = {};
-        EXAM_LIST.forEach(e => {
-          // Check if this exam date falls within the displayed week
-          const eDate = new Date(e.date); eDate.setHours(0,0,0,0);
-          dates.forEach((d, idx) => {
-            if (d.getTime() === eDate.getTime()) {
-              const key = `${DAYS[idx]}|${e.time_slot}`;
-              examLookup[key] = e;
-            }
-          });
-        });
-
-        // Populate cells
-        GRID_ROWS.forEach((row, rowIdx) => {
-          // Set AM/PM label
-          const ampms = document.querySelectorAll(`.ampm[data-time="${row.time}"]`);
-          const startHour = parseInt(row.time.slice(0, 2), 10);
-          const ampm = startHour >= 12 ? 'PM' : 'AM';
-          ampms.forEach(el => el.textContent = ampm);
-
-          DAYS.forEach((day, dayIdx) => {
-            const cell = document.getElementById(`cell-${day}-${rowIdx}`);
-            if (!cell) return;
-
-            // today highlight
-            cell.className = 'tt-cell' + (isToday(dates[dayIdx]) ? ' cell-today' : '');
-
-            // exam duty takes priority over lecture for this cell
-            const examKey  = `${day}|${row.time}`;
-            const examSlot = examLookup[examKey];
-            const lectSlot = row.days[day];
-
-            const slot = examSlot || lectSlot;
-
-            if (slot && slot.code) {
-              cell.innerHTML = blockHTML(slot);
-            } else {
-              cell.innerHTML = `<div class="empty-cell">—</div>`;
-            }
-          });
-        });
-      }
-
-    function truncateClasses(classNameStr, limit = 3) {
-      const classes = classNameStr
-        ? classNameStr.split(',').map(c => c.trim()).filter(Boolean)
-        : [];
-
-      if (classes.length <= limit) {
-        return { display: classes.join(', '), full: classes, hasMore: false };
-      }
-
-      const shown = classes.slice(0, limit).join(', ');
-      const remaining = classes.length - limit;
-      return {
-        display: `${shown} +${remaining} more`,
-        full: classes,
-        hasMore: true,
-      };
+    const todayLabel = document.getElementById('todayLabel');
+    const todayDayIdx = DAYS.indexOf(['MON','TUE','WED','THU','FRI','',''][
+      todayLocal.getDay() === 0 ? 6 : todayLocal.getDay() - 1
+    ]);
+    if (todayOnScreen && todayDayIdx >= 0 && todayDayIdx <= 4) {
+      todayLabel.textContent = `Today: ${DAY_LABELS[DAYS[todayDayIdx]]}, ${fmtShort(dates[todayDayIdx])}`;
+    } else {
+      todayLabel.textContent = `Week of ${fmtShort(dates[0])}`;
     }
 
-    function blockHTML(slot) {
-      const { display: classesDisplay } = truncateClasses(slot.class_name);
+    DAYS.forEach((day, i) => {
+      const th = document.getElementById(`th-${day}`);
+      if (!th) return;
+      th.textContent = `${DAY_LABELS[day]} ${fmtShort(dates[i])}`;
+      th.className   = (isToday(dates[i])) ? 'th-today' : '';
+    });
+
+    const examLookup = {};
+    EXAM_LIST.forEach(e => {
+      const eDate = new Date(e.date); eDate.setHours(0,0,0,0);
+      dates.forEach((d, idx) => {
+        if (d.getTime() === eDate.getTime()) {
+          const key = `${DAYS[idx]}|${e.time_slot}`;
+          examLookup[key] = e;
+        }
+      });
+    });
+
+    GRID_ROWS.forEach((row, rowIdx) => {
+      const ampms = document.querySelectorAll(`.ampm[data-time="${row.time}"]`);
+      const startHour = parseInt(row.time.slice(0, 2), 10);
+      const ampm = startHour >= 12 ? 'PM' : 'AM';
+      ampms.forEach(el => el.textContent = ampm);
+
+      DAYS.forEach((day, dayIdx) => {
+        const cell = document.getElementById(`cell-${day}-${rowIdx}`);
+        if (!cell) return;
+
+        cell.className = 'tt-cell' + (isToday(dates[dayIdx]) ? ' cell-today' : '');
+
+        const examKey  = `${day}|${row.time}`;
+        const examSlot = examLookup[examKey];
+        const lectSlot = row.days[day];
+        const slot = examSlot || lectSlot;
+
+        if (slot && slot.code) {
+          cell.innerHTML = blockHTML(slot);
+        } else {
+          cell.innerHTML = `<div class="empty-cell">—</div>`;
+        }
+      });
+    });
+
+    // Keep the mobile view in sync with the same weekOffset every time
+    // the desktop grid re-renders — one entry point, two outputs.
+    renderMobileDayStrip();
+    renderMobileClassList();
+  }
+
+  function truncateClasses(classNameStr, limit = 3) {
+    const classes = classNameStr
+      ? classNameStr.split(',').map(c => c.trim()).filter(Boolean)
+      : [];
+
+    if (classes.length <= limit) {
+      return { display: classes.join(', '), full: classes, hasMore: false };
+    }
+
+    const shown = classes.slice(0, limit).join(', ');
+    const remaining = classes.length - limit;
+    return {
+      display: `${shown} +${remaining} more`,
+      full: classes,
+      hasMore: true,
+    };
+  }
+
+  function blockHTML(slot) {
+    const { display: classesDisplay } = truncateClasses(slot.class_name);
+
+    return `
+      <div class="course-block ${slot.color}" onclick='openEntryModal(${JSON.stringify(slot)})'>
+        <div class="code">${slot.code}</div>
+        <div class="title">${slot.name}</div>
+        <div class="meta">
+          <span><i class="fas fa-map-pin"></i> ${slot.venue}</span>
+          <span><i class="fas fa-users"></i> ${classesDisplay}</span>
+        </div>
+        <span class="${slot.tag_class || 'tag'}">${slot.tag || 'Lecture'}</span>
+      </div>`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+
+  // ── mobile day strip + class list ───────────────────────────────────────────
+  function renderMobileDayStrip() {
+    const strip = document.getElementById('dayStrip');
+    if (!strip) return;
+    const dates = getWeekDates(weekOffset);
+
+    strip.innerHTML = DAYS.map((day, i) => {
+      const date = dates[i];
+      const hasItems =
+        GRID_ROWS.some(row => row.days[day]) ||
+        EXAM_LIST.some(e => e.date === toISODate(date));
+      const classes = [
+        'day-chip',
+        hasItems ? 'day-chip--has-items' : '',
+        isToday(date) ? 'day-chip--today' : '',
+        i === activeDayIndex ? 'day-chip--active' : '',
+      ].filter(Boolean).join(' ');
 
       return `
-        <div class="course-block ${slot.color}" onclick='openEntryModal(${JSON.stringify(slot)})'>
-          <div class="code">${slot.code}</div>
-          <div class="title">${slot.name}</div>
-          <div class="meta">
-            <span><i class="fas fa-map-pin"></i> ${slot.venue}</span>
-            <span><i class="fas fa-users"></i> ${classesDisplay}</span>
-          </div>
-          <span class="${slot.tag_class || 'tag'}">${slot.tag || 'Lecture'}</span>
+        <button class="${classes}" data-day-index="${i}">
+          <div class="day-chip__name">${DAY_SHORT[day]}</div>
+          <div class="day-chip__date">${date.getDate()}</div>
+          <div class="day-chip__dot"></div>
+        </button>`;
+    }).join('');
+
+    strip.querySelectorAll('.day-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectDay(parseInt(btn.dataset.dayIndex, 10));
+      });
+    });
+  }
+
+  function renderMobileClassList() {
+    const list = document.getElementById('classList');
+    if (!list) return;
+    const dates = getWeekDates(weekOffset);
+    const day = DAYS[activeDayIndex];
+    const date = dates[activeDayIndex];
+
+    const entries = [];
+    GRID_ROWS.forEach(row => {
+      const lectSlot = row.days[day];
+      if (lectSlot) entries.push({ time: row.time, slot: lectSlot, isExam: false });
+    });
+
+    const dateISO = toISODate(date);
+    EXAM_LIST.forEach(e => {
+      if (e.date === dateISO) entries.push({ time: e.time_slot, slot: e, isExam: true });
+    });
+
+    entries.sort((a, b) => a.time.localeCompare(b.time));
+
+    let html = `
+      <div class="day-heading">
+        <div class="day-heading__title">${DAY_LABELS[day]}, ${fmtShort(date)}</div>
+        <div class="day-heading__count">${entries.length} ${entries.length === 1 ? 'class' : 'classes'}</div>
+      </div>`;
+
+    if (entries.length === 0) {
+      html += `
+        <div class="empty-day">
+          <div class="empty-day__icon"><i class="fas fa-mug-hot"></i></div>
+          <div class="empty-day__title">No classes on ${DAY_LABELS[day]}</div>
+          <div class="empty-day__text">Enjoy your free day! Swipe or tap another day from the strip above.</div>
         </div>`;
+    } else {
+      entries.forEach(({ time, slot, isExam }) => {
+        html += renderMobileClassCard(time, slot, isExam);
+      });
     }
 
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str ?? '';
-      return div.innerHTML;
-    }
-    const CLASS_LIST_URL = "{% url 'lecturer-class-list' %}";  // adjust to your actual URL name
-    const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
+    list.innerHTML = html;
 
+    list.querySelectorAll('.class-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const data = JSON.parse(card.dataset.slot);
+        openEntryModal(data);
+      });
+    });
+  }
+
+  function renderMobileClassCard(time, slot, isExam) {
+    const { start, end } = splitTime(time);
+    const ampm = startHourAmPm(time);
+    const { display: classesDisplay } = truncateClasses(slot.class_name);
+    const safeSlot = JSON.stringify(slot).replace(/'/g, '&apos;');
+    const colorClass = slot.color || '';
+    const examClass = isExam ? 'class-card--exam' : '';
+    const tag = slot.tag || (isExam ? 'Invigilation' : 'Lecture');
+    const badgeClass = isExam ? 'badge--invig' : 'badge--lecture';
+
+    return `
+      <div class="class-card ${colorClass} ${examClass}" data-slot='${safeSlot}'>
+        <div class="class-card__time">
+          <div class="class-card__time-start">${start}</div>
+          <div class="class-card__time-end">${end}</div>
+          <div class="class-card__time-ampm">${ampm}</div>
+        </div>
+        <div class="class-card__body">
+          <div class="class-card__title">${escapeHtml(slot.name)}</div>
+          <div class="class-card__meta">
+            <span class="class-card__meta-item">
+              <i class="fas fa-hashtag"></i>
+              <span>${escapeHtml(slot.code)}</span>
+            </span>
+            <span class="class-card__meta-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>${escapeHtml(slot.venue)}</span>
+            </span>
+          </div>
+          <div class="class-card__meta" style="margin-top:.3rem;">
+            <span class="class-card__meta-item">
+              <i class="fas fa-users"></i>
+              <span>${escapeHtml(classesDisplay)}</span>
+            </span>
+          </div>
+          <div class="class-card__badges">
+            <span class="badge ${badgeClass}">${escapeHtml(tag)}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function selectDay(index) {
+    if (index < 0 || index >= DAYS.length) return;
+    activeDayIndex = index;
+    renderMobileDayStrip();
+    renderMobileClassList();
+  }
+
+  // ── swipe between days on the mobile class list ─────────────────────────────
+  let touchStartX = 0, touchStartY = 0;
+  const classListEl = document.getElementById('classList');
+  if (classListEl) {
+    classListEl.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    classListEl.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0 && activeDayIndex < DAYS.length - 1) selectDay(activeDayIndex + 1);
+        else if (dx > 0 && activeDayIndex > 0) selectDay(activeDayIndex - 1);
+      }
+    }, { passive: true });
+  }
+
+  const CLASS_LIST_URL = "{% url 'lecturer-class-list' %}";
+  const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
+
+  // ── execution history (real, unchanged) ──────────────────────────────────────
   async function loadExecutionHistory(timetableId) {
     const list = document.getElementById('entryExecHistoryList');
     if (!list) return;
@@ -1271,6 +1410,8 @@
     }
   }
 
+  // ── entry modal (real, unchanged) — opened from either the desktop
+  //    course-block onclick OR a mobile class-card click ────────────────────
   function openEntryModal(slot) {
     const isExam = !!slot.exam_type;
     const { full: fullClasses } = truncateClasses(slot.class_name);
@@ -1300,8 +1441,6 @@
       </div>
     `).join('');
 
-    // Only recurring lecture slots have a real Timetable row (slot_id) to
-    // look up DailyClassExecution history against — exam duties don't.
     const historyHtml = (!isExam && slot.slot_id) ? `
       <div class="exec-history-divider"><i class="fas fa-history"></i> Execution History</div>
       <div id="entryExecHistoryList" class="exec-history-list">
@@ -1327,43 +1466,46 @@
 
     openModal('entryModal');
   }
-    function openModal(id) {
-      document.getElementById(id).classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('active');
-      document.body.style.overflow = '';
-    }
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', function (e) {
-        if (e.target === this) closeModal(this.id);
-      });
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function (e) {
+      if (e.target === this) closeModal(this.id);
     });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay.active').forEach(el => closeModal(el.id));
-      }
-    });
-      // ── week navigation ───────────────────────────────────────────────────────
-      function changeWeek(delta) {
-        weekOffset += delta;
-        renderTimetable();
-      }
-      function goToToday() {
-        weekOffset = 0;
-        renderTimetable();
-        showToast('📅 Current week', 'info');
-      }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(el => closeModal(el.id));
+    }
+  });
 
+  // ── week navigation (real, extended to also snap the mobile day) ────────────
+  function changeWeek(delta) {
+    weekOffset += delta;
+    if (weekOffset === 0) activeDayIndex = getTodayIndex();
+    renderTimetable();
+  }
+  function goToToday() {
+    weekOffset = 0;
+    activeDayIndex = getTodayIndex();
+    renderTimetable();
+    showToast('📅 Current week', 'info');
+  }
 
-      // ── init ──────────────────────────────────────────────────────────────────
-      document.addEventListener('DOMContentLoaded', () => {
-
-        {% if grid_rows %}
-        renderTimetable();
-        {% endif %}
-      });
+  // ── init ──────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    {% if grid_rows %}
+    activeDayIndex = getTodayIndex();
+    renderTimetable();
+    {% endif %}
+  });
 </script>
 
 {% endblock %}

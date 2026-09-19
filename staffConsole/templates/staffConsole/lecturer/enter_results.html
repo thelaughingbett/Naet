@@ -21,6 +21,7 @@
     --blue-card: #1f6392;
     --green: #1e6f3f;
     --gold: #fbbf24;
+    --red: #b91c1c;
     --sidebar-w: 280px;
     --topnav-h: 64px;
     --font: "Inter", "Segoe UI", sans-serif;
@@ -30,10 +31,14 @@
     --bg: #f1f5f9;
     --white: #ffffff;
     --radius: 14px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
     --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   body {
     font-family: var(--font);
@@ -44,7 +49,8 @@
   }
 
   /* ============================================
-           SIDEBAR
+           SIDEBAR (structure/toggle owned by the shell —
+           this just keeps the shell's own styling consistent)
            ============================================ */
   .sidebar {
     position: fixed;
@@ -72,7 +78,6 @@
     background: rgba(255, 255, 255, 0.15);
     border-radius: 10px;
   }
-
   .sidebar__brand {
     display: flex;
     align-items: center;
@@ -95,7 +100,6 @@
     color: transparent;
     white-space: nowrap;
   }
-
   .sidebar__nav {
     flex: 1;
     padding: 0.6rem 0.6rem;
@@ -104,7 +108,6 @@
   .sidebar__item {
     margin-bottom: 2px;
   }
-
   .sidebar__link,
   .sidebar__link--toggle {
     display: flex;
@@ -151,7 +154,6 @@
   .sidebar__item--open .sidebar__chevron {
     transform: rotate(180deg);
   }
-
   .sidebar__submenu {
     list-style: none;
     max-height: 0;
@@ -199,7 +201,6 @@
     border-radius: 30px;
     font-weight: 600;
   }
-
   .sidebar__footer {
     padding: 1rem 1.2rem;
     font-size: 0.62rem;
@@ -209,9 +210,6 @@
     flex-shrink: 0;
   }
 
-  /* ============================================
-           MOBILE OVERLAY
-           ============================================ */
   .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -326,13 +324,6 @@
   .btn-outline:hover {
     background: var(--bg);
   }
-  .btn-maroon {
-    background: var(--maroon);
-    color: white;
-  }
-  .btn-maroon:hover {
-    background: var(--maroon-hover);
-  }
   .btn-sm {
     padding: 0.2rem 0.7rem;
     font-size: 0.65rem;
@@ -353,33 +344,9 @@
     background: var(--bg);
     border-color: #cbd5e1;
   }
-  .btn-sm.primary {
-    background: var(--navy);
-    color: white;
-    border-color: var(--navy);
-  }
-  .btn-sm.primary:hover {
-    background: var(--navy-light);
-  }
-  .btn-sm.success {
-    background: var(--green);
-    color: white;
-    border-color: var(--green);
-  }
-  .btn-sm.success:hover {
-    background: #14532d;
-  }
-  .btn-sm.danger {
-    background: #dc2626;
-    color: white;
-    border-color: #dc2626;
-  }
-  .btn-sm.danger:hover {
-    background: #b91c1c;
-  }
 
   /* ============================================
-           COURSE SELECTOR
+           COURSE SELECTOR (real, Django-rendered list)
            ============================================ */
   .course-selector {
     position: relative;
@@ -389,7 +356,7 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.4rem 1rem 0.4rem 1rem;
+    padding: 0.4rem 1rem;
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 40px;
@@ -419,7 +386,6 @@
   .course-selector__trigger.open .chevron {
     transform: rotate(180deg);
   }
-
   .course-selector__dropdown {
     position: absolute;
     top: calc(100% + 6px);
@@ -483,10 +449,6 @@
     color: var(--text-muted);
     font-weight: 400;
   }
-  .course-selector__item .check {
-    color: var(--green);
-    font-size: 0.8rem;
-  }
   .course-selector__item .students {
     font-size: 0.65rem;
     color: var(--text-muted);
@@ -496,7 +458,7 @@
   }
 
   /* ============================================
-           ASSESSMENT MANAGER
+           ASSESSMENT MANAGER (desktop, real)
            ============================================ */
   .assessment-manager {
     background: var(--white);
@@ -564,13 +526,17 @@
     border-radius: 30px;
     text-transform: uppercase;
   }
-  .type-badge.cat {
+  .type-badge.C {
     background: #dbeafe;
     color: #1e40af;
   }
-  .type-badge.exam {
+  .type-badge.E {
     background: #fce4ec;
     color: #9e2a2b;
+  }
+  .type-badge.A {
+    background: #fef3c7;
+    color: #92400e;
   }
 
   .add-assessment-form {
@@ -616,7 +582,7 @@
   }
 
   /* ============================================
-           RESULTS STATS
+           RESULTS STATS (desktop, real)
            ============================================ */
   .results-stats {
     display: grid;
@@ -644,18 +610,9 @@
     letter-spacing: 0.3px;
     margin-top: 0.1rem;
   }
-  .stat-card__number.green {
-    color: var(--green);
-  }
-  .stat-card__number.gold {
-    color: var(--gold);
-  }
-  .stat-card__number.maroon {
-    color: var(--maroon);
-  }
 
   /* ============================================
-           SEARCH BAR
+           SEARCH BAR (desktop, real)
            ============================================ */
   .search-bar {
     display: flex;
@@ -700,7 +657,7 @@
   }
 
   /* ============================================
-           RESULTS TABLE
+           RESULTS TABLE (desktop, real)
            ============================================ */
   .table-wrapper {
     background: var(--white);
@@ -740,7 +697,6 @@
   .results-table tr:hover td {
     background: #f8fafc;
   }
-
   .results-table .avatar {
     width: 32px;
     height: 32px;
@@ -761,10 +717,6 @@
   }
   .results-table .student-name {
     font-weight: 600;
-  }
-  .results-table .student-id {
-    font-size: 0.7rem;
-    color: var(--text-muted);
   }
 
   .score-input {
@@ -791,6 +743,10 @@
     border-color: var(--gold);
     background: #fefce8;
   }
+  .score-input.error {
+    border-color: var(--red);
+    background: #fef2f2;
+  }
 
   .save-status {
     font-size: 0.6rem;
@@ -800,11 +756,481 @@
     align-items: center;
     gap: 0.3rem;
   }
-  .save-status .saved {
+  .save-status .ok {
     color: var(--green);
   }
-  .save-status .saving {
-    color: var(--gold);
+  .save-status .err {
+    color: var(--red);
+  }
+
+  .table-footer {
+    padding: 0.8rem 1.2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  /* ============================================
+           MOBILE VIEW — mirrors the real state above
+           ============================================ */
+  .desktop-view {
+    display: block;
+  }
+  .mobile-view {
+    display: none;
+  }
+
+  .mobile-assessments {
+    padding: 0 0 0.4rem;
+  }
+  .mobile-assessments__title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mobile-assessments__add {
+    background: transparent;
+    border: none;
+    color: var(--blue-card);
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+  }
+  .mobile-assessments__add:active {
+    background: rgba(31, 99, 146, 0.1);
+  }
+  .mobile-assessments__strip {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+    scrollbar-width: none;
+  }
+  .mobile-assessments__strip::-webkit-scrollbar {
+    display: none;
+  }
+  .assessment-chip {
+    flex: 0 0 auto;
+    padding: 0.55rem 0.9rem;
+    border-radius: 20px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .assessment-chip:active {
+    transform: scale(0.96);
+  }
+  .assessment-chip.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .assessment-chip .chip-count {
+    font-size: 0.6rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.08);
+    padding: 0.1rem 0.4rem;
+    border-radius: 20px;
+  }
+  .assessment-chip.active .chip-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .mobile-stats {
+    margin: 0.7rem 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .mobile-stat {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .mobile-stat.highlight {
+    background: linear-gradient(135deg, #0a2540, #1f4e6e);
+    border-color: var(--navy);
+    color: white;
+  }
+  .mobile-stat__label {
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .mobile-stat.highlight .mobile-stat__label {
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .mobile-stat__value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .mobile-stat.highlight .mobile-stat__value {
+    color: white;
+  }
+
+  .mobile-search {
+    margin: 0.7rem 0 0;
+    position: relative;
+  }
+  .mobile-search i {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    pointer-events: none;
+  }
+  .mobile-search input {
+    width: 100%;
+    padding: 0.7rem 0.9rem 0.7rem 2.2rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.82rem;
+    outline: none;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+  .mobile-search input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+
+  .student-list {
+    padding: 0.7rem 0 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .student-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 0.9rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: 0.2s;
+  }
+  .student-card.saved {
+    border-color: #bbf7d0;
+  }
+  .student-card.saving {
+    border-color: #fde68a;
+  }
+  .student-card.error {
+    border-color: #fca5a5;
+  }
+  .student-card__top {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .student-card__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #eef4fb;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .student-card__info {
+    flex: 1;
+    min-width: 0;
+  }
+  .student-card__name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+  .student-card__meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .student-card__meta .reg {
+    font-family: monospace;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .student-card__score {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .student-card__score input {
+    flex: 1;
+    padding: 0.7rem 0.8rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    transition: 0.2s;
+    text-align: center;
+  }
+  .student-card__score input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+  .student-card__score input.saved {
+    border-color: var(--green);
+    background: #f0fdf4;
+  }
+  .student-card__score input.saving {
+    border-color: var(--gold);
+    background: #fefce8;
+  }
+  .student-card__score input.error {
+    border-color: var(--red);
+    background: #fef2f2;
+  }
+  .student-card__status {
+    min-width: 68px;
+    text-align: right;
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: var(--text-muted);
+  }
+  .student-card__status .ok {
+    color: var(--green);
+  }
+  .student-card__status .err {
+    color: var(--red);
+  }
+
+  .mobile-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+  }
+  .mobile-empty__icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.7rem;
+  }
+  .mobile-empty__title {
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .mobile-empty__text {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  /* ============================================
+           FLOATING SAVE BAR (mobile)
+           ============================================ */
+  .mobile-save-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 0.7rem 1rem calc(0.7rem + var(--safe-bottom));
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    z-index: 40;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    transform: translateY(120%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  .mobile-save-bar.show {
+    transform: translateY(0);
+  }
+  .mobile-save-bar__info {
+    flex: 0 0 auto;
+  }
+  .mobile-save-bar__label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .mobile-save-bar__value {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .mobile-save-bar .btn-success {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 40px;
+  }
+
+  /* ============================================
+           ADD ASSESSMENT SHEET (mobile)
+           ============================================ */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .sheet {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 0.6rem 1.1rem calc(1.2rem + var(--safe-bottom));
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.4, 1.05);
+  }
+  .sheet-overlay.active .sheet {
+    transform: translateY(0);
+  }
+  .sheet__handle {
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.6rem auto 0.9rem;
+  }
+  .sheet__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .sheet__title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .sheet__subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .sheet__close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sheet-form-group {
+    margin-top: 0.9rem;
+  }
+  .sheet-form-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+  }
+  .sheet-form-group input,
+  .sheet-form-group select {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    background: var(--white);
+  }
+  .sheet-form-group input:focus,
+  .sheet-form-group select:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
+  }
+  .sheet-submit {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: none;
+    background: var(--navy);
+    color: white;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .sheet-submit:active {
+    transform: scale(0.98);
   }
 
   /* ============================================
@@ -840,6 +1266,10 @@
     background: var(--navy);
   }
 
+  .hidden-file-input {
+    display: none;
+  }
+
   /* ============================================
            RESPONSIVE
            ============================================ */
@@ -871,47 +1301,12 @@
       opacity: 1;
       visibility: visible;
     }
-    .search-bar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .course-selector {
-      min-width: 100%;
-    }
+    .course-selector,
     .course-selector__trigger {
       min-width: 100%;
     }
     .topbar__left {
       width: 100%;
-    }
-    .assessment-manager__header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .assessment-list {
-      flex-wrap: wrap;
-    }
-    .add-assessment-form {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .add-assessment-form .field input {
-      min-width: auto;
-    }
-    .results-table th,
-    .results-table td {
-      padding: 0.5rem 0.7rem;
-    }
-    .results-table .student-info .avatar {
-      display: none;
-    }
-    .score-input {
-      width: 80px;
-    }
-  }
-  @media (max-width: 480px) {
-    .results-stats {
-      grid-template-columns: 1fr;
     }
     .topbar__actions {
       width: 100%;
@@ -920,17 +1315,26 @@
       flex: 1;
       justify-content: center;
     }
-    .results-table {
-      font-size: 0.7rem;
-    }
-    .score-input {
-      width: 60px;
-      font-size: 0.7rem;
-    }
-  }
 
-  .hidden-file-input {
-    display: none;
+    .desktop-view {
+      display: none;
+    }
+    .mobile-view {
+      display: block;
+    }
+    .mobile-save-bar {
+      display: flex;
+    }
+
+    .toast {
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%) translateY(20px);
+      bottom: calc(5.5rem + var(--safe-bottom));
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
   }
 </style>
 {% endblock %} {% block content %}
@@ -1033,581 +1437,875 @@
 </div>
 
 {% else %}
-<div class="assessment-manager">
-  <div class="assessment-manager__header">
-    <h3>Assessments</h3>
-    <span style="font-size: 0.7rem; color: var(--text-muted)"
-      >Click an assessment to enter scores</span
-    >
-  </div>
 
-  <div class="assessment-list" id="assessmentList">
-    {% for a in assessments %}
-    <button
-      class="assessment-tab {% if forloop.first %}active{% endif %}"
-      data-title="{{ a.title }}"
-      data-type="{{ a.type }}"
-      onclick="selectAssessment('{{ a.title }}', '{{ a.type }}', this)"
-    >
-      <span>{{ a.title }}</span>
-      <span class="type-badge {{ a.type }}">{{ a.type_display }}</span>
-      <span class="badge">{{ a.score_count }}/{{ a.total }}</span>
-      <span
-        class="del-btn"
-        onclick="event.stopPropagation();deleteAssessment('{{ a.title }}','{{ a.type }}')"
-        style="
-          color: var(--text-muted);
-          cursor: pointer;
-          font-size: 0.7rem;
-          margin-left: 0.2rem;
-        "
+<!-- ============================================
+     DESKTOP VIEW — unchanged, real
+     ============================================ -->
+<div class="desktop-view">
+  <div class="assessment-manager">
+    <div class="assessment-manager__header">
+      <h3>Assessments</h3>
+      <span style="font-size: 0.7rem; color: var(--text-muted)"
+        >Click an assessment to enter scores</span
       >
-        <i class="fas fa-times"></i>
-      </span>
-    </button>
-    {% empty %}
-    <span style="font-size: 0.75rem; color: var(--text-muted)"
-      >No assessments yet. Add one below.</span
-    >
-    {% endfor %}
+    </div>
+
+    <div class="assessment-list" id="assessmentList">
+      {% for a in assessments %}
+      <button
+        class="assessment-tab {% if forloop.first %}active{% endif %}"
+        data-title="{{ a.title }}"
+        data-type="{{ a.type }}"
+        onclick="selectAssessment('{{ a.title }}', '{{ a.type }}', this)"
+      >
+        <span>{{ a.title }}</span>
+        <span class="type-badge {{ a.type }}">{{ a.type_display }}</span>
+        <span class="badge">{{ a.score_count }}/{{ a.total }}</span>
+        <span
+          class="del-btn"
+          onclick="event.stopPropagation();deleteAssessment('{{ a.title }}','{{ a.type }}')"
+          style="
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-left: 0.2rem;
+          "
+        >
+          <i class="fas fa-times"></i>
+        </span>
+      </button>
+      {% empty %}
+      <span style="font-size: 0.75rem; color: var(--text-muted)"
+        >No assessments yet. Add one below.</span
+      >
+      {% endfor %}
+    </div>
+
+    <div class="add-assessment-form">
+      <div class="field">
+        <label for="newTitle">Title</label>
+        <input
+          type="text"
+          id="newTitle"
+          placeholder="e.g. CAT 2, Final Exam…"
+        />
+      </div>
+      <div class="field">
+        <label for="newType">Type</label>
+        <select id="newType">
+          {% for val, label in result_type_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addAssessmentFromDesktop()">
+        <i class="fas fa-plus"></i> Add Assessment
+      </button>
+    </div>
   </div>
 
-  <div class="add-assessment-form">
-    <div class="field">
-      <label for="newTitle">Title</label>
-      <input type="text" id="newTitle" placeholder="e.g. CAT 2, Final Exam…" />
+  <div class="results-stats">
+    <div class="stat-card">
+      <div class="stat-card__number" id="statTotal">{{ stats.total }}</div>
+      <div class="stat-card__label">Total Students</div>
     </div>
-    <div class="field">
-      <label for="newType">Type</label>
-      <select id="newType">
+    <div class="stat-card">
+      <div
+        class="stat-card__number"
+        id="statScored"
+        style="color: var(--green)"
+      >
+        {{ stats.scored }}
+      </div>
+      <div class="stat-card__label">Scored</div>
+    </div>
+    <div class="stat-card">
+      <div
+        class="stat-card__number"
+        id="statPending"
+        style="color: var(--maroon)"
+      >
+        {{ stats.pending }}
+      </div>
+      <div class="stat-card__label">Pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__number" id="statAvg" style="color: var(--gold)">
+        {{ stats.avg }}
+      </div>
+      <div class="stat-card__label">Avg Score</div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-bar__input">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="studentSearch"
+        placeholder="Search by name or reg. no.…"
+        onkeyup="filterTable()"
+      />
+    </div>
+    <select
+      id="classFilter"
+      onchange="filterTable()"
+      style="
+        padding: 0.4rem 1rem;
+        border-radius: 40px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        font-family: var(--font);
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--text);
+        outline: none;
+        cursor: pointer;
+      "
+    >
+      <option value="">All Classes</option>
+    </select>
+    <select
+      id="resultsFilter"
+      onchange="filterTable()"
+      style="
+        padding: 0.4rem 1rem;
+        border-radius: 40px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        font-family: var(--font);
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--text);
+        outline: none;
+        cursor: pointer;
+      "
+    >
+      <option value="">All Results</option>
+      <option value="entered">Score Entered</option>
+      <option value="not_entered">Not Entered</option>
+    </select>
+    <button
+      class="btn-sm"
+      onclick="
+        document.getElementById('studentSearch').value = '';
+        document.getElementById('classFilter').value = '';
+        document.getElementById('resultsFilter').value = '';
+        filterTable();
+      "
+    >
+      <i class="fas fa-undo"></i> Reset
+    </button>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table class="results-table" id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Reg. No.</th>
+            <th>Class</th>
+            <th style="min-width: 120px">Score</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    {% if student_rows %}
+    <div class="table-footer">
+      <span id="rowCount">
+        {{ student_rows|length }} student{{ student_rows|length|pluralize }}
+      </span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============================================
+     MOBILE VIEW — mirrors allRows / the real
+     assessment tabs, doesn't fetch anything on its own
+     ============================================ -->
+<div class="mobile-view">
+  <div class="mobile-assessments">
+    <div class="mobile-assessments__title">
+      <span>Assessments</span>
+      <button class="mobile-assessments__add" id="mobileAddAssessmentBtn">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+    <div class="mobile-assessments__strip" id="mobileAssessmentStrip"></div>
+  </div>
+
+  <div class="mobile-stats">
+    <div class="mobile-stat highlight">
+      <div class="mobile-stat__label">Scored</div>
+      <div class="mobile-stat__value" id="mStatScored">0</div>
+    </div>
+    <div class="mobile-stat">
+      <div class="mobile-stat__label">Pending</div>
+      <div
+        class="mobile-stat__value"
+        id="mStatPending"
+        style="color: var(--maroon)"
+      >
+        0
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-search">
+    <i class="fas fa-search"></i>
+    <input
+      type="text"
+      id="mobileSearch"
+      placeholder="Search by name or reg. no.…"
+      onkeyup="filterTable()"
+    />
+  </div>
+
+  <div class="student-list" id="mobileStudentList"></div>
+</div>
+
+{% endif %}
+
+<!-- MOBILE SAVE BAR — calls the exact same saveAll() as the desktop button -->
+<!-- <div class="mobile-save-bar" id="mobileSaveBar">
+  <div class="mobile-save-bar__info">
+    <div class="mobile-save-bar__label">Ready to save?</div>
+    <div class="mobile-save-bar__value" id="mobileSaveLabel">—</div>
+  </div>
+  <button class="btn btn-success" id="mobileSaveAllBtn">
+    <i class="fas fa-save"></i> Save All
+  </button>
+</div> -->
+
+<!-- ADD ASSESSMENT SHEET (mobile) — calls the exact same submitNewAssessment() -->
+<div class="sheet-overlay" id="addAssessmentSheet">
+  <div class="sheet">
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Add Assessment</div>
+        <div class="sheet__subtitle">
+          Create a new assessment for this course
+        </div>
+      </div>
+      <button class="sheet__close" id="closeSheetBtn">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="sheet-form-group">
+      <label for="mNewTitle">Title</label>
+      <input type="text" id="mNewTitle" placeholder="e.g. CAT 2, Final Exam…" />
+    </div>
+
+    <div class="sheet-form-group">
+      <label for="mNewType">Type</label>
+      <select id="mNewType">
         {% for val, label in result_type_choices %}
         <option value="{{ val }}">{{ label }}</option>
         {% endfor %}
       </select>
     </div>
-    <button class="btn btn-primary" onclick="addAssessment()">
+
+    <button class="sheet-submit" id="mAddAssessmentSubmit">
       <i class="fas fa-plus"></i> Add Assessment
     </button>
   </div>
 </div>
 
-<div class="results-stats">
-  <div class="stat-card">
-    <div class="stat-card__number" id="statTotal">{{ stats.total }}</div>
-    <div class="stat-card__label">Total Students</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card__number" id="statScored" style="color: var(--green)">
-      {{ stats.scored }}
-    </div>
-    <div class="stat-card__label">Scored</div>
-  </div>
-  <div class="stat-card">
-    <div
-      class="stat-card__number"
-      id="statPending"
-      style="color: var(--maroon)"
-    >
-      {{ stats.pending }}
-    </div>
-    <div class="stat-card__label">Pending</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card__number" id="statAvg" style="color: var(--gold)">
-      {{ stats.avg }}
-    </div>
-    <div class="stat-card__label">Avg Score</div>
-  </div>
-</div>
-
-<div class="search-bar">
-  <div class="search-bar__input">
-    <i class="fas fa-search"></i>
-    <input
-      type="text"
-      id="studentSearch"
-      placeholder="Search by name or reg. no.…"
-      onkeyup="filterTable()"
-    />
-  </div>
-  <select
-    id="classFilter"
-    onchange="filterTable()"
-    style="
-      padding: 0.4rem 1rem;
-      border-radius: 40px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      font-family: var(--font);
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--text);
-      outline: none;
-      cursor: pointer;
-    "
-  >
-    <option value="">All Classes</option>
-  </select>
-  <select
-    id="resultsFilter"
-    onchange="filterTable()"
-    style="
-      padding: 0.4rem 1rem;
-      border-radius: 40px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      font-family: var(--font);
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--text);
-      outline: none;
-      cursor: pointer;
-    "
-  >
-    <option value="">All Results</option>
-    <option value="entered">Score Entered</option>
-    <option value="not_entered">Not Entered</option>
-  </select>
-  <button
-    class="btn-sm"
-    onclick="
-      document.getElementById('studentSearch').value = '';
-      document.getElementById('classFilter').value = '';
-      document.getElementById('resultsFilter').value = '';
-      filterTable();
-    "
-  >
-    <i class="fas fa-undo"></i> Reset
-  </button>
-</div>
-
-<div class="table-wrapper">
-  <div class="table-scroll">
-    <table class="results-table" id="resultsTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Student</th>
-          <th>Reg. No.</th>
-          <th>Class</th>
-          <th style="min-width: 120px">Score</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-  {% if student_rows %}
-  <div class="table-footer" style="padding: 13px">
-    <span id="rowCount">
-      {{ student_rows|length }} student{{ student_rows|length|pluralize }}
-    </span>
-  </div>
-  {% endif %}
-</div>
-
-{% endif %}
-
 <div class="toast" id="toast"></div>
 
 <script>
-      const CSRF      = '{{ csrf_token }}';
-      const CURR_ID   = '{{ selected.record_id|default:"" }}';
-      const UNIT_LIST = {{ unit_list_json|safe }};
+  const CSRF      = '{{ csrf_token }}';
+  const CURR_ID   = '{{ selected.record_id|default:"" }}';
+  const UNIT_LIST = {{ unit_list_json|safe }};
 
-      // Result type choices for the add-assessment form (mirrors model)
-      const TYPE_DISPLAY = { C: 'Cat', E: 'Exams', A: 'Assignment' };
+  const TYPE_DISPLAY = { C: 'Cat', E: 'Exams', A: 'Assignment' };
 
-      // Current assessment state
-      let currentTitle = '{{ selected_assessment.title|default:""|escapejs }}';
-      let currentType  = '{{ selected_assessment.type|default:"C" }}';
+  let currentTitle = '{{ selected_assessment.title|default:""|escapejs }}';
+  let currentType  = '{{ selected_assessment.type|default:"C" }}';
 
-      // Student rows for the current assessment (server-rendered, then updated by JS)
-      let allRows = {{ student_rows_json|safe }};
+  // The single source of truth both views render from.
+  let allRows = {{ student_rows_json|safe }};
 
-      // Debounce timers per enrollment_id
-      const saveTimers = {};
+  const saveTimers = {};
 
-      // ── render table ──────────────────────────────────────────────────────────
-      function renderTable(rows) {
-      const q     = document.getElementById('studentSearch')?.value.toLowerCase() || '';
-      const klass = document.getElementById('classFilter')?.value || '';
-      const results = document.getElementById('resultsFilter')?.value || '';
-      const tbody = document.getElementById('tableBody');
-      if (!tbody) return;
+  function escapeHtmlJs(s) {
+    const d = document.createElement('div');
+    d.textContent = s ?? '';
+    return d.innerHTML;
+  }
 
-      if (!currentTitle) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" style="text-align:center;padding:2.5rem 1rem;opacity:.6">
-              <div style="font-size:1.6rem;margin-bottom:8px">📋</div>
-              <div style="font-weight:600;margin-bottom:4px">No assessment selected</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">
-                Add an assessment above to start entering scores.
-              </div>
-            </td>
-          </tr>`;
-        document.getElementById('rowCount').textContent = '0 students';
-        updateStats([]);
-        return;
-      }
+  // ── render desktop table + mobile cards from the SAME filtered set ──────────
+  function getFilteredRows() {
+    // Desktop and mobile each have their own search box, but only one
+    // is ever visible per viewport — combining them is safe since the
+    // hidden one stays empty.
+    const q = (
+      (document.getElementById('studentSearch')?.value || '') +
+      (document.getElementById('mobileSearch')?.value || '')
+    ).toLowerCase();
+    const klass = document.getElementById('classFilter')?.value || '';
+    const results = document.getElementById('resultsFilter')?.value || '';
 
-      let visible = rows.filter(r => {
-        const matchQ = r.full_name.toLowerCase().includes(q) ||
-                       r.registration_no.toLowerCase().includes(q);
-        const matchC = !klass || r.class_name === klass;
-        const matchR = !results ||
-                       (results === 'entered' ? r.score !== '' : r.score === '');
-        return matchQ && matchC && matchR;
-      });
+    return allRows.filter(r => {
+      const matchQ = !q ||
+        r.full_name.toLowerCase().includes(q) ||
+        r.registration_no.toLowerCase().includes(q);
+      const matchC = !klass || r.class_name === klass;
+      const matchR = !results ||
+        (results === 'entered' ? r.score !== '' : r.score === '');
+      return matchQ && matchC && matchR;
+    });
+  }
 
-      if (!visible.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;opacity:.5">No students found.</td></tr>`;
-        document.getElementById('rowCount').textContent = '0 students';
-        return;
-      }
+  function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    if (!tbody) return;
 
-      tbody.innerHTML = visible.map((r, i) => `
-        <tr data-eid="${r.enrollment_id}">
-          <td>${i + 1}</td>
-          <td>
-            <div class="student-info">
-              <span class="avatar">${r.initials}</span>
-              <span class="student-name">${r.full_name}</span>
+    if (!currentTitle) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center;padding:2.5rem 1rem;opacity:.6">
+            <div style="font-size:1.6rem;margin-bottom:8px">📋</div>
+            <div style="font-weight:600;margin-bottom:4px">No assessment selected</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">
+              Add an assessment above to start entering scores.
             </div>
           </td>
-          <td><code style="font-size:.7rem;background:var(--bg);padding:.1rem .4rem;border-radius:4px">${r.registration_no.toUpperCase()}</code></td>
-          <td><span style="font-size:.75rem">${r.class_name}</span></td>
-          <td>
+        </tr>`;
+      const rc = document.getElementById('rowCount');
+      if (rc) rc.textContent = '0 students';
+      renderMobileCards([]);
+      updateStats([]);
+      return;
+    }
+
+    const visible = getFilteredRows();
+
+    if (!visible.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;opacity:.5">No students found.</td></tr>`;
+      const rc = document.getElementById('rowCount');
+      if (rc) rc.textContent = '0 students';
+      renderMobileCards([]);
+      return;
+    }
+
+    tbody.innerHTML = visible.map((r, i) => `
+      <tr data-eid="${r.enrollment_id}">
+        <td>${i + 1}</td>
+        <td>
+          <div class="student-info">
+            <span class="avatar">${escapeHtmlJs(r.initials)}</span>
+            <span class="student-name">${escapeHtmlJs(r.full_name)}</span>
+          </div>
+        </td>
+        <td><code style="font-size:.7rem;background:var(--bg);padding:.1rem .4rem;border-radius:4px">${escapeHtmlJs(r.registration_no.toUpperCase())}</code></td>
+        <td><span style="font-size:.75rem">${escapeHtmlJs(r.class_name)}</span></td>
+        <td>
+          <input type="number" step="0.01" min="0" max="100"
+                 class="score-input ${r.score !== '' ? 'saved' : ''}"
+                 value="${r.score}"
+                 placeholder="0.00"
+                 data-eid="${r.enrollment_id}"
+                 oninput="scheduleAutoSave('${r.enrollment_id}', this)" />
+        </td>
+        <td>
+          <div class="save-status" id="status-${r.enrollment_id}">
+            ${r.score !== '' ? '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>' : '<span style="opacity:.4">—</span>'}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    const rc = document.getElementById('rowCount');
+    if (rc) rc.textContent = `${visible.length} student${visible.length !== 1 ? 's' : ''}`;
+
+    renderMobileCards(visible);
+    updateStats(rows);
+  }
+
+  function renderMobileCards(visible) {
+    const list = document.getElementById('mobileStudentList');
+    if (!list) return;
+
+    if (!currentTitle) {
+      list.innerHTML = `
+        <div class="mobile-empty">
+          <div class="mobile-empty__icon">📋</div>
+          <div class="mobile-empty__title">No assessment selected</div>
+          <div class="mobile-empty__text">Add or select an assessment above to start entering scores.</div>
+        </div>`;
+      return;
+    }
+
+    if (!visible.length) {
+      list.innerHTML = `
+        <div class="mobile-empty">
+          <div class="mobile-empty__icon">🔍</div>
+          <div class="mobile-empty__title">No students found</div>
+          <div class="mobile-empty__text">Try a different search.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = visible.map(r => {
+      const scoreClass = r.score !== '' ? 'saved' : '';
+      const statusHtml = r.score !== ''
+        ? '<span class="ok"><i class="fas fa-check"></i> Saved</span>'
+        : '—';
+      return `
+        <div class="student-card ${scoreClass}" data-eid="${r.enrollment_id}">
+          <div class="student-card__top">
+            <div class="student-card__avatar">${escapeHtmlJs(r.initials)}</div>
+            <div class="student-card__info">
+              <div class="student-card__name">${escapeHtmlJs(r.full_name)}</div>
+              <div class="student-card__meta">
+                <span class="reg">${escapeHtmlJs(r.registration_no.toUpperCase())}</span>
+                <span>·</span>
+                <span>${escapeHtmlJs(r.class_name)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="student-card__score">
             <input type="number" step="0.01" min="0" max="100"
-                   class="score-input ${r.score !== '' ? 'saved' : ''}"
+                   class="${scoreClass}"
                    value="${r.score}"
                    placeholder="0.00"
                    data-eid="${r.enrollment_id}"
                    oninput="scheduleAutoSave('${r.enrollment_id}', this)" />
-          </td>
-          <td>
-            <div class="save-status" id="status-${r.enrollment_id}">
-              ${r.score !== '' ? '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>' : '<span style="opacity:.4">—</span>'}
+            <div class="student-card__status" id="mstatus-${r.enrollment_id}">
+              ${statusHtml}
             </div>
-          </td>
-        </tr>
-      `).join('');
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
-      document.getElementById('rowCount').textContent =
-        `${visible.length} student${visible.length !== 1 ? 's' : ''}`;
-
-      updateStats(rows);
-    }
-
-    function populateClassFilter(rows) {
+  function populateClassFilter(rows) {
     const select = document.getElementById('classFilter');
+    if (!select) return;
     const current = select.value;
     const classes = [...new Set(rows.map(r => r.class_name))].sort();
 
     select.innerHTML = '<option value="">All Classes</option>' +
-      classes.map(c => `<option value="${c}">${c}</option>`).join('');
+      classes.map(c => `<option value="${escapeHtmlJs(c)}">${escapeHtmlJs(c)}</option>`).join('');
 
-    // preserve selection if it's still valid after rows changed
     if (classes.includes(current)) select.value = current;
   }
-      function filterTable() { renderTable(allRows); }
 
-      // ── stats ─────────────────────────────────────────────────────────────────
-      function updateStats(rows) {
-        const total   = rows.length;
-        const scored  = rows.filter(r => r.score !== '').length;
-        const pending = total - scored;
-        const vals    = rows.filter(r => r.score !== '').map(r => parseFloat(r.score));
-        const avg     = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2) : '—';
+  function filterTable() { renderTable(allRows); }
 
-        document.getElementById('statTotal').textContent   = total;
-        document.getElementById('statScored').textContent  = scored;
-        document.getElementById('statPending').textContent = pending;
-        document.getElementById('statAvg').textContent     = avg;
-      }
+  // ── stats (desktop + mobile mirrors) ────────────────────────────────────────
+  function updateStats(rows) {
+    const total   = rows.length;
+    const scored  = rows.filter(r => r.score !== '').length;
+    const pending = total - scored;
+    const vals    = rows.filter(r => r.score !== '').map(r => parseFloat(r.score));
+    const avg     = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2) : '—';
 
-      // ── assessment tabs ───────────────────────────────────────────────────────
-      function selectAssessment(title, type, btn) {
-        currentTitle = title;
-        currentType  = type;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('statTotal', total);
+    set('statScored', scored);
+    set('statPending', pending);
+    set('statAvg', avg);
+    set('mStatScored', scored);
+    set('mStatPending', pending);
 
-        // Update tab active state
-        document.querySelectorAll('.assessment-tab').forEach(t => t.classList.remove('active'));
-        btn?.classList.add('active');
+    const saveLabel = document.getElementById('mobileSaveLabel');
+    if (saveLabel) saveLabel.textContent = currentTitle || 'No assessment selected';
+  }
 
-        // Fetch student rows for this assessment
-        const url = new URL('/staff/lecturer/results/assessment-students/', location.origin);
-        url.searchParams.set('curriculum', CURR_ID);
-        url.searchParams.set('title', title);
-        url.searchParams.set('type', type);
+  // ── assessment chip strip — mirrors the real .assessment-tab buttons ────────
+  function syncMobileAssessmentChips() {
+    const strip = document.getElementById('mobileAssessmentStrip');
+    if (!strip) return;
+    const tabs = [...document.querySelectorAll('#assessmentList .assessment-tab')];
 
-        fetch(url)
-          .then(r => r.json())
-          .then(d => {
-            if (d.error) { showToast(d.error, 'warning'); return; }
+    if (tabs.length === 0) {
+      strip.innerHTML = `<span style="font-size:.72rem;color:var(--text-muted);padding:.4rem .6rem;">No assessments yet — tap Add</span>`;
+      return;
+    }
 
-            allRows = d.rows;
-            populateClassFilter(allRows);
-            renderTable(allRows);
-          })
-          .catch(() => showToast('Failed to load scores.', 'warning'));
-      }
+    strip.innerHTML = tabs.map(tab => {
+      const title = tab.dataset.title;
+      const type = tab.dataset.type;
+      const count = tab.querySelector('.badge')?.textContent || '0/0';
+      const active = tab.classList.contains('active');
+      return `
+        <button class="assessment-chip ${active ? 'active' : ''}"
+                data-title="${escapeHtmlJs(title)}" data-type="${escapeHtmlJs(type)}">
+          <span>${escapeHtmlJs(title)}</span>
+          <span class="chip-count">${count}</span>
+        </button>`;
+    }).join('');
 
-      // ── save single score (debounced) ─────────────────────────────────────────
-      function scheduleAutoSave(eid, input) {
-        const statusEl = document.getElementById(`status-${eid}`);
-        statusEl.innerHTML = '<span class="ing"><i class="fas fa-spinner fa-spin"></i> Saving…</span>';
-        input.classList.remove('saved', 'error');
-        input.classList.add('saving');
-
-        clearTimeout(saveTimers[eid]);
-        saveTimers[eid] = setTimeout(() => saveScore(eid, input.value, input, statusEl), 600);
-      }
-
-      function saveScore(eid, rawScore, inputEl, statusEl) {
-        fetch('/staff/lecturer/results/save-score/', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({
-            enrollment_id: eid,
-            title:         currentTitle,
-            type:          currentType,
-            score:         rawScore === '' ? '' : parseFloat(rawScore),
-          }),
-        })
-        .then(r => r.json())
-        .then(d => {
-          if (d.error) {
-            inputEl?.classList.remove('saving');
-            inputEl?.classList.add('error');
-            statusEl.innerHTML = `<span class="err"><i class="fas fa-exclamation-circle"></i> ${d.error}</span>`;
-            return;
-          }
-          inputEl?.classList.remove('saving');
-          // Update allRows cache
-          const row = allRows.find(r => r.enrollment_id === eid);
-          if (row) row.score = d.status === 'deleted' ? '' : rawScore;
-
-          if (d.status === 'deleted' || rawScore === '') {
-            inputEl?.classList.remove('saved');
-            statusEl.innerHTML = '<span style="opacity:.4">—</span>';
-          } else {
-            inputEl?.classList.add('saved');
-            statusEl.innerHTML = '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>';
-          }
-          updateAssessmentBadge();
-          updateStats(allRows);
-        })
-        .catch(() => {
-          statusEl.innerHTML = '<span class="err">Network error</span>';
-        });
-      }
-
-      // ── save all ──────────────────────────────────────────────────────────────
-      document.getElementById('saveAllBtn')?.addEventListener('click', () => {
-        const inputs = document.querySelectorAll('.score-input');
-        const scores = [...inputs].map(inp => ({
-          enrollment_id: inp.dataset.eid,
-          score: inp.value === '' ? '' : parseFloat(inp.value),
-        }));
-
-        fetch('/staff/lecturer/results/bulk-save/', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({
-            curriculum_id: CURR_ID,
-            title:         currentTitle,
-            type:          currentType,
-            scores,
-          }),
-        })
-        .then(r => r.json())
-        .then(d => {
-          if (d.error) { showToast(d.error, 'warning'); return; }
-          // Refresh rows from server
-          selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
-          showToast(`✅ Saved ${d.saved} score${d.saved !== 1 ? 's' : ''}${d.errors?.length ? ' (some errors)' : ''}`, 'success');
-          if (d.errors?.length) console.warn('Bulk save errors:', d.errors);
-        })
-        .catch(() => showToast('Network error saving scores.', 'warning'));
+    strip.querySelectorAll('.assessment-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        selectAssessment(chip.dataset.title, chip.dataset.type, null);
       });
+    });
+  }
 
-      // ── add assessment ────────────────────────────────────────────────────────
-      function addAssessment() {
-        const title = document.getElementById('newTitle').value.trim();
-        const type  = document.getElementById('newType').value;
-        if (!title) { showToast('Please enter a title.', 'warning'); return; }
+  // ── assessment selection (real fetch, unchanged) ─────────────────────────────
+  function selectAssessment(title, type, btn) {
+    currentTitle = title;
+    currentType  = type;
 
-        fetch('/staff/lecturer/results/add-assessment/', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
-        })
-        .then(r => r.json())
-        .then(d => {
-          if (d.error) { showToast(d.error, 'warning'); return; }
-          rebuildAssessmentTabs(d.assessments, title, type);
-          document.getElementById('newTitle').value = '';
-          showToast(`✅ Added: ${title}`, 'success');
-          selectAssessment(title, type, document.querySelector('.assessment-tab.active'));
-        })
-        .catch(() => showToast('Network error.', 'warning'));
-      }
+    document.querySelectorAll('.assessment-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.title === title && t.dataset.type === type);
+    });
+    document.querySelectorAll('.assessment-chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.title === title && c.dataset.type === type);
+    });
 
-      // ── delete assessment ─────────────────────────────────────────────────────
-      function deleteAssessment(title, type) {
-        if (!confirm(`Delete "${title}" and all its scores?`)) return;
+    const url = new URL('/staff/lecturer/results/assessment-students/', location.origin);
+    url.searchParams.set('curriculum', CURR_ID);
+    url.searchParams.set('title', title);
+    url.searchParams.set('type', type);
 
-        fetch('/staff/lecturer/results/delete-assessment/', {
-          method:  'DELETE',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
-        })
-        .then(r => r.json())
-        .then(d => {
-          if (d.error) { showToast(d.error, 'warning'); return; }
-          rebuildAssessmentTabs(d.assessments, null, null);
-          showToast(`🗑️ Deleted "${title}"`, 'info');
-        })
-        .catch(() => showToast('Network error.', 'warning'));
-      }
-
-      // ── rebuild assessment tab strip ──────────────────────────────────────────
-      function rebuildAssessmentTabs(assessments, activeTitle, activeType) {
-        const container = document.getElementById('assessmentList');
-        if (!assessments.length) {
-          container.innerHTML = `<span style="font-size:.75rem;color:var(--text-muted)">No assessments yet.</span>`;
-          currentTitle = '';
-          allRows = [];
-          renderTable([]);
-          return;
-        }
-
-        container.innerHTML = assessments.map(a => `
-          <button class="assessment-tab ${a.title === activeTitle && a.type === activeType ? 'active' : ''}"
-                  data-title="${a.title}" data-type="${a.type}"
-                  onclick="selectAssessment('${a.title}', '${a.type}', this)">
-            <span>${a.title}</span>
-            <span class="type-badge ${a.type}">${TYPE_DISPLAY[a.type] || a.type}</span>
-            <span class="badge">${a.score_count}/${a.total}</span>
-            <span class="del-btn" onclick="event.stopPropagation();deleteAssessment('${a.title}','${a.type}')"
-                  style="color:var(--text-muted);cursor:pointer;font-size:.7rem;margin-left:.2rem">
-              <i class="fas fa-times"></i>
-            </span>
-          </button>
-        `).join('');
-      }
-
-      function updateAssessmentBadge() {
-        const activeTab = document.querySelector('.assessment-tab.active');
-        if (!activeTab) return;
-        const badge = activeTab.querySelector('.badge');
-        if (!badge) return;
-        const scored = allRows.filter(r => r.score !== '').length;
-        badge.textContent = `${scored}/${allRows.length}`;
-      }
-
-      // ── import CSV ────────────────────────────────────────────────────────────
-      document.getElementById('importFile')?.addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (!file || !currentTitle) {
-          showToast('Select an assessment first.', 'warning');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = ev => {
-          const lines  = ev.target.result.split('\n').filter(l => l.trim());
-          if (lines.length < 2) return;
-          const header = lines[0].split(',').map(h => h.trim().toLowerCase());
-          const idIdx  = header.findIndex(h => h.includes('id') || h.includes('reg'));
-          const scIdx  = header.findIndex(h => h.includes('score') || h.includes('mark'));
-          if (idIdx < 0 || scIdx < 0) { showToast('CSV needs "Student ID" and "Score" columns.', 'warning'); return; }
-
-          // Build reg→enrollment_id map from allRows
-          const regMap = {};
-          allRows.forEach(r => { regMap[r.registration_no.toLowerCase()] = r.enrollment_id; });
-
-          const scores = [];
-          for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',').map(c => c.trim());
-            const reg  = cols[idIdx]?.toLowerCase();
-            const val  = cols[scIdx];
-            const eid  = regMap[reg];
-            if (eid && val !== undefined) scores.push({ enrollment_id: eid, score: val });
-          }
-
-          fetch('/staff/lecturer/results/bulk-save/', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ curriculum_id: CURR_ID, title: currentTitle, type: currentType, scores }),
-          })
-          .then(r => r.json())
-          .then(d => {
-            allRows = [];
-            populateClassFilter(allRows);
-            renderTable([]);
-            selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
-            showToast(`✅ Imported ${d.saved} score${d.saved !== 1 ? 's' : ''}`, 'success');
-          });
-          e.target.value = '';
-        };
-        reader.readAsText(file);
-      });
-
-      // ── export template ───────────────────────────────────────────────────────
-      document.getElementById('exportBtn')?.addEventListener('click', () => {
-        const url = new URL('/staff/lecturer/results/export-template/', location.origin);
-        url.searchParams.set('curriculum', CURR_ID);
-        url.searchParams.set('title', currentTitle);
-        url.searchParams.set('type',  currentType);
-        window.location.href = url.toString();
-      });
-
-      // ── course selector ───────────────────────────────────────────────────────
-      const trigger  = document.getElementById('courseTrigger');
-      const dropdown = document.getElementById('courseDropdown');
-      const searchIn = document.getElementById('courseSearchInput');
-
-      trigger?.addEventListener('click', () => {
-        dropdown.classList.toggle('open');
-        trigger.classList.toggle('open');
-        if (dropdown.classList.contains('open')) searchIn?.focus();
-      });
-      searchIn?.addEventListener('input', () => {
-        const q = searchIn.value.toLowerCase();
-        document.querySelectorAll('.course-selector__item').forEach(item => {
-          item.style.display = (item.dataset.code?.includes(q) || item.dataset.title?.includes(q)) ? '' : 'none';
-        });
-      });
-      document.addEventListener('click', e => {
-        const sel = document.getElementById('courseSelector');
-        if (sel && !sel.contains(e.target)) {
-          dropdown?.classList.remove('open');
-          trigger?.classList.remove('open');
-        }
-      });
-
-
-      // ── init ──────────────────────────────────────────────────────────────────
-      document.addEventListener('DOMContentLoaded', () => {
-        // Open sidebar groups
-        ['assessment-sub'].forEach(id => {
-          const sub = document.getElementById(id);
-          const btn = document.querySelector(`[data-target="${id}"]`);
-          if (sub && btn) {
-            sub.classList.add('sidebar__submenu--open');
-            btn.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
-            btn.setAttribute('aria-expanded', 'true');
-          }
-        });
-
-
-
-         populateClassFilter(allRows);
+    fetch(url)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) { showToast(d.error, 'warning'); return; }
+        allRows = d.rows;
+        populateClassFilter(allRows);
         renderTable(allRows);
+      })
+      .catch(() => showToast('Failed to load scores.', 'warning'));
+  }
 
+  // ── save single score (debounced, real) ───────────────────────────────────
+  function scheduleAutoSave(eid, input) {
+    const statusEl = document.getElementById(`status-${eid}`) || document.getElementById(`mstatus-${eid}`);
+    if (statusEl) statusEl.innerHTML = '<span class="ok"><i class="fas fa-spinner fa-spin"></i> Saving…</span>';
+    input.classList.remove('saved', 'error');
+    input.classList.add('saving');
+
+    // Keep every input for this eid (desktop row + mobile card) visually
+    // in sync while a save is in flight.
+    document.querySelectorAll(`[data-eid="${eid}"] input, input[data-eid="${eid}"]`).forEach(el => {
+      if (el !== input) el.value = input.value;
+    });
+
+    clearTimeout(saveTimers[eid]);
+    saveTimers[eid] = setTimeout(() => saveScore(eid, input.value, input, statusEl), 600);
+  }
+
+  function saveScore(eid, rawScore, inputEl, statusEl) {
+    fetch('/staff/lecturer/results/save-score/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({
+        enrollment_id: eid,
+        title:         currentTitle,
+        type:          currentType,
+        score:         rawScore === '' ? '' : parseFloat(rawScore),
+      }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      const statusEls = [
+        document.getElementById(`status-${eid}`),
+        document.getElementById(`mstatus-${eid}`),
+      ].filter(Boolean);
+      const inputEls = [...document.querySelectorAll(`input[data-eid="${eid}"]`)];
+
+      if (d.error) {
+        inputEls.forEach(el => { el.classList.remove('saving'); el.classList.add('error'); });
+        statusEls.forEach(el => {
+          el.innerHTML = `<span class="err"><i class="fas fa-exclamation-circle"></i> ${escapeHtmlJs(d.error)}</span>`;
+        });
+        return;
+      }
+
+      const row = allRows.find(r => r.enrollment_id === eid);
+      if (row) row.score = d.status === 'deleted' ? '' : rawScore;
+
+      inputEls.forEach(el => {
+        el.classList.remove('saving');
+        if (d.status === 'deleted' || rawScore === '') el.classList.remove('saved');
+        else el.classList.add('saved');
       });
+
+      const card = inputEl?.closest?.('.student-card');
+      if (card) {
+        card.classList.remove('saving', 'error');
+        if (d.status !== 'deleted' && rawScore !== '') card.classList.add('saved');
+        else card.classList.remove('saved');
+      }
+
+      const statusHtml = (d.status === 'deleted' || rawScore === '')
+        ? '<span style="opacity:.4">—</span>'
+        : '<span class="ok"><i class="fas fa-check-circle"></i> Saved</span>';
+      statusEls.forEach(el => { el.innerHTML = statusHtml; });
+
+      updateAssessmentBadge();
+      updateStats(allRows);
+    })
+    .catch(() => {
+      const statusEls = [
+        document.getElementById(`status-${eid}`),
+        document.getElementById(`mstatus-${eid}`),
+      ].filter(Boolean);
+      statusEls.forEach(el => { el.innerHTML = '<span class="err">Network error</span>'; });
+    });
+  }
+
+  // ── save all — one function, two triggers (desktop button + mobile bar) ────
+  function saveAll() {
+    const inputs = document.querySelectorAll('#tableBody .score-input');
+    const scores = [...inputs].map(inp => ({
+      enrollment_id: inp.dataset.eid,
+      score: inp.value === '' ? '' : parseFloat(inp.value),
+    }));
+
+    fetch('/staff/lecturer/results/bulk-save/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({
+        curriculum_id: CURR_ID,
+        title:         currentTitle,
+        type:          currentType,
+        scores,
+      }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { showToast(d.error, 'warning'); return; }
+      selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
+      showToast(`✅ Saved ${d.saved} score${d.saved !== 1 ? 's' : ''}${d.errors?.length ? ' (some errors)' : ''}`, 'success');
+      if (d.errors?.length) console.warn('Bulk save errors:', d.errors);
+    })
+    .catch(() => showToast('Network error saving scores.', 'warning'));
+  }
+  document.getElementById('saveAllBtn')?.addEventListener('click', saveAll);
+  document.getElementById('mobileSaveAllBtn')?.addEventListener('click', saveAll);
+
+  // ── add assessment — one shared real function, two thin callers ────────────
+  function submitNewAssessment(title, type, onDone) {
+    if (!title) { showToast('Please enter a title.', 'warning'); return; }
+
+    fetch('/staff/lecturer/results/add-assessment/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { showToast(d.error, 'warning'); return; }
+      rebuildAssessmentTabs(d.assessments, title, type);
+      showToast(`✅ Added: ${title}`, 'success');
+      selectAssessment(title, type, document.querySelector('.assessment-tab.active'));
+      if (onDone) onDone();
+    })
+    .catch(() => showToast('Network error.', 'warning'));
+  }
+
+  function addAssessmentFromDesktop() {
+    const title = document.getElementById('newTitle').value.trim();
+    const type  = document.getElementById('newType').value;
+    submitNewAssessment(title, type, () => {
+      document.getElementById('newTitle').value = '';
+    });
+  }
+
+  function addAssessmentFromMobile() {
+    const title = document.getElementById('mNewTitle').value.trim();
+    const type  = document.getElementById('mNewType').value;
+    submitNewAssessment(title, type, () => {
+      document.getElementById('mNewTitle').value = '';
+      closeAddAssessmentSheet();
+    });
+  }
+
+  // ── delete assessment (real, unchanged) ──────────────────────────────────
+  function deleteAssessment(title, type) {
+    if (!confirm(`Delete "${title}" and all its scores?`)) return;
+
+    fetch('/staff/lecturer/results/delete-assessment/', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ curriculum_id: CURR_ID, title, type }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { showToast(d.error, 'warning'); return; }
+      rebuildAssessmentTabs(d.assessments, null, null);
+      showToast(`🗑️ Deleted "${title}"`, 'info');
+    })
+    .catch(() => showToast('Network error.', 'warning'));
+  }
+
+  // ── rebuild assessment tab strip (real) + sync mobile chips ─────────────────
+  function rebuildAssessmentTabs(assessments, activeTitle, activeType) {
+    const container = document.getElementById('assessmentList');
+    if (!assessments.length) {
+      container.innerHTML = `<span style="font-size:.75rem;color:var(--text-muted)">No assessments yet.</span>`;
+      currentTitle = '';
+      allRows = [];
+      renderTable([]);
+      syncMobileAssessmentChips();
+      return;
+    }
+
+    container.innerHTML = assessments.map(a => `
+      <button class="assessment-tab ${a.title === activeTitle && a.type === activeType ? 'active' : ''}"
+              data-title="${a.title}" data-type="${a.type}"
+              onclick="selectAssessment('${a.title}', '${a.type}', this)">
+        <span>${a.title}</span>
+        <span class="type-badge ${a.type}">${TYPE_DISPLAY[a.type] || a.type}</span>
+        <span class="badge">${a.score_count}/${a.total}</span>
+        <span class="del-btn" onclick="event.stopPropagation();deleteAssessment('${a.title}','${a.type}')"
+              style="color:var(--text-muted);cursor:pointer;font-size:.7rem;margin-left:.2rem">
+          <i class="fas fa-times"></i>
+        </span>
+      </button>
+    `).join('');
+
+    syncMobileAssessmentChips();
+  }
+
+  function updateAssessmentBadge() {
+    const activeTab = document.querySelector('.assessment-tab.active');
+    if (!activeTab) return;
+    const badge = activeTab.querySelector('.badge');
+    if (!badge) return;
+    const scored = allRows.filter(r => r.score !== '').length;
+    badge.textContent = `${scored}/${allRows.length}`;
+    syncMobileAssessmentChips();
+  }
+
+  // ── mobile add-assessment sheet controls ────────────────────────────────────
+  function openAddAssessmentSheet() {
+    const sheet = document.getElementById('addAssessmentSheet');
+    sheet.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('mNewTitle')?.focus(), 300);
+  }
+  function closeAddAssessmentSheet() {
+    const sheet = document.getElementById('addAssessmentSheet');
+    sheet.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('mobileAddAssessmentBtn')?.addEventListener('click', openAddAssessmentSheet);
+  document.getElementById('closeSheetBtn')?.addEventListener('click', closeAddAssessmentSheet);
+  document.getElementById('addAssessmentSheet')?.addEventListener('click', (e) => {
+    if (e.target.id === 'addAssessmentSheet') closeAddAssessmentSheet();
+  });
+  document.getElementById('mAddAssessmentSubmit')?.addEventListener('click', addAssessmentFromMobile);
+
+  // ── import CSV (real, desktop-only, unchanged) ───────────────────────────────
+  document.getElementById('importFile')?.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file || !currentTitle) {
+      showToast('Select an assessment first.', 'warning');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const lines  = ev.target.result.split('\n').filter(l => l.trim());
+      if (lines.length < 2) return;
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const idIdx  = header.findIndex(h => h.includes('id') || h.includes('reg'));
+      const scIdx  = header.findIndex(h => h.includes('score') || h.includes('mark'));
+      if (idIdx < 0 || scIdx < 0) { showToast('CSV needs "Student ID" and "Score" columns.', 'warning'); return; }
+
+      const regMap = {};
+      allRows.forEach(r => { regMap[r.registration_no.toLowerCase()] = r.enrollment_id; });
+
+      const scores = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const reg  = cols[idIdx]?.toLowerCase();
+        const val  = cols[scIdx];
+        const eid  = regMap[reg];
+        if (eid && val !== undefined) scores.push({ enrollment_id: eid, score: val });
+      }
+
+      fetch('/staff/lecturer/results/bulk-save/', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ curriculum_id: CURR_ID, title: currentTitle, type: currentType, scores }),
+      })
+      .then(r => r.json())
+      .then(d => {
+        selectAssessment(currentTitle, currentType, document.querySelector('.assessment-tab.active'));
+        showToast(`✅ Imported ${d.saved} score${d.saved !== 1 ? 's' : ''}`, 'success');
+      });
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // ── export template (real, desktop-only, unchanged) ──────────────────────────
+  document.getElementById('exportBtn')?.addEventListener('click', () => {
+    const url = new URL('/staff/lecturer/results/export-template/', location.origin);
+    url.searchParams.set('curriculum', CURR_ID);
+    url.searchParams.set('title', currentTitle);
+    url.searchParams.set('type',  currentType);
+    window.location.href = url.toString();
+  });
+
+  // ── course selector (real, unchanged) ─────────────────────────────────────
+  const trigger  = document.getElementById('courseTrigger');
+  const dropdown = document.getElementById('courseDropdown');
+  const searchIn = document.getElementById('courseSearchInput');
+
+  trigger?.addEventListener('click', () => {
+    dropdown.classList.toggle('open');
+    trigger.classList.toggle('open');
+    if (dropdown.classList.contains('open')) searchIn?.focus();
+  });
+  searchIn?.addEventListener('input', () => {
+    const q = searchIn.value.toLowerCase();
+    document.querySelectorAll('.course-selector__item').forEach(item => {
+      item.style.display = (item.dataset.code?.includes(q) || item.dataset.title?.includes(q)) ? '' : 'none';
+    });
+  });
+  document.addEventListener('click', e => {
+    const sel = document.getElementById('courseSelector');
+    if (sel && !sel.contains(e.target)) {
+      dropdown?.classList.remove('open');
+      trigger?.classList.remove('open');
+    }
+  });
+
+  // ── toast (real, unchanged) ───────────────────────────────────────────────
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ── init ──────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    ['assessment-sub'].forEach(id => {
+      const sub = document.getElementById(id);
+      const btn = document.querySelector(`[data-target="${id}"]`);
+      if (sub && btn) {
+        sub.classList.add('sidebar__submenu--open');
+        btn.closest('.sidebar__item--group')?.classList.add('sidebar__item--open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    populateClassFilter(allRows);
+    renderTable(allRows);
+    syncMobileAssessmentChips();
+
+    const bar = document.getElementById('mobileSaveBar');
+    if (bar) bar.classList.add('show');
+  });
 </script>
 
 {% endblock %}

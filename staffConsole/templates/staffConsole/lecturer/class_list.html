@@ -1,249 +1,249 @@
 <!-- prettier-ignore -->
 {% extends 'staffConsole/lecturer/shell.html' %}
-{% load static %}
+
 {% block head %}
 <title>Class List · Lecturer · Naet</title>
-
 <style>
-  /* ============================================
-           RESET & VARIABLES
-           ============================================ */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  /* Works with the existing shell.html (sidebar + #hamburgerBtn toggle + showToast).
+     Tokens and helpers the design needs but the shell does not define: */
   :root {
-    --navy: #0a2540;
-    --navy-light: #1a3a5c;
-    --maroon: #9e2a2b;
-    --maroon-hover: #b13e3f;
-    --blue-card: #1f6392;
-    --green: #1e6f3f;
-    --gold: #fbbf24;
-    --sidebar-w: 280px;
-    --topnav-h: 64px;
-    --font: "Inter", "Segoe UI", sans-serif;
-    --text: #1e293b;
-    --text-muted: #5a6874;
-    --border: #e9edf2;
-    --bg: #f1f5f9;
-    --white: #ffffff;
-    --radius: 14px;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
-    --transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
+
+  [hidden] {
+    display: none !important;
+  }
+
+  .main-content {
+    min-width: 0; /* lets the table scroll inside its wrapper instead of stretching the page */
   }
 
   /* ============================================
-           SIDEBAR
-           ============================================ */
-  .sidebar {
-    position: fixed;
+     MOBILE APP BAR
+     ============================================ */
+  .app-bar {
+    display: none;
+    position: sticky;
     top: 0;
-    left: 0;
-    height: 100vh;
-    width: var(--sidebar-w);
-    background: linear-gradient(180deg, #0a2b3e 0%, #07212f 100%);
+    z-index: 50;
+    background: linear-gradient(135deg, #0a2b3e 0%, #07212f 100%);
     color: #eef2ff;
+    padding: calc(0.9rem + var(--safe-top, 0px)) 1rem 0.9rem;
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .app-bar__top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+
+  /* Hamburger: id="hamburgerBtn" is what shell.html's script binds to */
+  .app-bar__menu {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
     display: flex;
     flex-direction: column;
-    z-index: 100;
-    transition: transform 0.3s ease;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-  }
-  .sidebar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .sidebar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-  }
-
-  .sidebar__brand {
-    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 1.2rem 1.2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
-    min-height: var(--topnav-h);
-  }
-  .sidebar__brand-icon {
-    font-size: 1.6rem;
-    flex-shrink: 0;
-  }
-  .sidebar__brand-text {
-    font-weight: 800;
-    font-size: 1.1rem;
-    background: linear-gradient(120deg, #fff, #c0d9f0);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    white-space: nowrap;
-  }
-
-  .sidebar__nav {
-    flex: 1;
-    padding: 0.6rem 0.6rem;
-    overflow-y: auto;
-  }
-  .sidebar__item {
-    margin-bottom: 2px;
-  }
-
-  .sidebar__link,
-  .sidebar__link--toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.5rem 0.9rem;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.78);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: all 0.2s;
+    gap: 5px;
     cursor: pointer;
-    white-space: nowrap;
-    border: none;
-    background: transparent;
+    flex-shrink: 0;
+    transition: 0.2s;
+  }
+
+  .app-bar__menu:active {
+    transform: scale(0.94);
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .app-bar__menu span {
+    display: block;
+    width: 20px;
+    height: 2.5px;
+    background: white;
+    border-radius: 4px;
+  }
+
+  .app-bar__title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .app-bar__title-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .app-bar__course {
+    position: relative;
+  }
+
+  .app-bar__course-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.65rem 0.9rem;
     width: 100%;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: white;
     font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
     text-align: left;
   }
-  .sidebar__link:hover,
-  .sidebar__link--toggle:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
+
+  .app-bar__course-trigger:active {
+    transform: scale(0.98);
   }
-  .sidebar__link.active,
-  .sidebar__link--toggle.active {
-    background: var(--maroon);
-    color: white;
-    box-shadow: 0 4px 12px rgba(158, 42, 43, 0.25);
+
+  .app-bar__course-trigger .code {
+    font-weight: 800;
   }
-  .sidebar__link i,
-  .sidebar__link--toggle i {
-    width: 20px;
-    text-align: center;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-  }
-  .sidebar__chevron {
-    margin-left: auto;
-    transition: transform 0.2s;
+
+  .app-bar__course-trigger i {
     font-size: 0.7rem;
+    opacity: 0.75;
+    transition: transform 0.2s;
   }
-  .sidebar__item--open .sidebar__chevron {
+
+  .app-bar__course-trigger.open i {
     transform: rotate(180deg);
   }
 
-  .sidebar__submenu {
-    list-style: none;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    margin: 0 0.5rem 0 0.5rem;
-  }
-  .sidebar__submenu--open {
-    max-height: 600px;
-  }
-  .sidebar__sublink {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.4rem 0.9rem 0.4rem 2.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    font-size: 0.76rem;
-    font-weight: 400;
-    transition: 0.2s;
-    border-radius: 6px;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    width: 100%;
-    text-align: left;
-    font-family: inherit;
-  }
-  .sidebar__sublink:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: white;
-  }
-  .sidebar__sublink.active {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .sidebar__sublink .badge {
-    margin-left: auto;
-    background: var(--maroon);
-    color: white;
-    font-size: 0.55rem;
-    padding: 0.1rem 0.5rem;
-    border-radius: 30px;
-    font-weight: 600;
-  }
-
-  .sidebar__footer {
-    padding: 1rem 1.2rem;
-    font-size: 0.62rem;
-    color: rgba(255, 255, 255, 0.3);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  /* ============================================
-           MOBILE OVERLAY
-           ============================================ */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
+  .app-bar__course-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 90;
-    opacity: 0;
-    visibility: hidden;
-    transition: 0.2s;
-  }
-  .sidebar-overlay.active {
-    opacity: 1;
-    visibility: visible;
+    right: 0;
+    background: var(--white);
+    color: var(--text);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    max-height: 60vh;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    z-index: 60;
   }
 
-  /* ============================================
-           MAIN CONTENT
-           ============================================ */
-  .main-content {
-    margin-left: var(--sidebar-w);
-    flex: 1;
-    min-height: 100vh;
-    transition: margin-left 0.3s ease;
-    padding: 1.8rem 2rem 2rem;
+  .app-bar__course-dropdown.open {
+    display: flex;
+  }
+
+  .app-bar__course-search {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-bar__course-search input {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    color: var(--text);
+    outline: none;
+  }
+
+  .app-bar__course-search input:focus {
+    border-color: var(--navy);
+  }
+
+  .app-bar__course-list {
+    overflow-y: auto;
+  }
+
+  .app-bar__course-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .app-bar__course-item:active {
     background: var(--bg);
   }
 
+  .app-bar__course-item.active {
+    background: #eef4fb;
+  }
+
+  .app-bar__course-item .item-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .app-bar__course-item .item-code {
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 0.78rem;
+  }
+
+  .app-bar__course-item .item-name {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-bar__course-item .item-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: var(--bg);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .app-bar__course-item.active .item-count {
+    background: var(--navy);
+    color: white;
+  }
+
   /* ============================================
-           TOP BAR
-           ============================================ */
+     DESKTOP VIEW
+     ============================================ */
+  .desktop-view {
+    display: block;
+  }
+
   .topbar {
     display: flex;
     justify-content: space-between;
@@ -252,81 +252,83 @@
     flex-wrap: wrap;
     gap: 1rem;
   }
+
   .topbar__left {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
   }
-  .topbar__hamburger {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    color: var(--navy);
-    cursor: pointer;
-    padding: 0.3rem;
-  }
+
   .topbar__title {
     font-size: 1.6rem;
     font-weight: 800;
+    color: var(--navy);
     display: flex;
     align-items: center;
     gap: 0.6rem;
   }
+
   .topbar__badge {
     background: var(--navy);
     color: white;
-    padding: 0.2rem 0.9rem;
+    padding: 0.25rem 0.9rem;
     border-radius: 40px;
     font-size: 0.7rem;
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
   }
+
   .topbar__actions {
     display: flex;
     gap: 0.6rem;
     flex-wrap: wrap;
   }
 
-  /* ===== Course Selector ===== */
+  /* Course selector (desktop) */
   .course-selector {
     position: relative;
-    min-width: 220px;
+    min-width: 240px;
   }
+
   .course-selector__trigger {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.4rem 1rem 0.4rem 1rem;
+    padding: 0.5rem 1rem;
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 40px;
     cursor: pointer;
-    font-family: var(--font);
+    font-family: inherit;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text);
     transition: 0.2s;
-    box-shadow: var(--shadow);
-    min-width: 200px;
+    box-shadow: var(--shadow-sm);
     justify-content: space-between;
+    width: 100%;
+    text-align: left;
   }
+
   .course-selector__trigger:hover {
     border-color: var(--navy);
     box-shadow: var(--shadow-md);
   }
+
   .course-selector__trigger .code {
     color: var(--navy);
     font-weight: 800;
   }
+
   .course-selector__trigger .chevron {
     font-size: 0.6rem;
     color: var(--text-muted);
     transition: 0.2s;
   }
+
   .course-selector__trigger.open .chevron {
     transform: rotate(180deg);
   }
@@ -336,9 +338,10 @@
     top: calc(100% + 6px);
     left: 0;
     width: 100%;
+    min-width: 280px;
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     z-index: 50;
     display: none;
@@ -346,225 +349,187 @@
     overflow: hidden;
     flex-direction: column;
   }
+
   .course-selector__dropdown.open {
     display: flex;
   }
+
   .course-selector__search {
     padding: 0.6rem 0.8rem;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
+
   .course-selector__search input {
     width: 100%;
     padding: 0.4rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 30px;
-    font-family: var(--font);
+    font-family: inherit;
     font-size: 0.75rem;
     outline: none;
-    transition: 0.2s;
   }
+
   .course-selector__search input:focus {
     border-color: var(--navy);
   }
+
   .course-selector__list {
     overflow-y: auto;
     padding: 0.3rem 0;
   }
+
   .course-selector__item {
-    padding: 0.5rem 1rem;
+    padding: 0.55rem 1rem;
     cursor: pointer;
     transition: 0.15s;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.6rem;
     font-size: 0.8rem;
+    text-decoration: none;
+    color: var(--text);
   }
+
   .course-selector__item:hover {
     background: var(--bg);
   }
+
   .course-selector__item.active {
-    background: #eef2ff;
+    background: #eef4fb;
   }
+
   .course-selector__item .code {
     font-weight: 700;
     color: var(--navy);
+    margin-right: 0.4rem;
   }
+
   .course-selector__item .title {
     color: var(--text-muted);
     font-weight: 400;
   }
-  .course-selector__item .check {
-    color: var(--green);
-    font-size: 0.8rem;
-  }
+
   .course-selector__item .students {
     font-size: 0.65rem;
     color: var(--text-muted);
     background: var(--bg);
     padding: 0.05rem 0.5rem;
     border-radius: 30px;
+    white-space: nowrap;
   }
 
-  .btn {
-    padding: 0.35rem 1rem;
-    border: none;
-    border-radius: 40px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: inherit;
-  }
-  .btn-primary {
-    background: var(--navy);
-    color: white;
-  }
-  .btn-primary:hover {
-    background: var(--navy-light);
-  }
-  .btn-success {
-    background: var(--green);
-    color: white;
-  }
-  .btn-success:hover {
-    background: #14532d;
-  }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .btn-outline:hover {
-    background: var(--bg);
-  }
-  .btn-sm {
-    padding: 0.2rem 0.7rem;
-    font-size: 0.65rem;
-    border-radius: 30px;
-    border: 1px solid var(--border);
-    background: var(--white);
-    cursor: pointer;
-    transition: 0.2s;
-    font-family: inherit;
-    font-weight: 500;
-    color: var(--text);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .btn-sm:hover {
-    background: var(--bg);
-    border-color: #cbd5e1;
-  }
-  .btn-sm.primary {
-    background: var(--navy);
-    color: white;
-    border-color: var(--navy);
-  }
-  .btn-sm.primary:hover {
-    background: var(--navy-light);
-  }
-
-  /* ============================================
-           COURSE CONTEXT HEADER
-           ============================================ */
+  /* Course context header */
   .course-context {
     background: var(--white);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     padding: 1.2rem 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
   }
-  .course-context__info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
+
   .course-context__code {
     font-weight: 800;
     font-size: 1.2rem;
     color: var(--navy);
+    margin-right: 0.6rem;
   }
+
   .course-context__title {
     font-size: 1rem;
     font-weight: 500;
     color: var(--text);
   }
+
   .course-context__meta {
     display: flex;
     gap: 1.2rem;
     font-size: 0.75rem;
     color: var(--text-muted);
-    margin-top: 0.2rem;
+    margin-top: 0.5rem;
     flex-wrap: wrap;
   }
+
   .course-context__meta span {
     display: flex;
     align-items: center;
     gap: 0.3rem;
   }
+
+  .course-context__meta .is-muted {
+    font-style: italic;
+    opacity: 0.6;
+  }
+
   .course-context__actions {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
   }
 
-  /* ============================================
-           STATS ROW (Class Summary)
-           ============================================ */
+  /* Class stats */
   .class-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
+
   .class-stat {
     background: var(--white);
-    border-radius: var(--radius);
-    padding: 0.8rem 1rem;
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1rem;
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     text-align: center;
   }
+
   .class-stat__number {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 800;
     color: var(--navy);
   }
+
+  .class-stat__number.is-green {
+    color: var(--green);
+  }
+  .class-stat__number.is-gold {
+    color: #b45309;
+  }
+  .class-stat__number.is-red {
+    color: var(--maroon);
+  }
+
   .class-stat__label {
-    font-size: 0.6rem;
+    font-size: 0.62rem;
     text-transform: uppercase;
     color: var(--text-muted);
     letter-spacing: 0.3px;
     margin-top: 0.1rem;
+    font-weight: 700;
   }
 
-  /* ============================================
-           SEARCH & FILTER BAR
-           ============================================ */
+  /* Search + filters */
   .search-filter-bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.8rem;
     margin-bottom: 1.5rem;
     background: var(--white);
     padding: 0.8rem 1.2rem;
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     align-items: center;
   }
+
   .search-filter-bar__search {
     flex: 1;
     min-width: 180px;
@@ -575,91 +540,112 @@
     padding: 0.3rem 0.8rem;
     border-radius: 40px;
     border: 1px solid var(--border);
-    transition: 0.2s;
   }
+
   .search-filter-bar__search:focus-within {
     border-color: var(--navy);
-    box-shadow: 0 0 0 2px rgba(10, 37, 64, 0.1);
   }
+
   .search-filter-bar__search i {
     color: var(--text-muted);
   }
+
   .search-filter-bar__search input {
     border: none;
     background: transparent;
     padding: 0.5rem 0;
-    font-family: var(--font);
-    font-size: 0.8rem;
+    font-family: inherit;
+    font-size: 0.82rem;
     width: 100%;
     outline: none;
     color: var(--text);
   }
+
   .search-filter-bar__filters {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
     align-items: center;
   }
+
   .search-filter-bar__filters select {
-    padding: 0.4rem 1rem;
+    padding: 0.45rem 1rem;
     border-radius: 40px;
     border: 1px solid var(--border);
     background: var(--bg);
-    font-family: var(--font);
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--text);
     outline: none;
     cursor: pointer;
   }
-  .search-filter-bar__filters select:focus {
-    border-color: var(--navy);
-  }
 
-  /* ============================================
-           STUDENT TABLE
-           ============================================ */
+  /* Table */
   .table-wrapper {
     background: var(--white);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
   }
+
   .table-scroll {
     overflow-x: auto;
   }
+
   .student-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
+
   .student-table th {
     background: var(--bg);
     padding: 0.8rem 1rem;
     text-align: left;
     font-weight: 700;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
+  }
+
+  .student-table th[data-sort] {
     cursor: pointer;
     user-select: none;
   }
+
+  .student-table th[data-sort]:hover {
+    color: var(--navy);
+  }
+
   .student-table th i {
     margin-left: 0.3rem;
     font-size: 0.6rem;
+    opacity: 0.45;
   }
+
+  .student-table th.sorted {
+    color: var(--navy);
+  }
+
+  .student-table th.sorted i {
+    opacity: 1;
+  }
+
   .student-table td {
     padding: 0.7rem 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
+
   .student-table tr:last-child td {
     border-bottom: none;
   }
+
   .student-table tr:hover td {
     background: #f8fafc;
   }
@@ -668,7 +654,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #eef2ff;
+    background: #eef4fb;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -677,94 +663,30 @@
     color: var(--navy);
     flex-shrink: 0;
   }
+
   .student-table .student-info {
     display: flex;
     align-items: center;
     gap: 0.7rem;
   }
+
   .student-table .student-name {
     font-weight: 600;
   }
 
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.15rem 0.6rem;
-    border-radius: 30px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .status-badge.active {
-    background: #d1fae5;
-    color: #065f46;
-  }
-  .status-badge.inactive {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-  .status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .grade-pill {
-    display: inline-block;
-    padding: 0.1rem 0.5rem;
-    border-radius: 30px;
+  .student-table .reg-code {
     font-size: 0.7rem;
-    font-weight: 700;
     background: var(--bg);
-    color: var(--text-muted);
-  }
-  .grade-pill.a {
-    background: #d1fae5;
-    color: #065f46;
-  }
-  .grade-pill.b {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-  .grade-pill.c {
-    background: #fef3c7;
-    color: #92400e;
-  }
-  .grade-pill.d {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-  .grade-pill.f {
-    background: #fee2e2;
-    color: #991b1b;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
   }
 
-  .attendance-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .student-table .cell-class {
+    font-size: 0.75rem;
   }
-  .attendance-bar .track {
-    width: 60px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 30px;
-    overflow: hidden;
-  }
-  .attendance-bar .fill {
-    height: 100%;
-    border-radius: 30px;
-    background: var(--green);
-  }
-  .attendance-bar .fill.warn {
-    background: var(--gold);
-  }
-  .attendance-bar .fill.danger {
-    background: var(--maroon);
-  }
-  .attendance-bar .pct {
-    font-size: 0.65rem;
-    font-weight: 600;
+
+  .student-table .cell-email {
+    font-size: 0.7rem;
     color: var(--text-muted);
   }
 
@@ -773,142 +695,565 @@
     gap: 0.3rem;
     flex-wrap: wrap;
   }
-  .student-table .actions-cell .btn-sm {
-    padding: 0.15rem 0.5rem;
-    font-size: 0.6rem;
+
+  .dash {
+    opacity: 0.4;
   }
 
-  /* ============================================
-           PAGINATION
-           ============================================ */
-  .table-footer {
-    display: flex;
-    justify-content: space-between;
+  .status-badge {
+    display: inline-flex;
     align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 30px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .status-badge.approved {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .grade-pill {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 30px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: var(--bg);
+    color: var(--text-muted);
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .grade-pill.A {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .grade-pill.B {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .grade-pill.C {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .grade-pill.D {
+    background: #fed7aa;
+    color: #9a3412;
+  }
+  .grade-pill.F {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .table-footer {
     padding: 0.8rem 1.2rem;
     border-top: 1px solid var(--border);
     font-size: 0.75rem;
     color: var(--text-muted);
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    font-weight: 600;
   }
-  .table-footer__pagination {
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state__icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .empty-state__title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .empty-state__text {
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  /* Page-level empty state (no session / no courses) */
+  .page-empty {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin: 0;
+  }
+
+  /* ============================================
+     MOBILE VIEW
+     ============================================ */
+  .mobile-view {
+    display: none;
+  }
+
+  .mobile-context {
+    margin: 0.9rem 1rem 0;
+    background: linear-gradient(135deg, #0a2540, #1f4e6e);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+
+  .mobile-context__code {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    margin-bottom: 3px;
+  }
+
+  .mobile-context__name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    opacity: 0.9;
+    line-height: 1.3;
+    margin-bottom: 0.7rem;
+  }
+
+  .mobile-context__meta {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.8rem;
+    font-size: 0.68rem;
+    opacity: 0.8;
+    margin-bottom: 0.7rem;
+  }
+
+  .mobile-context__meta span {
+    display: inline-flex;
+    align-items: center;
     gap: 0.3rem;
   }
-  .table-footer__pagination button {
-    padding: 0.2rem 0.7rem;
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    background: var(--white);
-    cursor: pointer;
-    font-family: var(--font);
-    font-size: 0.7rem;
-    font-weight: 500;
-    transition: 0.2s;
-    color: var(--text);
+
+  .mobile-context__actions {
+    display: flex;
+    gap: 0.4rem;
   }
-  .table-footer__pagination button:hover {
+
+  .mobile-context__btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .mobile-context__btn:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .mobile-stats {
+    margin: 0.7rem 1rem 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+  }
+
+  .mobile-stat {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.4rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-stat__number {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+
+  .mobile-stat__number.green {
+    color: var(--green);
+  }
+  .mobile-stat__number.gold {
+    color: #b45309;
+  }
+  .mobile-stat__number.red {
+    color: var(--maroon);
+  }
+
+  .mobile-stat__label {
+    font-size: 0.52rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .mobile-search {
+    margin: 0.7rem 1rem 0;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .mobile-search__input {
+    position: relative;
+    flex: 1;
+  }
+
+  .mobile-search__input i {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    pointer-events: none;
+  }
+
+  .mobile-search__input input {
+    width: 100%;
+    padding: 0.7rem 0.9rem 0.7rem 2.2rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.82rem;
+    outline: none;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-search__input input:focus {
+    border-color: var(--navy);
+  }
+
+  .mobile-search__filter-btn {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.7rem 0.9rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .mobile-search__filter-btn:active {
+    transform: scale(0.96);
+  }
+
+  .mobile-search__filter-btn .dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--maroon);
+    display: none;
+  }
+
+  .mobile-search__filter-btn.has-filters .dot {
+    display: block;
+  }
+
+  .student-list {
+    padding: 0.7rem 1rem 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .student-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 0.9rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .student-card__top {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .student-card__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #eef4fb;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .student-card__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .student-card__name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+
+  .student-card__reg {
+    font-family: monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  .student-card__scores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .student-card__score-cell {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+  }
+
+  .student-card__score-label {
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .student-card__score-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+
+  .student-card__score-value.empty {
+    color: #cbd5e1;
+  }
+  .student-card__score-value.grade-A {
+    color: #16a34a;
+  }
+  .student-card__score-value.grade-B {
+    color: #1e40af;
+  }
+  .student-card__score-value.grade-C {
+    color: #b45309;
+  }
+  .student-card__score-value.grade-D {
+    color: #9a3412;
+  }
+  .student-card__score-value.grade-F {
+    color: #b91c1c;
+  }
+
+  .student-card__actions {
+    display: flex;
+    gap: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .student-card__action {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: 0.2s;
+  }
+
+  .student-card__action:active {
+    transform: scale(0.96);
     background: var(--bg);
   }
-  .table-footer__pagination button.active {
+
+  .student-card__action.primary {
     background: var(--navy);
     color: white;
     border-color: var(--navy);
   }
 
+  .mobile-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .mobile-empty__icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .mobile-empty__title {
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+
+  .mobile-empty__text {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
   /* ============================================
-           MODALS
-           ============================================ */
-  .modal-overlay {
+     MODAL / SHEET
+     Desktop: centred dialog. Mobile: bottom sheet.
+     ============================================ */
+  .sheet-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    display: none;
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s ease,
+      visibility 0.25s ease;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
   }
-  .modal-overlay.active {
-    display: flex;
-  }
-  .modal-overlay.active .modal {
-    animation: modalFadeIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  }
-  @keyframes modalFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+
+  .sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
   }
 
-  .modal {
+  .sheet {
     background: var(--white);
-    border-radius: var(--radius);
-    max-width: 560px;
+    border-radius: var(--radius-xl);
+    max-width: 480px;
     width: 100%;
-    max-height: 90vh;
+    max-height: 88vh;
     overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    padding: 0;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s ease;
   }
-  .modal--large {
-    max-width: 640px;
+
+  .sheet-overlay.active .sheet {
+    transform: scale(1) translateY(0);
   }
-  .modal__header {
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+
+  .sheet__handle {
+    display: none;
+    width: 42px;
+    height: 4px;
+    border-radius: 4px;
+    background: #d5dbe3;
+    margin: 0.3rem auto 0.9rem;
+  }
+
+  .sheet__header {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    background: var(--white);
-    border-radius: var(--radius) var(--radius) 0 0;
-    z-index: 2;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
   }
-  .modal__header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
+
+  .sheet__title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.25;
+  }
+
+  .sheet__subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+    word-break: break-word;
+  }
+
+  .sheet__close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-  }
-  .modal__close {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    color: var(--text-muted);
+    justify-content: center;
+    font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.2rem 0.4rem;
-    border-radius: 8px;
+    flex-shrink: 0;
     transition: 0.2s;
   }
-  .modal__close:hover {
-    background: var(--bg);
-    color: var(--text);
+
+  .sheet__close:active {
+    transform: scale(0.9);
+    background: var(--border);
   }
-  .modal__body {
-    padding: 1.5rem;
-  }
-  .modal__footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.6rem;
-    background: var(--bg);
-    border-radius: 0 0 var(--radius) var(--radius);
+
+  .sheet-loading {
+    text-align: center;
+    padding: 2rem;
+    opacity: 0.5;
   }
 
   .detail-row {
@@ -917,1066 +1262,1507 @@
     border-bottom: 1px solid var(--border);
     font-size: 0.85rem;
   }
+
   .detail-row:last-child {
     border-bottom: none;
   }
+
   .detail-row__label {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-muted);
-    width: 120px;
+    min-width: 100px;
     flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
+
   .detail-row__value {
     flex: 1;
     color: var(--text);
+    word-break: break-word;
   }
 
-  .form-group {
-    margin-bottom: 1rem;
+  .detail-row__value a {
+    color: var(--blue-card);
+    text-decoration: none;
   }
-  .form-group label {
+
+  .sheet-form-group {
+    margin-top: 0.9rem;
+  }
+
+  .sheet-form-group label {
     display: block;
-    font-weight: 600;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 0.3rem;
-  }
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.55rem 0.9rem;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-family: var(--font);
-    font-size: 0.85rem;
-    background: var(--white);
-    transition: 0.2s;
+    font-size: 0.72rem;
+    font-weight: 800;
     color: var(--text);
+    margin-bottom: 0.35rem;
   }
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
+
+  .sheet-form-group select,
+  .sheet-form-group input,
+  .sheet-form-group textarea {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
     outline: none;
+    background: var(--white);
+  }
+
+  .sheet-form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .sheet-form-group select:focus,
+  .sheet-form-group input:focus,
+  .sheet-form-group textarea:focus {
     border-color: var(--navy);
     box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.08);
   }
-  .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+
+  .sheet-recipients {
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    line-height: 1.6;
   }
 
-  /* ============================================
-           TOAST
-           ============================================ */
-  .toast {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+  .sheet-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  .sheet-error {
+    color: #dc2626;
+    font-size: 0.78rem;
+    margin-top: 0.6rem;
+  }
+
+  .sheet-submit {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: none;
     background: var(--navy);
     color: white;
-    padding: 0.7rem 1.3rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 0.3s;
-    z-index: 2000;
-    font-size: 0.85rem;
-    font-family: var(--font);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
   }
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0);
+
+  .sheet-submit:active {
+    transform: scale(0.98);
   }
-  .toast.success {
+
+  .sheet-submit:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  .sheet-submit--outline {
+    background: var(--white);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .sheet-submit--green {
     background: var(--green);
-  }
-  .toast.warning {
-    background: #92400e;
-  }
-  .toast.info {
-    background: var(--navy);
   }
 
   /* ============================================
-           RESPONSIVE
-           ============================================ */
-  @media (max-width: 1024px) {
-    .class-stats {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
+     RESPONSIVE MORPH
+     ============================================ */
   @media (max-width: 768px) {
-    .topbar__hamburger {
-      display: block;
-    }
-    .sidebar {
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      width: var(--sidebar-w) !important;
-    }
-    .sidebar.open {
-      transform: translateX(0);
-    }
-    .main-content {
-      margin-left: 0 !important;
-      padding: 1rem;
-    }
-    .topbar__title {
-      font-size: 1.2rem;
-    }
-    .sidebar-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    .search-filter-bar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .search-filter-bar__filters {
-      flex-wrap: wrap;
-    }
-    .search-filter-bar__filters select {
-      flex: 1;
-      min-width: 100px;
-    }
-    .course-context {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .course-context__actions {
-      justify-content: flex-start;
-    }
-    .student-table th,
-    .student-table td {
-      padding: 0.5rem 0.7rem;
-    }
-    .student-table .student-info .avatar {
+    .desktop-view {
       display: none;
     }
-    .table-footer {
-      flex-direction: column;
-      align-items: stretch;
-      text-align: center;
+
+    .mobile-view {
+      display: block;
     }
-    .table-footer__pagination {
-      justify-content: center;
+
+    .app-bar {
+      display: block;
     }
-    .form-row {
-      grid-template-columns: 1fr;
+
+    /* full-bleed: the app bar and mobile cards manage their own padding */
+    .main-content {
+      padding: 0;
     }
-    .modal {
-      max-width: 100%;
+
+    .page-empty {
       margin: 1rem;
     }
-    .modal--large {
+
+    .sheet-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .sheet {
       max-width: 100%;
+      border-radius: 24px 24px 0 0;
+      max-height: 88vh;
+      padding: 0.6rem 1.1rem calc(1.2rem + var(--safe-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.4, 1.05);
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
     }
-    .course-selector {
-      min-width: 100%;
+
+    .sheet-overlay.active .sheet {
+      transform: translateY(0);
     }
-    .course-selector__trigger {
-      min-width: 100%;
-    }
-    .topbar__left {
-      width: 100%;
+
+    .sheet__handle {
+      display: block;
     }
   }
-  @media (max-width: 480px) {
-    .class-stats {
-      grid-template-columns: 1fr;
-    }
-    .topbar__actions {
-      width: 100%;
-    }
-    .topbar__actions .btn {
-      flex: 1;
-      justify-content: center;
-    }
-    .student-table {
-      font-size: 0.7rem;
-    }
-    .student-table .actions-cell .btn-sm {
-      padding: 0.1rem 0.4rem;
-      font-size: 0.55rem;
-    }
-    .attendance-bar .track {
-      width: 40px;
-    }
-    .detail-row {
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-    .detail-row__label {
-      width: auto;
+
+  @media (min-width: 769px) {
+    .mobile-view {
+      display: none !important;
     }
   }
 </style>
-{% endblock %} {% block content %}
-<div class="topbar">
-  <div class="topbar__left">
-    <button class="topbar__hamburger" id="hamburgerBtn" aria-label="Open menu">
-      <i class="fas fa-bars"></i>
-    </button>
-    <h1 class="topbar__title"><i class="fas fa-list-ul"></i> Class List</h1>
-    {% if session %}
-    <span class="topbar__badge"
-      ><i class="fas fa-calendar"></i> {{ session }}</span
+{% endblock head %} {% block content %}
+<!-- ================= MOBILE APP BAR (title + course selector) ================= -->
+<header class="app-bar">
+  <div class="app-bar__top">
+    <button
+      class="app-bar__menu"
+      id="hamburgerBtn"
+      type="button"
+      aria-label="Open menu"
     >
-    {% endif %} {% if unit_list %}
-    <div class="course-selector" id="courseSelector">
-      <button class="course-selector__trigger" id="courseTrigger" type="button">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="app-bar__title">
+      <div class="app-bar__title-icon">📋</div>
+      <span>Class List</span>
+    </div>
+  </div>
+
+  {% if unit_list %}
+  <div class="app-bar__course" id="mobileCourseSelector">
+    <button
+      class="app-bar__course-trigger"
+      id="mobileCourseTrigger"
+      type="button"
+    >
+      <span>
         {% if selected %}
-        <span>
-          <span class="code">{{ selected.course.course_code }}</span>
-          {{ selected.course.course_name|truncatechars:28 }}
-        </span>
+        <span class="code">{{ selected.course.course_code }}</span>
+        <span>· {{ selected.course.course_name|truncatechars:28 }}</span>
         {% else %}
         <span>Select a course</span>
         {% endif %}
-        <span class="chevron"><i class="fas fa-chevron-down"></i></span>
-      </button>
-      <div class="course-selector__dropdown" id="courseDropdown">
-        <div class="course-selector__search">
-          <input
-            type="text"
-            id="courseSearchInput"
-            placeholder="Search courses…"
-          />
-        </div>
-        <div class="course-selector__list" id="courseList">
-          {% for item in unit_list %}
-          <a
-            href="?curriculum={{ item.curriculum.record_id }}"
-            class="course-selector__item {% if item.curriculum == selected %}active{% endif %}"
-            data-code="{{ item.curriculum.course.course_code|lower }}"
-            data-title="{{ item.curriculum.course.course_name|lower }}"
-          >
-            <div class="item-left">
-              <span class="code">{{ item.curriculum.course.course_code }}</span>
-              <span class="title"
-                >{{ item.curriculum.course.course_name }}</span
-              >
+      </span>
+      <i class="fas fa-chevron-down"></i>
+    </button>
+    <div class="app-bar__course-dropdown" id="mobileCourseDropdown">
+      <div class="app-bar__course-search">
+        <input
+          type="text"
+          id="mobileCourseSearch"
+          placeholder="Search courses…"
+        />
+      </div>
+      <div class="app-bar__course-list">
+        {% for item in unit_list %}
+        <a
+          href="?curriculum={{ item.curriculum.record_id }}"
+          class="app-bar__course-item{% if item.curriculum == selected %} active{% endif %}"
+          data-code="{{ item.curriculum.course.course_code|lower }}"
+          data-title="{{ item.curriculum.course.course_name|lower }}"
+        >
+          <div class="item-main">
+            <div class="item-code">
+              {{ item.curriculum.course.course_code }}
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem">
-              <span class="students">
-                <i class="fas fa-user-graduate"></i> {{ item.total_enrolled }}
+            <div class="item-name">
+              {{ item.curriculum.course.course_name }}
+            </div>
+          </div>
+          <span class="item-count">{{ item.total_enrolled }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</header>
+
+<!-- ================= DESKTOP VIEW ================= -->
+<div class="desktop-view" id="desktopView">
+  <div class="topbar">
+    <div class="topbar__left">
+      <h1 class="topbar__title"><i class="fas fa-list-ul"></i> Class List</h1>
+      {% if session %}
+      <span class="topbar__badge"
+        ><i class="fas fa-calendar"></i> {{ session }}</span
+      >
+      {% endif %} {% if unit_list %}
+      <div class="course-selector" id="desktopCourseSelector">
+        <button
+          class="course-selector__trigger"
+          id="desktopCourseTrigger"
+          type="button"
+        >
+          <span>
+            {% if selected %}
+            <span class="code">{{ selected.course.course_code }}</span>
+            {{ selected.course.course_name|truncatechars:28 }} {% else %} Select
+            a course {% endif %}
+          </span>
+          <span class="chevron"><i class="fas fa-chevron-down"></i></span>
+        </button>
+        <div class="course-selector__dropdown" id="desktopCourseDropdown">
+          <div class="course-selector__search">
+            <input
+              type="text"
+              id="desktopCourseSearch"
+              placeholder="Search courses…"
+            />
+          </div>
+          <div class="course-selector__list">
+            {% for item in unit_list %}
+            <a
+              href="?curriculum={{ item.curriculum.record_id }}"
+              class="course-selector__item{% if item.curriculum == selected %} active{% endif %}"
+              data-code="{{ item.curriculum.course.course_code|lower }}"
+              data-title="{{ item.curriculum.course.course_name|lower }}"
+            >
+              <span>
+                <span class="code"
+                  >{{ item.curriculum.course.course_code }}</span
+                >
+                <span class="title"
+                  >{{ item.curriculum.course.course_name }}</span
+                >
               </span>
-              {% if item.curriculum == selected %}
-              <span class="check"><i class="fas fa-check-circle"></i></span>
-              {% endif %}
-            </div>
-          </a>
-          {% endfor %}
+              <span class="students">{{ item.total_enrolled }}</span>
+            </a>
+            {% endfor %}
+          </div>
         </div>
       </div>
+      {% endif %}
+    </div>
+
+    {% if selected %}
+    <div class="topbar__actions">
+      <button class="btn btn-outline" type="button" data-action="export">
+        <i class="fas fa-download"></i> Export CSV
+      </button>
+      <button class="btn btn-success" type="button" data-action="email-all">
+        <i class="fas fa-envelope"></i> Email All
+      </button>
     </div>
     {% endif %}
   </div>
 
-  <div class="topbar__actions">
-    <button class="btn btn-outline" id="exportBtn">
-      <i class="fas fa-download"></i> Export CSV
-    </button>
-    <button class="btn btn-success" id="emailAllBtn">
-      <i class="fas fa-envelope"></i> Email All
-    </button>
-  </div>
-</div>
-
-{% if not session %}
-<div class="card" style="text-align: center; padding: 48px 24px">
-  <div style="font-size: 2rem; margin-bottom: 12px">📭</div>
-  <div style="font-weight: 600">No active session</div>
-</div>
-
-{% elif not selected %}
-<div class="card" style="text-align: center; padding: 48px 24px">
-  <div style="font-size: 2rem; margin-bottom: 12px">📚</div>
-  <div style="font-weight: 600">No courses assigned to you this session</div>
-</div>
-
-{% else %}
-<div class="course-context">
-  <div>
+  {% if selected %}
+  <div class="course-context">
     <div>
-      <span class="course-context__code"
-        >{{ selected.course.course_code }}</span
-      >
-      <span class="course-context__title"
-        >{{ selected.course.course_name }}</span
-      >
+      <div>
+        <span class="course-context__code"
+          >{{ selected.course.course_code }}</span
+        >
+        <span class="course-context__title"
+          >{{ selected.course.course_name }}</span
+        >
+      </div>
+      <div class="course-context__meta">
+        <span><i class="far fa-calendar-alt"></i> {{ selected.session }}</span>
+        {% if selected_slot %}
+        <span>
+          <i class="fas fa-clock"></i>
+          {{ selected_slot.get_day_display }} · {{ selected_slot.time_slot }}
+        </span>
+        <span>
+          <i class="fas fa-map-pin"></i>
+          {{ selected_slot.venue.venue_name }}
+        </span>
+        {% else %}
+        <span class="is-muted"
+          ><i class="fas fa-clock"></i> No timetable slot yet</span
+        >
+        {% endif %}
+        <span>
+          <i class="fas fa-users"></i>
+          <!-- prettier-ignore -->
+          {% for cls in selected.classes.all %}{{ cls.class_name }}{% if not  forloop.last %}, {% endif %}{% endfor %}
+        </span>
+        <span>
+          <i class="fas fa-user-graduate"></i>
+          {{ stats.total }} student{{ stats.total|pluralize }}
+        </span>
+        <span
+          ><i class="fas fa-chalkboard-teacher"></i> {{ lecturer.name }}</span
+        >
+      </div>
     </div>
-    <div class="course-context__meta">
+    <div class="course-context__actions">
+      <button class="btn-sm primary" type="button" data-action="export">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <button class="btn-sm" type="button" onclick="window.print()">
+        <i class="fas fa-print"></i> Print
+      </button>
+    </div>
+  </div>
+
+  <div class="class-stats">
+    <div class="class-stat">
+      <div class="class-stat__number">{{ stats.total }}</div>
+      <div class="class-stat__label">Total Enrolled</div>
+    </div>
+    <div class="class-stat">
+      <div class="class-stat__number is-green">{{ stats.approved }}</div>
+      <div class="class-stat__label">Approved</div>
+    </div>
+    <div class="class-stat">
+      <div class="class-stat__number is-gold">{{ stats.pending }}</div>
+      <div class="class-stat__label">Pending</div>
+    </div>
+    <div class="class-stat">
+      <div class="class-stat__number is-red">{{ stats.rejected }}</div>
+      <div class="class-stat__label">Rejected</div>
+    </div>
+  </div>
+
+  <div class="search-filter-bar">
+    <div class="search-filter-bar__search">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="studentSearch"
+        placeholder="Search by name, ID or email…"
+      />
+    </div>
+    <div class="search-filter-bar__filters">
+      <select id="classFilter" aria-label="Filter by class">
+        <option value="">All Classes</option>
+      </select>
+      <select id="statusFilter" aria-label="Filter by status">
+        <option value="">All Status</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <select id="gradeFilter" aria-label="Filter by grade">
+        <option value="">All Grades</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+        <option value="F">F</option>
+        <option value="—">Not entered</option>
+      </select>
+      <select id="resultsFilter" aria-label="Filter by results">
+        <option value="">All Results</option>
+        <option value="entered">Results Entered</option>
+        <option value="not_entered">Not Entered</option>
+      </select>
+      <button class="btn-sm" type="button" data-action="reset-filters">
+        <i class="fas fa-undo"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table class="student-table" id="studentTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th data-sort="name">Student <i class="fas fa-sort"></i></th>
+            <th data-sort="reg">Reg. No. <i class="fas fa-sort"></i></th>
+            <th data-sort="class">Class <i class="fas fa-sort"></i></th>
+            <th data-sort="email">Email <i class="fas fa-sort"></i></th>
+            <th data-sort="status">Status <i class="fas fa-sort"></i></th>
+            <th data-sort="cat" data-type="number">
+              CAT <i class="fas fa-sort"></i>
+            </th>
+            <th data-sort="exam" data-type="number">
+              Exam <i class="fas fa-sort"></i>
+            </th>
+            <th data-sort="total" data-type="number">
+              Total <i class="fas fa-sort"></i>
+            </th>
+            <th data-sort="grade">Grade <i class="fas fa-sort"></i></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for row in student_rows %}
+          <tr
+            class="student-row"
+            data-enrollment="{{ row.enrollment_id }}"
+            data-name="{{ row.full_name|lower }}"
+            data-fullname="{{ row.full_name }}"
+            data-reg="{{ row.registration_no|lower }}"
+            data-class="{{ row.class_name|lower }}"
+            data-email="{{ row.school_email|lower }}"
+            data-status="{{ row.status }}"
+            data-cat="{{ row.cat|default_if_none:'' }}"
+            data-exam="{{ row.exam|default_if_none:'' }}"
+            data-total="{{ row.total|default_if_none:'' }}"
+            data-grade="{{ row.grade }}"
+            data-results="{% if row.cat is not None or row.exam is not None %}entered{% else %}not_entered{% endif %}"
+          >
+            <td class="row-index"></td>
+            <td>
+              <div class="student-info">
+                <span class="avatar">{{ row.initials }}</span>
+                <span class="student-name">{{ row.full_name }}</span>
+              </div>
+            </td>
+            <td>
+              <code class="reg-code">{{ row.registration_no|upper }}</code>
+            </td>
+            <td><span class="cell-class">{{ row.class_name }}</span></td>
+            <td><span class="cell-email">{{ row.school_email }}</span></td>
+            <td>
+              <span class="status-badge {{ row.status }}"
+                >{{ row.status|title }}</span
+              >
+            </td>
+            <td>
+              {% if row.cat is not None %}{{ row.cat }}{% else %}<span
+                class="dash"
+                >—</span
+              >{% endif %}
+            </td>
+            <td>
+              {% if row.exam is not None %}{{ row.exam }}{% else %}<span
+                class="dash"
+                >—</span
+              >{% endif %}
+            </td>
+            <td>
+              {% if row.total is not None %}{{ row.total }}{% else %}<span
+                class="dash"
+                >—</span
+              >{% endif %}
+            </td>
+            <td>
+              <span class="grade-pill {{ row.grade }}">{{ row.grade }}</span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button
+                  class="btn-sm"
+                  type="button"
+                  title="View"
+                  aria-label="View {{ row.full_name }}"
+                  data-action="view"
+                  data-enrollment="{{ row.enrollment_id }}"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  class="btn-sm"
+                  type="button"
+                  title="Email student"
+                  aria-label="Email {{ row.full_name }}"
+                  data-action="email"
+                  data-email="{{ row.school_email }}"
+                  data-name="{{ row.full_name }}"
+                >
+                  <i class="fas fa-envelope"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11">
+              <div class="empty-state">
+                <div class="empty-state__icon">📭</div>
+                <div class="empty-state__title">No students enrolled</div>
+                <div class="empty-state__text">
+                  Nobody is enrolled in this course yet.
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %} {% if student_rows %}
+          <tr id="noResultsRow" hidden>
+            <td colspan="11">
+              <div class="empty-state">
+                <div class="empty-state__icon">📭</div>
+                <div class="empty-state__title">No students found</div>
+                <div class="empty-state__text">Try adjusting your filters.</div>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="rowCount">
+        {{ student_rows|length }} student{{ student_rows|length|pluralize }}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ================= MOBILE VIEW ================= -->
+{% if selected %}
+<div class="mobile-view" id="mobileView">
+  <div class="mobile-context">
+    <div class="mobile-context__code">{{ selected.course.course_code }}</div>
+    <div class="mobile-context__name">{{ selected.course.course_name }}</div>
+    <div class="mobile-context__meta">
       <span>
-        <i class="far fa-calendar-alt"></i>
-        {{ selected.session }}
+        <i class="fas fa-user-graduate"></i>
+        {{ stats.total }} student{{ stats.total|pluralize }}
       </span>
       {% if selected_slot %}
       <span>
         <i class="fas fa-clock"></i>
-        {{ selected_slot.get_day_display }} · {{ selected_slot.time_slot }}
+        {{ selected_slot.get_day_display }} {{ selected_slot.time_slot }}
       </span>
       <span>
         <i class="fas fa-map-pin"></i>
-        <!-- prettier-ignore -->
-        {{ selected_slot.venue.venue_name }} · {% for cls in  selected.classes.all %}
-        {{ cls.class_name }} {% if not forloop.last %},
-        {% endif %}{% endfor %}
+        {{ selected_slot.venue.venue_name }}
       </span>
       {% else %}
-      <span>
-        <i class="fas fa-map-pin"></i>
-        <!-- prettier-ignore -->
-        {% for cls in selected.classes.all %}
-         {{ cls.class_name }}
-         {% if not forloop.last %}, {% endif %}{% endfor %}
-      </span>
-      <span style="font-style: italic; opacity: 0.6"
-        ><i class="fas fa-clock"></i> No timetable slot yet</span
-      >
+      <span><i class="fas fa-clock"></i> No timetable slot yet</span>
       {% endif %}
-      <span>
-        <i class="fas fa-user-graduate"></i>
-        {{ stats.total }} student{{ stats.total|pluralize }}</span
-      >
-      <span><i class="fas fa-chalkboard-teacher"></i> {{ lecturer.name }}</span>
+    </div>
+    <div class="mobile-context__actions">
+      <button class="mobile-context__btn" type="button" data-action="export">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <button class="mobile-context__btn" type="button" data-action="email-all">
+        <i class="fas fa-envelope"></i> Email All
+      </button>
     </div>
   </div>
-  <div class="course-context__actions">
-    <button class="btn-sm primary" id="exportBtnCtx">
-      <i class="fas fa-download"></i> Export
+
+  <div class="mobile-stats">
+    <div class="mobile-stat">
+      <div class="mobile-stat__number">{{ stats.total }}</div>
+      <div class="mobile-stat__label">Total</div>
+    </div>
+    <div class="mobile-stat">
+      <div class="mobile-stat__number green">{{ stats.approved }}</div>
+      <div class="mobile-stat__label">Approved</div>
+    </div>
+    <div class="mobile-stat">
+      <div class="mobile-stat__number gold">{{ stats.pending }}</div>
+      <div class="mobile-stat__label">Pending</div>
+    </div>
+    <div class="mobile-stat">
+      <div class="mobile-stat__number red">{{ stats.rejected }}</div>
+      <div class="mobile-stat__label">Rejected</div>
+    </div>
+  </div>
+
+  <div class="mobile-search">
+    <div class="mobile-search__input">
+      <i class="fas fa-search"></i>
+      <input type="text" id="mobileSearch" placeholder="Search students…" />
+    </div>
+    <button
+      class="mobile-search__filter-btn"
+      id="mobileFilterBtn"
+      type="button"
+      aria-label="Filters"
+      data-action="open-filters"
+    >
+      <i class="fas fa-filter"></i>
+      <span class="dot"></span>
     </button>
-    <button class="btn-sm" onclick="window.print()">
-      <i class="fas fa-print"></i> Print
+  </div>
+
+  <div class="student-list" id="mobileStudentList">
+    {% for row in student_rows %}
+    <div class="student-card" data-enrollment="{{ row.enrollment_id }}">
+      <div class="student-card__top">
+        <div class="student-card__avatar">{{ row.initials }}</div>
+        <div class="student-card__info">
+          <div class="student-card__name">{{ row.full_name }}</div>
+          <div class="student-card__reg">{{ row.registration_no|upper }}</div>
+        </div>
+        <span class="status-badge {{ row.status }}"
+          >{{ row.status|title }}</span
+        >
+      </div>
+      <div class="student-card__scores">
+        <div class="student-card__score-cell">
+          <div class="student-card__score-label">CAT</div>
+          <div
+            class="student-card__score-value{% if row.cat is None %} empty{% endif %}"
+          >
+            {% if row.cat is not None %}{{ row.cat }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="student-card__score-cell">
+          <div class="student-card__score-label">Exam</div>
+          <div
+            class="student-card__score-value{% if row.exam is None %} empty{% endif %}"
+          >
+            {% if row.exam is not None %}{{ row.exam }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="student-card__score-cell">
+          <div class="student-card__score-label">Grade</div>
+          <div
+            class="student-card__score-value grade-{{ row.grade }}{% if row.grade == '—' %} empty{% endif %}"
+          >
+            {{ row.grade }}
+          </div>
+        </div>
+      </div>
+      <div class="student-card__actions">
+        <button
+          class="student-card__action primary"
+          type="button"
+          data-action="view"
+          data-enrollment="{{ row.enrollment_id }}"
+        >
+          <i class="fas fa-eye"></i> View
+        </button>
+        <button
+          class="student-card__action"
+          type="button"
+          data-action="email"
+          data-email="{{ row.school_email }}"
+          data-name="{{ row.full_name }}"
+        >
+          <i class="fas fa-envelope"></i> Email
+        </button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="mobile-empty">
+      <div class="mobile-empty__icon">📭</div>
+      <div class="mobile-empty__title">No students enrolled</div>
+      <div class="mobile-empty__text">
+        Nobody is enrolled in this course yet.
+      </div>
+    </div>
+    {% endfor %} {% if student_rows %}
+    <div class="mobile-empty" id="mobileNoResults" hidden>
+      <div class="mobile-empty__icon">🔍</div>
+      <div class="mobile-empty__title">No students found</div>
+      <div class="mobile-empty__text">
+        Try adjusting your search or filters.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ================= EMPTY STATES (both views) ================= -->
+{% if not selected %}
+<div class="page-empty empty-state">
+  {% if not session %}
+  <div class="empty-state__icon">📭</div>
+  <div class="empty-state__title">No active session</div>
+  <div class="empty-state__text">
+    There is no active academic session right now.
+  </div>
+  {% else %}
+  <div class="empty-state__icon">📚</div>
+  <div class="empty-state__title">No courses assigned</div>
+  <div class="empty-state__text">
+    You have no courses assigned to you this session.
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ================= SHEETS ================= -->
+{% if selected %}
+<div class="sheet-overlay" id="studentModal">
+  <div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sheetStudentName"
+  >
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title" id="sheetStudentName">Student</div>
+        <div class="sheet__subtitle" id="sheetStudentMeta"></div>
+      </div>
+      <button
+        class="sheet__close"
+        type="button"
+        data-close="studentModal"
+        aria-label="Close"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="sheetStudentBody"></div>
+    <button
+      class="sheet-submit"
+      id="sheetEmailBtn"
+      type="button"
+      style="margin-top: 1.2rem"
+      hidden
+    >
+      <i class="fas fa-envelope"></i> Email Student
     </button>
   </div>
 </div>
-<div class="class-stats">
-  <div class="class-stat">
-    <div class="class-stat__number">{{ stats.total }}</div>
-    <div class="class-stat__label">Total Enrolled</div>
-  </div>
-  <div class="class-stat">
-    <div class="class-stat__number">{{ stats.approved }}</div>
-    <div class="class-stat__label">Approved</div>
-  </div>
-  <div class="class-stat">
-    <div class="class-stat__number">{{ stats.pending }}</div>
-    <div class="class-stat__label">Pending</div>
-  </div>
-  <div class="class-stat">
-    <div class="class-stat__number">{{ stats.rejected }}</div>
-    <div class="class-stat__label">Rejected</div>
-  </div>
-</div>
-<div class="search-filter-bar">
-  <div class="search-filter-bar__search">
-    <i class="fas fa-search"></i>
-    <input
-      type="text"
-      id="studentSearch"
-      placeholder="Search by name, ID or email…"
-      onkeyup="filterTable()"
-    />
-  </div>
-  <div class="search-filter-bar__filters">
-    <select id="classFilter" onchange="filterTable()">
-      <option value="">All Classes</option>
-    </select>
-    <select id="statusFilter" onchange="filterTable()">
-      <option value="">All Status</option>
-      <option value="approved">Approved</option>
-      <option value="pending">Pending</option>
-      <option value="rejected">Rejected</option>
-    </select>
-    <select id="gradeFilter" onchange="filterTable()">
-      <option value="">All Grades</option>
-      <option value="A">A</option>
-      <option value="B">B</option>
-      <option value="C">C</option>
-      <option value="D">D</option>
-      <option value="F">F</option>
-      <option value="—">Not entered</option>
-    </select>
-    <select id="resultsFilter" onchange="filterTable()">
-      <option value="">All Results</option>
-      <option value="entered">Results Entered</option>
-      <option value="not_entered">Not Entered</option>
-    </select>
-    <button class="btn-sm" onclick="resetFilters()">
+
+<div class="sheet-overlay" id="filterModal">
+  <div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Filter students"
+  >
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Filter Students</div>
+        <div class="sheet__subtitle">Narrow down the roster</div>
+      </div>
+      <button
+        class="sheet__close"
+        type="button"
+        data-close="filterModal"
+        aria-label="Close"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="sheet-form-group">
+      <label for="mClassFilter">Class</label>
+      <select id="mClassFilter">
+        <option value="">All Classes</option>
+      </select>
+    </div>
+    <div class="sheet-form-group">
+      <label for="mStatusFilter">Status</label>
+      <select id="mStatusFilter">
+        <option value="">All Status</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+    <div class="sheet-form-group">
+      <label for="mGradeFilter">Grade</label>
+      <select id="mGradeFilter">
+        <option value="">All Grades</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+        <option value="F">F</option>
+        <option value="—">Not entered</option>
+      </select>
+    </div>
+    <div class="sheet-form-group">
+      <label for="mResultsFilter">Results</label>
+      <select id="mResultsFilter">
+        <option value="">All Results</option>
+        <option value="entered">Results Entered</option>
+        <option value="not_entered">Not Entered</option>
+      </select>
+    </div>
+
+    <button class="sheet-submit" type="button" data-action="apply-filters">
+      <i class="fas fa-check"></i> Apply Filters
+    </button>
+    <button
+      class="sheet-submit sheet-submit--outline"
+      type="button"
+      data-action="reset-filters-close"
+      style="margin-top: 0.6rem"
+    >
       <i class="fas fa-undo"></i> Reset
     </button>
   </div>
 </div>
 
-<div class="table-wrapper">
-  <div class="table-scroll">
-    <table class="student-table" id="studentTable">
-      <thead>
-        <tr>
-          <th onclick="sortTable(0)"># <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(1)">Student <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(2)">Reg. No. <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(3)">Class <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(4)">Email <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(5)">Status <i class="fas fa-sort"></i></th>
-          <th onclick="sortTable(6)">CAT</th>
-          <th onclick="sortTable(7)">Exam</th>
-          <th onclick="sortTable(8)">Total</th>
-          <th onclick="sortTable(9)">Grade <i class="fas fa-sort"></i></th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        {% for row in student_rows %}
-        <tr
-          class="student-row"
-          data-name="{{ row.full_name|lower }}"
-          data-reg="{{ row.registration_no|lower }}"
-          data-class="{{ row.class_name|lower }}"
-          data-email="{{ row.school_email|lower }}"
-          data-status="{{ row.status }}"
-          data-grade="{{ row.grade }}"
-          data-results="{% if row.cat or row.exam %}entered{% else %}not_entered{% endif %}"
-          data-enrollment="{{ row.enrollment_id }}"
-        >
-          <td class="row-index"></td>
-          <td>
-            <div class="student-info">
-              <span class="avatar">{{ row.initials }}</span>
-              <div>
-                <div class="student-name">{{ row.full_name }}</div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <code
-              style="
-                font-size: 0.7rem;
-                background: var(--bg);
-                padding: 0.1rem 0.4rem;
-                border-radius: 4px;
-              "
-            >
-              {{ row.registration_no|upper }}
-            </code>
-          </td>
-          <td>
-            <span style="font-size: 0.75rem">{{ row.class_name }}</span>
-          </td>
-          <td>
-            <span style="font-size: 0.7rem; color: var(--text-muted)"
-              >{{ row.school_email }}</span
-            >
-          </td>
-          <td>
-            <span class="status-badge {{ row.status }}">
-              <i class="fas fa-circle" style="font-size: 0.4rem"></i>
-              {{ row.status|title }}
-            </span>
-          </td>
-          <td class="score-cell">
-            {% if row.cat %}{{ row.cat }}{% else %}<span style="opacity: 0.4"
-              >—</span
-            >{% endif %}
-          </td>
-          <td class="score-cell">
-            {% if row.exam %}{{ row.exam }}{% else %}<span style="opacity: 0.4"
-              >—</span
-            >{% endif %}
-          </td>
-          <td class="score-cell">
-            {% if row.total %}{{ row.total }}{% else %}<span
-              style="opacity: 0.4"
-              >—</span
-            >{% endif %}
-          </td>
-          <td>
-            <span class="grade-pill {{ row.grade }}">{{ row.grade }}</span>
-          </td>
-          <td>
-            <div class="actions-cell">
-              <button
-                class="btn-sm"
-                title="View"
-                onclick="openViewModal('{{ row.enrollment_id }}')"
-              >
-                <i class="fas fa-eye"></i>
-              </button>
-              <button
-                class="btn-sm"
-                title="Email student"
-                onclick="openEmailModal('{{ row.school_email }}', '{{ row.full_name }}')"
-              >
-                <i class="fas fa-envelope"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td
-            colspan="11"
-            style="text-align: center; padding: 3rem; opacity: 0.5"
-          >
-            <div style="font-size: 1.6rem; margin-bottom: 8px">📭</div>
-            No students enrolled in this course yet.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="table-footer">
-    <span id="rowCount"
-      >{{ student_rows|length }} student{{ student_rows|length|pluralize
-      }}</span
-    >
-  </div>
-</div>
-
-{% endif %}
-<div class="modal-overlay" id="viewModal">
-  <div class="modal">
-    <div class="modal__header">
-      <h2>
-        <i class="fas fa-user-circle" style="color: var(--navy)"></i> Student
-        Profile
-      </h2>
-      <button class="modal__close" onclick="closeModal('viewModal')">
-        &times;
-      </button>
-    </div>
-    <div class="modal__body" id="viewModalBody">
-      <div style="text-align: center; padding: 2rem; opacity: 0.5">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem"></i>
+<div class="sheet-overlay" id="emailModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Send email">
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Send Email</div>
+        <div class="sheet__subtitle" id="emailToLabel"></div>
       </div>
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn-outline" onclick="closeModal('viewModal')">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="emailModal">
-  <div class="modal modal--lg">
-    <div class="modal__header">
-      <h2>
-        <i class="fas fa-envelope" style="color: var(--blue-card)"></i> Send
-        Email
-      </h2>
-      <button class="modal__close" onclick="closeModal('emailModal')">
-        &times;
-      </button>
-    </div>
-    <div class="modal__body">
-      <div class="form-group">
-        <label>To</label>
-        <input type="email" id="emailTo" readonly style="background: #f5f7fb" />
-      </div>
-      <div class="form-group">
-        <label>Subject</label>
-        <input type="text" id="emailSubject" placeholder="Enter subject…" />
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea
-          id="emailMessage"
-          rows="5"
-          placeholder="Write your message here…"
-        ></textarea>
-      </div>
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn-outline" onclick="closeModal('emailModal')">
-        Cancel
-      </button>
-      <button class="btn btn-success" id="sendEmailBtn" onclick="sendEmail()">
-        <i class="fas fa-paper-plane"></i> Send
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="emailAllModal">
-  <div class="modal modal--large">
-    <div class="modal__header">
-      <h2>
-        <i
-          class="fas fa-envelope-open-text"
-          style="color: var(--blue-card)"
-        ></i>
-        Email All Students
-      </h2>
-      <button class="modal__close" onclick="closeModal('emailAllModal')">
-        &times;
-      </button>
-    </div>
-    <div class="modal__body">
-      <div class="form-group">
-        <label>Recipients</label>
-        <div
-          id="emailAllRecipientCount"
-          style="
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
-          "
-        ></div>
-        <div
-          id="emailAllRecipientList"
-          style="
-            max-height: 100px;
-            overflow-y: auto;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 0.5rem 0.8rem;
-          "
-        ></div>
-      </div>
-      <div class="form-group">
-        <label>Subject</label>
-        <input type="text" id="emailAllSubject" placeholder="Enter subject…" />
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea
-          id="emailAllMessage"
-          rows="6"
-          placeholder="Write your message here…"
-        ></textarea>
-        <div
-          style="
-            font-size: 0.68rem;
-            color: var(--text-muted);
-            margin-top: 0.3rem;
-          "
-        >
-          Tip:
-          <code>
-            {% templatetag openvariable %}name{% templatetag closevariable %}
-          </code>
-          will be replaced with each student's name.
-        </div>
-      </div>
-      <div
-        class="form-error"
-        id="emailAllError"
-        style="
-          display: none;
-          color: #dc2626;
-          font-size: 0.78rem;
-          margin-top: 0.4rem;
-        "
-      ></div>
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn-outline" onclick="closeModal('emailAllModal')">
-        Cancel
-      </button>
       <button
-        class="btn btn-success"
-        id="emailAllSendBtn"
-        onclick="sendBulkEmail()"
+        class="sheet__close"
+        type="button"
+        data-close="emailModal"
+        aria-label="Close"
       >
-        <i class="fas fa-paper-plane"></i> Send to All
+        <i class="fas fa-times"></i>
       </button>
     </div>
+
+    <input type="hidden" id="emailTo" />
+
+    <div class="sheet-form-group">
+      <label for="emailSubject">Subject</label>
+      <input type="text" id="emailSubject" placeholder="Subject…" />
+    </div>
+    <div class="sheet-form-group">
+      <label for="emailMessage">Message</label>
+      <textarea id="emailMessage" rows="5" placeholder="Message…"></textarea>
+    </div>
+
+    <button class="sheet-submit" id="sendEmailBtn" type="button">
+      <i class="fas fa-paper-plane"></i> Send
+    </button>
   </div>
 </div>
+
+<div class="sheet-overlay" id="emailAllModal">
+  <div
+    class="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Email all students"
+  >
+    <div class="sheet__handle"></div>
+    <div class="sheet__header">
+      <div>
+        <div class="sheet__title">Email All Students</div>
+        <div class="sheet__subtitle" id="emailAllRecipientCount"></div>
+      </div>
+      <button
+        class="sheet__close"
+        type="button"
+        data-close="emailAllModal"
+        aria-label="Close"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="sheet-form-group">
+      <label>Recipients</label>
+      <div class="sheet-recipients" id="emailAllRecipientList"></div>
+    </div>
+    <div class="sheet-form-group">
+      <label for="emailAllSubject">Subject</label>
+      <input type="text" id="emailAllSubject" placeholder="Subject…" />
+    </div>
+    <div class="sheet-form-group">
+      <label for="emailAllMessage">Message</label>
+      <textarea id="emailAllMessage" rows="6" placeholder="Message…"></textarea>
+      <div class="sheet-hint">
+        Tip:
+        <code
+          >{% templatetag openvariable %}name{% templatetag closevariable
+          %}</code
+        >
+        is replaced with each student's name.
+      </div>
+    </div>
+    <div class="sheet-error" id="emailAllError" hidden></div>
+
+    <button class="sheet-submit" id="emailAllSendBtn" type="button">
+      <i class="fas fa-paper-plane"></i> Send to All
+    </button>
+  </div>
+</div>
+{% endif %}
 
 <div class="toast" id="toast"></div>
 
+<!-- Server values consumed by the script below (attribute-escaped, so quotes in names are safe) -->
+<div
+  id="pageConfig"
+  hidden
+  data-csrf="{{ csrf_token }}"
+  data-curriculum-id="{{ selected.record_id|default:'' }}"
+  data-course-code="{{ selected.course.course_code|default:'' }}"
+  data-course-name="{{ selected.course.course_name|default:'' }}"
+  data-lecturer="{{ lecturer.name|default:'' }}"
+  data-send-email-url="{% url 'lecturer-send-student-email' %}"
+  data-send-bulk-url="{% url 'lecturer-send-bulk-email' %}"
+></div>
 <script>
-  const trigger = document.getElementById("courseTrigger");
-  const dropdown = document.getElementById("courseDropdown");
-  const searchIn = document.getElementById("courseSearchInput");
+  (function () {
+    "use strict";
 
-  const CSRF_TOKEN = "{{ csrf_token }}";
-  const CURRICULUM_ID = "{{ selected.record_id|default:'' }}";
-  const SEND_EMAIL_URL = "{% url 'lecturer-send-student-email' %}";
-  const SEND_BULK_EMAIL_URL = "{% url 'lecturer-send-bulk-email' %}";
+    const $ = (id) => document.getElementById(id);
+    const cfg = $("pageConfig").dataset;
+    const STUDENT_DETAIL_URL = "/staff/lecturer/class-list/student/";
 
-  trigger?.addEventListener("click", () => {
-    dropdown.classList.toggle("open");
-    trigger.classList.toggle("open");
-    if (dropdown.classList.contains("open")) searchIn?.focus();
-  });
-
-  searchIn?.addEventListener("input", () => {
-    const q = searchIn.value.toLowerCase();
-    document.querySelectorAll(".course-selector__item").forEach((item) => {
-      const match =
-        item.dataset.code?.includes(q) || item.dataset.title?.includes(q);
-      item.style.display = match ? "" : "none";
-    });
-  });
-
-  document.addEventListener("click", (e) => {
-    const sel = document.getElementById("courseSelector");
-    if (sel && !sel.contains(e.target)) {
-      dropdown?.classList.remove("open");
-      trigger?.classList.remove("open");
-    }
-  });
-
-  let sortCol = -1,
-    sortAsc = true;
-
-  function populateClassFilter() {
-    const select = document.getElementById("classFilter");
-    const classes = new Set();
-    document.querySelectorAll("#tableBody .student-row").forEach((row) => {
-      if (row.dataset.class) classes.add(row.dataset.class);
-    });
-    [...classes].sort().forEach((c) => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c.toUpperCase();
-      select.appendChild(opt);
-    });
-  }
-
-  function filterTable() {
-    const q = document.getElementById("studentSearch").value.toLowerCase();
-    const status = document.getElementById("statusFilter").value;
-    const grade = document.getElementById("gradeFilter").value;
-    const klass = document.getElementById("classFilter").value;
-    const results = document.getElementById("resultsFilter").value;
-    let idx = 1;
-
-    document.querySelectorAll("#tableBody .student-row").forEach((row) => {
-      const matchQ =
-        !q ||
-        row.dataset.name.includes(q) ||
-        row.dataset.reg.includes(q) ||
-        row.dataset.email.includes(q);
-      const matchS = !status || row.dataset.status === status;
-      const matchG = !grade || row.dataset.grade === grade;
-      const matchC = !klass || row.dataset.class === klass;
-      const matchR = !results || row.dataset.results === results;
-      const show = matchQ && matchS && matchG && matchC && matchR;
-      row.style.display = show ? "" : "none";
-      if (show) row.querySelector(".row-index").textContent = idx++;
-    });
-
-    const visible = idx - 1;
-    document.getElementById("rowCount").textContent =
-      `${visible} student${visible !== 1 ? "s" : ""}`;
-  }
-
-  function resetFilters() {
-    document.getElementById("studentSearch").value = "";
-    document.getElementById("statusFilter").value = "";
-    document.getElementById("gradeFilter").value = "";
-    document.getElementById("classFilter").value = "";
-    document.getElementById("resultsFilter").value = "";
-    filterTable();
-  }
-
-  function sortTable(col) {
-    if (sortCol === col) sortAsc = !sortAsc;
-    else {
-      sortCol = col;
-      sortAsc = true;
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s ?? "";
+      return d.innerHTML;
     }
 
-    const tbody = document.getElementById("tableBody");
-    const rows = [...tbody.querySelectorAll(".student-row")];
-    const keys = ["", "name", "reg", "class", "email", "status", "grade"];
-    rows.sort((a, b) => {
-      const ak = (
-        a.dataset[keys[col]] ||
-        a.cells[col]?.textContent ||
-        ""
-      ).toLowerCase();
-      const bk = (
-        b.dataset[keys[col]] ||
-        b.cells[col]?.textContent ||
-        ""
-      ).toLowerCase();
-      return sortAsc ? ak.localeCompare(bk) : bk.localeCompare(ak);
+    const orDash = (v) => (v === null || v === undefined || v === "" ? "—" : v);
+
+    // ─── Sheets ──────────────────────────────────────────────────────────────
+    function openSheet(id) {
+      $(id).classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeSheet(id) {
+      $(id).classList.remove("active");
+      if (!document.querySelector(".sheet-overlay.active")) {
+        document.body.style.overflow = "";
+      }
+    }
+
+    document.querySelectorAll(".sheet-overlay").forEach((o) => {
+      o.addEventListener("click", (e) => {
+        if (e.target === o) closeSheet(o.id);
+      });
     });
-    rows.forEach((r) => tbody.appendChild(r));
-    filterTable();
-  }
 
-  function openViewModal(enrollmentId) {
-    openModal("viewModal");
-    document.getElementById("viewModalBody").innerHTML =
-      '<div style="text-align:center;padding:2rem;opacity:.5"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem"></i></div>';
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document
+          .querySelectorAll(".sheet-overlay.active")
+          .forEach((o) => closeSheet(o.id));
+      }
+    });
 
-    fetch(`/staff/lecturer/class-list/student/${enrollmentId}/`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) {
-          showToast("Could not load student.", "warning");
-          return;
+    // ─── Course dropdowns (desktop + mobile) ─────────────────────────────────
+    function wireDropdown(
+      rootId,
+      triggerId,
+      dropdownId,
+      searchId,
+      itemSelector,
+    ) {
+      const root = $(rootId);
+      const trigger = $(triggerId);
+      const dropdown = $(dropdownId);
+      const search = $(searchId);
+      if (!root || !trigger || !dropdown) return;
+
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const willOpen = !dropdown.classList.contains("open");
+        closeAllDropdowns();
+        if (willOpen) {
+          dropdown.classList.add("open");
+          trigger.classList.add("open");
+          search?.focus();
         }
+      });
 
+      search?.addEventListener("input", () => {
+        const q = search.value.toLowerCase();
+        dropdown.querySelectorAll(itemSelector).forEach((item) => {
+          const hit =
+            item.dataset.code.includes(q) || item.dataset.title.includes(q);
+          item.style.display = hit ? "" : "none";
+        });
+      });
+    }
+
+    function closeAllDropdowns() {
+      ["desktopCourseDropdown", "mobileCourseDropdown"].forEach((id) =>
+        $(id)?.classList.remove("open"),
+      );
+      ["desktopCourseTrigger", "mobileCourseTrigger"].forEach((id) =>
+        $(id)?.classList.remove("open"),
+      );
+    }
+
+    wireDropdown(
+      "desktopCourseSelector",
+      "desktopCourseTrigger",
+      "desktopCourseDropdown",
+      "desktopCourseSearch",
+      ".course-selector__item",
+    );
+    wireDropdown(
+      "mobileCourseSelector",
+      "mobileCourseTrigger",
+      "mobileCourseDropdown",
+      "mobileCourseSearch",
+      ".app-bar__course-item",
+    );
+
+    document.addEventListener("click", (e) => {
+      const inside =
+        $("desktopCourseSelector")?.contains(e.target) ||
+        $("mobileCourseSelector")?.contains(e.target);
+      if (!inside) closeAllDropdowns();
+    });
+
+    // Everything below needs a selected course
+    if (!$("tableBody")) return;
+
+    // ─── Filtering (one state, shared by table rows and mobile cards) ────────
+    const rows = [...document.querySelectorAll("#tableBody .student-row")];
+    const cards = [
+      ...document.querySelectorAll("#mobileStudentList .student-card"),
+    ];
+    const noResultsRow = $("noResultsRow");
+    const mobileNoResults = $("mobileNoResults");
+
+    const DEFAULT_FILTERS = {
+      q: "",
+      klass: "",
+      status: "",
+      grade: "",
+      results: "",
+    };
+    const filters = { ...DEFAULT_FILTERS };
+
+    // filter key → [desktop control id, mobile control id]
+    const CONTROLS = {
+      q: ["studentSearch", "mobileSearch"],
+      klass: ["classFilter", "mClassFilter"],
+      status: ["statusFilter", "mStatusFilter"],
+      grade: ["gradeFilter", "mGradeFilter"],
+      results: ["resultsFilter", "mResultsFilter"],
+    };
+
+    function populateClassFilters() {
+      const classes = [
+        ...new Set(rows.map((r) => r.dataset.class).filter(Boolean)),
+      ].sort();
+      ["classFilter", "mClassFilter"].forEach((id) => {
+        const select = $(id);
+        if (!select) return;
+        classes.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c.toUpperCase();
+          select.appendChild(opt);
+        });
+      });
+    }
+
+    function syncControls() {
+      Object.entries(CONTROLS).forEach(([key, ids]) => {
+        ids.forEach((id) => {
+          const el = $(id);
+          if (el && el.value !== filters[key]) el.value = filters[key];
+        });
+      });
+    }
+
+    function applyFilters() {
+      const q = filters.q.trim().toLowerCase();
+      const visibleIds = new Set();
+      let idx = 0;
+
+      rows.forEach((row) => {
+        const d = row.dataset;
+        const show =
+          (!q ||
+            d.name.includes(q) ||
+            d.reg.includes(q) ||
+            d.email.includes(q)) &&
+          (!filters.status || d.status === filters.status) &&
+          (!filters.grade || d.grade === filters.grade) &&
+          (!filters.klass || d.class === filters.klass) &&
+          (!filters.results || d.results === filters.results);
+
+        row.hidden = !show;
+        if (show) {
+          row.querySelector(".row-index").textContent = ++idx;
+          visibleIds.add(d.enrollment);
+        }
+      });
+
+      cards.forEach((card) => {
+        card.hidden = !visibleIds.has(card.dataset.enrollment);
+      });
+
+      if (noResultsRow) noResultsRow.hidden = idx > 0;
+      if (mobileNoResults) mobileNoResults.hidden = idx > 0;
+      $("rowCount").textContent = `${idx} student${idx !== 1 ? "s" : ""}`;
+
+      $("mobileFilterBtn")?.classList.toggle(
+        "has-filters",
+        !!(filters.klass || filters.status || filters.grade || filters.results),
+      );
+    }
+
+    function setFilters(next) {
+      Object.assign(filters, next);
+      syncControls();
+      applyFilters();
+    }
+
+    // Desktop controls + mobile search filter live
+    [
+      ["studentSearch", "q", "input"],
+      ["mobileSearch", "q", "input"],
+      ["classFilter", "klass", "change"],
+      ["statusFilter", "status", "change"],
+      ["gradeFilter", "grade", "change"],
+      ["resultsFilter", "results", "change"],
+    ].forEach(([id, key, evt]) => {
+      $(id)?.addEventListener(evt, (e) =>
+        setFilters({ [key]: e.target.value }),
+      );
+    });
+
+    // ─── Sorting (desktop table) ─────────────────────────────────────────────
+    const tbody = $("tableBody");
+    let sortKey = null;
+    let sortAsc = true;
+
+    document.querySelectorAll("#studentTable th[data-sort]").forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.sort;
+        const numeric = th.dataset.type === "number";
+        sortAsc = sortKey === key ? !sortAsc : true;
+        sortKey = key;
+
+        const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+        [...rows]
+          .sort((a, b) => {
+            const av = a.dataset[key] ?? "";
+            const bv = b.dataset[key] ?? "";
+            if (numeric) {
+              const an = parseFloat(av);
+              const bn = parseFloat(bv);
+              if (isNaN(an) && isNaN(bn)) return 0;
+              if (isNaN(an)) return 1; // blanks always last
+              if (isNaN(bn)) return -1;
+              return sortAsc ? an - bn : bn - an;
+            }
+            return sortAsc
+              ? collator.compare(av, bv)
+              : collator.compare(bv, av);
+          })
+          .forEach((r) => tbody.appendChild(r));
+        if (noResultsRow) tbody.appendChild(noResultsRow);
+
+        document
+          .querySelectorAll("#studentTable th[data-sort]")
+          .forEach((h) => {
+            const active = h === th;
+            h.classList.toggle("sorted", active);
+            h.querySelector("i").className =
+              "fas " +
+              (active ? (sortAsc ? "fa-sort-up" : "fa-sort-down") : "fa-sort");
+          });
+        applyFilters(); // renumber
+      });
+    });
+
+    // ─── Student sheet ───────────────────────────────────────────────────────
+    async function openStudentSheet(enrollmentId) {
+      $("sheetStudentName").textContent = "Student";
+      $("sheetStudentMeta").textContent = "";
+      $("sheetEmailBtn").hidden = true;
+      $("sheetStudentBody").innerHTML =
+        '<div class="sheet-loading"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem"></i></div>';
+      openSheet("studentModal");
+
+      try {
+        const res = await fetch(
+          `${STUDENT_DETAIL_URL}${encodeURIComponent(enrollmentId)}/`,
+        );
+        const d = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        const status = String(d.status || "");
         const gradeClass = ["A", "B", "C", "D", "F"].includes(d.grade)
           ? d.grade
           : "";
-        document.getElementById("viewModalBody").innerHTML = `
-  <div class="detail-row">
-    <span class="detail-row__label">Full Name</span>
-    <span><strong>${d.full_name}</strong></span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">Reg. No.</span>
-    <span><code style="background:var(--bg);padding:.1rem .5rem;border-radius:4px">${d.registration_no.toUpperCase()}</code></span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">Class</span>
-    <span>${d.class_name}</span>
-  </div>
-  <div class="detail-row">
-  <span class="detail-row__label">Email</span>
-  <span><a href="mailto:${d.school_email}" style="color:var(--blue-card)">${d.school_email}</a></span>
-</div>
-  <div class="detail-row">
-    <span class="detail-row__label">Status</span>
-    <span class="status-badge ${d.status}">${d.status.charAt(0).toUpperCase() + d.status.slice(1)}</span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">CAT</span>
-    <span>${d.cat || "—"}</span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">Exam</span>
-    <span>${d.exam || "—"}</span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">Total / Grade</span>
-    <span>${d.total || "—"} &nbsp;
-      <span class="grade-pill ${gradeClass}">${d.grade}</span>
-    </span>
-  </div>
-  <div class="detail-row">
-    <span class="detail-row__label">Course</span>
-    <span><strong>${d.course_code}</strong> — ${d.course_name}</span>
-  </div>
-`;
-      })
-      .catch(() => showToast("Network error loading student.", "warning"));
-  }
 
-  function openEmailModal(email, name) {
-    document.getElementById("emailTo").value = email;
-    document.getElementById("emailSubject").value =
-      `[{{ selected.course.course_code|default:"" }}] Message for ${name}`;
-    document.getElementById("emailMessage").value =
-      `Dear ${name},\n\nI hope this message finds you well.\n\n\nBest regards,\n{{ lecturer.name|default:"" }}\n{{ selected.course.course_code|default:"" }} — {{ selected.course.course_name|default:"" }}`;
-    openModal("emailModal");
-  }
+        $("sheetStudentName").textContent = d.full_name;
+        $("sheetStudentMeta").textContent =
+          `${String(d.registration_no).toUpperCase()} · ${d.class_name}`;
+        $("sheetStudentBody").innerHTML = `
+          <div class="detail-row">
+            <span class="detail-row__label">Status</span>
+            <span class="detail-row__value"><span class="status-badge ${escapeHtml(status)}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Email</span>
+            <span class="detail-row__value"><a href="mailto:${escapeHtml(d.school_email)}">${escapeHtml(d.school_email)}</a></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">CAT</span>
+            <span class="detail-row__value">${escapeHtml(orDash(d.cat))}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Exam</span>
+            <span class="detail-row__value">${escapeHtml(orDash(d.exam))}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Total</span>
+            <span class="detail-row__value">${escapeHtml(orDash(d.total))}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Grade</span>
+            <span class="detail-row__value"><span class="grade-pill ${gradeClass}">${escapeHtml(d.grade)}</span></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Course</span>
+            <span class="detail-row__value"><strong>${escapeHtml(d.course_code)}</strong> — ${escapeHtml(d.course_name)}</span>
+          </div>`;
 
-  async function sendEmail() {
-    const to = document.getElementById("emailTo").value;
-    const subject = document.getElementById("emailSubject").value.trim();
-    const message = document.getElementById("emailMessage").value.trim();
-    const btn = document.getElementById("sendEmailBtn");
-
-    if (!subject || !message) {
-      showToast("Subject and message are required.", "warning");
-      return;
+        const emailBtn = $("sheetEmailBtn");
+        emailBtn.hidden = false;
+        emailBtn.onclick = () => {
+          closeSheet("studentModal");
+          openEmailSheet(d.school_email, d.full_name);
+        };
+      } catch (err) {
+        closeSheet("studentModal");
+        showToast("Could not load student.", "warning");
+      }
     }
 
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    // ─── Email (single) ──────────────────────────────────────────────────────
+    function openEmailSheet(email, name) {
+      $("emailTo").value = email;
+      $("emailToLabel").textContent = `${name} <${email}>`;
+      $("emailSubject").value = `[${cfg.courseCode}] Message for ${name}`;
+      $("emailMessage").value =
+        `Dear ${name},\n\nI hope this message finds you well.\n\n\nBest regards,\n${cfg.lecturer}\n${cfg.courseCode} — ${cfg.courseName}`;
+      openSheet("emailModal");
+    }
 
-    try {
-      const res = await fetch(SEND_EMAIL_URL, {
+    async function postJson(url, payload) {
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": CSRF_TOKEN,
+          "X-CSRFToken": cfg.csrf,
         },
-        body: JSON.stringify({ to, subject, message }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      return res.json();
+    }
 
-      if (data.error) {
-        showToast(data.error, "warning");
+    async function sendEmail() {
+      const to = $("emailTo").value;
+      const subject = $("emailSubject").value.trim();
+      const message = $("emailMessage").value.trim();
+      const btn = $("sendEmailBtn");
+
+      if (!subject || !message) {
+        showToast("Subject and message are required.", "warning");
         return;
       }
 
-      closeModal("emailModal");
-      showToast(`📧 Email sent to ${to}`, "success");
-    } catch (err) {
-      showToast("Network error sending email.", "warning");
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }
-  }
-  document.getElementById("exportBtn")?.addEventListener("click", exportCSV);
-  document.getElementById("exportBtnCtx")?.addEventListener("click", exportCSV);
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
 
-  document
-    .getElementById("emailAllBtn")
-    ?.addEventListener("click", openEmailAllModal);
-
-  function getVisibleRecipients() {
-    return [...document.querySelectorAll("#tableBody .student-row")]
-      .filter((r) => r.style.display !== "none")
-      .map((r) => ({
-        email: r.dataset.email,
-        name: r.querySelector(".student-name")?.textContent.trim() || "",
-      }))
-      .filter((r) => r.email);
-  }
-
-  function openEmailAllModal() {
-    const recipients = getVisibleRecipients();
-
-    if (recipients.length === 0) {
-      showToast("No students match the current filters.", "warning");
-      return;
+      try {
+        const data = await postJson(cfg.sendEmailUrl, { to, subject, message });
+        if (data.error) {
+          showToast(data.error, "warning");
+          return;
+        }
+        closeSheet("emailModal");
+        showToast(`📧 Email sent to ${to}`, "success");
+      } catch (err) {
+        showToast("Network error sending email.", "warning");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
     }
 
-    document.getElementById("emailAllRecipientCount").textContent =
-      `${recipients.length} student${recipients.length !== 1 ? "s" : ""} (based on current filters)`;
-    document.getElementById("emailAllRecipientList").innerHTML = recipients
-      .map((r) => `${r.name} &lt;${r.email}&gt;`)
-      .join("<br>");
-
-    document.getElementById("emailAllSubject").value =
-      `[{{ selected.course.course_code|default:"" }}] `;
-    document.getElementById("emailAllMessage").value =
-      `Dear student,\n\n\n\nBest regards,\n{{ lecturer.name|default:"" }}\n{{ selected.course.course_code|default:"" }} — {{ selected.course.course_name|default:"" }}`;
-    document.getElementById("emailAllError").style.display = "none";
-
-    openModal("emailAllModal");
-  }
-
-  async function sendBulkEmail() {
-    const recipients = getVisibleRecipients();
-    const subject = document.getElementById("emailAllSubject").value.trim();
-    const message = document.getElementById("emailAllMessage").value.trim();
-    const errorBox = document.getElementById("emailAllError");
-    const btn = document.getElementById("emailAllSendBtn");
-
-    errorBox.style.display = "none";
-
-    if (!subject || !message) {
-      errorBox.textContent = "Subject and message are required.";
-      errorBox.style.display = "block";
-      return;
+    // ─── Email all ───────────────────────────────────────────────────────────
+    function getVisibleRecipients() {
+      return rows
+        .filter((r) => !r.hidden)
+        .map((r) => ({ email: r.dataset.email, name: r.dataset.fullname }))
+        .filter((r) => r.email);
     }
 
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    function openEmailAllSheet() {
+      const recipients = getVisibleRecipients();
+      if (recipients.length === 0) {
+        showToast("No students match the current filters.", "warning");
+        return;
+      }
 
-    try {
-      const res = await fetch(SEND_BULK_EMAIL_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": CSRF_TOKEN,
-        },
-        body: JSON.stringify({
-          curriculum_id: CURRICULUM_ID,
+      $("emailAllRecipientCount").textContent =
+        `${recipients.length} recipient${recipients.length !== 1 ? "s" : ""} (based on current filters)`;
+      $("emailAllRecipientList").innerHTML = recipients
+        .map((r) => `${escapeHtml(r.name)} &lt;${escapeHtml(r.email)}&gt;`)
+        .join("<br>");
+      $("emailAllSubject").value = `[${cfg.courseCode}] `;
+      $("emailAllMessage").value =
+        `Dear student,\n\n\n\nBest regards,\n${cfg.lecturer}\n${cfg.courseCode} — ${cfg.courseName}`;
+      $("emailAllError").hidden = true;
+      openSheet("emailAllModal");
+    }
+
+    async function sendBulkEmail() {
+      const recipients = getVisibleRecipients();
+      const subject = $("emailAllSubject").value.trim();
+      const message = $("emailAllMessage").value.trim();
+      const errorBox = $("emailAllError");
+      const btn = $("emailAllSendBtn");
+
+      errorBox.hidden = true;
+
+      if (!subject || !message) {
+        errorBox.textContent = "Subject and message are required.";
+        errorBox.hidden = false;
+        return;
+      }
+
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+      try {
+        const data = await postJson(cfg.sendBulkUrl, {
+          curriculum_id: cfg.curriculumId,
           recipients,
           subject,
           message,
-        }),
-      });
-      const data = await res.json();
+        });
 
-      if (data.error) {
-        errorBox.textContent = data.error;
-        errorBox.style.display = "block";
-        return;
+        if (data.error) {
+          errorBox.textContent = data.error;
+          errorBox.hidden = false;
+          return;
+        }
+
+        closeSheet("emailAllModal");
+        showToast(
+          `📧 Sent to ${data.sent} student${data.sent !== 1 ? "s" : ""}${data.errors?.length ? " (some skipped)" : ""}`,
+          "success",
+        );
+        if (data.errors?.length) console.warn("Bulk email skips:", data.errors);
+      } catch (err) {
+        errorBox.textContent = "Network error sending emails.";
+        errorBox.hidden = false;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
       }
-
-      closeModal("emailAllModal");
-      showToast(
-        `📧 Sent to ${data.sent} student${data.sent !== 1 ? "s" : ""}${data.errors?.length ? " (some skipped)" : ""}`,
-        "success",
-      );
-      if (data.errors?.length) console.warn("Bulk email skips:", data.errors);
-    } catch (err) {
-      errorBox.textContent = "Network error sending emails.";
-      errorBox.style.display = "block";
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
     }
-  }
 
-  function exportCSV() {
-    const rows = [
-      ...document.querySelectorAll("#tableBody .student-row"),
-    ].filter((r) => r.style.display !== "none");
-    const header = [
-      "#",
-      "Name",
-      "Reg No",
-      "Class",
-      "Email",
-      "Status",
-      "CAT",
-      "Exam",
-      "Total",
-      "Grade",
-    ];
-    const lines = [header.join(",")];
-    rows.forEach((r, i) => {
-      const cells = [...r.querySelectorAll("td")].map(
-        (td) => `"${td.textContent.trim().replace(/"/g, '""')}"`,
-      );
-      lines.push(cells.join(","));
-    });
-    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
-    const a = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(blob),
-      download: `{{ selected.course.course_code|default:"classlist" }}_classlist.csv`,
-    });
-    a.click();
-    showToast("📊 CSV downloaded", "success");
-  }
+    // ─── CSV export (visible rows only) ──────────────────────────────────────
+    function exportCSV() {
+      const header = [
+        "#",
+        "Name",
+        "Reg No",
+        "Class",
+        "Email",
+        "Status",
+        "CAT",
+        "Exam",
+        "Total",
+        "Grade",
+      ];
+      const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+      const clean = (v) => (v === "—" ? "" : v);
 
-  function openModal(id) {
-    document.getElementById(id).classList.add("active");
-    document.body.style.overflow = "hidden";
-  }
+      const lines = [header.map(q).join(",")];
+      rows
+        .filter((r) => !r.hidden)
+        .forEach((r, i) => {
+          const t = (n) => clean(r.cells[n].textContent.trim());
+          lines.push(
+            [
+              i + 1,
+              r.dataset.fullname,
+              t(2),
+              t(3),
+              t(4),
+              t(5),
+              t(6),
+              t(7),
+              t(8),
+              t(9),
+            ]
+              .map(q)
+              .join(","),
+          );
+        });
 
-  function closeModal(id) {
-    document.getElementById(id).classList.remove("active");
-    document.body.style.overflow = "";
-  }
+      const blob = new Blob(["\uFEFF" + lines.join("\n")], {
+        type: "text/csv;charset=utf-8",
+      });
+      const a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `${cfg.courseCode || "classlist"}_classlist.csv`,
+      });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      showToast("📊 CSV downloaded", "success");
+    }
 
-  document.querySelectorAll(".modal-overlay").forEach((o) => {
-    o.addEventListener("click", (e) => {
-      if (e.target === o) {
-        closeModal(o.id);
+    // ─── One delegated click handler for every [data-action] ─────────────────
+    document.addEventListener("click", (e) => {
+      const closer = e.target.closest("[data-close]");
+      if (closer) return closeSheet(closer.dataset.close);
+
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+
+      switch (el.dataset.action) {
+        case "view":
+          return openStudentSheet(el.dataset.enrollment);
+        case "email":
+          return openEmailSheet(el.dataset.email, el.dataset.name);
+        case "email-all":
+          return openEmailAllSheet();
+        case "export":
+          return exportCSV();
+        case "reset-filters":
+          return setFilters(DEFAULT_FILTERS);
+        case "open-filters":
+          syncControls();
+          return openSheet("filterModal");
+        case "apply-filters":
+          setFilters({
+            klass: $("mClassFilter").value,
+            status: $("mStatusFilter").value,
+            grade: $("mGradeFilter").value,
+            results: $("mResultsFilter").value,
+          });
+          closeSheet("filterModal");
+          return showToast("Filters applied", "info");
+        case "reset-filters-close":
+          setFilters(DEFAULT_FILTERS);
+          closeSheet("filterModal");
+          return showToast("Filters reset", "info");
       }
     });
-  });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape")
-      document
-        .querySelectorAll(".modal-overlay.active")
-        .forEach((o) => closeModal(o.id));
-  });
+    $("sendEmailBtn").addEventListener("click", sendEmail);
+    $("emailAllSendBtn").addEventListener("click", sendBulkEmail);
 
-  document.addEventListener("DOMContentLoaded", () => {
-    populateClassFilter();
-    filterTable();
-  });
+    // ─── Init ────────────────────────────────────────────────────────────────
+    populateClassFilters();
+    applyFilters();
+  })();
 </script>
-{% endblock %}
+{% endblock content %}

@@ -24,6 +24,7 @@ CLASSIFICATION_CHOICES = [
 
 
 class DegreeAudit(BaseModelMixin):
+
     class Result(models.TextChoices):
         ON_TRACK = "on_track", "On Track"
         DEFICIENT = "deficient", "Deficient"
@@ -62,7 +63,8 @@ class DegreeAudit(BaseModelMixin):
         time, not recalculated now.
         """
         graded = self.student.enrollment_records.filter(
-            graded_at__isnull=False)
+            graded_at__isnull=False
+        )
 
         credits_completed = graded.aggregate(
             total=models.Sum('credits_earned')
@@ -100,23 +102,23 @@ class DegreeAudit(BaseModelMixin):
         if newly_eligible and not was_eligible:
             self._nominate_for_graduation()
 
-        def _nominate_for_graduation(self):
-            graduation, created = Graduation.objects.get_or_create(
-                student=self.student,
-                defaults={
-                    'Tclass': self.student.class_entered,
-                    'status': 'nominated',
-                    'nominated_at': timezone.now(),
-                    # final_classification is required on the model with no
-                    # default — left blank here on purpose. Nothing computes
-                    # First Class/Upper/Lower/Pass from gpa yet, so this is
-                    # deliberately punted to whoever verifies the nomination.
-                    'final_classification': '',
-                },
-            )
-            if not created and graduation.status == 'nominated':
-                graduation.nominated_at = timezone.now()
-                graduation.save(update_fields=['nominated_at'])
+    def _nominate_for_graduation(self):
+        graduation, created = Graduation.objects.get_or_create(
+            student=self.student,
+            defaults={
+                'Tclass': self.student.class_entered,
+                'status': 'nominated',
+                'nominated_at': timezone.now(),
+                # final_classification is required on the model with no
+                # default — left blank here on purpose. Nothing computes
+                # First Class/Upper/Lower/Pass from gpa yet, so this is
+                # deliberately punted to whoever verifies the nomination.
+                'final_classification': '',
+            },
+        )
+        if not created and graduation.status == 'nominated':
+            graduation.nominated_at = timezone.now()
+            graduation.save(update_fields=['nominated_at'])
 
 
 class Graduation(BaseModelMixin):
@@ -153,6 +155,7 @@ class Graduation(BaseModelMixin):
     final_classification = models.CharField(
         max_length=30,
         choices=CLASSIFICATION_CHOICES,
+        null=True,
         help_text="Official degree classification mapped to CUE data guidelines."
     )
 
@@ -167,16 +170,29 @@ class Graduation(BaseModelMixin):
         help_text="Compulsory for Postgraduate (Masters/PhD) returns"
     )
 
-    nominated_at = models.DateTimeField(null=True, blank=True)
+    nominated_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     verified_by = models.ForeignKey(
-        'User', on_delete=models.SET_NULL, null=True, blank=True,
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='verified_graduations'
     )
-    verified_at = models.DateTimeField(null=True, blank=True)
+
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     approved_by = models.ForeignKey(
-        'User', on_delete=models.SET_NULL, null=True, blank=True,
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='approved_graduations'
     )
     approved_at = models.DateTimeField(null=True, blank=True)
@@ -256,7 +272,11 @@ class Diploma(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="diploma"
     )
-    diploma_number = models.CharField(max_length=50, unique=True)
+
+    diploma_number = models.CharField(
+        max_length=50,
+        unique=True
+    )
     conferred_date = models.DateField()
     issued = models.BooleanField(default=False)
     file = models.FileField(
@@ -273,6 +293,7 @@ class Convocation(BaseModelMixin):
         max_length=255,
         blank=True
     )
+
     candidates = models.ManyToManyField(
         'Graduation',
         related_name="convocations",

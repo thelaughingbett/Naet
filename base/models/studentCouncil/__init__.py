@@ -37,20 +37,28 @@ from .proposals import (  # noqa: F401
     CouncilProposal,
     ProposalSupport,
 )
-from .grievances import (  # noqa: F401
-    Grievance,
-    GrievanceUpdate,
-)
+# from .grievances import (  # noqa: F401
+#     Grievance,
+#     GrievanceUpdate,
+# )
 from .meetings import (  # noqa: F401
     CouncilMeeting,
     CouncilMeetingAttendance,
 )
 
 __all__ = [
-    'COUNCIL_POSITION_CHOICES', 'EXECUTIVE_POSITIONS',
-    'CouncilTerm', 'CouncilPosition',
-    'Election', 'ElectionPosition', 'Candidate', 'Vote',
-    'CouncilProposal', 'ProposalSupport',
-    'Grievance', 'GrievanceUpdate',
-    'CouncilMeeting', 'CouncilMeetingAttendance',
+    'COUNCIL_POSITION_CHOICES',
+    'EXECUTIVE_POSITIONS',
+    'CouncilTerm',
+    'CouncilPosition',
+    'Election',
+    'ElectionPosition',
+    'Candidate',
+    'Vote',
+    'CouncilProposal',
+    'ProposalSupport',
+    # 'Grievance',
+    # 'GrievanceUpdate',
+    'CouncilMeeting',
+    'CouncilMeetingAttendance',
 ]

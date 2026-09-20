@@ -43,11 +43,13 @@ class RegistrationWindow(BaseModelMixin):
         related_name="registration_windows",
         help_text="e.g. Semester 2 2026/2027",
     )
+
     window_type = models.CharField(
         max_length=30,
         choices=window_choices,
         help_text="What this window governs, e.g. course registration, bursary",
     )
+
     programme = models.ForeignKey(
         "Programme",
         on_delete=models.CASCADE,
@@ -56,6 +58,7 @@ class RegistrationWindow(BaseModelMixin):
         related_name="registration_windows",
         help_text="Optional: restrict this window to one program. Leave blank for institution-wide.",
     )
+
     opens_date = models.DateField()
     closes_date = models.DateField()
     late_closes_date = models.DateField(
@@ -63,6 +66,7 @@ class RegistrationWindow(BaseModelMixin):
         blank=True,
         help_text="Optional grace/late period end date, if late registration is allowed (often with a penalty fee).",
     )
+
     is_active = models.BooleanField(
         default=True,
         help_text="Manual kill-switch to close a window early regardless of dates.",

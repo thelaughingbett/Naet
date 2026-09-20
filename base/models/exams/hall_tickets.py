@@ -10,13 +10,7 @@
 Hall ticket domain — the exam admit card issued to a student for a
 term (Session), verifiable via its serial number / QR payload.
 
-This is the model `attendance.py`'s module docstring was referring to
-when it noted the source's "Hall tickets & attendance" comment implied
-a hall-ticket model that wasn't present yet — ExamCard is that model,
-now split out on its own rather than folded into attendance.py, since
-issuing a card (registrar-adjacent, term-scoped) and marking attendance
-at a sitting (invigilation-adjacent, per-ExamSession) are different
-points in the workflow with different owners.
+
 
 Note ExamCard.session is the academic term (`Session`), not an
 individual `ExamSession` sitting — one card covers every exam a
@@ -63,7 +57,7 @@ class ExamCard(BaseModelMixin):
     """
 
     student = models.ForeignKey(
-        Student,
+        'Student',
         on_delete=models.CASCADE,
         related_name='exam_cards'
     )
@@ -101,6 +95,7 @@ class ExamCard(BaseModelMixin):
     def generate_serial(cls):
         import random
         from datetime import datetime
+        # can be strategy ?
 
         while True:
             year = datetime.now().year

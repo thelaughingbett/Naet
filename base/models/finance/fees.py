@@ -28,6 +28,8 @@ from ..base import BaseModelMixin
 # Core billing
 # ─────────────────────────────────────────────────────────────────────────────
 
+# TODO rethink fee structure to allow for modelling even beyond registered sessions
+
 class FeeStructure(BaseModelMixin):
     """Defines what a class owes per session"""
 
@@ -44,7 +46,7 @@ class FeeStructure(BaseModelMixin):
     )
 
     # breakdown e.g {"tuition": 45000, "registration": 5000, "hostel": 12000}
-    breakdown = models.JSONField()
+    breakdown = models.JSONField()  # TODO make a separate model like grading band
 
     @property
     def total_amount(self):
@@ -313,7 +315,7 @@ class Charge(BaseModelMixin):
         'StudentFeeAccount',
         on_delete=models.PROTECT,
         related_name='charges',
-    )  # ??? to be removed
+    )  # ??? to be removed or applied to student since this may affect exam cardb and what not
 
     category = models.CharField(
         max_length=25,
@@ -330,7 +332,11 @@ class Charge(BaseModelMixin):
         db_index=True,
     )
 
-    waived_reason = models.CharField(max_length=255, blank=True, default="")
+    waived_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default=""
+    )
 
     charged_by = models.ForeignKey(
         'User',

@@ -47,7 +47,7 @@ DESIGN CALLS:
    vs new) is captured automatically; regrade() additionally sets
    _change_reason so that diff shows up with WHY in the history, not
    just WHAT changed.
-
+   
 KNOWN ISSUE — CARRIED OVER FROM THE ORIGINAL, NOT FIXED HERE:
 `Enrollment.is_passed` is declared below both as a `BooleanField` and,
 later in the same class body, as a `@property` of the same name. Python
@@ -60,8 +60,7 @@ freezing anything. This split preserves that behavior unchanged; it's
 flagged here rather than silently fixed since resolving it (e.g.
 renaming the live property to `computed_is_passed`, or dropping the
 field) changes what `credits_earned`/`grade_points_earned` freezing
-actually does and deserves a deliberate decision, not a drive-by fix.
-"""
+actually does and deserves a deliberate decision, not a drive-by fix."""
 
 from decimal import Decimal, ROUND_HALF_UP
 from decimal import Decimal
@@ -84,8 +83,17 @@ RESULT_TYPE_CHOICES = [
     ('PR', 'Projects'),
 ]
 
+RESULT_SOURCE_CHOICES = [
+    ('original',       'Original Sitting'),
+    ('resit',          'Resit'),
+    ('supplementary',  'Supplementary'),
+    ('special_exam',   'Special Sit-in Exam'),
+    ('re_evaluation',  'Re-evaluation / Remark'),
+]
+
 
 class Enrollment(BaseModelMixin):
+    # TODO handle deferred students in middle of semester
     STATUS_CHOICES = [
         ('pending',  'Pending'),
         ('approved', 'Approved'),
@@ -100,8 +108,8 @@ class Enrollment(BaseModelMixin):
         ('manual', 'Manually approved'),
     ]
 
-    # Core, Common Unit — default behavior only now
-    AUTO_APPROVE_COURSE_TYPES = ('C', 'CC')
+    # Core, Common Unit,Projects — default behavior only now
+    AUTO_APPROVE_COURSE_TYPES = ('C', 'CC', 'PR', 'P', 'IA', 'TP')
 
     FINAL_RESULT_TYPES = ('E', 'PR')
 
@@ -110,6 +118,7 @@ class Enrollment(BaseModelMixin):
         on_delete=models.PROTECT,
         related_name='enrollment_records'
     )
+
     curriculum = models.ForeignKey(
         'Curriculum',
         on_delete=models.PROTECT,
@@ -145,7 +154,10 @@ class Enrollment(BaseModelMixin):
     )
 
     # TODO : make sure save updates this
-    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     history = HistoricalRecords()
 
@@ -186,8 +198,16 @@ class Enrollment(BaseModelMixin):
         blank=True,
         related_name='graded_against'
     )
-    pass_mark_applied = models.PositiveIntegerField(null=True, blank=True)
-    graded_at = models.DateTimeField(null=True, blank=True)
+
+    pass_mark_applied = models.PositiveIntegerField(
+        null=True,
+        blank=True
+    )
+
+    graded_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     weighting_scheme_used = models.ForeignKey(
         'WeightingScheme',
@@ -273,6 +293,7 @@ class Enrollment(BaseModelMixin):
         super().clean()
 
         from base.models import RegistrationWindow
+
         # window = (
         #     RegistrationWindow.objects.filter(
         #         term=self.curriculum.session,
@@ -436,16 +457,30 @@ class Enrollment(BaseModelMixin):
         """
         if not reason:
             raise ValidationError(
-                "A reason is required to regrade a finalized enrollment.")
+                "A reason is required to regrade a finalized enrollment."
+            )
         if self.graded_at is None:
-            raise ValidationError("Cannot regrade an enrollment that hasn't been graded yet — "
-                                  "call finalize_grade() first.")
+            raise ValidationError(
+                "Cannot regrade an enrollment that hasn't been graded yet — "
+                "call finalize_grade() first."
+            )
 
         changed = self.finalize_grade(force=True)
         if changed:
             # update_change_reason(self, f"Regraded by {by_user}: {reason}") NOTE make this exist
             pass
         return changed
+
+#  TODO add buttons to enter result view for submit reults for approval irregardless of the type this should send all results to hod for approval
+# this should also be where auto computation of grade to be done
+
+
+# Sources whose score is capped at the course pass mark for grading —
+# a second-chance attempt shouldn't outscore a first-sitting pass.
+# special_exam (missed for valid reason) and re_evaluation (remark of
+# an existing script) aren't "second chances" in that sense, so both
+# stay uncapped.
+CAPPED_RESULT_SOURCES = {'resit', 'supplementary'}
 
 
 class Result(BaseModelMixin):
@@ -459,7 +494,7 @@ class Result(BaseModelMixin):
     ]
 
     enrollment = models.ForeignKey(
-        Enrollment,
+        'Enrollment',
         on_delete=models.PROTECT,
         related_name='results'
     )
@@ -490,7 +525,33 @@ class Result(BaseModelMixin):
         max_length=124
     )
 
+    source = models.CharField(
+        max_length=20,
+        choices=RESULT_SOURCE_CHOICES,
+        default='original',
+        help_text="Why this Result row exists — an original sitting, or "
+        "the outcome of an AcademicRequisition (resit/supplementary/"
+        "special exam/re-evaluation). type stays the assessment "
+        "component (CAT/Exam/etc.) either way, so weighting-scheme "
+        "components keep working unchanged."
+    )
+
     history = HistoricalRecords()
+
+    @property
+    def effective_score(self):
+        """
+        Score actually used for grading. Equal to `score` except for a
+        resit/supplementary result under a course that caps such
+        attempts — then capped at the course pass mark. The raw `score`
+        field is never altered, so the mark actually achieved stays on
+        record even though only pass-mark credit is applied in grading.
+        """
+        if self.source in CAPPED_RESULT_SOURCES:
+            course = self.enrollment.curriculum.course
+            if course.cap_supplementary_at_pass_mark:
+                return min(self.score, Decimal(course.pass_mark))
+        return self.score
 
     def clean(self):
         if self.type != 'E' and self.type != 'PR':
@@ -506,3 +567,5 @@ class Result(BaseModelMixin):
 
     def __str__(self):
         return f"{self.enrollment.student} - {self.title}"
+
+# TODO : add requisition result here to tie to an enrollment fail for resit or supplementary records , check re-evaluation request exams/academic records -> ✅ moved to the academic requistion model to handle that

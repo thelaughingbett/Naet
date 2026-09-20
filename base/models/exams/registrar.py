@@ -50,7 +50,7 @@ class TranscriptRequest(BaseModelMixin):
         max_length=50,
         default="digital",
         choices=DELIVERY_METHOD_CHOICES
-    )  # digital, mail, pickup -> make enum
+    )
 
     status = models.CharField(
         max_length=20,
@@ -63,6 +63,7 @@ class TranscriptRequest(BaseModelMixin):
         blank=True,
         null=True
     )
+
     requested_on = models.DateTimeField(auto_now_add=True)
     fee_paid = models.BooleanField(default=False)
 
@@ -79,6 +80,7 @@ class Certificate(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="certificates"
     )
+
     cert_type = models.CharField(
         max_length=30,
         choices=CertType.choices
@@ -102,3 +104,5 @@ class Certificate(BaseModelMixin):
         unique=True,
         blank=True
     )
+
+    # add qr code or something

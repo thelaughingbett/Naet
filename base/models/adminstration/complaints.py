@@ -47,8 +47,14 @@ UPLOAD_ROLE_CHOICES = [
 ]
 
 LEVEL_CHOICES = [
-    ('Department', 'Department Level (HOD / Lecturer)'),
+    ('result_entrant', 'Result Entrant (Lecturer who recorded the score)'),
+    ('lecturer_liaison', 'Programme Liaison (Lecturer, via Tclass.liason)'),
+    ('Department', 'Department Level (HOD)'),
+    ('school_rep', 'Student Council – School Representative'),
     ('School', 'School / Faculty Level (Dean)'),
+    ('secretary_general', 'Student Council – Secretary General'),
+    ('deputy_chairperson', 'Student Council – Deputy Chairperson'),
+    ('chairperson', 'Student Council – Chairperson'),
     ('StudentAffairs', 'Dean of Students'),
     ('Division', 'Division Level (Registrar Academic Affairs)'),
     ('Senate', 'University Senate / Vice-Chancellor Executive'),
@@ -57,41 +63,48 @@ LEVEL_CHOICES = [
 
 # --- ESCALATION POLICY CONFIG -------------------------------------------
 #
-# category -> ordered list of levels the complaint climbs through.
-# Index 0 is where a new complaint starts; escalate() walks forward.
-#
-# Ops categories (Facilities/Administrative/Catering/Other) start at
-# 'School' because the School Student Rep is the front-line handler
-# before anything reaches Dean of Students. Harassment skips both
-# Department and School entirely.
+# Results is the only category that starts at 'result_entrant' — the
+# lecturer who actually recorded the disputed CAT/Exam score (Result.
+# entered_by — confirm actual field name). Fastest possible fix, since
+# they can correct a data-entry error directly. Academic starts one
+# level later, at the programme liaison, since a "lecturer issue"
+# complaint isn't about a specific score.
 
 ESCALATION_PATHS = {
-    'Academic':       ['Department', 'School', 'StudentAffairs', 'Division', 'Senate'],
-    'Results':        ['Department', 'School', 'Division', 'Senate'],
-    'Facilities':     ['School', 'StudentAffairs', 'Senate'],
-    'Administrative': ['School', 'StudentAffairs', 'Senate'],
-    'Catering':       ['School', 'StudentAffairs', 'Senate'],
-    'Other':          ['School', 'StudentAffairs', 'Senate'],
+    'Academic':       ['lecturer_liaison', 'Department', 'School', 'StudentAffairs', 'Division', 'Senate'],
+    'Results':        ['result_entrant', 'lecturer_liaison', 'Department', 'School', 'Division', 'Senate'],
+
+    'Facilities':     ['school_rep', 'secretary_general', 'deputy_chairperson', 'chairperson', 'StudentAffairs', 'Senate'],
+    'Administrative': ['school_rep', 'secretary_general', 'deputy_chairperson', 'chairperson', 'StudentAffairs', 'Senate'],
+    'Catering':       ['school_rep', 'secretary_general', 'deputy_chairperson', 'chairperson', 'StudentAffairs', 'Senate'],
+    'Other':          ['school_rep', 'secretary_general', 'deputy_chairperson', 'chairperson', 'StudentAffairs', 'Senate'],
+
     'Harassment':     ['StudentAffairs', 'Senate'],
 }
 
-# category -> hours allowed at a level before the SLA is breached.
-# 'default' covers any level not explicitly listed for that category.
-
 SLA_HOURS_BY_CATEGORY = {
-    'Academic':       {'default': 72},
-    # Tighter at Department level: the lecturer/HOD holds the mark sheet
-    # and can verify in a day. Longer once it reaches Division, where a
-    # Senate-ratified mark change is a formal process.
-    'Results':        {'default': 72, 'Department': 24, 'Division': 120},
-    'Facilities':     {'default': 48},
-    'Administrative': {'default': 48},
+    'Academic':       {'default': 72, 'lecturer_liaison': 48},
+
+    # Entrant gets the tightest window of all — it's often just a typo
+    # or transcription error, so 24hr is enough to check and correct it.
+    # Liaison and Division keep their existing windows.
+    'Results':        {'default': 72, 'result_entrant': 24, 'lecturer_liaison': 48, 'Division': 120},
+
+    'Facilities':     {'default': 24},
+    'Administrative': {'default': 24},
     'Catering':       {'default': 24},
-    'Other':          {'default': 72},
-    'Harassment':     {'default': 12},   # tight window, deliberately
+    'Other':          {'default': 24},
+
+    'Harassment':     {'default': 12},
 }
 
-PRIORITY_ORDER = ['Low', 'Medium', 'High', 'Critical']
+
+PRIORITY_ORDER = [
+    'Low',
+    'Medium',
+    'High',
+    'Critical'
+]
 
 RESULT_ACTION_CHOICES = [
     ('challenge', 'Challenge Result / Grade Appeal'),
@@ -264,25 +277,33 @@ class Complaint(BaseModelMixin):
         null=True,
         blank=True
     )
+
     snapshot_exam = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True
     )
+
     snapshot_total = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True
     )
-    snapshot_grade = models.CharField(max_length=2, blank=True)
-    snapshot_taken_at = models.DateTimeField(null=True, blank=True)
+    snapshot_grade = models.CharField(
+        max_length=2,
+        blank=True
+    )
+    snapshot_taken_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
-    history = HistoricalRecords()
-
-    date_opened = models.DateTimeField(auto_now_add=True)
-    # TODO : auto escalation based on work policy so that after a given while if comlaint is not resolves it goes the higher up , jus for annoying purposes
+    date_opened = models.DateTimeField(
+        auto_now_add=True
+    )
+    # TODO : auto escalation based on work policy so that after a given while if complaint is not resolved it goes  higher up , just for annoying purposes ✅
     date_resolved = models.DateTimeField(blank=True, null=True)
 
     is_anonymous_to_faculty = models.BooleanField(
@@ -306,6 +327,8 @@ class Complaint(BaseModelMixin):
         "scheduled job escalates anything with sla_due_at in "
         "the past and status != 'Resolved'."
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Student Complaint"
@@ -396,7 +419,9 @@ class Complaint(BaseModelMixin):
         is_new = self._state.adding
 
         if is_new and not self.current_level:
-            self.current_level = self.escalation_path[0]
+            path = self.escalation_path
+            idx = self._resolve_level(path, 0)
+            self.current_level = path[idx]
             self.sla_due_at = timezone.now() + timezone.timedelta(
                 hours=get_sla_hours(self.category, self.current_level)
             )
@@ -406,9 +431,6 @@ class Complaint(BaseModelMixin):
 
         super().save(*args, **kwargs)
 
-        # Mark the underlying results as disputed so the student's results
-        # page and any staff results-review UI both reflect that this grade
-        # is under formal challenge rather than settled.
         if is_new and self.result_action == 'challenge' and self.challenged_enrollment_id:
             from base.models import Result
             qs = Result.objects.filter(
@@ -424,15 +446,6 @@ class Complaint(BaseModelMixin):
         self.priority = PRIORITY_ORDER[min(idx + 1, len(PRIORITY_ORDER) - 1)]
 
     def escalate(self, by_user=None, reason="", automatic=False, new_priority=None):
-        """
-        Moves the complaint to the next level in its category's path.
-
-        automatic=True  -> system/Celery call. escalated_by is left null,
-                            priority is bumped one tier automatically.
-        automatic=False -> a human is escalating early. by_user is
-                            required, and THEY set the priority (via
-                            new_priority) rather than it being auto-bumped.
-        """
         if not automatic and by_user is None:
             raise ValidationError(
                 "A manual escalation requires the escalating user.")
@@ -444,15 +457,23 @@ class Complaint(BaseModelMixin):
             current_idx = -1
 
         if current_idx + 1 >= len(path):
-            # Already at the top of this category's ladder (Senate/External).
-            # Nothing further to escalate to — flag it rather than raise,
-            # so a Celery loop doesn't choke on a stale-but-maxed complaint.
             if automatic and self.priority != 'Critical':
                 self._bump_priority()
                 self.save(update_fields=['priority'])
             return None
 
-        next_level = path[current_idx + 1]
+        next_idx = self._resolve_level(path, current_idx + 1)
+        next_level = path[next_idx]
+
+        reason_text = reason or (
+            "SLA window expired" if automatic else "Manually escalated"
+        )
+        skipped = path[current_idx + 1: next_idx]
+        if skipped:
+            skipped_labels = ", ".join(
+                dict(LEVEL_CHOICES).get(lvl, lvl) for lvl in skipped
+            )
+            reason_text += f" (seat vacant, skipped: {skipped_labels})"
 
         history = ComplaintEscalationHistory(
             complaint=self,
@@ -460,9 +481,7 @@ class Complaint(BaseModelMixin):
             escalated_to_level=next_level,
             escalated_by=None if automatic else by_user,
             is_automatic=automatic,
-            reason_for_escalation=reason or (
-                "SLA window expired" if automatic else "Manually escalated"
-            ),
+            reason_for_escalation=reason_text,
         )
         history.full_clean()
         history.save()
@@ -516,6 +535,82 @@ class Complaint(BaseModelMixin):
             ],
         }
 
+    # --- rep lookup helpers ---------------------------------------------
+
+    @property
+    def _tclass(self):
+        """
+        The student's current class — holds `liason` (programme liaison)
+        and `student_rep` (class rep). TODO: confirm the actual FK name
+        from Student to Tclass; adjust the getattr chain below if it's
+        called something other than these.
+        """
+        return (
+            getattr(self.student, 'current_class', None)
+            or getattr(self.student, 'tclass', None)
+            or getattr(self.student, 'Tclass', None)
+        )
+
+    @property
+    def _school(self):
+        tclass = self._tclass
+        if not tclass or not tclass.programme_id:
+            return None
+        department = tclass.programme.department  # via WithDepartmentMixin
+        return getattr(department, 'school', None)
+
+    def _has_level_holder(self, level):
+        if level == 'result_entrant':
+            if not self.challenged_result_id:
+                # No single Result row pinned (dispute is at the
+                # enrollment/unit level) — nothing to check, skip to liaison.
+                return False
+            entrant_id = getattr(self.challenged_result, 'entered_by_id', None)
+            return bool(entrant_id)
+
+        if level == 'lecturer_liaison':
+            tclass = self._tclass
+            return bool(tclass and tclass.liason_id)
+
+        if level == 'Department':
+            department = getattr(self._tclass.programme,
+                                 'department', None) if self._tclass else None
+            return bool(department)
+
+        if level == 'school_rep':
+            school = self._school
+            if not school:
+                return False
+            from base.models.studentCouncil import CouncilPosition
+            return CouncilPosition.objects.filter(
+                school=school, position='school_rep', is_active=True
+            ).exists()
+
+        if level == 'School':
+            school = self._school
+            return bool(school)
+
+        if level in ('secretary_general', 'deputy_chairperson', 'chairperson'):
+            from base.models.studentCouncil import CouncilPosition, CouncilTerm
+            term = CouncilTerm.current()
+            return bool(term) and CouncilPosition.objects.filter(
+                term=term, position=level, is_active=True
+            ).exists()
+
+        return True
+
+    def _resolve_level(self, path, start_idx):
+        """
+        Walk forward from `start_idx` past any level whose seat is
+        currently vacant, and land on the first one that's actually
+        held. If every remaining level in the path is vacant, stop at
+        the last one — there's nowhere further to fall back to.
+        """
+        idx = start_idx
+        while idx < len(path) - 1 and not self._has_level_holder(path[idx]):
+            idx += 1
+        return idx
+
 
 class ComplaintEscalationHistory(models.Model):
     """
@@ -567,7 +662,8 @@ class ComplaintEscalationHistory(models.Model):
         super().clean()
         if self.escalated_from_level == self.escalated_to_level:
             raise ValidationError(
-                "A complaint cannot be escalated to the exact same administrative tier.")
+                "A complaint cannot be escalated to the exact same administrative tier."
+            )
         if self.is_automatic and self.escalated_by_id:
             raise ValidationError({
                 'escalated_by': "An automatic escalation shouldn't carry a human actor. "

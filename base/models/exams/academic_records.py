@@ -33,10 +33,15 @@ from django.db import models
 from ..base import BaseModelMixin
 
 
+# TODO  this is what is to be printed
 class GradeCard(BaseModelMixin):
     """Consolidated term result summary for a student."""
     student = models.ForeignKey(
-        "Student", on_delete=models.CASCADE, related_name="grade_cards")
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="grade_cards"
+    )
+
     term = models.ForeignKey(
         "Session",
         on_delete=models.CASCADE,
@@ -56,6 +61,7 @@ class GradeCard(BaseModelMixin):
         null=True,
         blank=True
     )
+
     file = models.FileField(
         upload_to="exams/grade_cards/",
         blank=True,
@@ -66,68 +72,3 @@ class GradeCard(BaseModelMixin):
 
     class Meta:
         unique_together = ("student", "term")
-
-
-class RevaluationRequest(BaseModelMixin):
-    class Status(models.TextChoices):
-        REQUESTED = "requested", "Requested"
-        UNDER_REVIEW = "under_review", "Under Review"
-        MARKS_CHANGED = "marks_changed", "Marks Changed"
-        MARKS_UNCHANGED = "marks_unchanged", "Marks Unchanged"
-
-    result = models.ForeignKey(
-        "Result",
-        on_delete=models.CASCADE,
-        related_name="revaluation_requests"
-    )
-    student = models.ForeignKey(
-        "Student",
-        on_delete=models.CASCADE,
-        related_name="revaluation_requests"
-    )
-    reason = models.TextField(blank=True)
-    fee_paid = models.BooleanField(default=False)
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.REQUESTED
-    )
-    revised_marks = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
-    reviewed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-
-
-class BacklogRegistration(BaseModelMixin):
-    """Supplementary/backlog exam registration for a previously failed course."""
-
-    student = models.ForeignKey(
-        "Student",
-        on_delete=models.CASCADE,
-        related_name="backlog_registrations"
-    )
-
-    original_result = models.ForeignKey(
-        "Result",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="backlog_attempts"
-    )
-
-    exam = models.ForeignKey(
-        "ExamSession",
-        on_delete=models.CASCADE,
-        related_name="backlog_registrations"
-    )
-
-    attempt_number = models.PositiveSmallIntegerField(default=2)
-    fee_paid = models.BooleanField(default=False)

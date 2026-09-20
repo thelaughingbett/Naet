@@ -72,7 +72,7 @@ class Room(BaseModelMixin):
     ]
 
     hostel = models.ForeignKey(
-        Hostel,
+        'Hostel',
         on_delete=models.PROTECT,
         related_name='rooms'
     )
@@ -92,13 +92,15 @@ class Room(BaseModelMixin):
     @property
     def is_full(self):
         return HostelAllocation.objects.filter(
-            room=self, is_active=True
+            room=self,
+            is_active=True
         ).count() >= self.capacity
 
     @property
     def occupants(self):
         return HostelAllocation.objects.filter(
-            room=self, is_active=True
+            room=self,
+            is_active=True
         ).select_related('student__user')
 
 
@@ -126,11 +128,13 @@ class HostelAllocation(BaseModelMixin):
         on_delete=models.PROTECT,
         related_name='hostel_allocations'
     )
+
     room = models.ForeignKey(
         Room,
         on_delete=models.PROTECT,
         related_name='allocations'
     )
+
     session = models.ForeignKey(
         'Session',
         on_delete=models.PROTECT,
@@ -165,6 +169,22 @@ class HostelAllocation(BaseModelMixin):
         blank=True,
         help_text="The specific staff user account (Warden/Housekeeper) who manually approved this record."
     )
+
+    checked_out_at = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    checked_out_by = models.ForeignKey(
+        'User',
+        on_delete=models.PROTECT,
+        # related_name='processed_room_allocations',
+        null=True,
+        blank=True,
+        help_text="The specific staff user account (Warden/Housekeeper) who manually Checked out  this Student."
+    )
+
+    # TODO : add audit for checking out like returned key ,liability etc
 
     class Meta:
         # One room slot per student per session

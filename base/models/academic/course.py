@@ -11,13 +11,7 @@ from django.db import models
 
 from ..base import BaseModelMixin
 from .isced import UNESCO_ISCED_FIELDS
-# FIX: original file called GradingScale.objects.filter(...) inside
-# get_grading_scale() with no import anywhere in the module — that
-# would raise NameError the first time a Course with no grading_scale
-# set tried to resolve its default. get_weighting_scheme() right below
-# it did import WeightingScheme (lazily); this brings GradingScale up
-# to the same standard, imported at module level since curriculum/
-# doesn't import academics/ back (no circularity risk).
+
 from ..curriculum.grading_policy import GradingScale, WeightingScheme
 
 from simple_history.models import HistoricalRecords
@@ -47,7 +41,10 @@ class Course(BaseModelMixin):
         help_text="e.g., CCS 401, BIL 810"
     )
 
-    department = models.ForeignKey('Department', on_delete=models.PROTECT)
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.PROTECT
+    )
 
     course_type = models.CharField(
         choices=type_choices,
@@ -62,7 +59,7 @@ class Course(BaseModelMixin):
         help_text="Undergraduate units default to 3 credits. PhD Research can scale up to 15+ credits."
     )
 
-    # 3. Mode Hours Tracking (Required for CUE Curriculum Audits)
+    # 3. Mode Hours Tracking (Required for CUE Curriculum Audits) and timetabling purposes
     lecture_hours_per_week = models.PositiveIntegerField(default=3)
     practical_hours_per_week = models.PositiveIntegerField(
         default=0,
@@ -107,8 +104,8 @@ class Course(BaseModelMixin):
     unesco_isced = models.CharField(
         max_length=123,
         null=True,
-        choices=UNESCO_ISCED_FIELDS,
         blank=True,
+        choices=UNESCO_ISCED_FIELDS,
         help_text="Standardized UNESCO tag for this specific subject matter."
     )
 
@@ -121,6 +118,15 @@ class Course(BaseModelMixin):
         default=40,
         help_text="Minimum score to pass this specific course. Override per "
         "course — e.g. a professional/regulated unit might require 50."
+    )  # should be put in curriculum ?? or should curriculum have a redundacy field
+
+    cap_supplementary_at_pass_mark = models.BooleanField(
+        default=True,
+        help_text="If true, a supplementary attempt's score is capped at "
+        "the course pass mark for grading purposes — a supplementary "
+        "pass never outscores a first-sitting pass. The raw score entered "
+        "on Result is preserved for the record; only the value used in "
+        "grading is capped."
     )
 
     grading_scale = models.ForeignKey(
@@ -134,7 +140,10 @@ class Course(BaseModelMixin):
     )
 
     weighting_scheme = models.ForeignKey(
-        'WeightingScheme', on_delete=models.PROTECT, null=True, blank=True,
+        'WeightingScheme',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='courses',
         help_text="Default CAT/Exam/etc. weighting for this course. Leave "
         "blank to use the institution default scheme."
@@ -188,21 +197,27 @@ class Course(BaseModelMixin):
     def get_grading_scale(self):
         if self.grading_scale_id:
             return self.grading_scale
+
         default = GradingScale.objects.filter(is_default=True).first()
+
         if default is None:
             raise ValidationError(
                 f"Course {self.course_code} has no grading_scale set and no "
                 f"GradingScale is marked is_default=True — nothing to fall back to."
             )
+
         return default
 
     def get_weighting_scheme(self):
         if self.weighting_scheme_id:
             return self.weighting_scheme
+
         default = WeightingScheme.objects.filter(is_default=True).first()
+
         if default is None:
             raise ValidationError(
                 f"Course {self.course_code} has no weighting_scheme and no "
                 f"WeightingScheme is marked is_default=True."
             )
+
         return default

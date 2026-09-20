@@ -10,14 +10,6 @@
 AcademicRequisition — resit, supplementary exam, missing-marks
 investigation, and special/sit-in exam requests.
 
-Deliberately NOT modeled on Complaint. A results *challenge* is
-adversarial (the student disputes a decision someone made) and belongs
-on Complaint's category='Results' / multi-level escalation ladder. A
-resit request isn't a dispute against anyone — it's a normal academic
-process with a linear two-stage sign-off (HOD recommends, Registrar
-Academic Affairs approves) and often a fee gate before the student can
-actually sit the exam. Forcing that through Complaint's SLA/escalation
-machinery would be the wrong shape for it.
 """
 
 import os
@@ -34,6 +26,7 @@ REQUISITION_TYPE_CHOICES = [
     ('supplementary',  'Supplementary Examination'),
     ('missing_marks',  'Missing / Unpublished Marks Investigation'),
     ('special_exam',   'Special Sit-in Exam (Missed for Valid Reason)'),
+    ('re_evaluation',  'Re-evaluation / Remarking'),
 ]
 
 REQUISITION_STATUS_CHOICES = [
@@ -44,14 +37,23 @@ REQUISITION_STATUS_CHOICES = [
     ('completed',     'Completed'),
 ]
 
-# Duplicated from ComplaintDocument.clean() rather than imported. Once a
-# third document-attaching model shows up, pull both into a shared
-# SupportingDocument abstract base — not worth the indirection for two.
+
 ALLOWED_SUPPORTING_DOC_EXTENSIONS = [
-    '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.heic', '.doc', '.docx',
+    '.pdf',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.heic',
+    '.doc',
+    '.docx',
 ]
 
-OPEN_STATUSES = ['pending', 'hod_approved', 'approved']
+OPEN_STATUSES = [
+    'pending',
+    'hod_approved',
+    'approved'
+]
 
 
 class AcademicRequisition(BaseModelMixin):
@@ -68,7 +70,11 @@ class AcademicRequisition(BaseModelMixin):
         help_text="The unit registration this request concerns."
     )
 
-    type = models.CharField(max_length=20, choices=REQUISITION_TYPE_CHOICES)
+    type = models.CharField(
+        max_length=20,
+        choices=REQUISITION_TYPE_CHOICES
+    )
+
     status = models.CharField(
         max_length=20,
         choices=REQUISITION_STATUS_CHOICES,
@@ -77,6 +83,31 @@ class AcademicRequisition(BaseModelMixin):
 
     reason = models.TextField(help_text="Why you're requesting this.")
     requested_at = models.DateTimeField(auto_now_add=True)
+
+    # Only meaningful for type='re_evaluation' — which specific Result
+    # (e.g. the Exam script) is being remarked. Every other type acts on
+    # the enrollment's overall outcome, not one component, so this stays
+    # null for those.
+    disputed_result = models.ForeignKey(
+        'Result',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='reevaluation_requisitions'
+    )
+
+    # The outcome: for resit/supplementary, the new Result row produced
+    # by that fresh attempt. For re_evaluation, the corrected Result
+    # after remarking (may be a new row, or original_result itself
+    # updated — up to the marking workflow; this just points at the
+    # Result that reflects the final outcome).
+    outcome_result = models.ForeignKey(
+        'Result',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='requisition_outcomes'
+    )
 
     # --- stage 1: HOD recommendation ---
     hod_reviewed_by = models.ForeignKey(
@@ -97,8 +128,14 @@ class AcademicRequisition(BaseModelMixin):
         blank=True,
         related_name='approved_requisitions'
     )
-    approved_at = models.DateTimeField(null=True, blank=True)
-    registrar_remarks = models.TextField(blank=True, null=True)
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    registrar_remarks = models.TextField(
+        blank=True,
+        null=True
+    )
 
     # --- fee gate ---
     # Resit/supplementary typically carry a fee; missing-marks and
@@ -113,13 +150,20 @@ class AcademicRequisition(BaseModelMixin):
         blank=True
     )
     fee_paid = models.BooleanField(default=False)
-    fee_paid_at = models.DateTimeField(null=True, blank=True)
+    fee_paid_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     # --- scheduling (set once approved, by the exams office) ---
-    scheduled_date = models.DateField(null=True, blank=True)
+    scheduled_date = models.DateField(
+        null=True,
+        blank=True
+    )
     # Free text rather than Timetable.TIME_SLOTS to avoid a cross-app
     # import here — worth tightening to a shared choices list once the
     # exams office UI for this exists.
+    # can be models
     scheduled_time_slot = models.CharField(
         max_length=20,
         null=True,
@@ -133,7 +177,44 @@ class AcademicRequisition(BaseModelMixin):
         blank=True
     )
 
-    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    REVALUATION_OUTCOME_CHOICES = [
+        ('changed', 'Marks Changed'),
+        ('unchanged', 'Marks Unchanged'),
+    ]
+
+    revaluation_outcome = models.CharField(
+        max_length=10,
+        choices=REVALUATION_OUTCOME_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Only set for type='re_evaluation' on completion — whether "
+        "the remark actually changed the score."
+    )
+
+    exam_session = models.ForeignKey(
+        'ExamSession',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requisitions',
+        help_text="The exam sitting this resit/supplementary/special exam "
+        "is registered for, once one exists. Distinct from "
+        "scheduled_date/time_slot/venue, which cover ad-hoc scheduling "
+        "before/instead of a formal ExamSession."
+    )
+
+    attempt_number = models.PositiveSmallIntegerField(
+        default=2,
+        null=True,
+        blank=True,
+        help_text="Which attempt at this course this is (2nd, 3rd, ...). "
+        "Used to enforce max-attempt policy and flag final attempts."
+    )
 
     history = HistoricalRecords()
 
@@ -152,6 +233,26 @@ class AcademicRequisition(BaseModelMixin):
         if self.enrollment.student_id != self.student_id:
             raise ValidationError({
                 'enrollment': "You can only file a requisition against your own enrollment."
+            })
+
+        if self.type == 're_evaluation':
+            if not self.disputed_result_id:
+                raise ValidationError({
+                    'disputed_result': "Re-evaluation requires the specific Result "
+                    "(e.g. the Exam script) being remarked."
+                })
+            if self.disputed_result.enrollment_id != self.enrollment_id:
+                raise ValidationError({
+                    'disputed_result': "This Result doesn't belong to the referenced enrollment."
+                })
+            if self.disputed_result.state not in ('published', 'disputed'):
+                raise ValidationError({
+                    'disputed_result': "Only a published (or already-disputed) result can be "
+                    "sent for re-evaluation."
+                })
+        elif self.disputed_result_id:
+            raise ValidationError({
+                'disputed_result': "Only a re-evaluation request should reference a specific Result."
             })
 
         # One open request per (student, enrollment, type) — otherwise a
@@ -194,6 +295,11 @@ class AcademicRequisition(BaseModelMixin):
             self.fee_paid_at = timezone.now()
         elif not self.fee_paid:
             self.fee_paid_at = None
+
+        if self.type not in ('resit', 'supplementary') and self.exam_session_id:
+            raise ValidationError({
+                'exam_session': "Only resit/supplementary requisitions register against an ExamSession."
+            })
 
         super().save(*args, **kwargs)
 
@@ -238,13 +344,21 @@ class AcademicRequisition(BaseModelMixin):
         self.full_clean()
         self.save()
 
-    def mark_completed(self):
+    def mark_completed(self, outcome_result=None):
         if self.status != 'approved':
             raise ValidationError(
                 "Only an approved requisition can be marked completed.")
         if self.fee_required and not self.fee_paid:
             raise ValidationError(
                 "Outstanding fee must be cleared before this requisition can be completed.")
+
+        if outcome_result is not None:
+            if outcome_result.source == 'original':
+                # tags it resit/supplementary/special_exam/re_evaluation
+                outcome_result.source = self.type
+                outcome_result.save(update_fields=['source'])
+            self.outcome_result = outcome_result
+
         self.status = 'completed'
         self.full_clean()
         self.save()

@@ -59,7 +59,10 @@ class Announcement(BaseModelMixin):
         ('dept',       'Whole department'),
     ]
 
-    author = models.ForeignKey('User', on_delete=models.PROTECT)
+    author = models.ForeignKey(
+        'User',
+        on_delete=models.PROTECT
+    )
     title = models.CharField(max_length=255)
     body = models.TextField()
     scope = models.CharField(max_length=15, choices=SCOPE_CHOICES)

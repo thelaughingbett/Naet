@@ -71,7 +71,11 @@ class Timetable(BaseModelMixin):
     venue = models.ForeignKey(
         "Venue",
         on_delete=models.DO_NOTHING,
-        related_name="timetable_slots"
+        related_name="timetable_slots",
+        help_text="Default venue for this slot. For a shared curriculum "
+        "spanning several classes, an individual class can be pinned to "
+        "a different venue via TimetableClassVenue — this stays the "
+        "fallback for any class without an override."
     )
 
     class Meta:
@@ -84,34 +88,101 @@ class Timetable(BaseModelMixin):
         verbose_name = "Master Timetable Slot"
         verbose_name_plural = "Master Timetable Slots"
 
+    def venue_for(self, class_link):
+        """
+        The effective venue for one class attending this slot — its own
+        TimetableClassVenue override if one exists, else this slot's
+        default `venue`.
+        """
+        override = self.class_venues.filter(class_link=class_link).first()
+        return override.venue if override else self.venue
+
     def clean(self):
         """
-        Compliance Audit: Verifies space limitations and facility traits 
-        against the designated slot requirements.
+        Compliance Audit: Verifies space limitations and facility traits
+        against the designated slot requirements — checked per class
+        attending this slot, since a shared curriculum can have several
+        classes, each potentially in a different venue.
         """
         super().clean()
 
-        if self.venue_id and self.curriculum_id:
+        if not self.curriculum_id:
+            return
+
+        class_links = self.curriculum.class_links.select_related('Tclass')
+
+        for link in class_links:
+            venue = self.venue_for(link)
+            if not venue:
+                continue
+
             # 1. Computer Lab Resource Safe-Check
-            # If the class is flagged as a Practical/Lab session, ensure the assigned venue actually has computers.
-            if self.slot_type == 'Practical' and not self.venue.has_computers:
+            if self.slot_type == 'Practical' and not venue.has_computers:
                 raise ValidationError({
-                    'venue': f"Resource Defieciency: Cannot assign a 'Practical' slot type to '{self.venue.venue_name}' "
-                    f"because this venue record indicates it lacks computer/lab workstations."
+                    'venue': f"Resource Deficiency: Cannot assign a 'Practical' slot type to "
+                    f"'{venue.venue_name}' for {link.Tclass.class_name} because this venue "
+                    f"record indicates it lacks computer/lab workstations."
                 })
 
             # 2. Strict Class Capacity Guardrail
-            # Ensure the cohort student size (Tclass size) does not exceed the maximum physical sitting limits of the venue.
-            # Assuming a student_count tracker exists on Tclass
-            cohort_size = self.curriculum.Tclass.student_count
-            if cohort_size > self.venue.capacity:
+            cohort_size = link.Tclass.student_count
+            if cohort_size > venue.capacity:
                 raise ValidationError({
-                    'venue': f"Capacity Breach: The cohort class size ({cohort_size} students) exceeds "
-                    f"the maximum legal capacity of '{self.venue.venue_name}' ({self.venue.capacity} seats)."
+                    'venue': f"Capacity Breach: {link.Tclass.class_name} ({cohort_size} students) "
+                    f"exceeds the maximum legal capacity of '{venue.venue_name}' "
+                    f"({venue.capacity} seats)."
                 })
 
     def __str__(self):
         return f"{self.curriculum.course.course_code} ({self.slot_type}) — {self.day} [{self.time_slot}]"
+
+
+class TimetableClassVenue(BaseModelMixin):
+    """
+    Per-class venue override for a shared Timetable slot. A Curriculum
+    can serve several classes at once (via CurriculumClass) attending
+    the same lecture — for a Practical needing multiple lab rooms, or a
+    common-unit cohort too large for one venue, different classes within
+    the same day/time slot may need different rooms even though they
+    share one Curriculum/Timetable row.
+    """
+    timetable_slot = models.ForeignKey(
+        'Timetable',
+        on_delete=models.CASCADE,
+        related_name='class_venues'
+    )
+
+    class_link = models.ForeignKey(
+        'CurriculumClass',
+        on_delete=models.CASCADE,
+        related_name='timetable_venue_overrides'
+    )
+
+    venue = models.ForeignKey(
+        'Venue',
+        on_delete=models.PROTECT,
+        related_name='class_timetable_overrides'
+    )
+
+    class Meta:
+        unique_together = ('timetable_slot', 'class_link')
+        verbose_name = "Timetable Class Venue Override"
+
+    def clean(self):
+        super().clean()
+        if self.class_link_id and self.timetable_slot_id:
+            if self.class_link.curriculum_id != self.timetable_slot.curriculum_id:
+                raise ValidationError({
+                    'class_link': "This class isn't attached to the curriculum this "
+                    "timetable slot belongs to."
+                })
+            if self.venue_id == self.timetable_slot.venue_id:
+                raise ValidationError({
+                    'venue': "This matches the slot's default venue — no override needed."
+                })
+
+    def __str__(self):
+        return f"{self.timetable_slot} — {self.class_link.Tclass.class_name} → {self.venue.venue_name}"
 
 
 EXECUTION_STATUS_CHOICES = [
@@ -131,8 +202,24 @@ RESCHEDULE_INITIATOR_CHOICES = [
 
 class DailyClassExecution(BaseModelMixin):
     """
-    Tracks the actual day-to-day execution and attendance of a timetable slot.
-    Feeds directly into CUE quality audits for class contact-hour verification.
+    Tracks the actual day-to-day execution of a timetable slot — whether
+    the assigned lecturer taught it, was absent, or the slot was
+    cancelled/rescheduled. Feeds directly into CUE quality audits for
+    class contact-hour verification.
+
+    This is lecturer attendance, not student attendance — status answers
+    "did the lecturer teach this" not "which students were present."
+    class_representative below signs off that the session happened; it
+    doesn't record who among students attended.
+
+    lecturer_assignment: points at the specific LecturerAssignment this
+    row is tracking attendance for, rather than at Lecturer directly —
+    LecturerAssignment already carries class_link (which class, for a
+    common unit split across lecturers) and status (Draft/Confirmed/
+    Substituted), so this one FK carries everything needed to know both
+    who and, where relevant, which class. Nullable only because it's
+    auto-resolved in clean() when the slot has exactly one active
+    assignment; always populated by the time the row is saved.
     """
     timetable_slot = models.ForeignKey(
         'Timetable',
@@ -140,10 +227,20 @@ class DailyClassExecution(BaseModelMixin):
         related_name='daily_executions'
     )
 
-    # The actual calendar date for this specific lecture instance
     calendar_date = models.DateField(db_index=True)
 
-    # Updated to point directly to the list variable
+    lecturer_assignment = models.ForeignKey(
+        'LecturerAssignment',
+        on_delete=models.PROTECT,
+        related_name='daily_class_executions',
+        null=True,
+        blank=True,
+        help_text="Which lecturer (and, for a common unit, which class) "
+        "this row tracks attendance for. Required explicitly only when "
+        "the curriculum has more than one active LecturerAssignment — "
+        "otherwise resolved automatically from the slot's single one."
+    )
+
     status = models.CharField(
         max_length=20,
         choices=EXECUTION_STATUS_CHOICES,
@@ -151,50 +248,40 @@ class DailyClassExecution(BaseModelMixin):
         db_index=True
     )
 
-    # --- STUDENT ATTENDANCE CONFIRMATION ENGINE ---
     class_representative = models.ForeignKey(
         'Student',
         on_delete=models.PROTECT,
         related_name='confirmed_daily_classes',
         null=True,
         blank=True,
-        help_text="The Class Representative or student who signs off/vouchers that the class took place."
+        help_text="The Class Representative or student who signs off that the class took place."
     )
 
     student_confirmed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        auto_now_add=True
-    )
+        null=True, blank=True, auto_now_add=True)
 
-    # --- RESCHEDULING ENGINE METRICS ---
     rescheduled_by = models.ForeignKey(
         "User",
         on_delete=models.PROTECT,
         related_name='initiated_class_reschedules',
         null=True,
         blank=True,
-        help_text="The staff user (lecturer/admin) who processed the adjustment in the system."
     )
 
-    # Updated to point directly to the list variable
     reschedule_requested_by_role = models.CharField(
         max_length=15,
         choices=RESCHEDULE_INITIATOR_CHOICES,
         null=True,
         blank=True,
-        help_text="Tracks whether the request came from the lecturer or the student group."
     )
 
-    # The new target coordinates if status == 'Rescheduled'
     rescheduled_to_date = models.DateField(null=True, blank=True)
     rescheduled_to_time_slot = models.CharField(
         max_length=11,
-        choices=Timetable.TIME_SLOTS,  # Reuses choices array from your main Timetable class
+        choices=Timetable.TIME_SLOTS,
         null=True,
         blank=True
     )
-
     rescheduled_to_venue = models.ForeignKey(
         'Venue',
         on_delete=models.PROTECT,
@@ -203,24 +290,64 @@ class DailyClassExecution(BaseModelMixin):
         blank=True
     )
 
-    notes = models.TextField(
-        blank=True,
-        help_text="Reasoning for cancellation or rescheduling parameters."
-    )
+    notes = models.TextField(blank=True)
 
     class Meta:
-        unique_together = ('timetable_slot', 'calendar_date')
+        constraints = [
+            # One execution row per lecturer assignment per slot per date
+            # — a shared curriculum with several active assignments (a
+            # common unit split across lecturers) can now legitimately
+            # have multiple rows for the same date, one per assignment.
+            models.UniqueConstraint(
+                fields=['timetable_slot', 'calendar_date',
+                        'lecturer_assignment'],
+                name='unique_execution_per_assignment_per_slot_per_date',
+            ),
+        ]
         verbose_name = "Daily Class Execution"
         verbose_name_plural = "Daily Class Executions"
         ordering = ['-calendar_date']
 
     def clean(self):
-        """
-        Enforces strict logical guardrails over class sign-offs and reschedule moves.
-        """
         super().clean()
 
-        # 1. Verification Guardrail
+        from base.models import LecturerAssignment
+
+        assignments = self.timetable_slot.curriculum.lecturer_assignments.all() \
+            if self.timetable_slot_id else LecturerAssignment.objects.none()
+
+        # Substituted lecturers are no longer teaching this slot — never
+        # eligible for attendance checking or auto-resolution.
+        active_assignments = assignments.exclude(status='Substituted')
+
+        if not self.lecturer_assignment_id:
+            if active_assignments.count() == 1:
+                self.lecturer_assignment = active_assignments.first()
+            elif active_assignments.count() == 0:
+                raise ValidationError({
+                    'lecturer_assignment': "No active lecturer assignment exists for this "
+                    "curriculum — nothing to check attendance against."
+                })
+            else:
+                raise ValidationError({
+                    'lecturer_assignment': "This curriculum has multiple active lecturer "
+                    "assignments — specify which one this execution record is for."
+                })
+
+        # Confirm the referenced assignment actually belongs to this
+        # timetable slot's curriculum, and hasn't since been substituted.
+        elif self.lecturer_assignment.curriculum_id != self.timetable_slot.curriculum_id:
+            raise ValidationError({
+                'lecturer_assignment': "This assignment doesn't belong to the curriculum "
+                "this timetable slot is for."
+            })
+        elif self.lecturer_assignment.status == 'Substituted':
+            raise ValidationError({
+                'lecturer_assignment': f"{self.lecturer_assignment.lecturer} has been "
+                "substituted off this curriculum and can no longer be logged for "
+                "attendance on it."
+            })
+
         if self.status == 'Attended':
             if not self.class_representative:
                 raise ValidationError({
@@ -231,7 +358,6 @@ class DailyClassExecution(BaseModelMixin):
                 from django.utils import timezone
                 self.student_confirmed_at = timezone.now()
 
-        # 2. Rescheduling Data Integrity Guardrail
         if self.status == 'Rescheduled':
             if not self.rescheduled_by or not self.reschedule_requested_by_role:
                 raise ValidationError({
@@ -241,8 +367,6 @@ class DailyClassExecution(BaseModelMixin):
                 raise ValidationError({
                     'rescheduled_to_date': "You must complete all target fields (Date, Time, and Venue) when moving a class."
                 })
-
-            # Prevent moving a class onto the exact same coordinates
             if (self.calendar_date == self.rescheduled_to_date and
                 self.timetable_slot.time_slot == self.rescheduled_to_time_slot and
                     self.timetable_slot.venue == self.rescheduled_to_venue):
@@ -250,4 +374,50 @@ class DailyClassExecution(BaseModelMixin):
                     "Invalid Reschedule: Target coordinates match the original slot parameters.")
 
     def __str__(self):
-        return f"{self.calendar_date} : {self.timetable_slot.curriculum.course.course_code} -> [{self.get_status_display()}]"
+        who = f" ({self.lecturer_assignment.lecturer})" if self.lecturer_assignment_id else ""
+        return f"{self.calendar_date} : {self.timetable_slot.curriculum.course.course_code}{who} -> [{self.get_status_display()}]"
+
+
+class DailyClassExecutionVenue(BaseModelMixin):
+    """
+    One-off venue change for a single class within a shared
+    DailyClassExecution, on this specific date only — e.g. one class's
+    usual room is unavailable today, but the rest of the cohort meets as
+    normal. Distinct from a full 'Rescheduled' status, which moves the
+    entire slot (every attending class) to a new date/time/venue.
+    """
+    execution = models.ForeignKey(
+        'DailyClassExecution',
+        on_delete=models.CASCADE,
+        related_name='class_venues'
+    )
+
+    class_link = models.ForeignKey(
+        'CurriculumClass',
+        on_delete=models.CASCADE,
+        related_name='daily_venue_overrides'
+    )
+
+    venue = models.ForeignKey(
+        'Venue',
+        on_delete=models.PROTECT,
+        related_name='daily_execution_overrides'
+    )
+
+    notes = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        unique_together = ('execution', 'class_link')
+        verbose_name = "Daily Execution Class Venue Override"
+
+    def clean(self):
+        super().clean()
+        if self.class_link_id and self.execution_id:
+            if self.class_link.curriculum_id != self.execution.timetable_slot.curriculum_id:
+                raise ValidationError({
+                    'class_link': "This class isn't attached to the curriculum this "
+                    "execution's timetable slot belongs to."
+                })
+
+    def __str__(self):
+        return f"{self.execution} — {self.class_link.Tclass.class_name} → {self.venue.venue_name}"

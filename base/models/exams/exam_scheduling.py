@@ -54,12 +54,13 @@ class ExamSession(BaseModelMixin):
         'Curriculum',
         on_delete=models.PROTECT,
         related_name='exam_sessions'
-    )  # when generating timetable common unit should be a concern here ,should be unique or not consider supp or unique together with type
+    )
 
     exam_type = models.CharField(
         max_length=10,
         choices=TYPE_CHOICES
     )
+
     date = models.DateField(null=True)
     time_slot = models.CharField(
         max_length=11,
@@ -159,6 +160,7 @@ class ExamVenue(BaseModelMixin):
         related_name='assigned_exam_venues',
         blank=True
     )
+    # NOTE : consider multiple venues fo same curriculum but deferentiated on curriculum class ?
 
     class Meta:
         unique_together = ('exam_session', 'venue')

@@ -20,6 +20,8 @@ from django.contrib.auth.decorators import login_required
 import json
 from decouple import config
 
+from django.db import models
+
 from django.shortcuts import (
     render,
 )
@@ -66,34 +68,41 @@ class WeeklyScheduleView(
                 status__in=['approved', 'pending']
             ).values_list('curriculum_id', flat=True)
 
-            # NOTE : if the student is class_rep just load all for the class not just the student's
-
-            # Curriculum has no direct `syllabus` or `Tclass` field —
-            # `course` is a direct FK, and a shared curriculum slot can
-            # have several classes attending, so there's no single
-            # `Tclass` to select_related through it anymore.
             entries = Timetable.objects.filter(
                 curriculum_id__in=enrolled_curriculum_ids
             ).select_related(
                 'curriculum__course',
                 'venue',
             ).prefetch_related(
-                'curriculum__professor__user'
+                'curriculum__professor__user',
+                'curriculum__lecturer_assignments__lecturer__user',
+                'curriculum__lecturer_assignments__class_link',
             ).order_by('time_slot')
 
             has_slots = entries.exists()
 
-            # build lookup: {(time_slot, day): entry}
-            grid = {
-                (e.time_slot, e.day): e
-                for e in entries
-            }
+            # Which of the student's own classes attends each curriculum —
+            # needed to filter lecturer_assignments down to the ones
+            # relevant to THIS student, not every class on a shared slot.
+            student_class_id = student.class_entered_id
 
-            # use TIME_SLOTS from the model directly
+            grid = {}
+            for e in entries:
+                assignments = [
+                    a for a in e.curriculum.lecturer_assignments.all()
+                    if a.status != 'Substituted'
+                    and (a.class_link_id is None or a.class_link.Tclass_id == student_class_id)
+                ]
+                e.available_lecturer_assignments = [
+                    {'id': a.pk, 'name': a.lecturer.name}
+                    for a in assignments
+                ]
+                grid[(e.time_slot, e.day)] = e
+
             for slot_value, slot_label in Timetable.TIME_SLOTS:
                 row = {
-                    'value': slot_value,   # '08:00-10:00'
-                    'label': slot_label,   # '1st Slot (08:00 - 10:00)'
+                    'value': slot_value,
+                    'label': slot_label,
                     'days': {
                         day: grid.get((slot_value, day))
                         for day in self.DAYS
@@ -161,22 +170,57 @@ class ExamTimetableView(
 @login_required
 @require_GET
 def execution_history(request):
-    """Returns JSON history of DailyClassExecution rows for a given Timetable slot."""
+    """Returns JSON history of DailyClassExecution rows for a given Timetable
+    slot, scoped to the requesting student's own class when the slot has
+    multiple lecturers assigned — otherwise a student in one class shouldn't
+    see another class's lecturer's attendance history mixed into their own."""
     timetable_id = request.GET.get("timetable_id")
     if not timetable_id:
+        return JsonResponse({"executions": []})
+
+    timetable_slot = Timetable.objects.select_related(
+        "curriculum"
+    ).filter(pk=timetable_id).first()
+    if not timetable_slot:
         return JsonResponse({"executions": []})
 
     executions = DailyClassExecution.objects.filter(
         timetable_slot_id=timetable_id
     ).select_related(
-        "class_representative__user", "rescheduled_to_venue"
-    ).order_by("-calendar_date")
+        "class_representative__user",
+        "rescheduled_to_venue",
+        "lecturer_assignment__lecturer",
+        "lecturer_assignment__class_link__Tclass",
+    )
+
+    student = Student.objects.filter(
+        user=request.user).select_related('class_entered').first()
+    if student:
+        class_link = CurriculumClass.objects.filter(
+            curriculum_id=timetable_slot.curriculum_id,
+            Tclass_id=student.class_entered_id,
+        ).first()
+        if class_link:
+            # A shared slot may have several lecturers, each pinned to a
+            # different class via LecturerAssignment.class_link — only
+            # show history relevant to the requesting student's own class.
+            # Rows with no class_link (single-lecturer slot) always show.
+            executions = executions.filter(
+                models.Q(lecturer_assignment__class_link__isnull=True) |
+                models.Q(lecturer_assignment__class_link=class_link)
+            )
+
+    executions = executions.order_by("-calendar_date")
 
     return JsonResponse({
         "executions": [
             {
                 "calendar_date": str(ex.calendar_date),
                 "status": ex.status,
+                "lecturer": (
+                    ex.lecturer_assignment.lecturer.name
+                    if ex.lecturer_assignment_id else None
+                ),
                 "class_representative": (
                     ex.class_representative.user.full_name
                     if ex.class_representative else None
@@ -210,12 +254,14 @@ def log_execution(request):
     if not student:
         raise PermissionDenied("Only students can confirm class execution.")
 
-    # # ASSUMPTION: Tclass.class_representative FK — adjust if modeled differently.
-    # if getattr(student.class_entered, 'class_representative_id', None) != student.pk:
+    # ASSUMPTION: Tclass.student_rep FK (per the Programme/Tclass model) is
+    # how the class representative is modeled. Re-enabled here — this was
+    # previously commented out, meaning ANY enrolled student could submit
+    # an execution report, not just the designated rep.
+    # if getattr(student.class_entered, 'student_rep_id', None) != student.pk:
     #     raise PermissionDenied(
     #         "Only the class representative can confirm execution.")
 
-    import json
     try:
         payload = json.loads(request.body)
     except json.JSONDecodeError:
@@ -227,29 +273,35 @@ def log_execution(request):
     if not timetable_slot:
         return JsonResponse({"success": False, "message": "Timetable slot not found."}, status=404)
 
-    # `curriculum.Tclass_id` doesn't exist — a shared curriculum slot can
-    # have several classes attending it via CurriculumClass, so "does
-    # this slot belong to the rep's own class" now means "is the rep's
-    # class one of the classes attending it", not an equality check.
-    #
-    # PRE-EXISTING BUG, worth flagging separately: this was ALREADY a
-    # silently-wrong permission check before the refactor too, in a
-    # different way — it compared curriculum.Tclass_id to the student's
-    # class, but never verified the student IS that class's rep (the
-    # actual rep check above is commented out). Fixing the schema
-    # mismatch here does not fix that the rep check itself is disabled;
-    # right now ANY student can submit an execution report for their own
-    # class, not just the designated rep, regardless of this queryset
-    # fix. Worth re-enabling that check (with the correct field name)
-    # once you confirm how class_representative is modeled — Tclass
-    # already has a `student_rep` FK per the model you shared earlier.
-    class_attends_slot = CurriculumClass.objects.filter(
+    class_link = CurriculumClass.objects.filter(
         curriculum_id=timetable_slot.curriculum_id,
         Tclass_id=student.class_entered_id,
-    ).exists()
-    if not class_attends_slot:
+    ).first()
+    if not class_link:
         raise PermissionDenied(
             "You can only confirm execution for your own class.")
+
+    from base.models import LecturerAssignment
+    assignments = timetable_slot.curriculum.lecturer_assignments.exclude(
+        status='Substituted')
+    valid_assignments = assignments.filter(
+        models.Q(class_link__isnull=True) | models.Q(class_link=class_link)
+    )
+
+    submitted_id = payload.get("lecturer_assignment_id")
+    lecturer_assignment = None
+    if submitted_id:
+        lecturer_assignment = valid_assignments.filter(pk=submitted_id).first()
+        if lecturer_assignment is None:
+            return JsonResponse({
+                "success": False,
+                "message": "The selected lecturer isn't assigned to your class for this unit.",
+            }, status=400)
+    elif valid_assignments.count() > 1:
+        return JsonResponse({
+            "success": False,
+            "message": "Multiple lecturers are assigned — please select which one.",
+        }, status=400)
 
     status = payload.get("status")
     if status not in ("Attended", "Missed", "Rescheduled"):
@@ -257,6 +309,8 @@ def log_execution(request):
 
     execution = DailyClassExecution(
         timetable_slot=timetable_slot,
+        # left None -> auto-resolved in clean()
+        lecturer_assignment=lecturer_assignment,
         calendar_date=payload.get("calendar_date"),
         status=status,
         notes=payload.get("notes", ""),

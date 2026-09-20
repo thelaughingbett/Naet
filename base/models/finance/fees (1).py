@@ -39,17 +39,18 @@ class FeeCategory(BaseModelMixin):
     """
 
     code = models.CharField(
-        max_length=30, unique=True,
+        max_length=30,
+        unique=True,
         help_text="Stable identifier used in code, e.g. 'tuition', "
-                   "'registration', 'caution'. Not shown to users directly.",
+        "'registration', 'caution'. Not shown to users directly.",
     )
     name = models.CharField(max_length=100)
 
     is_refundable = models.BooleanField(
         default=False,
         help_text="e.g. True for caution money — flags this category as "
-                   "one that's expected to be returned at clearance/"
-                   "graduation rather than genuinely spent.",
+        "one that's expected to be returned at clearance/"
+        "graduation rather than genuinely spent.",
     )
     is_active = models.BooleanField(default=True)
 
@@ -105,11 +106,17 @@ class FeeStructureItem(BaseModelMixin):
     JSON dict with a real, queryable, FK-able row."""
 
     fee_structure = models.ForeignKey(
-        'FeeStructure', on_delete=models.CASCADE, related_name='items'
+        'FeeStructure',
+        on_delete=models.CASCADE,
+        related_name='items'
     )
+
     category = models.ForeignKey(
-        'FeeCategory', on_delete=models.PROTECT, related_name='fee_structure_items'
+        'FeeCategory',
+        on_delete=models.PROTECT,
+        related_name='fee_structure_items'
     )
+
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
@@ -291,13 +298,14 @@ class Payment(BaseModelMixin):
     )
 
     paid_at = models.DateTimeField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="Set explicitly by confirm() at actual confirmation time. "
-                   "Deliberately NOT auto_now_add — that field type freezes "
-                   "at first save and silently ignores later manual "
-                   "assignment, which would have meant this never reflected "
-                   "when a payment actually cleared, only when it was "
-                   "initiated. See initiated_at for the true creation timestamp.",
+        "Deliberately NOT auto_now_add — that field type freezes "
+        "at first save and silently ignores later manual "
+        "assignment, which would have meant this never reflected "
+        "when a payment actually cleared, only when it was "
+        "initiated. See initiated_at for the true creation timestamp.",
     )
     initiated_at = models.DateTimeField(auto_now_add=True)
 
@@ -378,10 +386,10 @@ class Charge(BaseModelMixin):
     ]
 
     account = models.ForeignKey(
-        'StudentFeeAccount',
+        'Student',
         on_delete=models.PROTECT,
         related_name='charges',
-    )
+    )  # TODO charge to student not feeaccount ✅
 
     category = models.CharField(
         max_length=25,
@@ -479,7 +487,8 @@ class Charge(BaseModelMixin):
                 amount = policy.penalty_amount
             else:
                 amount = (
-                    account.balance * policy.penalty_percentage / Decimal('100')
+                    account.balance *
+                    policy.penalty_percentage / Decimal('100')
                 ).quantize(Decimal('0.01'))
 
             charge = cls.objects.create(
@@ -581,7 +590,7 @@ class Refund(BaseModelMixin):
             if self.amount > self.account.available_credit:
                 raise ValidationError({
                     'amount': f"Refund exceeds the account's available credit "
-                              f"(KES {self.account.available_credit})."
+                    f"(KES {self.account.available_credit})."
                 })
 
     def approve(self, by_user):
@@ -669,23 +678,23 @@ class Scholarship(BaseModelMixin):
     coverage_amount = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         help_text="Fixed KES amount. Used when coverage_type is "
-                   "'partial_fixed' or 'category_specific'.",
+        "'partial_fixed' or 'category_specific'.",
     )
     covered_category = models.ForeignKey(
         'FeeCategory', on_delete=models.PROTECT, null=True, blank=True,
         related_name='scholarships',
         help_text="Required when coverage_type='category_specific'. "
-                   "Previously a free-text field matched against "
-                   "FeeStructure.breakdown's JSON keys — now a real FK "
-                   "against FeeCategory, so an invalid/renamed category "
-                   "fails loudly instead of silently matching nothing.",
+        "Previously a free-text field matched against "
+        "FeeStructure.breakdown's JSON keys — now a real FK "
+        "against FeeCategory, so an invalid/renamed category "
+        "fails loudly instead of silently matching nothing.",
     )
 
     session = models.ForeignKey(
         'Session', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='scholarships',
         help_text="Optional — restrict this award programme to one "
-                   "session's award cycle.",
+        "session's award cycle.",
     )
 
     is_active = models.BooleanField(default=True)
@@ -725,7 +734,8 @@ class Scholarship(BaseModelMixin):
 
         if self.coverage_type == 'partial_percentage':
             return (
-                account.fee_structure.total_amount * self.coverage_percentage / Decimal('100')
+                account.fee_structure.total_amount *
+                self.coverage_percentage / Decimal('100')
             ).quantize(Decimal('0.01'))
 
         if self.coverage_type == 'partial_fixed':
@@ -973,7 +983,7 @@ class LateFeePolicy(BaseModelMixin):
     grace_period_days = models.PositiveIntegerField(
         default=14,
         help_text="Days past the account's due date (days_remaining) "
-                   "before a penalty applies.",
+        "before a penalty applies.",
     )
 
     penalty_type = models.CharField(

@@ -10,6 +10,7 @@ from django.db import models
 
 from ..base import BaseModelMixin, WithDepartmentMixin
 from .isced import UNESCO_ISCED_FIELDS
+from simple_history.models import HistoricalRecords
 
 
 class Programme(BaseModelMixin, WithDepartmentMixin):
@@ -47,7 +48,8 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
         ("Active",   "Active"),
         ('Expired', 'Expired'),
         ('Suspended', 'Suspended'),
-        ('Review', 'Under Review')
+        ('Review', 'Under Review'),
+        ('Proposed', 'Proposed')
     ]
 
     code = models.CharField(
@@ -74,6 +76,7 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
 
     description = models.TextField(
         blank=True,
+        null=True,
         default=""
     )
 
@@ -88,7 +91,7 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
         related_name='current_class',
         null=True,
         blank=True
-    )  # refers to the most recent enrolling class , TODO :  this should change to somehing
+    )  # refers to the most recent enrolling class , TODO :  this should change to something
 
     # approved_cue_capacity ,TODO : should be based on accredition or some form of strategy
     capacity = models.IntegerField(default=70)
@@ -117,6 +120,8 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
     semesters_per_year = models.IntegerField(default=2)
     total_credits_required = models.PositiveIntegerField(default=120)
 
+    history = HistoricalRecords()
+
     @property
     def total_semesters(self):
         return self.duration_years * self.semesters_per_year
@@ -128,21 +133,42 @@ class Programme(BaseModelMixin, WithDepartmentMixin):
 class Tclass(BaseModelMixin):
     class_name = models.CharField(max_length=78)
 
-    programme = models.ForeignKey('Programme', on_delete=models.PROTECT)
-
-    # removed: courses = models.ManyToManyField('Syllabus', through='Curriculum')
-    # Curriculum is no longer a valid through-model for this — it has no FK
-    # to Tclass or Syllabus under the shared-slot design. Use CurriculumClass
-    # (which links Tclass -> Syllabus via a specific Curriculum slot) instead.
+    programme = models.ForeignKey(
+        'Programme',
+        on_delete=models.PROTECT
+    )
 
     year_of_study = models.IntegerField(default=1, blank=True)
     graduated = models.DateField(null=True, blank=True)
     liason = models.ForeignKey(
-        'Lecturer', null=True, blank=True, on_delete=models.DO_NOTHING)
-    student_rep = models.ForeignKey(
-        'Student', null=True, blank=True,
-        on_delete=models.SET_NULL, related_name='class_representative'
+        'Lecturer',
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING
     )
+
+    student_rep = models.ForeignKey(
+        'Student',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='class_representative'
+    )
+
+    @property
+    def student_count(self):
+        """
+        Live count of students currently in this class — used for venue
+        capacity checks (Timetable.clean()) and similar cohort-size
+        logic. Deliberately not a stored field: a cached counter would
+        drift every time a student is admitted, deferred, or graduates
+        out of the class, and nothing here needs a frozen point-in-time
+        value the way Enrollment's graded_* fields do.
+
+
+        """
+        from ..student import Student
+        return Student.objects.filter(current_class=self).count()
 
     @property
     def syllabus_entries(self):

@@ -13,6 +13,7 @@ from ..base import BaseModelMixin
 
 
 class StatusChangeRequest(BaseModelMixin):
+
     class ChangeType(models.TextChoices):
         LEAVE_OF_ABSENCE = "leave", "Leave of Absence"
         WITHDRAWAL = "withdrawal", "Withdrawal"

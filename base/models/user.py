@@ -49,6 +49,8 @@ class User(BaseModelMixin, AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
+    is_deleted = models.BooleanField(default=False)
+
     @property
     def full_name(self):
         return f"{self.first_name} {self.surname or ' '} {self.last_name}"

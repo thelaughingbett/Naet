@@ -49,8 +49,6 @@ from .hall_tickets import (
 )
 from .academic_records import (
     GradeCard,
-    RevaluationRequest,
-    BacklogRegistration,
 )
 from .registrar import (
     TranscriptRequest,
@@ -70,8 +68,7 @@ __all__ = [
     "ExamClash",
     "ExamCard",
     "GradeCard",
-    "RevaluationRequest",
-    "BacklogRegistration",
+
     "TranscriptRequest",
     "Certificate",
 ]

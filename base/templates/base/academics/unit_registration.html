@@ -11,6 +11,32 @@
 />
 
 <style>
+  .flash-toast {
+    position: fixed;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translate(-50%, -200%);
+    z-index: 1200;
+    max-width: min(92vw, 420px);
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    transition: transform 0.3s ease;
+  }
+  .flash-toast.show {
+    transform: translate(-50%, 0);
+  }
+  .flash-toast--success {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .flash-toast--error {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
   .unit-row--clickable {
     cursor: pointer;
   }
@@ -792,15 +818,17 @@
 </div>
 
 <!-- MOBILE SUBMIT BAR — triggers the REAL registerBtn, no reimplemented logic -->
-{% if available %}
-<div class="mobile-submit-bar" id="mobileSubmitBar">
-  <div class="mobile-submit-bar__info">
-    <div class="mobile-submit-bar__label">Total</div>
-    <div class="mobile-submit-bar__value" id="mobileSubmitCredits">0 cr</div>
+<div id="mobileSubmitBarWrap">
+  {% if available %}
+  <div class="mobile-submit-bar" id="mobileSubmitBar">
+    <div class="mobile-submit-bar__info">
+      <div class="mobile-submit-bar__label">Total</div>
+      <div class="mobile-submit-bar__value" id="mobileSubmitCredits">0 cr</div>
+    </div>
+    <button class="btn-primary" id="mobileRegisterBtn" type="button" disabled>
+      Submit for Approval
+    </button>
   </div>
-  <button class="btn-primary" id="mobileRegisterBtn" type="button" disabled>
-    Submit for Approval
-  </button>
 </div>
 {% endif %}
 
@@ -826,356 +854,429 @@
 {{ results_by_enrollment|json_script:"resultsData" }}
 
 <script>
-  // ============================================================
-  // REAL BACKEND WIRING — unchanged
-  // ============================================================
-  const DROP_UNIT_URL = "{% url 'drop-elective-unit' %}";
-  const CSRF_TOKEN = "{{ csrf_token }}";
-  const RESULTS_DATA = JSON.parse(document.getElementById("resultsData")?.textContent || "{}");
-  const MIN_CREDITS = {{ min_credits|default:2 }};
-  const MAX_CREDITS = {{ max_credits|default:21 }};
+      // ============================================================
+      // REAL BACKEND WIRING — unchanged
+      // ============================================================
+      const DROP_UNIT_URL = "{% url 'drop-elective-unit' %}";
+      const CSRF_TOKEN = "{{ csrf_token }}";
+      let RESULTS_DATA = JSON.parse(document.getElementById("resultsData")?.textContent || "{}");
+      const MIN_CREDITS = {{ min_credits|default:2 }};
+      const MAX_CREDITS = {{ max_credits|default:21 }};
 
-  let activeEnrollmentId = null;
+      let activeEnrollmentId = null;
 
-  // Refactored into a named function so both the real desktop row click
-  // AND the mobile card mirror can open the exact same modal logic.
-  function openUnitModal(row) {
-    activeEnrollmentId = row.dataset.enrollmentId;
+      // Refactored into a named function so both the real desktop row click
+      // AND the mobile card mirror can open the exact same modal logic.
+      function openUnitModal(row) {
+        activeEnrollmentId = row.dataset.enrollmentId;
 
-    document.getElementById("unitModalTitle").textContent = row.dataset.coursename;
-    document.getElementById("unitModalSubtitle").textContent =
-      `${row.dataset.coursecode} · ${row.dataset.credits} credits`;
+        document.getElementById("unitModalTitle").textContent = row.dataset.coursename;
+        document.getElementById("unitModalSubtitle").textContent =
+          `${row.dataset.coursecode} · ${row.dataset.credits} credits`;
 
-    const outcomeBox = document.getElementById("unitModalOutcome");
-    if (row.dataset.ispassed === "true") {
-      outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--pass">✅ Passed — Final score: ${row.dataset.gradedscore}</div>`;
-    } else if (row.dataset.ispassed === "false") {
-      outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--fail">❌ Not passed — Final score: ${row.dataset.gradedscore}</div>`;
-    } else {
-      outcomeBox.innerHTML = "";
-    }
+        const outcomeBox = document.getElementById("unitModalOutcome");
+        if (row.dataset.ispassed === "true") {
+          outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--pass">✅ Passed — Final score: ${row.dataset.gradedscore}</div>`;
+        } else if (row.dataset.ispassed === "false") {
+          outcomeBox.innerHTML = `<div class="modal-final-outcome modal-final-outcome--fail">❌ Not passed — Final score: ${row.dataset.gradedscore}</div>`;
+        } else {
+          outcomeBox.innerHTML = "";
+        }
 
-    const results = RESULTS_DATA[activeEnrollmentId] || [];
-    const list = document.getElementById("unitResultsList");
-    if (results.length === 0) {
-      list.innerHTML = `<div class="results-empty">No published results yet.</div>`;
-    } else {
-      list.innerHTML = results.map((r) => `
-        <div class="result-item">
-          <span>${r.title} (${r.type})</span>
-          <span class="result-score">${r.score}</span>
-        </div>
-      `).join("");
-    }
-
-    const dropBtn = document.getElementById("dropUnitBtn");
-    const canDrop = row.dataset.coursetype === "E" && row.dataset.status !== "dropped" && row.dataset.status !== "completed";
-    dropBtn.style.display = canDrop ? "block" : "none";
-
-    document.getElementById("unitModalOverlay").classList.add("active");
-  }
-
-  document.querySelectorAll(".unit-row--clickable").forEach((row) => {
-    row.addEventListener("click", () => openUnitModal(row));
-  });
-
-  document.getElementById("unitModalClose").addEventListener("click", () => {
-    document.getElementById("unitModalOverlay").classList.remove("active");
-  });
-  document.getElementById("unitModalOverlay").addEventListener("click", (e) => {
-    if (e.target.id === "unitModalOverlay") {
-      document.getElementById("unitModalOverlay").classList.remove("active");
-    }
-  });
-
-  document.getElementById("dropUnitBtn").addEventListener("click", async () => {
-    if (!confirm("Drop this unit? You can re-register for it later if seats remain open.")) return;
-
-    const formData = new FormData();
-    formData.append("enrollment_id", activeEnrollmentId);
-
-    try {
-      const res = await fetch(DROP_UNIT_URL, {
-        method: "POST",
-        headers: { "X-CSRFToken": CSRF_TOKEN },
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        alert(data.message || "Failed to drop unit.");
-        return;
-      }
-      window.location.reload();
-    } catch (err) {
-      alert("Network error — please try again.");
-    }
-  });
-
-  const tbody = document.getElementById('unitsBody');
-  const registerBtn = document.getElementById('registerBtn');
-  const totalEl = document.getElementById('totalCredits');
-  const listEl = document.getElementById('selectedList');
-
-  function getSelectedRows() {
-    if (!tbody) return [];
-    return [...tbody.querySelectorAll('input[type="checkbox"]:checked')].map((cb) => cb.closest('tr'));
-  }
-
-  function updateSummary() {
-    if (!totalEl) return;
-
-    const selected = getSelectedRows();
-    const totalCredits = selected.reduce((sum, row) => sum + parseInt(row.dataset.credits, 10), 0);
-
-    totalEl.textContent = `Total Credits: ${totalCredits}`;
-
-    if (selected.length === 0) {
-      listEl.innerHTML = '<li class="empty-row">No units selected</li>';
-    } else {
-      listEl.innerHTML = selected.map((row) => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`).join('');
-    }
-
-    if (totalCredits < MIN_CREDITS) {
-      registerBtn.disabled = true;
-      registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
-    } else if (totalCredits > MAX_CREDITS) {
-      registerBtn.disabled = true;
-      registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
-    } else {
-      registerBtn.disabled = false;
-      registerBtn.title = '';
-    }
-
-    // Keep the mobile mirror in sync every time the real checkboxes change.
-    renderMobileAvailable();
-    renderMobileSelected();
-  }
-
-  tbody?.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-    cb.addEventListener('change', updateSummary);
-  });
-
-  document.getElementById('registrationForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const form = e.target;
-    const selected = getSelectedRows();
-    const messageEl = document.getElementById('formMessage');
-
-    if (selected.length === 0) return;
-
-    const codes = selected.map((r) => r.dataset.coursecode).join(', ');
-    const ok = confirm(
-      `Submit ${selected.length} unit(s) for approval?\n\n${codes}\n\n` +
-      `These will appear as "Pending" until your department approves them.`
-    );
-    if (!ok) return;
-
-    const originalLabel = registerBtn.textContent;
-    registerBtn.disabled = true;
-    registerBtn.textContent = '⏳ Submitting…';
-
-    try {
-      const response = await fetch(window.location.pathname, {
-        method: 'POST',
-        body: new FormData(form),
-      });
-      const data = await response.json();
-
-      messageEl.textContent = data.message;
-      messageEl.className = `form-message form-message--${data.success ? 'success' : 'error'}`;
-
-      if (data.success) {
-        setTimeout(() => { window.location.reload(); }, 5000);
-      } else {
-        registerBtn.disabled = false;
-        registerBtn.textContent = originalLabel;
-      }
-    } catch (err) {
-      messageEl.textContent = 'Something went wrong submitting your request. Please try again.';
-      messageEl.className = 'form-message form-message--error';
-      registerBtn.disabled = false;
-      registerBtn.textContent = originalLabel;
-    }
-  });
-
-  // ============================================================
-  // MOBILE MIRROR — reads the real DOM above, no duplicate state
-  // ============================================================
-  function escapeHtml(s) {
-    const d = document.createElement("div");
-    d.textContent = s ?? "";
-    return d.innerHTML;
-  }
-
-  function renderMobileAvailable() {
-    const container = document.getElementById("mobileAvailableList");
-    if (!container || !tbody) return;
-
-    const rows = [...tbody.querySelectorAll("tr")];
-    document.getElementById("mobileAvailableCount").textContent = rows.length;
-
-    container.innerHTML = rows.map((row) => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const checked = checkbox?.checked;
-      const disabled = checkbox?.disabled;
-      const name = row.children[2]?.textContent.trim() || "";
-      return `
-        <div class="unit-card unit-card--selectable ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}"
-             data-id="${row.dataset.id}">
-          <div class="unit-card__body">
-            <div class="unit-card__code">${escapeHtml(row.dataset.coursecode)}</div>
-            <div class="unit-card__name">${escapeHtml(name)}</div>
-            <div class="unit-card__meta">
-              <span class="credits-badge">${row.dataset.credits} credits</span>
+        const results = RESULTS_DATA[activeEnrollmentId] || [];
+        const list = document.getElementById("unitResultsList");
+        if (results.length === 0) {
+          list.innerHTML = `<div class="results-empty">No published results yet.</div>`;
+        } else {
+          list.innerHTML = results.map((r) => `
+            <div class="result-item">
+              <span>${r.title} (${r.type})</span>
+              <span class="result-score">${r.score}</span>
             </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+          `).join("");
+        }
 
-    container.querySelectorAll(".unit-card--selectable:not(.disabled)").forEach((card) => {
-      card.addEventListener("click", () => {
-        const row = tbody.querySelector(`tr[data-id="${card.dataset.id}"]`);
-        const checkbox = row?.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-          checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event("change")); // triggers real updateSummary()
+        const dropBtn = document.getElementById("dropUnitBtn");
+        const canDrop = row.dataset.coursetype === "E" && row.dataset.status !== "dropped" && row.dataset.status !== "completed";
+        dropBtn.style.display = canDrop ? "block" : "none";
+
+        document.getElementById("unitModalOverlay").classList.add("active");
+      }
+
+
+
+      document.getElementById("unitModalClose").addEventListener("click", () => {
+        document.getElementById("unitModalOverlay").classList.remove("active");
+      });
+
+      document.getElementById("unitModalOverlay").addEventListener("click", (e) => {
+        if (e.target.id === "unitModalOverlay") {
+          document.getElementById("unitModalOverlay").classList.remove("active");
         }
       });
-    });
-  }
 
-  function renderMobileSelected() {
-    const list = document.getElementById("mobileSelectedList");
-    const totalEl2 = document.getElementById("mobileTotalCredits");
-    const submitCredits = document.getElementById("mobileSubmitCredits");
-    const bar = document.getElementById("mobileSubmitBar");
-    const btn = document.getElementById("mobileRegisterBtn");
-    if (!list) return;
+      document.getElementById("dropUnitBtn").addEventListener("click", async () => {
+        if (!confirm("Drop this unit? You can re-register for it later if seats remain open.")) return;
 
-    const selected = getSelectedRows();
-    const credits = selected.reduce((sum, row) => sum + parseInt(row.dataset.credits, 10), 0);
+        const formData = new FormData();
+        formData.append("enrollment_id", activeEnrollmentId);
 
-    if (selected.length === 0) {
-      list.innerHTML = '<span class="mobile-selected__empty">No units selected</span>';
-    } else {
-      list.innerHTML = selected.map((row) => `
-        <span class="selected-chip">
-          ${escapeHtml(row.dataset.coursecode)}
-          <button type="button" data-remove="${row.dataset.id}">&times;</button>
-        </span>
-      `).join("");
+        try {
+          const res = await fetch(DROP_UNIT_URL, {
+            method: "POST",
+            headers: { "X-CSRFToken": CSRF_TOKEN },
+            body: formData,
+          });
+          const data = await res.json();
 
-      list.querySelectorAll("[data-remove]").forEach((b) => {
-        b.addEventListener("click", () => {
-          const row = tbody.querySelector(`tr[data-id="${b.dataset.remove}"]`);
-          const checkbox = row?.querySelector('input[type="checkbox"]');
-          if (checkbox) {
-            checkbox.checked = false;
-            checkbox.dispatchEvent(new Event("change"));
+          if (!data.success) {
+            alert(data.message || "Failed to drop unit.");
+            return;
           }
-        });
+        document.getElementById("unitModalOverlay").classList.remove("active");
+        flash(data.message || "Unit dropped.", "success");
+        await refreshView();
+        } catch (err) {
+          alert("Network error — please try again.");
+        }
       });
-    }
 
-    if (totalEl2) totalEl2.textContent = `${credits} credits`;
-    if (submitCredits) submitCredits.textContent = `${credits} cr`;
+      let tbody, registerBtn, totalEl, listEl, mobileRegisterBtn;
+      let isSubmitting = false;
 
-    if (bar) {
-      const shouldShow = selected.length > 0 && window.matchMedia("(max-width: 768px)").matches;
-      bar.classList.toggle("show", shouldShow);
-      if (shouldShow) {
-        bar.classList.remove("scroll-hidden");
-        lastScrollY = window.scrollY;
+      function cacheRefs() {
+        tbody             = document.getElementById('unitsBody');
+        registerBtn       = document.getElementById('registerBtn');
+        totalEl           = document.getElementById('totalCredits');
+        listEl            = document.getElementById('selectedList');
+        mobileRegisterBtn = document.getElementById('mobileRegisterBtn');
       }
-    }
 
-    if (btn) {
-      if (credits < MIN_CREDITS) {
-        btn.disabled = true; btn.title = `Minimum ${MIN_CREDITS} credits required.`;
-      } else if (credits > MAX_CREDITS) {
-        btn.disabled = true; btn.title = `Maximum ${MAX_CREDITS} credits allowed.`;
-      } else {
-        btn.disabled = false; btn.title = '';
+      cacheRefs();
+
+      function getSelectedRows() {
+        if (!tbody) return [];
+        return [...tbody.querySelectorAll('input[type="checkbox"]:checked')].map((cb) => cb.closest('tr'));
       }
-    }
-  }
 
-  function renderMobileEnrolled() {
-    const container = document.getElementById("mobileEnrolledList");
-    if (!container) return;
+      function updateSummary() {
+        if (!totalEl) return;
 
-    const rows = [...document.querySelectorAll("#myUnitsTable tbody tr")];
+        const selected = getSelectedRows();
+        const totalCredits = selected.reduce((sum, row) => sum + parseInt(row.dataset.credits, 10), 0);
 
-    document.getElementById("mobileEnrolledCount").textContent = rows.length;
-    document.getElementById("mobileEnrolledCount2").textContent = rows.length;
-    document.getElementById("mobilePendingCount").textContent =
-      rows.filter((r) => r.dataset.status === "pending").length;
+        totalEl.textContent = `Total Credits: ${totalCredits}`;
 
-    if (rows.length === 0) {
-      container.innerHTML = `<p class="empty-row">No units enrolled yet for this session.</p>`;
-      return;
-    }
+        if (selected.length === 0) {
+          listEl.innerHTML = '<li class="empty-row">No units selected</li>';
+        } else {
+          listEl.innerHTML = selected.map((row) => `<li><span>${row.dataset.coursecode}</span><span>${row.dataset.credits} cr</span></li>`).join('');
+        }
 
-    container.innerHTML = rows.map((row) => {
-      const statusLabel = row.querySelector(".status-badge")?.textContent.trim() || "";
-      return `
-        <div class="unit-card" data-enrollment-id="${row.dataset.enrollmentId}">
-          <div class="unit-card__body">
-            <div class="unit-card__code">${escapeHtml(row.dataset.coursecode)}</div>
-            <div class="unit-card__name">${escapeHtml(row.dataset.coursename)}</div>
-            <div class="unit-card__meta">
-              <span class="credits-badge">${row.dataset.credits} credits</span>
-              <span class="status-badge status-badge--${row.dataset.status}">${escapeHtml(statusLabel)}</span>
+        if (isSubmitting) {
+            // leave buttons alone while a request is in flight
+        } else if (totalCredits < MIN_CREDITS) {
+          registerBtn.disabled = true;
+          registerBtn.title = `Minimum ${MIN_CREDITS} credits required. You have ${totalCredits}.`;
+        } else if (totalCredits > MAX_CREDITS) {
+          registerBtn.disabled = true;
+          registerBtn.title = `Maximum ${MAX_CREDITS} credits allowed. You have ${totalCredits}.`;
+        } else {
+          registerBtn.disabled = false;
+          registerBtn.title = '';
+        }
+
+        // Keep the mobile mirror in sync every time the real checkboxes change.
+        renderMobileAvailable();
+        renderMobileSelected();
+      }
+
+      // ============================================================
+      // MOBILE MIRROR — reads the real DOM above, no duplicate state
+      // ============================================================
+      function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s ?? "";
+        return d.innerHTML;
+      }
+
+      function renderMobileAvailable() {
+        const container = document.getElementById("mobileAvailableList");
+        if (!container || !tbody) return;
+
+        const rows = [...tbody.querySelectorAll("tr")];
+        document.getElementById("mobileAvailableCount").textContent = rows.length;
+
+        container.innerHTML = rows.map((row) => {
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          const checked = checkbox?.checked;
+          const disabled = checkbox?.disabled;
+          const name = row.children[2]?.textContent.trim() || "";
+          return `
+            <div class="unit-card unit-card--selectable ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}"
+                 data-id="${row.dataset.id}">
+              <div class="unit-card__body">
+                <div class="unit-card__code">${escapeHtml(row.dataset.coursecode)}</div>
+                <div class="unit-card__name">${escapeHtml(name)}</div>
+                <div class="unit-card__meta">
+                  <span class="credits-badge">${row.dataset.credits} credits</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+          `;
+        }).join("");
 
-    // Mirror card tap -> the SAME modal logic used by the real desktop row.
-    container.querySelectorAll(".unit-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const realRow = document.querySelector(`#myUnitsTable tr[data-enrollment-id="${card.dataset.enrollmentId}"]`);
-        if (realRow) openUnitModal(realRow);
-      });
-    });
-  }
+        container.querySelectorAll(".unit-card--selectable:not(.disabled)").forEach((card) => {
+          card.addEventListener("click", () => {
+            const row = tbody.querySelector(`tr[data-id="${card.dataset.id}"]`);
+            const checkbox = row?.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+              checkbox.checked = !checkbox.checked;
+              checkbox.dispatchEvent(new Event("change")); // triggers real updateSummary()
+            }
+          });
+        });
+      }
 
-  document.getElementById("mobileRegisterBtn")?.addEventListener("click", () => {
-    registerBtn?.click(); // reuses the exact real submit handler, no duplicated logic
-  });
+      function renderMobileSelected() {
+        const list = document.getElementById("mobileSelectedList");
+        const totalEl2 = document.getElementById("mobileTotalCredits");
+        const submitCredits = document.getElementById("mobileSubmitCredits");
+        const bar = document.getElementById("mobileSubmitBar");
+        const btn = document.getElementById("mobileRegisterBtn");
+        if (!list) return;
 
-  // ============================================================
-  // Scroll-aware mobile submit bar
-  // ============================================================
-  let lastScrollY = window.scrollY;
-  let scrollTicking = false;
+        const selected = getSelectedRows();
+        const credits = selected.reduce((sum, row) => sum + parseInt(row.dataset.credits, 10), 0);
 
-  function handleMobileScroll() {
-    if (!window.matchMedia("(max-width: 768px)").matches) { scrollTicking = false; return; }
-    const bar = document.getElementById("mobileSubmitBar");
-    if (!bar || !bar.classList.contains("show")) { scrollTicking = false; return; }
+        if (selected.length === 0) {
+          list.innerHTML = '<span class="mobile-selected__empty">No units selected</span>';
+        } else {
+          list.innerHTML = selected.map((row) => `
+            <span class="selected-chip">
+              ${escapeHtml(row.dataset.coursecode)}
+              <button type="button" data-remove="${row.dataset.id}">&times;</button>
+            </span>
+          `).join("");
 
-    const currentY = window.scrollY;
-    const delta = currentY - lastScrollY;
-    if (Math.abs(delta) > 6) {
-      if (delta > 0 && currentY > 80) bar.classList.add("scroll-hidden");
-      else if (delta < 0) bar.classList.remove("scroll-hidden");
-      lastScrollY = currentY;
+          list.querySelectorAll("[data-remove]").forEach((b) => {
+            b.addEventListener("click", () => {
+              const row = tbody.querySelector(`tr[data-id="${b.dataset.remove}"]`);
+              const checkbox = row?.querySelector('input[type="checkbox"]');
+              if (checkbox) {
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event("change"));
+              }
+            });
+          });
+        }
+
+        if (totalEl2) totalEl2.textContent = `${credits} credits`;
+        if (submitCredits) submitCredits.textContent = `${credits} cr`;
+
+        if (bar) {
+          const shouldShow = selected.length > 0 && window.matchMedia("(max-width: 768px)").matches;
+          bar.classList.toggle("show", shouldShow);
+          if (shouldShow) {
+            bar.classList.remove("scroll-hidden");
+            lastScrollY = window.scrollY;
+          }
+        }
+
+        if (btn && !isSubmitting) {
+          if (credits < MIN_CREDITS) {
+            btn.disabled = true; btn.title = `Minimum ${MIN_CREDITS} credits required.`;
+          } else if (credits > MAX_CREDITS) {
+            btn.disabled = true; btn.title = `Maximum ${MAX_CREDITS} credits allowed.`;
+          } else {
+            btn.disabled = false; btn.title = '';
+          }
+        }
+      }
+
+      function renderMobileEnrolled() {
+        const container = document.getElementById("mobileEnrolledList");
+        if (!container) return;
+
+        const rows = [...document.querySelectorAll("#myUnitsTable tbody tr")];
+
+        document.getElementById("mobileEnrolledCount").textContent = rows.length;
+        document.getElementById("mobileEnrolledCount2").textContent = rows.length;
+        document.getElementById("mobilePendingCount").textContent =
+          rows.filter((r) => r.dataset.status === "pending").length;
+
+        if (rows.length === 0) {
+          container.innerHTML = `<p class="empty-row">No units enrolled yet for this session.</p>`;
+          return;
+        }
+
+        container.innerHTML = rows.map((row) => {
+          const statusLabel = row.querySelector(".status-badge")?.textContent.trim() || "";
+          return `
+            <div class="unit-card" data-enrollment-id="${row.dataset.enrollmentId}">
+              <div class="unit-card__body">
+                <div class="unit-card__code">${escapeHtml(row.dataset.coursecode)}</div>
+                <div class="unit-card__name">${escapeHtml(row.dataset.coursename)}</div>
+                <div class="unit-card__meta">
+                  <span class="credits-badge">${row.dataset.credits} credits</span>
+                  <span class="status-badge status-badge--${row.dataset.status}">${escapeHtml(statusLabel)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Mirror card tap -> the SAME modal logic used by the real desktop row.
+        container.querySelectorAll(".unit-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const realRow = document.querySelector(`#myUnitsTable tr[data-enrollment-id="${card.dataset.enrollmentId}"]`);
+            if (realRow) openUnitModal(realRow);
+          });
+        });
+      }
+
+    function setSubmitState(state, label) {
+      // state: 'idle' | 'submitting' | 'done'
+      isSubmitting = state !== 'idle';
+
+      const labels = {
+        idle:       { desktop: '✅ Submit for Approval', mobile: 'Submit for Approval' },
+        submitting: { desktop: '⏳ Submitting…',          mobile: '⏳ Submitting…' },
+        done:       { desktop: '✅ Submitted',            mobile: '✅ Submitted' },
+      }[state];
+
+      if (registerBtn) {
+        registerBtn.textContent = labels.desktop;
+        registerBtn.disabled = state !== 'idle';
+      }
+      if (mobileRegisterBtn) {
+        mobileRegisterBtn.textContent = labels.mobile;
+        mobileRegisterBtn.disabled = state !== 'idle';
+      }
     }
-    scrollTicking = false;
-  }
 
-  window.addEventListener("scroll", () => {
-    if (!scrollTicking) { window.requestAnimationFrame(handleMobileScroll); scrollTicking = true; }
-  }, { passive: true });
+    function bindDynamic() {
+      tbody?.querySelectorAll('input[type="checkbox"]').forEach((cb) =>
+        cb.addEventListener('change', updateSummary));
 
-  window.addEventListener("resize", renderMobileSelected);
+      document.querySelectorAll('.unit-row--clickable').forEach((row) =>
+        row.addEventListener('click', () => openUnitModal(row)));
+
+      document.getElementById('registrationForm')
+        ?.addEventListener('submit', handleRegistrationSubmit);
+
+      mobileRegisterBtn?.addEventListener('click', () => registerBtn?.click());
+    }
+
+    const SWAP_SELECTORS = ['.desktop-view', '.mobile-view', '#mobileSubmitBarWrap'];
+
+    async function refreshView() {
+      try {
+        const res = await fetch(window.location.pathname, { cache: 'no-store' });
+        if (!res.ok) throw new Error('refresh failed');
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+
+        SWAP_SELECTORS.forEach((sel) => {
+          const fresh = doc.querySelector(sel);
+          const current = document.querySelector(sel);
+          if (fresh && current) current.innerHTML = fresh.innerHTML;
+        });
+
+        RESULTS_DATA = JSON.parse(doc.getElementById('resultsData')?.textContent || '{}');
+
+        cacheRefs();
+        bindDynamic();
+        isSubmitting = false;
+        updateSummary();        // also re-renders the mobile available/selected lists
+        renderMobileEnrolled(); // rebuilds mobile "My Units" and the app-bar counts
+      } catch (err) {
+        window.location.reload(); // fall back to the old behaviour
+      }
+    }
+
+    function flash(message, type = 'success') {
+      let el = document.getElementById('flashToast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'flashToast';
+        document.body.appendChild(el);
+      }
+      el.className = `flash-toast flash-toast--${type} show`;
+      el.textContent = message;
+      clearTimeout(flash._t);
+      flash._t = setTimeout(() => el.classList.remove('show'), 5000);
+    }
+
+      // ============================================================
+      // Scroll-aware mobile submit bar
+      // ============================================================
+      let lastScrollY = window.scrollY;
+      let scrollTicking = false;
+
+      function handleMobileScroll() {
+        if (!window.matchMedia("(max-width: 768px)").matches) { scrollTicking = false; return; }
+        const bar = document.getElementById("mobileSubmitBar");
+        if (!bar || !bar.classList.contains("show")) { scrollTicking = false; return; }
+
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY;
+        if (Math.abs(delta) > 6) {
+          if (delta > 0 && currentY > 80) bar.classList.add("scroll-hidden");
+          else if (delta < 0) bar.classList.remove("scroll-hidden");
+          lastScrollY = currentY;
+        }
+        scrollTicking = false;
+      }
+
+      window.addEventListener("scroll", () => {
+        if (!scrollTicking) { window.requestAnimationFrame(handleMobileScroll); scrollTicking = true; }
+      }, { passive: true });
+
+      async function handleRegistrationSubmit(e) {
+        e.preventDefault();
+        if (isSubmitting) return;
+
+        const form = e.target;
+        const selected = getSelectedRows();
+        if (selected.length === 0) return;
+
+        const codes = selected.map((r) => r.dataset.coursecode).join(', ');
+        const ok = confirm(
+          `Submit ${selected.length} unit(s) for approval?\n\n${codes}\n\n` +
+          `These will appear as "Pending" until your department approves them.`
+        );
+        if (!ok) return;
+
+        setSubmitState('submitting');
+
+        try {
+          const response = await fetch(window.location.pathname, {
+            method: 'POST',
+            body: new FormData(form),
+          });
+          const data = await response.json();
+
+          if (!data.success) {
+            flash(data.message, 'error');
+            setSubmitState('idle');
+            updateSummary();
+            return;
+          }
+
+          setSubmitState('done');
+          flash(data.message, 'success');
+          await refreshView();
+        } catch (err) {
+          flash('Something went wrong submitting your request. Please try again.', 'error');
+          setSubmitState('idle');
+          updateSummary();
+        }
+      }
+
+      window.addEventListener("resize", renderMobileSelected);
 
   // init
+  bindDynamic();
   updateSummary();
   renderMobileEnrolled();
 </script>

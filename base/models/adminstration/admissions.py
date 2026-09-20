@@ -40,11 +40,13 @@ class Application(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="applications"
     )
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.SUBMITTED
     )
+
     submitted_on = models.DateTimeField(auto_now_add=True)
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -59,6 +61,7 @@ class Application(BaseModelMixin):
 
 
 class ApplicationDocument(BaseModelMixin):
+
     class DocType(models.TextChoices):
         TRANSCRIPT = "transcript", "Prior Transcript"
         ID_PROOF = "id_proof", "ID Proof"
@@ -67,11 +70,15 @@ class ApplicationDocument(BaseModelMixin):
         OTHER = "other", "Other"
 
     application = models.ForeignKey(
-        Application,
+        'Application',
         on_delete=models.CASCADE,
         related_name="documents"
     )
-    doc_type = models.CharField(max_length=20, choices=DocType.choices)
+    doc_type = models.CharField(
+        max_length=20,
+        choices=DocType.choices
+    )
+
     file = models.FileField(upload_to="admissions/documents/")
     verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(
@@ -83,19 +90,22 @@ class ApplicationDocument(BaseModelMixin):
 
 
 class TransferCreditEvaluation(BaseModelMixin):
+
     application = models.ForeignKey(
-        Application,
+        'Application',
         on_delete=models.CASCADE,
         related_name="transfer_credits"
     )
+
     external_course_name = models.CharField(max_length=255)
     external_institution = models.CharField(max_length=255)
     equivalent_course = models.ForeignKey(
         'Course',
         on_delete=models.SET_NULL,
         null=True, blank=True
-        # should an api for external students to request transfers and have access to course catalog [can base on unesco or cue codes]
+        # QUESTION: should an api for external students to request transfers and have access to course catalog [can base on unesco or cue codes]
     )
+
     credits_awarded = models.PositiveSmallIntegerField(default=0)
     evaluated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

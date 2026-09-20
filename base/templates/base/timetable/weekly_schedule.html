@@ -965,6 +965,7 @@
               data-course-code="{{ entry.curriculum.course.course_code }}"
               data-venue="{{ entry.venue.venue_name }}"
               data-lecturer="{% for lecturer in entry.curriculum.professor.all %}{{ lecturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+              data-lecturer-assignments="{{ entry.available_lecturer_assignments|to_json }}"
             >
               <div class="class-title">
                 {{ entry.curriculum.course.course_name }}
@@ -1101,6 +1102,13 @@
         </select>
       </div>
 
+      <div class="form-group" id="lecturerField" style="display: none">
+        <label class="form-label">Which lecturer?</label>
+        <select class="form-select" id="execLecturer" required>
+          <!-- populated by JS from entry.lecturerAssignments -->
+        </select>
+      </div>
+
       <div class="reschedule-fields" id="rescheduleFields">
         <div class="form-group">
           <!-- hardcode rather than expose a choice, since only a student is submitting this form -->
@@ -1168,306 +1176,99 @@
 </div>
 
 <script>
-  const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
-  const LOG_EXECUTION_URL = "{% url 'log-execution' %}";
-  const CSRF_TOKEN = "{{ csrf_token }}";
-  const HAS_SLOTS = {{ has_slots|yesno:"true,false" }};
+    const EXEC_HISTORY_URL = "{% url 'execution-history' %}";
+    const LOG_EXECUTION_URL = "{% url 'log-execution' %}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
+    const HAS_SLOTS = {{ has_slots|yesno:"true,false" }};
 
-  const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
-  const DAY_FULL = { MON: "Monday", TUE: "Tuesday", WED: "Wednesday", THU: "Thursday", FRI: "Friday" };
-  const DAY_SHORT = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri" };
+    const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
+    const DAY_FULL = { MON: "Monday", TUE: "Tuesday", WED: "Wednesday", THU: "Thursday", FRI: "Friday" };
+    const DAY_SHORT = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri" };
 
-  // ── state ────────────────────────────────────────────────────────────────
-  let weekOffset = 0;
-  let activeDayIndex = 0;
-  let activeEntry = null; // the currently-open slot's data, from ENTRIES
-  let ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
+    // ── state ────────────────────────────────────────────────────────────────
+    let weekOffset = 0;
+    let activeDayIndex = 0;
+    let activeEntry = null; // the currently-open slot's data, from ENTRIES
+    let ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
 
-  // ── date helpers ─────────────────────────────────────────────────────────
-  function getWeekDates(offset) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dow = today.getDay();
-    const fromMon = dow === 0 ? 6 : dow - 1;
-    const mon = new Date(today);
-    mon.setDate(today.getDate() - fromMon + offset * 7);
-    return DAYS.map((_, i) => {
-      const d = new Date(mon);
-      d.setDate(mon.getDate() + i);
-      return d;
-    });
-  }
-  function isToday(date) {
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    return date.getTime() === t.getTime();
-  }
-  function getTodayIndex() {
-    const dates = getWeekDates(0);
-    const idx = dates.findIndex((d) => isToday(d));
-    return idx >= 0 ? idx : 0;
-  }
-  function fmtShort(d) {
-    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  }
-  function fmtLong(d) {
-    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  }
-  function toISODate(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str ?? "";
-    return div.innerHTML;
-  }
-
-  // ── build mobile data from the server-rendered desktop table ──────────────
-  // Single source of truth: the Django-rendered <div class="class-slot--clickable">
-  // elements already carry everything the mobile view needs via data-* attrs.
-  function buildEntries() {
-    ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
-    document.querySelectorAll(".class-slot--clickable").forEach((el) => {
-      const [start, end] = (el.dataset.slot || "").split("-");
-      const entry = {
-        id: el.dataset.timetableId,
-        day: el.dataset.day,
-        slot: el.dataset.slot,
-        slotLabel: el.dataset.slotLabel,
-        start: start || "",
-        end: end || "",
-        courseName: el.dataset.courseName,
-        courseCode: el.dataset.courseCode,
-        venue: el.dataset.venue,
-        lecturer: el.dataset.lecturer,
-      };
-      if (ENTRIES_BY_DAY[entry.day]) {
-        ENTRIES_BY_DAY[entry.day].push(entry);
-      }
-      el.addEventListener("click", () => openDetailsSheet(entry));
-    });
-    Object.values(ENTRIES_BY_DAY).forEach((list) =>
-      list.sort((a, b) => a.start.localeCompare(b.start)),
-    );
-  }
-
-  // ── week header (desktop + mobile) ─────────────────────────────────────────
-  function renderWeekHeaders() {
-    const dates = getWeekDates(weekOffset);
-
-    const desktopDate = document.getElementById("desktopWeekDate");
-    const desktopToday = document.getElementById("desktopTodayLabel");
-    if (desktopDate) desktopDate.textContent = `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
-    if (desktopToday) {
-      desktopToday.textContent =
-        weekOffset === 0 ? `Today: ${fmtLong(new Date())}` : `Week of ${fmtShort(dates[0])}`;
-    }
-
-    DAYS.forEach((day, i) => {
-      const th = document.getElementById(`th-${day}`);
-      if (th) th.textContent = `${DAY_FULL[day]} ${fmtShort(dates[i])}`;
-    });
-
-    const mobileLabel = document.getElementById("mobileWeekLabel");
-    const mobileSub = document.getElementById("mobileWeekSubLabel");
-    if (mobileLabel && mobileSub) {
-      const text =
-        weekOffset === 0 ? "This Week " :
-        weekOffset === -1 ? "Last Week " :
-        weekOffset === 1 ? "Next Week " :
-        `Week ${weekOffset > 0 ? "+" : ""}${weekOffset} `;
-      mobileLabel.childNodes[0].nodeValue = text;
-      mobileSub.textContent = `${fmtShort(dates[0])} – ${fmtShort(dates[4])}`;
-    }
-  }
-
-  // ── mobile day strip ────────────────────────────────────────────────────
-  function renderMobileDayStrip() {
-    const strip = document.getElementById("dayStrip");
-    if (!strip) return;
-    const dates = getWeekDates(weekOffset);
-
-    strip.innerHTML = DAYS.map((day, i) => {
-      const date = dates[i];
-      const hasClasses = (ENTRIES_BY_DAY[day] || []).length > 0;
-      const classes = [
-        "day-chip",
-        hasClasses ? "day-chip--has-classes" : "",
-        isToday(date) ? "day-chip--today" : "",
-        i === activeDayIndex ? "day-chip--active" : "",
-      ].filter(Boolean).join(" ");
-
-      return `
-        <button class="${classes}" type="button" onclick="selectDay(${i})">
-          <div class="day-chip__name">${DAY_SHORT[day]}</div>
-          <div class="day-chip__date">${date.getDate()}</div>
-          <div class="day-chip__dot"></div>
-        </button>`;
-    }).join("");
-  }
-
-  // ── mobile class list ───────────────────────────────────────────────────
-  function renderMobileClassList() {
-    const list = document.getElementById("classList");
-    if (!list) return;
-
-    const dates = getWeekDates(weekOffset);
-    const day = DAYS[activeDayIndex];
-    const date = dates[activeDayIndex];
-    const entries = ENTRIES_BY_DAY[day] || [];
-
-    let html = `
-      <div class="day-heading">
-        <div class="day-heading__title">${DAY_FULL[day]}, ${fmtShort(date)}</div>
-        <div class="day-heading__count">${entries.length} ${entries.length === 1 ? "class" : "classes"}</div>
-      </div>`;
-
-    if (entries.length === 0) {
-      html += `
-        <div class="empty-day">
-          <div class="empty-day__icon"><i class="fas fa-coffee"></i></div>
-          <div class="empty-day__title">No classes on ${DAY_FULL[day]}</div>
-          <div class="empty-day__text">Enjoy your free day! Pick another day from the strip above to see its schedule.</div>
-        </div>`;
-    } else {
-      entries.forEach((entry) => {
-        html += renderClassCard(entry);
+    // ── date helpers ─────────────────────────────────────────────────────────
+    function getWeekDates(offset) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dow = today.getDay();
+      const fromMon = dow === 0 ? 6 : dow - 1;
+      const mon = new Date(today);
+      mon.setDate(today.getDate() - fromMon + offset * 7);
+      return DAYS.map((_, i) => {
+        const d = new Date(mon);
+        d.setDate(mon.getDate() + i);
+        return d;
       });
     }
-
-    list.innerHTML = html;
-
-    list.querySelectorAll(".class-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const entry = entries.find((e) => e.id === card.dataset.id);
-        if (entry) openDetailsSheet(entry);
-      });
-    });
-  }
-
-  function renderClassCard(entry) {
-    return `
-      <div class="class-card" data-id="${entry.id}">
-        <div class="class-card__time">
-          <div class="class-card__time-start">${escapeHtml(entry.start)}</div>
-          <div class="class-card__time-end">${escapeHtml(entry.end)}</div>
-        </div>
-        <div class="class-card__body">
-          <div class="class-card__title">${escapeHtml(entry.courseName)}</div>
-          <div class="class-card__meta">
-            <span class="class-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(entry.courseCode)}</span></span>
-            <span class="class-card__meta-item"><i class="fas fa-map-marker-alt"></i><span>${escapeHtml(entry.venue)}</span></span>
-          </div>
-          <div class="class-card__meta" style="margin-top: 0.3rem;">
-            <span class="class-card__meta-item"><i class="fas fa-user-tie"></i><span>${escapeHtml(entry.lecturer)}</span></span>
-          </div>
-          <div class="class-card__badges">
-            <span class="badge badge--lecture">Lecture</span>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function selectDay(index) {
-    if (index < 0 || index >= DAYS.length) return;
-    activeDayIndex = index;
-    renderMobileDayStrip();
-    renderMobileClassList();
-  }
-
-  // ── week navigation ─────────────────────────────────────────────────────
-  function changeWeek(delta) {
-    weekOffset += delta;
-    if (weekOffset === 0) activeDayIndex = getTodayIndex();
-    renderWeekHeaders();
-    renderMobileDayStrip();
-    renderMobileClassList();
-  }
-  function goToToday() {
-    weekOffset = 0;
-    activeDayIndex = getTodayIndex();
-    renderWeekHeaders();
-    renderMobileDayStrip();
-    renderMobileClassList();
-  }
-
-  // ── details sheet ────────────────────────────────────────────────────────
-  function openDetailsSheet(entry) {
-    activeEntry = entry;
-
-    document.getElementById("sheetCourseName").textContent = entry.courseName;
-    document.getElementById("sheetCourseMeta").textContent = `${entry.courseCode} · ${entry.venue}`;
-    document.getElementById("sheetDay").textContent = DAY_FULL[entry.day] || entry.day;
-    document.getElementById("sheetTime").textContent = entry.slotLabel || entry.slot;
-    document.getElementById("sheetVenue").textContent = entry.venue;
-    document.getElementById("sheetLecturer").textContent = entry.lecturer || "—";
-
-    openSheet("detailsSheet");
-    loadExecutionHistory(entry.id);
-  }
-
-  async function loadExecutionHistory(timetableId) {
-    const container = document.getElementById("sheetHistory");
-    container.innerHTML = `<div class="history-empty">Loading…</div>`;
-
-    try {
-      const res = await fetch(`${EXEC_HISTORY_URL}?timetable_id=${timetableId}`);
-      const data = await res.json();
-
-      if (!data.executions || data.executions.length === 0) {
-        container.innerHTML = `
-          <div class="history-empty">
-            <i class="fas fa-inbox"></i>
-            No executions logged yet for this slot.
-          </div>`;
-        return;
-      }
-
-      container.innerHTML = `
-        <div class="history-timeline">
-          ${data.executions.map((ex) => {
-            const statusKey = (ex.status || "").toLowerCase();
-            let detail = "";
-            if (ex.status === "Rescheduled") {
-              detail = `Moved to <strong>${escapeHtml(ex.rescheduled_to_date || "—")}</strong> at <strong>${escapeHtml(ex.rescheduled_to_time_slot || "—")}</strong> · <strong>${escapeHtml(ex.rescheduled_to_venue || "—")}</strong>`;
-            } else if (ex.status === "Missed") {
-              detail = "Lecturer did not attend.";
-            } else if (ex.status === "Attended" && ex.class_representative) {
-              detail = `Confirmed by <strong>${escapeHtml(ex.class_representative)}</strong>`;
-            } else if (ex.status === "Cancelled") {
-              detail = "Class was cancelled.";
-            }
-            const notes = ex.notes
-              ? `<div class="history-item__notes" style="margin-top:4px;font-style:italic;">"${escapeHtml(ex.notes)}"</div>`
-              : "";
-            const icon =
-              ex.status === "Attended" ? "fa-check" :
-              ex.status === "Missed" ? "fa-times" :
-              ex.status === "Rescheduled" ? "fa-clock" : "fa-ban";
-
-            return `
-              <div class="history-item history-item--${statusKey}">
-                <div class="history-item__icon"><i class="fas ${icon}"></i></div>
-                <div class="history-item__body">
-                  <div class="history-item__top">
-                    <span class="history-item__date">${escapeHtml(ex.calendar_date)}</span>
-                    <span class="badge badge--${statusKey}">${escapeHtml(ex.status)}</span>
-                  </div>
-                  ${detail ? `<div class="history-item__notes">${detail}</div>` : ""}
-                  ${notes}
-                </div>
-              </div>`;
-          }).join("")}
-        </div>`;
-    } catch (err) {
-      container.innerHTML = `<div class="history-empty">⚠️ Failed to load history. Try again.</div>`;
+    function isToday(date) {
+      const t = new Date();
+      t.setHours(0, 0, 0, 0);
+      return date.getTime() === t.getTime();
     }
-  }
+    function getTodayIndex() {
+      const dates = getWeekDates(0);
+      const idx = dates.findIndex((d) => isToday(d));
+      return idx >= 0 ? idx : 0;
+    }
+    function fmtShort(d) {
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    }
+    function fmtLong(d) {
+      return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    }
+    function toISODate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str ?? "";
+      return div.innerHTML;
+    }
 
-  // ── log execution sheet ──────────────────────────────────────────────────
+    // ── build mobile data from the server-rendered desktop table ──────────────
+    // Single source of truth: the Django-rendered <div class="class-slot--clickable">
+    // elements already carry everything the mobile view needs via data-* attrs.
+    function buildEntries() {
+      ENTRIES_BY_DAY = { MON: [], TUE: [], WED: [], THU: [], FRI: [] };
+      document.querySelectorAll(".class-slot--clickable").forEach((el) => {
+        const [start, end] = (el.dataset.slot || "").split("-");
+        let lecturerAssignments = [];
+        try {
+          lecturerAssignments = JSON.parse(el.dataset.lecturerAssignments || "[]");
+        } catch (e) {
+          lecturerAssignments = [];
+        }
+        const entry = {
+          id: el.dataset.timetableId,
+          day: el.dataset.day,
+          slot: el.dataset.slot,
+          slotLabel: el.dataset.slotLabel,
+          start: start || "",
+          end: end || "",
+          courseName: el.dataset.courseName,
+          courseCode: el.dataset.courseCode,
+          venue: el.dataset.venue,
+          lecturer: el.dataset.lecturer,
+          lecturerAssignments: lecturerAssignments, // [{id, name}, ...]
+        };
+        if (ENTRIES_BY_DAY[entry.day]) {
+          ENTRIES_BY_DAY[entry.day].push(entry);
+        }
+        el.addEventListener("click", () => openDetailsSheet(entry));
+      });
+      Object.values(ENTRIES_BY_DAY).forEach((list) =>
+        list.sort((a, b) => a.start.localeCompare(b.start)),
+      );
+    }
+
   function openLogSheet() {
     if (!activeEntry) return;
 
@@ -1482,15 +1283,27 @@
     toggleRescheduleFields();
     document.getElementById("formError").classList.remove("active");
 
+    // Only show the dropdown when there's a real choice to make — a
+    // single-lecturer slot is auto-resolved server-side, no need to ask.
+    const lecturerField = document.getElementById("lecturerField");
+    const lecturerSelect = document.getElementById("execLecturer");
+    const assignments = activeEntry.lecturerAssignments || [];
+
+    if (assignments.length > 1) {
+      lecturerSelect.innerHTML = assignments
+        .map((a) => `<option value="${a.id}">${escapeHtml(a.name)}</option>`)
+        .join("");
+      lecturerSelect.required = true;
+      lecturerField.style.display = "block";
+    } else {
+      lecturerSelect.innerHTML = "";
+      lecturerSelect.required = false;
+      lecturerField.style.display = "none";
+    }
+
     closeSheet("detailsSheet");
     openSheet("logSheet");
   }
-
-  function toggleRescheduleFields() {
-    const status = document.getElementById("execStatus").value;
-    document.getElementById("rescheduleFields").classList.toggle("active", status === "Rescheduled");
-  }
-  document.getElementById("execStatus").addEventListener("change", toggleRescheduleFields);
 
   async function submitLog(e) {
     e.preventDefault();
@@ -1506,6 +1319,11 @@
       status: status,
       notes: document.getElementById("execNotes").value.trim(),
     };
+
+    const lecturerSelect = document.getElementById("execLecturer");
+    if (lecturerSelect.required && lecturerSelect.value) {
+      payload.lecturer_assignment_id = lecturerSelect.value;
+    }
 
     if (status === "Rescheduled") {
       payload.reschedule_requested_by_role = "STUDENT";
@@ -1531,56 +1349,276 @@
       closeSheet("logSheet");
       openSheet("detailsSheet");
       loadExecutionHistory(activeEntry.id);
-      // showToast() and #toast are provided globally by base/main.html.
       if (typeof showToast === "function") showToast("✅ Execution logged", "success");
     } catch (err) {
       errorBox.textContent = "Network error — please try again.";
       errorBox.classList.add("active");
     }
   }
+    // ── week header (desktop + mobile) ─────────────────────────────────────────
+    function renderWeekHeaders() {
+      const dates = getWeekDates(weekOffset);
 
-  // ── sheet controls ───────────────────────────────────────────────────────
-  function openSheet(id) {
-    document.getElementById(id).classList.add("active");
-    document.body.style.overflow = "hidden";
-  }
-  function closeSheet(id) {
-    document.getElementById(id).classList.remove("active");
-    document.body.style.overflow = "";
-  }
-  ["detailsSheet", "logSheet"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", (e) => {
-      if (e.target.id === id) closeSheet(id);
-    });
-  });
-
-  // ── swipe between days on mobile ────────────────────────────────────────
-  let touchStartX = 0, touchStartY = 0;
-  const classListEl = document.getElementById("classList");
-  if (classListEl) {
-    classListEl.addEventListener("touchstart", (e) => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-
-    classListEl.addEventListener("touchend", (e) => {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        if (dx < 0 && activeDayIndex < DAYS.length - 1) selectDay(activeDayIndex + 1);
-        else if (dx > 0 && activeDayIndex > 0) selectDay(activeDayIndex - 1);
+      const desktopDate = document.getElementById("desktopWeekDate");
+      const desktopToday = document.getElementById("desktopTodayLabel");
+      if (desktopDate) desktopDate.textContent = `${fmtLong(dates[0])} – ${fmtLong(dates[4])}`;
+      if (desktopToday) {
+        desktopToday.textContent =
+          weekOffset === 0 ? `Today: ${fmtLong(new Date())}` : `Week of ${fmtShort(dates[0])}`;
       }
-    }, { passive: true });
-  }
 
-  // ── init ──────────────────────────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!HAS_SLOTS) return;
-    activeDayIndex = getTodayIndex();
-    buildEntries();
-    renderWeekHeaders();
-    renderMobileDayStrip();
-    renderMobileClassList();
-  });
+      DAYS.forEach((day, i) => {
+        const th = document.getElementById(`th-${day}`);
+        if (th) th.textContent = `${DAY_FULL[day]} ${fmtShort(dates[i])}`;
+      });
+
+      const mobileLabel = document.getElementById("mobileWeekLabel");
+      const mobileSub = document.getElementById("mobileWeekSubLabel");
+      if (mobileLabel && mobileSub) {
+        const text =
+          weekOffset === 0 ? "This Week " :
+          weekOffset === -1 ? "Last Week " :
+          weekOffset === 1 ? "Next Week " :
+          `Week ${weekOffset > 0 ? "+" : ""}${weekOffset} `;
+        mobileLabel.childNodes[0].nodeValue = text;
+        mobileSub.textContent = `${fmtShort(dates[0])} – ${fmtShort(dates[4])}`;
+      }
+    }
+
+    // ── mobile day strip ────────────────────────────────────────────────────
+    function renderMobileDayStrip() {
+      const strip = document.getElementById("dayStrip");
+      if (!strip) return;
+      const dates = getWeekDates(weekOffset);
+
+      strip.innerHTML = DAYS.map((day, i) => {
+        const date = dates[i];
+        const hasClasses = (ENTRIES_BY_DAY[day] || []).length > 0;
+        const classes = [
+          "day-chip",
+          hasClasses ? "day-chip--has-classes" : "",
+          isToday(date) ? "day-chip--today" : "",
+          i === activeDayIndex ? "day-chip--active" : "",
+        ].filter(Boolean).join(" ");
+
+        return `
+          <button class="${classes}" type="button" onclick="selectDay(${i})">
+            <div class="day-chip__name">${DAY_SHORT[day]}</div>
+            <div class="day-chip__date">${date.getDate()}</div>
+            <div class="day-chip__dot"></div>
+          </button>`;
+      }).join("");
+    }
+
+    // ── mobile class list ───────────────────────────────────────────────────
+    function renderMobileClassList() {
+      const list = document.getElementById("classList");
+      if (!list) return;
+
+      const dates = getWeekDates(weekOffset);
+      const day = DAYS[activeDayIndex];
+      const date = dates[activeDayIndex];
+      const entries = ENTRIES_BY_DAY[day] || [];
+
+      let html = `
+        <div class="day-heading">
+          <div class="day-heading__title">${DAY_FULL[day]}, ${fmtShort(date)}</div>
+          <div class="day-heading__count">${entries.length} ${entries.length === 1 ? "class" : "classes"}</div>
+        </div>`;
+
+      if (entries.length === 0) {
+        html += `
+          <div class="empty-day">
+            <div class="empty-day__icon"><i class="fas fa-coffee"></i></div>
+            <div class="empty-day__title">No classes on ${DAY_FULL[day]}</div>
+            <div class="empty-day__text">Enjoy your free day! Pick another day from the strip above to see its schedule.</div>
+          </div>`;
+      } else {
+        entries.forEach((entry) => {
+          html += renderClassCard(entry);
+        });
+      }
+
+      list.innerHTML = html;
+
+      list.querySelectorAll(".class-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const entry = entries.find((e) => e.id === card.dataset.id);
+          if (entry) openDetailsSheet(entry);
+        });
+      });
+    }
+
+    function renderClassCard(entry) {
+      return `
+        <div class="class-card" data-id="${entry.id}">
+          <div class="class-card__time">
+            <div class="class-card__time-start">${escapeHtml(entry.start)}</div>
+            <div class="class-card__time-end">${escapeHtml(entry.end)}</div>
+          </div>
+          <div class="class-card__body">
+            <div class="class-card__title">${escapeHtml(entry.courseName)}</div>
+            <div class="class-card__meta">
+              <span class="class-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(entry.courseCode)}</span></span>
+              <span class="class-card__meta-item"><i class="fas fa-map-marker-alt"></i><span>${escapeHtml(entry.venue)}</span></span>
+            </div>
+            <div class="class-card__meta" style="margin-top: 0.3rem;">
+              <span class="class-card__meta-item"><i class="fas fa-user-tie"></i><span>${escapeHtml(entry.lecturer)}</span></span>
+            </div>
+            <div class="class-card__badges">
+              <span class="badge badge--lecture">Lecture</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function selectDay(index) {
+      if (index < 0 || index >= DAYS.length) return;
+      activeDayIndex = index;
+      renderMobileDayStrip();
+      renderMobileClassList();
+    }
+
+    // ── week navigation ─────────────────────────────────────────────────────
+    function changeWeek(delta) {
+      weekOffset += delta;
+      if (weekOffset === 0) activeDayIndex = getTodayIndex();
+      renderWeekHeaders();
+      renderMobileDayStrip();
+      renderMobileClassList();
+    }
+    function goToToday() {
+      weekOffset = 0;
+      activeDayIndex = getTodayIndex();
+      renderWeekHeaders();
+      renderMobileDayStrip();
+      renderMobileClassList();
+    }
+
+    // ── details sheet ────────────────────────────────────────────────────────
+    function openDetailsSheet(entry) {
+      activeEntry = entry;
+
+      document.getElementById("sheetCourseName").textContent = entry.courseName;
+      document.getElementById("sheetCourseMeta").textContent = `${entry.courseCode} · ${entry.venue}`;
+      document.getElementById("sheetDay").textContent = DAY_FULL[entry.day] || entry.day;
+      document.getElementById("sheetTime").textContent = entry.slotLabel || entry.slot;
+      document.getElementById("sheetVenue").textContent = entry.venue;
+      document.getElementById("sheetLecturer").textContent = entry.lecturer || "—";
+
+      openSheet("detailsSheet");
+      loadExecutionHistory(entry.id);
+    }
+
+    async function loadExecutionHistory(timetableId) {
+      const container = document.getElementById("sheetHistory");
+      container.innerHTML = `<div class="history-empty">Loading…</div>`;
+
+      try {
+        const res = await fetch(`${EXEC_HISTORY_URL}?timetable_id=${timetableId}`);
+        const data = await res.json();
+
+        if (!data.executions || data.executions.length === 0) {
+          container.innerHTML = `
+            <div class="history-empty">
+              <i class="fas fa-inbox"></i>
+              No executions logged yet for this slot.
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="history-timeline">
+            ${data.executions.map((ex) => {
+              const statusKey = (ex.status || "").toLowerCase();
+              let detail = "";
+              if (ex.status === "Rescheduled") {
+                detail = `Moved to <strong>${escapeHtml(ex.rescheduled_to_date || "—")}</strong> at <strong>${escapeHtml(ex.rescheduled_to_time_slot || "—")}</strong> · <strong>${escapeHtml(ex.rescheduled_to_venue || "—")}</strong>`;
+              } else if (ex.status === "Missed") {
+                detail = "Lecturer did not attend.";
+              } else if (ex.status === "Attended" && ex.class_representative) {
+                detail = `Confirmed by <strong>${escapeHtml(ex.class_representative)}</strong>`;
+              } else if (ex.status === "Cancelled") {
+                detail = "Class was cancelled.";
+              }
+              const notes = ex.notes
+                ? `<div class="history-item__notes" style="margin-top:4px;font-style:italic;">"${escapeHtml(ex.notes)}"</div>`
+                : "";
+              const icon =
+                ex.status === "Attended" ? "fa-check" :
+                ex.status === "Missed" ? "fa-times" :
+                ex.status === "Rescheduled" ? "fa-clock" : "fa-ban";
+
+              return `
+                <div class="history-item history-item--${statusKey}">
+                  <div class="history-item__icon"><i class="fas ${icon}"></i></div>
+                  <div class="history-item__body">
+                    <div class="history-item__top">
+                      <span class="history-item__date">${escapeHtml(ex.calendar_date)}</span>
+                      <span class="badge badge--${statusKey}">${escapeHtml(ex.status)}</span>
+                    </div>
+                    ${detail ? `<div class="history-item__notes">${detail}</div>` : ""}
+                    ${notes}
+                  </div>
+                </div>`;
+            }).join("")}
+          </div>`;
+      } catch (err) {
+        container.innerHTML = `<div class="history-empty">⚠️ Failed to load history. Try again.</div>`;
+      }
+    }
+
+    // ── log execution sheet ──────────────────────────────────────────────────
+
+    function toggleRescheduleFields() {
+      const status = document.getElementById("execStatus").value;
+      document.getElementById("rescheduleFields").classList.toggle("active", status === "Rescheduled");
+    }
+    document.getElementById("execStatus").addEventListener("change", toggleRescheduleFields);
+
+
+    // ── sheet controls ───────────────────────────────────────────────────────
+    function openSheet(id) {
+      document.getElementById(id).classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+    function closeSheet(id) {
+      document.getElementById(id).classList.remove("active");
+      document.body.style.overflow = "";
+    }
+    ["detailsSheet", "logSheet"].forEach((id) => {
+      document.getElementById(id).addEventListener("click", (e) => {
+        if (e.target.id === id) closeSheet(id);
+      });
+    });
+
+    // ── swipe between days on mobile ────────────────────────────────────────
+    let touchStartX = 0, touchStartY = 0;
+    const classListEl = document.getElementById("classList");
+    if (classListEl) {
+      classListEl.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      classListEl.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          if (dx < 0 && activeDayIndex < DAYS.length - 1) selectDay(activeDayIndex + 1);
+          else if (dx > 0 && activeDayIndex > 0) selectDay(activeDayIndex - 1);
+        }
+      }, { passive: true });
+    }
+
+    // ── init ──────────────────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!HAS_SLOTS) return;
+      activeDayIndex = getTodayIndex();
+      buildEntries();
+      renderWeekHeaders();
+      renderMobileDayStrip();
+      renderMobileClassList();
+    });
 </script>
 {% endblock %}

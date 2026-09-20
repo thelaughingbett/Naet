@@ -805,9 +805,9 @@ Tell us:
 
 ```
 Python version   3.10+
-Formatter        black (recommended, not enforced yet)
+Formatter        Prettier (recommended, not enforced yet)
 Imports          isort
-Line length      88 (black default)
+Line length      88 (Prettier default)
 ```
 
 Things we care about:

@@ -28,6 +28,7 @@ from ..base import BaseModelMixin
 
 
 ASSIGNMENT_STATUS_CHOICES = [
+    # when rolling over from a previous session this should be default if lecturer assignments were copied over from previous session
     ('Draft', 'Draft Assignment'),
     ('Assigned', 'Assigned / Pending Review'),
     ('Confirmed', 'Confirmed by Head of Department'),
@@ -61,6 +62,7 @@ class Syllabus(BaseModelMixin):
         on_delete=models.PROTECT,
         related_name="syllabus_entries"
     )
+
     course = models.ForeignKey(
         "Course",
         on_delete=models.PROTECT,
@@ -76,13 +78,14 @@ class Syllabus(BaseModelMixin):
     offered = models.IntegerField(
         default=1,
         help_text="Year of study this unit is typically scheduled."
-    )
+    )  # redunancy field   NB should match the course
 
-    year_introduced = models.PositiveSmallIntegerField(
+    year_introduced = models.CharField(
+        max_length=9,
         null=True,
         blank=True,
         help_text="Academic year this entry was approved/introduced into the programme",
-    )
+    )  # 2025/2026
 
     proposed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -99,7 +102,12 @@ class Syllabus(BaseModelMixin):
         blank=True,
         related_name="syllabus_approvals",
     )
-    approved_at = models.DateTimeField(null=True, blank=True)
+
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -120,7 +128,7 @@ class Syllabus(BaseModelMixin):
 
 class Curriculum(BaseModelMixin):
     """
-    Now represents a shared teaching slot for one Course in one Session —
+     represents a shared teaching slot for one Course in one Session —
     potentially serving several classes across different programmes at
     once (e.g. an Informatics section and a CS section attending the
     same lecture). Which classes attend, and under what syllabus
@@ -146,6 +154,13 @@ class Curriculum(BaseModelMixin):
         blank=True
     )
 
+    pass_mark = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Minimum score to pass this specific course. Override per "
+        "course — e.g. a professional/regulated unit might require 50."
+    )  # redundancy field should be derived from method TODO get_pass mark
+
     session = models.ForeignKey(
         'Session',
         on_delete=models.PROTECT,
@@ -159,12 +174,16 @@ class Curriculum(BaseModelMixin):
         help_text="Total seats across ALL classes attending this slot, "
         "not per-class. Enrollment capacity checks must sum across "
         "every class now, not assume one Tclass per Curriculum."
-    )
+    )  # NOTE : suggest this to be calculated  against programme capacity
 
     weighting_scheme_override = models.ForeignKey(
-        'WeightingScheme', on_delete=models.PROTECT, null=True, blank=True,
+        'WeightingScheme',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='curricula_overriding',
     )
+    # NOTE Grading scale override here also here
 
     class Meta:
         unique_together = ('course', 'session')
@@ -269,13 +288,21 @@ class CurriculumClass(BaseModelMixin):
     """
 
     curriculum = models.ForeignKey(
-        'Curriculum', on_delete=models.CASCADE, related_name='class_links'
+        'Curriculum',
+        on_delete=models.CASCADE,
+        related_name='class_links'
     )
+
     Tclass = models.ForeignKey(
-        'Tclass', on_delete=models.PROTECT, related_name='curriculum_links'
+        'Tclass',
+        on_delete=models.PROTECT,
+        related_name='curriculum_links'
     )
+
     syllabus = models.ForeignKey(
-        'Syllabus', on_delete=models.PROTECT, related_name='curriculum_links'
+        'Syllabus',
+        on_delete=models.PROTECT,
+        related_name='curriculum_links'
     )
 
     class Meta:
@@ -305,6 +332,19 @@ class LecturerAssignment(BaseModelMixin):
         "Curriculum",
         on_delete=models.CASCADE,
         related_name='lecturer_assignments'
+    )
+
+    class_link = models.ForeignKey(
+        'CurriculumClass',
+        on_delete=models.PROTECT,
+        related_name='lecturer_assignments',
+        null=True,
+        blank=True,
+        help_text="For a shared curriculum slot spanning several classes "
+        "(e.g. a common unit), pin this assignment to one specific class "
+        "rather than the whole slot. Used to filter result entry and "
+        "class lists, and to compute per-class workload, when a "
+        "curriculum has multiple classes attached."
     )
 
     lecturer = models.ForeignKey(

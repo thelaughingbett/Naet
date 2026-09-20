@@ -762,7 +762,7 @@ def submit_bulk_request(request):
         )
 
     results = []
-    for item in items:
+    for i, item in enumerate(items):
         course_code = (item.get("course_code") or "").strip()
         session_str = (item.get("session") or "").strip()
 

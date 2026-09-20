@@ -44,6 +44,7 @@ EXECUTIVE_POSITIONS = {
     "secretary_general",
     "deputy_secretary",
     "treasurer",
+    'school_rep'
 }
 
 
@@ -58,7 +59,7 @@ class CouncilTerm(BaseModelMixin):
         max_length=9,
         unique=True,
         help_text="e.g. '2026/2027' — matches Session.academic_year format.",
-    )
+    )  # redundant due to session inference
 
     theme = models.CharField(
         max_length=255,
@@ -67,11 +68,11 @@ class CouncilTerm(BaseModelMixin):
         help_text="This council's manifesto theme/slogan, if any.",
     )
 
-    start_date = models.DateField()
+    start_date = models.DateField()  # TODO : change to start session
     end_date = models.DateField(
         null=True,
         blank=True
-    )
+    )  # TODO :  change to end session
 
     is_current = models.BooleanField(default=False)
 

@@ -14,6 +14,11 @@ from ..base import BaseModelMixin
 
 class Reporting(BaseModelMixin):
 
+    REPORTED_VIA_CHOICES = [
+        ("online", "Online"),
+        ("physical", "Physical")
+    ]
+
     student = models.ForeignKey(
         'Student',
         on_delete=models.PROTECT,
@@ -25,11 +30,6 @@ class Reporting(BaseModelMixin):
         on_delete=models.PROTECT,
         related_name='reportings'
     )
-
-    REPORTED_VIA_CHOICES = [
-        ("online", "Online"),
-        ("physical", "Physical")
-    ]
 
     reported_at = models.DateTimeField(
         auto_now_add=True

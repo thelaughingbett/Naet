@@ -35,7 +35,7 @@ class Student(BaseModelMixin, hasUserMixin):
 
     stay_choices = [
         ('resident', 'Resident'),
-        ('outside',  'Outside'),
+        ('outside',  'Non-Resident'),
     ]
 
     ADMISSION_PATHWAY_CHOICES = [
@@ -59,9 +59,20 @@ class Student(BaseModelMixin, hasUserMixin):
 
     # --- personal info ---
     marital_status = models.CharField(
-        max_length=20, choices=MARRIAGE_STATUS, default="U")
-    name_of_spouse = models.CharField(max_length=255, null=True, blank=True)
-    spouse_contact = models.CharField(max_length=19, null=True, blank=True)
+        max_length=20,
+        choices=MARRIAGE_STATUS,
+        default="U"
+    )
+    name_of_spouse = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+    spouse_contact = models.CharField(
+        max_length=19,
+        null=True,
+        blank=True
+    )
     occupation_of_spouse = models.CharField(
         max_length=255,
         null=True,
@@ -70,7 +81,11 @@ class Student(BaseModelMixin, hasUserMixin):
     number_of_children = models.IntegerField(null=True, blank=True)
 
     id_type = models.CharField(
-        max_length=24, default='national', choices=id_type_choices)
+        max_length=24,
+        default='national',
+        choices=id_type_choices
+    )
+
     national_id = models.CharField(
         max_length=34,
         default="xxxxxxx",
@@ -115,14 +130,15 @@ class Student(BaseModelMixin, hasUserMixin):
     class_entered = models.ForeignKey(
         'Tclass',
         on_delete=models.PROTECT,
-        related_name='class_list'
+        related_name='day_ones'
     )
 
     current_class = models.ForeignKey(
         'Tclass',
         on_delete=models.PROTECT,
         null=True,
-        blank=True
+        blank=True,
+        related_name='class_list'
     )  # TODO  : make class entered on create
     # tracks deffered students and for analytics purposes,and graduation purposes
 

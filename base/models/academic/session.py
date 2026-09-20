@@ -25,12 +25,23 @@ class Session(BaseModelMixin):
     semester = models.CharField(max_length=1, choices=SEMESTER_CHOICES)
 
     start_date = models.DateField()
-    end_date = models.DateField(null=True)
+    end_date = models.DateField(
+        null=True,
+        blank=True
+    )
 
-    registration_start = models.DateField(null=True, blank=True)
-    registration_end = models.DateField(null=True, blank=True)
+    registration_start = models.DateField(
+        null=True,
+        blank=True
+    )
+    registration_end = models.DateField(
+        null=True,
+        blank=True
+    )
 
-    # is this redundant given that active session is set in school ? 👇🏿
+    # TODO figure out how to wire up hostel registrartion session'san other miscellenous for a given session  -> already wired up in compliance/registration window
+
+    # is this redundant given that active session is set in school ? 👇🏿 -> yes but nice guard
     is_active = models.BooleanField(default=False)
 
     class Meta:

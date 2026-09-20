@@ -17,6 +17,7 @@ class IDCard(BaseModelMixin):
         on_delete=models.CASCADE,
         related_name="id_card"
     )
+
     card_number = models.CharField(max_length=30, unique=True)
     issued_date = models.DateField(auto_now_add=True)
     expiry_date = models.DateField(null=True, blank=True)

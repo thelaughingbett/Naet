@@ -17,8 +17,7 @@ from ..base import BaseModelMixin
 
 class Club(BaseModelMixin):
     """
-    A student club or society. Deliberately not tied to a single
-    Department/School via WithDepartmentMixin/WithSchoolMixin — most clubs
+    A student club or society.  clubs
     (sports, media, religious, cultural) draw membership university-wide.
     Academic/professional societies can still be scoped to a department
     via the optional `department` FK below.
@@ -170,7 +169,8 @@ class Club(BaseModelMixin):
     @property
     def primary_patron(self):
         assignment = self.club_patrons.filter(
-            is_active=True, is_primary=True
+            is_active=True,
+            is_primary=True
         ).select_related("staff").first()
         return assignment.staff if assignment else None
 
@@ -223,10 +223,17 @@ class ClubPatron(BaseModelMixin):
     )
 
     date_appointed = models.DateField(default=timezone.now)
-    date_ended = models.DateField(null=True, blank=True)
+    date_ended = models.DateField(
+        null=True,
+        blank=True
+    )
     is_active = models.BooleanField(default=True)
 
-    notes = models.CharField(max_length=255, blank=True, default="")
+    notes = models.CharField(
+        max_length=255,
+        blank=True,
+        default=""
+    )
 
     history = HistoricalRecords()
 

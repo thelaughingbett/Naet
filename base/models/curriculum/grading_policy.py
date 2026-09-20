@@ -83,7 +83,8 @@ class GradingScale(BaseModelMixin):
         data-integrity problem worth surfacing loudly.
         """
         band = self.bands.filter(
-            min_score__lte=score).order_by('-min_score').first()
+            min_score__lte=score
+        ).order_by('-min_score').first()
         if band is None:
             raise ValidationError(
                 f"Grading scale '{self.name}' has no band covering a score of {score} "
@@ -96,15 +97,26 @@ class GradingScale(BaseModelMixin):
 
 
 class GradingBand(BaseModelMixin):
+
     scale = models.ForeignKey(
-        GradingScale, on_delete=models.CASCADE, related_name='bands'
+        'GradingScale',
+        on_delete=models.CASCADE,
+        related_name='bands'
     )
+
     min_score = models.PositiveIntegerField(
         help_text="Lowest score (inclusive) that earns this band's grade points."
     )
-    grade_points = models.DecimalField(max_digits=3, decimal_places=2)
+
+    grade_points = models.DecimalField(
+        max_digits=3,
+        decimal_places=2
+    )
+
     label = models.CharField(
-        max_length=5, blank=True, help_text="e.g. 'A', 'B+' — display only."
+        max_length=5,
+        blank=True,
+        help_text="e.g. 'A', 'B+' — display only."
     )
 
     class Meta:
@@ -122,7 +134,10 @@ class WeightingScheme(BaseModelMixin):
     {CAT: 30%, Exam: 70%}. Resolved per Course by default, overridable
     per Curriculum (a specific lecturer's specific class offering)."""
 
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(
+        max_length=100,
+        unique=True
+    )
 
     is_default = models.BooleanField(
         default=False,
@@ -181,21 +196,32 @@ class WeightingComponent(BaseModelMixin):
         BEST_N = "best_n", "Average the best N submissions"
         SUM = "sum", "Sum all submissions"
         LATEST = "latest", "Most recent submission only"
+        LATEST_N = "latest_n", "Most recent N Submissions only"
 
     scheme = models.ForeignKey(
-        WeightingScheme, on_delete=models.CASCADE, related_name='components'
+        'WeightingScheme',
+        on_delete=models.CASCADE,
+        related_name='components'
     )
+
     result_type = models.CharField(max_length=2, choices=RESULT_TYPE_CHOICES)
-    weight_percent = models.DecimalField(max_digits=5, decimal_places=2)
+    weight_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2
+    )  # e.g 30% for cats
 
     aggregation = models.CharField(
-        max_length=15, choices=Aggregation.choices, default=Aggregation.AVERAGE_ALL,
+        max_length=15,
+        choices=Aggregation.choices,
+        default=Aggregation.AVERAGE_ALL,
         help_text="How multiple results of this type combine into this "
         "component's score. e.g. three CATs: average all three, "
         "or drop the worst and average the best 2."
     )
+
     expected_count = models.PositiveSmallIntegerField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="How many results of this type the lecturer plans to "
         "give (e.g. 3 CATs). REQUIRED for 'best_n' — without "
         "knowing the total, the system can't tell 'still waiting "
@@ -203,10 +229,12 @@ class WeightingComponent(BaseModelMixin):
         "for the other strategies; leave blank if any number of "
         "submissions should count as complete."
     )
-    best_n_count = models.PositiveSmallIntegerField(
+
+    n_count = models.PositiveSmallIntegerField(
         null=True, blank=True,
-        help_text="Only used when aggregation='best_n' — how many of the "
-        "top scores to average, e.g. 2 (best 2 of 3)."
+        help_text="Used by 'best_n' (top N scores) and 'latest_n' (most "
+        "recent N submissions) — how many results to include, "
+        "e.g. 2 (best/latest 2 of 3)."
     )
 
     class Meta:
@@ -214,20 +242,21 @@ class WeightingComponent(BaseModelMixin):
 
     def clean(self):
         super().clean()
-        if self.aggregation == self.Aggregation.BEST_N:
-            if not self.best_n_count:
+
+        if self.aggregation in (self.Aggregation.BEST_N, self.Aggregation.LATEST_N):
+            if not self.n_count:
                 raise ValidationError({
-                    'best_n_count': "best_n aggregation requires best_n_count "
-                    "(e.g. 2, for 'best 2 of N')."
+                    'n_count': f"{self.get_aggregation_display()} requires n_count "
+                    "(how many submissions to include)."
                 })
             if not self.expected_count:
                 raise ValidationError({
-                    'expected_count': "best_n aggregation requires expected_count "
-                    "so the system knows when all submissions are in."
+                    'expected_count': f"{self.get_aggregation_display()} requires "
+                    "expected_count so the system knows when all submissions are in."
                 })
-            if self.best_n_count > self.expected_count:
+            if self.n_count > self.expected_count:
                 raise ValidationError({
-                    'best_n_count': f"best_n_count ({self.best_n_count}) can't exceed "
+                    'n_count': f"n_count ({self.n_count}) can't exceed "
                     f"expected_count ({self.expected_count})."
                 })
 
@@ -238,13 +267,20 @@ class WeightingComponent(BaseModelMixin):
 
         Returns the aggregated score, or None if not enough results have
         been submitted yet to consider this component complete.
+
+        Uses each Result's effective_score rather than raw score — a
+        resit/supplementary result is capped at the course pass mark for
+        grading purposes here, even though its raw score (the mark
+        actually achieved) stays untouched on the Result row itself.
         """
-        scores = list(results_qs.order_by(
-            'record_id').values_list('score', flat=True))
+        results = list(results_qs.order_by('record_id'))
+        scores = [r.effective_score for r in results]
+
         count = len(scores)
 
         if count == 0:
             return None
+
         if self.expected_count and count < self.expected_count:
             return None  # still waiting on more submissions of this type
 
@@ -258,8 +294,14 @@ class WeightingComponent(BaseModelMixin):
             return scores[-1]
 
         if self.aggregation == self.Aggregation.BEST_N:
-            best = sorted(scores, reverse=True)[:self.best_n_count]
+            best = sorted(scores, reverse=True)[:self.n_count]
             return (sum(best) / len(best)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
+
+        if self.aggregation == self.Aggregation.LATEST_N:
+            # scores is already in submission order (order_by('record_id')),
+            # so the last n_count entries are the most recent submissions.
+            latest = scores[-self.n_count:]
+            return (sum(latest) / len(latest)).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
 
         raise ValidationError(
             f"Unknown aggregation strategy '{self.aggregation}'.")

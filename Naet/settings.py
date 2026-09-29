@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     'django_celery_beat',
 
     "base.apps.BaseConfig",
-    "staffConsole.apps.StaffconsoleConfig"
+    "staffConsole.apps.StaffconsoleConfig",
+    # "api.apps.ApiConfig"
 ]
 
 MIDDLEWARE = [
@@ -264,3 +265,9 @@ RESULTS_MODULE_CONFIG = {
 }
 
 MESSAGEPIT_WEBHOOK_URL = 'http://localhost:8300'
+
+PDF_GENERATION_STRATEGY = "playwright"          # default when no name is given
+
+PDF_STRATEGY_ALIASES = {
+    "transcript": "playwright",
+}

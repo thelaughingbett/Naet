@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment Receipt — RVIT/RCP/2023/04417</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #1e3a5f;
+      --gold: #c9a227;
+      --credit: #047857;
+      --paid-bg: #eef8f1;
+      --note-bg: #fbf7e8;
+      --bg: #ffffff;
+      --zebra: #f9fafb;
+      --subtotal-bg: #eef2f7;
+      --total-bg: #e3ecf5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Georgia", "Times New Roman", serif;
+      color: var(--ink);
+      background: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.45;
+    }
+
+    .sheet {
+      max-width: 840px;
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      padding: 2.25rem 2.75rem 2.5rem;
+      position: relative;
+    }
+
+    /* PAID stamp in the corner — visually communicates "this transaction is settled" */
+    .stamp {
+      position: absolute;
+      top: 3rem;
+      right: 3rem;
+      transform: rotate(-8deg);
+      border: 3px double var(--credit);
+      color: var(--credit);
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: .18em;
+      padding: .4rem 1.2rem;
+      text-transform: uppercase;
+      opacity: .82;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       INSTITUTION HEADER
+       ============================================================ */
+    .inst-header {
+      display: grid;
+      grid-template-columns: 100px 1fr 100px;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 1.1rem;
+      border-bottom: 3px double var(--ink);
+    }
+    .inst-mark {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inst-mark svg,
+    .inst-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+    .inst-identity { text-align: center; }
+    .inst-identity .inst-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: .05em;
+      margin: 0 0 .15rem;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .inst-identity .inst-motto {
+      font-size: .74rem;
+      font-style: italic;
+      color: var(--muted);
+      margin: 0 0 .45rem;
+    }
+    .inst-identity .inst-contact {
+      font-size: .68rem;
+      color: var(--muted);
+      letter-spacing: .03em;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .inst-identity .inst-contact span + span::before {
+      content: " · ";
+      color: var(--line);
+    }
+
+    /* ============================================================
+       DOCUMENT TITLE
+       ============================================================ */
+    .doc-title {
+      text-align: center;
+      margin: 1.1rem 0 .25rem;
+      font-size: 1rem;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .doc-title-rule {
+      width: 160px;
+      height: 1px;
+      background: var(--ink);
+      margin: 0 auto 1.25rem;
+    }
+
+    /* ============================================================
+       RECEIPT META STRIP — receipt no, date, method
+       ============================================================ */
+    .receipt-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: .9rem 1.1rem;
+      background: var(--subtotal-bg);
+      border-left: 5px solid var(--accent);
+    }
+    .receipt-meta .meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .receipt-meta .meta-label {
+      font-size: .66rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: .15rem;
+    }
+    .receipt-meta .meta-value {
+      font-size: .92rem;
+      font-weight: bold;
+      color: var(--ink);
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    /* ============================================================
+       TWO-COLUMN DETAIL GRIDS — payer / student
+       ============================================================ */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .detail-panel {
+      border: 1px solid var(--line);
+      padding: 1rem 1.2rem;
+    }
+    .detail-panel h3 {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--accent);
+      margin: 0 0 .6rem;
+      padding-bottom: .3rem;
+      border-bottom: 1px solid var(--line);
+      font-weight: bold;
+    }
+    .detail-panel dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: .3rem .9rem;
+      font-size: .82rem;
+    }
+    .detail-panel dt {
+      color: var(--muted);
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding-top: .15rem;
+    }
+    .detail-panel dd {
+      margin: 0;
+      font-weight: bold;
+      color: var(--ink);
+    }
+    .detail-panel dd.mono {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-weight: normal;
+      font-size: .82rem;
+    }
+
+    /* ============================================================
+       AMOUNT PANEL — the headline figure
+       ============================================================ */
+    .amount-panel {
+      margin-bottom: 1.75rem;
+      padding: 1.4rem 1.6rem;
+      background: var(--paid-bg);
+      border-left: 5px solid var(--credit);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+    .amount-panel .amount-figure {
+      font-size: 2.1rem;
+      font-weight: bold;
+      color: var(--credit);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.01em;
+      line-height: 1.1;
+    }
+    .amount-panel .amount-figure .currency {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: normal;
+      letter-spacing: .1em;
+      display: block;
+      margin-bottom: .15rem;
+    }
+    .amount-panel .amount-words {
+      font-size: .8rem;
+      color: var(--ink);
+      font-style: italic;
+      line-height: 1.5;
+    }
+    .amount-panel .amount-words strong {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    /* ============================================================
+       ALLOCATION TABLE — what the payment covered
+       ============================================================ */
+    table.allocation {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+      margin-bottom: 1.75rem;
+    }
+    table.allocation thead th {
+      text-align: left;
+      font-size: .66rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding: .45rem .55rem;
+      background: #fff;
+    }
+    table.allocation thead th.num { text-align: right; }
+    table.allocation tbody td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid var(--zebra);
+      vertical-align: top;
+    }
+    table.allocation tbody tr:nth-child(even) { background: var(--zebra); }
+    table.allocation td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+
+    table.allocation tfoot tr.total td {
+      font-weight: bold;
+      background: var(--total-bg);
+      border-top: 2px solid var(--ink);
+      padding-top: .6rem;
+      padding-bottom: .6rem;
+      font-size: .95rem;
+    }
+    table.allocation tfoot tr.total td.row-label {
+      text-transform: uppercase;
+      font-size: .72rem;
+      letter-spacing: .06em;
+    }
+
+    /* ============================================================
+       BALANCE LINE — what remains
+       ============================================================ */
+    .balance-line {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      padding: 1rem 1.2rem;
+      background: var(--subtotal-bg);
+      border: 1px solid var(--line);
+    }
+    .balance-line .bal-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: .88rem;
+    }
+    .balance-line .bal-label {
+      color: var(--muted);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .balance-line .bal-value {
+      font-weight: bold;
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    /* ============================================================
+       SIGNATURES + QR
+       ============================================================ */
+    .signatures {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 130px;
+      gap: 2.5rem;
+      align-items: end;
+      page-break-inside: avoid;
+    }
+    .signatures .sig {
+      border-top: 1px solid var(--ink);
+      padding-top: .4rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: .68rem;
+    }
+    .signatures .sig .role {
+      display: block;
+      font-weight: bold;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: .8rem;
+      margin-bottom: .15rem;
+    }
+    .signatures .sig .line {
+      display: block;
+      font-size: .66rem;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .qr-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: center;
+    }
+    .qr-block .qr-image {
+      width: 115px;
+      height: 115px;
+      display: block;
+      background: #ffffff;
+      padding: 4px;
+      border: 1px solid var(--line);
+      shape-rendering: crispEdges;
+    }
+    .qr-block .qr-caption {
+      margin-top: .4rem;
+      font-size: .58rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+
+    /* ============================================================
+       NOTES
+       ============================================================ */
+    .notes {
+      margin-top: 2rem;
+      padding: .9rem 1.2rem;
+      background: var(--note-bg);
+      border-left: 4px solid var(--gold);
+      font-size: .72rem;
+      line-height: 1.55;
+      page-break-inside: avoid;
+    }
+    .notes h3 {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 .4rem;
+      color: var(--ink);
+    }
+    .notes ul {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+    .notes ul li { margin-bottom: .25rem; }
+    .notes ul li:last-child { margin-bottom: 0; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      margin-top: 2.5rem;
+      font-size: .66rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+      border-top: 1px solid var(--line);
+      padding-top: .9rem;
+    }
+    footer .disclaimer {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    @media print {
+      body { padding: 0; font-size: 10.5pt; }
+      .sheet { border: none; padding: 0; max-width: 100%; }
+      tbody tr:nth-child(even) { background: transparent !important; }
+      .amount-panel, .balance-line, .notes, .signatures { page-break-inside: avoid; }
+      .stamp { opacity: .7; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+
+    <!-- PAID stamp -->
+    <div class="stamp">Paid</div>
+
+    <!-- ==========================================================
+         INSTITUTION HEADER
+         ========================================================== -->
+    <div class="inst-header">
+
+      <div class="inst-mark">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Institution crest">
+          <circle cx="60" cy="60" r="58" fill="#ffffff" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="60" cy="60" r="53" fill="none" stroke="#c9a227" stroke-width="1"/>
+          <path d="M60 20 L96 30 L96 68 Q96 92 60 106 Q24 92 24 68 L24 30 Z"
+                fill="#1e3a5f" stroke="#0f2338" stroke-width="1.4"/>
+          <path d="M60 20 L96 30 L96 42 L24 42 L24 30 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width="1"/>
+          <text x="42" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <text x="60" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <text x="78" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <path d="M28 62 L60 50 L92 62 L92 68 L60 56 L28 68 Z" fill="#c9a227"/>
+          <path d="M40 74 Q60 68 80 74 L80 90 Q60 84 40 90 Z"
+                fill="#ffffff" stroke="#0f2338" stroke-width="1"/>
+          <line x1="60" y1="71" x2="60" y2="87" stroke="#0f2338" stroke-width="1"/>
+          <path d="M60 58 Q58 62 60 65 Q62 62 60 58 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width=".5"/>
+          <path d="M22 100 Q60 112 98 100 L98 104 Q60 116 22 104 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width="1"/>
+          <text x="60" y="109" text-anchor="middle"
+                font-family="Georgia, serif" font-size="5.2"
+                fill="#0f2338" font-style="italic" letter-spacing=".3">
+            SCIENTIA · LABOR · INTEGRITAS
+          </text>
+        </svg>
+      </div>
+
+      <div class="inst-identity">
+        <h1 class="inst-name">Rift Valley Institute of Technology</h1>
+        <p class="inst-motto">Scientia et Labor — Knowledge Through Work</p>
+        <p class="inst-contact">
+          <span>P.O. Box 4756-30100, Eldoret, Kenya</span>
+          <span>+254 20 123 4567</span>
+          <span>finance@rvit.ac.ke</span>
+          <span>www.rvit.ac.ke</span>
+        </p>
+      </div>
+
+      <div class="inst-mark">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Accreditation badge">
+          <circle cx="60" cy="60" r="56" fill="none" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1e3a5f" stroke-width="1"/>
+          <circle cx="60" cy="60" r="42" fill="#1e3a5f"/>
+          <text x="60" y="42" text-anchor="middle"
+                font-family="Georgia, serif" font-size="11"
+                fill="#ffffff" letter-spacing="2">★ ★ ★</text>
+          <text x="60" y="64" text-anchor="middle"
+                font-family="Georgia, serif" font-size="17" font-weight="bold"
+                fill="#ffffff" letter-spacing="1">TVETA</text>
+          <text x="60" y="78" text-anchor="middle"
+                font-family="Georgia, serif" font-size="7.5"
+                fill="#cfd8e3" letter-spacing="1.5">ACCREDITED</text>
+          <text x="60" y="102" text-anchor="middle"
+                font-family="Georgia, serif" font-size="7"
+                fill="#1e3a5f" letter-spacing="1.5">TVETA/PRIV/00147</text>
+        </svg>
+      </div>
+
+    </div>
+
+    <div class="doc-title">Official Payment Receipt</div>
+    <div class="doc-title-rule"></div>
+
+    <!-- ==========================================================
+         RECEIPT META
+         ========================================================== -->
+    <div class="receipt-meta">
+      <div class="meta-item">
+        <span class="meta-label">Receipt No.</span>
+        <span class="meta-value">RVIT/RCP/2023/04417</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Date of Payment</span>
+        <span class="meta-value">12 Sep 2023 · 10:42 AM</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Payment Method</span>
+        <span class="meta-value">M-PESA Paybill</span>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         PAYER / STUDENT DETAILS
+         ========================================================== -->
+    <div class="detail-grid">
+
+      <div class="detail-panel">
+        <h3>Payer</h3>
+        <dl>
+          <dt>Name</dt>
+          <dd>Peter Mwangi Njoroge</dd>
+          <dt>Relationship</dt>
+          <dd>Parent / Guardian</dd>
+          <dt>Phone</dt>
+          <dd class="mono">+254 722 345 678</dd>
+          <dt>ID No.</dt>
+          <dd class="mono">12345678</dd>
+        </dl>
+      </div>
+
+      <div class="detail-panel">
+        <h3>Student</h3>
+        <dl>
+          <dt>Name</dt>
+          <dd>Jane Wanjiku Mwangi</dd>
+          <dt>Registration No.</dt>
+          <dd class="mono">RVIT/CS/2022/0147</dd>
+          <dt>Programme</dt>
+          <dd>BSc. Computer Science</dd>
+          <dt>Year of Study</dt>
+          <dd>Year 2, 2023/2024</dd>
+        </dl>
+      </div>
+
+    </div>
+
+    <!-- ==========================================================
+         AMOUNT PAID — headline
+         ========================================================== -->
+    <div class="amount-panel">
+      <div class="amount-figure">
+        <span class="currency">KES</span>
+        22,620<span style="font-size:1.2rem">.00</span>
+      </div>
+      <div class="amount-words">
+        <strong>Twenty-Two Thousand, Six Hundred and Twenty Shillings Only</strong><br>
+        Received in full settlement of the amount shown below.
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         ALLOCATION — what the payment covered
+         ========================================================== -->
+    <table class="allocation">
+      <thead>
+        <tr>
+          <th>Fee Item</th>
+          <th>Description</th>
+          <th class="num">Amount Allocated (KES)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tuition — Semester 1</td>
+          <td>Part payment towards Year 2 tuition</td>
+          <td class="num">18,500.00</td>
+        </tr>
+        <tr>
+          <td>Registration &amp; Examination</td>
+          <td>Statutory — TVETA</td>
+          <td class="num">2,000.00</td>
+        </tr>
+        <tr>
+          <td>Library &amp; Information Services</td>
+          <td>Institutional</td>
+          <td class="num">1,200.00</td>
+        </tr>
+        <tr>
+          <td>Medical &amp; Insurance</td>
+          <td>Regulatory — SHA</td>
+          <td class="num">920.00</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total">
+          <td colspan="2" class="row-label">Total Amount Received</td>
+          <td class="num">22,620.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- ==========================================================
+         BALANCE
+         ========================================================== -->
+    <div class="balance-line">
+      <div class="bal-item">
+        <span class="bal-label">Total Fees — Year 2</span>
+        <span class="bal-value">75,400.00</span>
+      </div>
+      <div class="bal-item">
+        <span class="bal-label">Balance After Payment</span>
+        <span class="bal-value" style="color: var(--credit);">52,780.00</span>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         TRANSACTION DETAIL
+         ========================================================== -->
+    <table class="allocation" style="margin-bottom: 0;">
+      <thead>
+        <tr>
+          <th colspan="2">Transaction Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="width:35%">Transaction Reference</td>
+          <td class="num" style="text-align:left; font-family: 'SFMono-Regular', monospace;">
+            QDF7X9KPLM
+          </td>
+        </tr>
+        <tr>
+          <td>Payment Channel</td>
+          <td style="text-align:left;">M-PESA Paybill 522533 · Acc. RVIT/CS/2022/0147</td>
+        </tr>
+        <tr>
+          <td>Bank / Mobile Money Ref.</td>
+          <td style="text-align:left; font-family: 'SFMono-Regular', monospace;">
+            MPESA-20230912-1042-856721
+          </td>
+        </tr>
+        <tr>
+          <td>Received By</td>
+          <td style="text-align:left;">Finance Office — Auto-reconciled via M-PESA API</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ==========================================================
+         SIGNATURES + QR
+         ========================================================== -->
+    <div class="signatures">
+
+      <div class="sig">
+        <span class="role">Received By</span>
+        <span class="line">Sign: ____________________________</span>
+        <span class="line">Name: ____________________________</span>
+      </div>
+
+      <div class="sig">
+        <span class="role">Date Stamped</span>
+        <span class="line">Official stamp: __________________</span>
+        <span class="line">Date: ____________________________</span>
+      </div>
+
+      <div class="qr-block">
+        <svg class="qr-image" viewBox="0 0 29 29" role="img"
+             aria-label="Scan to verify this receipt">
+          <rect width="29" height="29" fill="#ffffff"/>
+          <g fill="#000000">
+            <rect x="0" y="0" width="7" height="7"/>
+            <rect x="1" y="1" width="5" height="5" fill="#ffffff"/>
+            <rect x="2" y="2" width="3" height="3"/>
+            <rect x="22" y="0" width="7" height="7"/>
+            <rect x="23" y="1" width="5" height="5" fill="#ffffff"/>
+            <rect x="24" y="2" width="3" height="3"/>
+            <rect x="0" y="22" width="7" height="7"/>
+            <rect x="1" y="23" width="5" height="5" fill="#ffffff"/>
+            <rect x="2" y="24" width="3" height="3"/>
+            <rect x="22" y="22" width="5" height="5"/>
+            <rect x="23" y="23" width="3" height="3" fill="#ffffff"/>
+            <rect x="24" y="24" width="1" height="1"/>
+            <rect x="9" y="0" width="1" height="1"/>
+            <rect x="11" y="0" width="1" height="1"/>
+            <rect x="14" y="0" width="1" height="1"/>
+            <rect x="16" y="0" width="1" height="1"/>
+            <rect x="19" y="0" width="1" height="1"/>
+            <rect x="9" y="2" width="1" height="1"/>
+            <rect x="12" y="2" width="1" height="1"/>
+            <rect x="15" y="2" width="1" height="1"/>
+            <rect x="18" y="2" width="1" height="1"/>
+            <rect x="10" y="4" width="1" height="1"/>
+            <rect x="13" y="4" width="1" height="1"/>
+            <rect x="17" y="4" width="1" height="1"/>
+            <rect x="9" y="6" width="1" height="1"/>
+            <rect x="12" y="6" width="1" height="1"/>
+            <rect x="16" y="6" width="1" height="1"/>
+            <rect x="19" y="6" width="1" height="1"/>
+            <rect x="0" y="9" width="1" height="1"/>
+            <rect x="3" y="9" width="1" height="1"/>
+            <rect x="6" y="9" width="1" height="1"/>
+            <rect x="8" y="9" width="1" height="1"/>
+            <rect x="10" y="9" width="1" height="1"/>
+            <rect x="13" y="9" width="1" height="1"/>
+            <rect x="15" y="9" width="1" height="1"/>
+            <rect x="17" y="9" width="1" height="1"/>
+            <rect x="20" y="9" width="1" height="1"/>
+            <rect x="23" y="9" width="1" height="1"/>
+            <rect x="26" y="9" width="1" height="1"/>
+            <rect x="28" y="9" width="1" height="1"/>
+            <rect x="1" y="10" width="1" height="1"/>
+            <rect x="5" y="10" width="1" height="1"/>
+            <rect x="9" y="10" width="1" height="1"/>
+            <rect x="12" y="10" width="1" height="1"/>
+            <rect x="14" y="10" width="1" height="1"/>
+            <rect x="16" y="10" width="1" height="1"/>
+            <rect x="19" y="10" width="1" height="1"/>
+            <rect x="21" y="10" width="1" height="1"/>
+            <rect x="25" y="10" width="1" height="1"/>
+            <rect x="27" y="10" width="1" height="1"/>
+            <rect x="2" y="11" width="1" height="1"/>
+            <rect x="4" y="11" width="1" height="1"/>
+            <rect x="7" y="11" width="1" height="1"/>
+            <rect x="10" y="11" width="1" height="1"/>
+            <rect x="13" y="11" width="1" height="1"/>
+            <rect x="15" y="11" width="1" height="1"/>
+            <rect x="18" y="11" width="1" height="1"/>
+            <rect x="20" y="11" width="1" height="1"/>
+            <rect x="22" y="11" width="1" height="1"/>
+            <rect x="24" y="11" width="1" height="1"/>
+            <rect x="26" y="11" width="1" height="1"/>
+            <rect x="28" y="11" width="1" height="1"/>
+            <rect x="3" y="12" width="1" height="1"/>
+            <rect x="5" y="12" width="1" height="1"/>
+            <rect x="9" y="12" width="1" height="1"/>
+            <rect x="12" y="12" width="1" height="1"/>
+            <rect x="14" y="12" width="1" height="1"/>
+            <rect x="17" y="12" width="1" height="1"/>
+            <rect x="19" y="12" width="1" height="1"/>
+            <rect x="21" y="12" width="1" height="1"/>
+            <rect x="25" y="12" width="1" height="1"/>
+            <rect x="27" y="12" width="1" height="1"/>
+            <rect x="1" y="13" width="1" height="1"/>
+            <rect x="4" y="13" width="1" height="1"/>
+            <rect x="7" y="13" width="1" height="1"/>
+            <rect x="11" y="13" width="1" height="1"/>
+            <rect x="14" y="13" width="1" height="1"/>
+            <rect x="16" y="13" width="1" height="1"/>
+            <rect x="18" y="13" width="1" height="1"/>
+            <rect x="20" y="13" width="1" height="1"/>
+            <rect x="23" y="13" width="1" height="1"/>
+            <rect x="26" y="13" width="1" height="1"/>
+            <rect x="0" y="14" width="1" height="1"/>
+            <rect x="2" y="14" width="1" height="1"/>
+            <rect x="5" y="14" width="1" height="1"/>
+            <rect x="8" y="14" width="1" height="1"/>
+            <rect x="10" y="14" width="1" height="1"/>
+            <rect x="12" y="14" width="1" height="1"/>
+            <rect x="15" y="14" width="1" height="1"/>
+            <rect x="17" y="14" width="1" height="1"/>
+            <rect x="19" y="14" width="1" height="1"/>
+            <rect x="22" y="14" width="1" height="1"/>
+            <rect x="24" y="14" width="1" height="1"/>
+            <rect x="27" y="14" width="1" height="1"/>
+            <rect x="1" y="15" width="1" height="1"/>
+            <rect x="3" y="15" width="1" height="1"/>
+            <rect x="6" y="15" width="1" height="1"/>
+            <rect x="9" y="15" width="1" height="1"/>
+            <rect x="11" y="15" width="1" height="1"/>
+            <rect x="13" y="15" width="1" height="1"/>
+            <rect x="16" y="15" width="1" height="1"/>
+            <rect x="18" y="15" width="1" height="1"/>
+            <rect x="20" y="15" width="1" height="1"/>
+            <rect x="23" y="15" width="1" height="1"/>
+            <rect x="25" y="15" width="1" height="1"/>
+            <rect x="28" y="15" width="1" height="1"/>
+            <rect x="0" y="16" width="1" height="1"/>
+            <rect x="4" y="16" width="1" height="1"/>
+            <rect x="7" y="16" width="1" height="1"/>
+            <rect x="10" y="16" width="1" height="1"/>
+            <rect x="12" y="16" width="1" height="1"/>
+            <rect x="14" y="16" width="1" height="1"/>
+            <rect x="17" y="16" width="1" height="1"/>
+            <rect x="19" y="16" width="1" height="1"/>
+            <rect x="21" y="16" width="1" height="1"/>
+            <rect x="24" y="16" width="1" height="1"/>
+            <rect x="26" y="16" width="1" height="1"/>
+            <rect x="2" y="17" width="1" height="1"/>
+            <rect x="5" y="17" width="1" height="1"/>
+            <rect x="8" y="17" width="1" height="1"/>
+            <rect x="11" y="17" width="1" height="1"/>
+            <rect x="13" y="17" width="1" height="1"/>
+            <rect x="15" y="17" width="1" height="1"/>
+            <rect x="18" y="17" width="1" height="1"/>
+            <rect x="20" y="17" width="1" height="1"/>
+            <rect x="22" y="17" width="1" height="1"/>
+            <rect x="25" y="17" width="1" height="1"/>
+            <rect x="27" y="17" width="1" height="1"/>
+            <rect x="1" y="18" width="1" height="1"/>
+            <rect x="3" y="18" width="1" height="1"/>
+            <rect x="6" y="18" width="1" height="1"/>
+            <rect x="9" y="18" width="1" height="1"/>
+            <rect x="12" y="18" width="1" height="1"/>
+            <rect x="14" y="18" width="1" height="1"/>
+            <rect x="16" y="18" width="1" height="1"/>
+            <rect x="19" y="18" width="1" height="1"/>
+            <rect x="21" y="18" width="1" height="1"/>
+            <rect x="23" y="18" width="1" height="1"/>
+            <rect x="26" y="18" width="1" height="1"/>
+            <rect x="28" y="18" width="1" height="1"/>
+            <rect x="9" y="20" width="1" height="1"/>
+            <rect x="11" y="20" width="1" height="1"/>
+            <rect x="14" y="20" width="1" height="1"/>
+            <rect x="16" y="20" width="1" height="1"/>
+            <rect x="19" y="20" width="1" height="1"/>
+            <rect x="21" y="20" width="1" height="1"/>
+            <rect x="24" y="20" width="1" height="1"/>
+            <rect x="26" y="20" width="1" height="1"/>
+            <rect x="28" y="20" width="1" height="1"/>
+            <rect x="10" y="21" width="1" height="1"/>
+            <rect x="13" y="21" width="1" height="1"/>
+            <rect x="15" y="21" width="1" height="1"/>
+            <rect x="17" y="21" width="1" height="1"/>
+            <rect x="20" y="21" width="1" height="1"/>
+            <rect x="22" y="21" width="1" height="1"/>
+            <rect x="25" y="21" width="1" height="1"/>
+            <rect x="27" y="21" width="1" height="1"/>
+            <rect x="8" y="22" width="1" height="1"/>
+            <rect x="10" y="22" width="1" height="1"/>
+            <rect x="12" y="22" width="1" height="1"/>
+            <rect x="14" y="22" width="1" height="1"/>
+            <rect x="16" y="22" width="1" height="1"/>
+            <rect x="18" y="22" width="1" height="1"/>
+            <rect x="20" y="22" width="1" height="1"/>
+            <rect x="9" y="24" width="1" height="1"/>
+            <rect x="11" y="24" width="1" height="1"/>
+            <rect x="14" y="24" width="1" height="1"/>
+            <rect x="16" y="24" width="1" height="1"/>
+            <rect x="18" y="24" width="1" height="1"/>
+            <rect x="21" y="24" width="1" height="1"/>
+            <rect x="9" y="25" width="1" height="1"/>
+            <rect x="12" y="25" width="1" height="1"/>
+            <rect x="15" y="25" width="1" height="1"/>
+            <rect x="17" y="25" width="1" height="1"/>
+            <rect x="20" y="25" width="1" height="1"/>
+            <rect x="22" y="25" width="1" height="1"/>
+            <rect x="10" y="26" width="1" height="1"/>
+            <rect x="13" y="26" width="1" height="1"/>
+            <rect x="15" y="26" width="1" height="1"/>
+            <rect x="18" y="26" width="1" height="1"/>
+            <rect x="21" y="26" width="1" height="1"/>
+            <rect x="24" y="26" width="1" height="1"/>
+            <rect x="26" y="26" width="1" height="1"/>
+            <rect x="28" y="26" width="1" height="1"/>
+            <rect x="9" y="27" width="1" height="1"/>
+            <rect x="11" y="27" width="1" height="1"/>
+            <rect x="14" y="27" width="1" height="1"/>
+            <rect x="16" y="27" width="1" height="1"/>
+            <rect x="19" y="27" width="1" height="1"/>
+            <rect x="23" y="27" width="1" height="1"/>
+            <rect x="25" y="27" width="1" height="1"/>
+            <rect x="27" y="27" width="1" height="1"/>
+            <rect x="10" y="28" width="1" height="1"/>
+            <rect x="13" y="28" width="1" height="1"/>
+            <rect x="15" y="28" width="1" height="1"/>
+            <rect x="18" y="28" width="1" height="1"/>
+            <rect x="21" y="28" width="1" height="1"/>
+            <rect x="24" y="28" width="1" height="1"/>
+            <rect x="26" y="28" width="1" height="1"/>
+            <rect x="28" y="28" width="1" height="1"/>
+          </g>
+        </svg>
+        <div class="qr-caption">
+          Scan to<br>verify
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==========================================================
+         NOTES
+         ========================================================== -->
+    <div class="notes">
+      <h3>Important</h3>
+      <ul>
+        <li>This receipt is proof of payment. Keep it for the entire duration of your studies — you may need it for HELB, scholarship, or transfer applications.</li>
+        <li>Any discrepancy between the amount shown here and the amount actually received must be reported to the Finance Office within <strong>7 days</strong> of the payment date.</li>
+        <li>Fees paid are non-refundable except under the conditions set out in the Student Handbook.</li>
+        <li>To verify this receipt, scan the QR code above or visit <strong>rvit.ac.ke/verify/receipt</strong> and enter the reference <strong>RVIT/RCP/2023/04417</strong>.</li>
+      </ul>
+    </div>
+
+    <!-- ==========================================================
+         FOOTER
+         ========================================================== -->
+    <footer>
+      <p class="disclaimer">
+        This is a computer-generated receipt. It is valid without a physical signature when
+        verified via the QR code. Any alteration renders it invalid.
+      </p>
+      <p>Issued 12 Sep 2023 · 10:42 AM · Receipt No. RVIT/RCP/2023/04417 · Page 1 of 1</p>
+    </footer>
+
+  </div>
+</body>
+</html>

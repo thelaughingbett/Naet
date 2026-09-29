@@ -7,7 +7,7 @@ from base.views import (
     DropElectiveUnitView,
     result_challenge_history, submit_result_challenge,    requisition_history,
     submit_requisition,
-    submit_bulk_request
+    submit_bulk_request, transcript_pdf
 )
 
 urlpatterns = [
@@ -55,5 +55,10 @@ urlpatterns = [
         'results/bulk/',
         submit_bulk_request,
         name='submit-bulk-request'
+    ),
+    path(
+        'transcript/pdf/',
+        transcript_pdf,
+        name='transcript-pdf'
     ),
 ]

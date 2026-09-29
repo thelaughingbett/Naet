@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fee Structure — BSc. Computer Science, Year 2, 2023/2024</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #1e3a5f;
+      --gold: #c9a227;
+      --credit: #047857;
+      --bg: #ffffff;
+      --zebra: #f9fafb;
+      --subtotal-bg: #eef2f7;
+      --total-bg: #e3ecf5;
+      --note-bg: #fbf7e8;
+      --pay-bg: #f0f7f2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Georgia", "Times New Roman", serif;
+      color: var(--ink);
+      background: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.45;
+    }
+
+    .sheet {
+      max-width: 900px;
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      padding: 2.25rem 2.75rem 2.75rem;
+    }
+
+    /* ============================================================
+       INSTITUTION HEADER
+       ============================================================ */
+    .inst-header {
+      display: grid;
+      grid-template-columns: 110px 1fr 110px;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 3px double var(--ink);
+    }
+    .inst-mark {
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inst-mark svg,
+    .inst-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+    .inst-identity { text-align: center; }
+    .inst-identity .inst-name {
+      font-size: 1.4rem;
+      font-weight: bold;
+      letter-spacing: .05em;
+      margin: 0 0 .15rem;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .inst-identity .inst-motto {
+      font-size: .76rem;
+      font-style: italic;
+      color: var(--muted);
+      margin: 0 0 .5rem;
+    }
+    .inst-identity .inst-contact {
+      font-size: .7rem;
+      color: var(--muted);
+      letter-spacing: .03em;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .inst-identity .inst-contact span + span::before {
+      content: " · ";
+      color: var(--line);
+    }
+
+    /* ============================================================
+       DOCUMENT TITLE
+       ============================================================ */
+    .doc-title {
+      text-align: center;
+      margin: 1.25rem 0 .25rem;
+      font-size: 1.05rem;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .doc-title-rule {
+      width: 180px;
+      height: 1px;
+      background: var(--ink);
+      margin: 0 auto 1.5rem;
+    }
+
+    /* ============================================================
+       YEAR BANNER — focal point of a single-year doc
+       ============================================================ */
+    .year-banner {
+      margin: 0 0 1.75rem;
+      padding: 1rem 1.4rem;
+      background: var(--subtotal-bg);
+      border-left: 5px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .year-banner .year-title {
+      font-size: 1.35rem;
+      font-weight: bold;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .year-banner .year-dates {
+      font-size: .85rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
+
+    /* ============================================================
+       CONTEXT STRIP — programme / mode
+       ============================================================ */
+    .context-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .25rem 2rem;
+      margin: 0 0 2rem;
+      font-size: .9rem;
+    }
+    .context-strip .ctx-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .context-strip .ctx-label {
+      color: var(--muted);
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .1rem;
+    }
+    .context-strip .ctx-value {
+      font-weight: bold;
+      color: var(--ink);
+    }
+
+    /* ============================================================
+       FEE TABLE — one year, semester columns
+       ============================================================ */
+    table.fees {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+      margin-bottom: 1.5rem;
+    }
+    table.fees thead th {
+      text-align: left;
+      font-size: .66rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding: .5rem .55rem;
+      background: #fff;
+      vertical-align: bottom;
+    }
+    table.fees thead th.num { text-align: right; }
+    table.fees thead th .sem-tag {
+      display: block;
+      font-size: .82rem;
+      font-weight: bold;
+      color: var(--accent);
+      letter-spacing: .04em;
+      margin-bottom: .1rem;
+    }
+    table.fees thead th .sem-sub {
+      display: block;
+      font-size: .62rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      font-weight: normal;
+    }
+
+    table.fees tbody td {
+      padding: .5rem .55rem;
+      border-bottom: 1px solid var(--zebra);
+      vertical-align: top;
+    }
+    table.fees tbody tr:nth-child(even) { background: var(--zebra); }
+    table.fees td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .84rem;
+      white-space: nowrap;
+    }
+
+    table.fees tbody tr.group-head td {
+      background: var(--total-bg);
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-weight: bold;
+      color: var(--accent);
+      padding-top: .5rem;
+      padding-bottom: .5rem;
+    }
+
+    table.fees tbody tr.subtotal td {
+      font-weight: bold;
+      background: var(--subtotal-bg);
+      border-top: 1px solid var(--line);
+    }
+    table.fees tbody tr.subtotal td.row-label {
+      text-transform: uppercase;
+      font-size: .7rem;
+      letter-spacing: .06em;
+    }
+
+    table.fees tfoot tr.total td {
+      font-weight: bold;
+      background: var(--total-bg);
+      border-top: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+      padding-top: .7rem;
+      padding-bottom: .7rem;
+      font-size: .95rem;
+    }
+    table.fees tfoot tr.total td.row-label {
+      text-transform: uppercase;
+      font-size: .74rem;
+      letter-spacing: .06em;
+    }
+
+    .credit { color: var(--credit); font-weight: bold; }
+    sup.fn {
+      font-size: .6rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* ============================================================
+       YEAR SUMMARY STRIP
+       ============================================================ */
+    .year-summary {
+      margin-top: 2rem;
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--line);
+      padding: 1.25rem 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+    .year-summary .label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .25rem;
+    }
+    .year-summary .value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      font-variant-numeric: tabular-nums;
+    }
+    .year-summary .sub {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-top: .2rem;
+    }
+
+    /* ============================================================
+       PAYMENT SCHEDULE — per semester
+       ============================================================ */
+    .pay-schedule {
+      margin: 2rem 0 1.5rem;
+      page-break-inside: avoid;
+    }
+    .pay-schedule h3 {
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 .6rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: .3rem;
+    }
+    table.pay-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+    }
+    table.pay-table thead th {
+      text-align: left;
+      font-size: .66rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding: .4rem .55rem;
+    }
+    table.pay-table tbody td {
+      padding: .5rem .55rem;
+      border-bottom: 1px solid var(--zebra);
+    }
+    table.pay-table tbody tr:nth-child(even) { background: var(--zebra); }
+    table.pay-table .amount {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      text-align: right;
+      white-space: nowrap;
+    }
+    table.pay-table .due {
+      white-space: nowrap;
+      color: var(--muted);
+    }
+    table.pay-table .sem-cell {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    /* ============================================================
+       PAYMENT CHANNELS
+       ============================================================ */
+    .pay-channels {
+      margin-top: 2rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--pay-bg);
+      border-left: 4px solid var(--credit);
+      page-break-inside: avoid;
+    }
+    .pay-channels h3 {
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 .75rem;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: .3rem;
+    }
+    .pay-channels .channel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem 2rem;
+      font-size: .82rem;
+    }
+    .pay-channels .channel {
+      display: flex;
+      flex-direction: column;
+    }
+    .pay-channels .channel .ch-name {
+      font-weight: bold;
+      color: var(--accent);
+      font-size: .78rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: .15rem;
+    }
+    .pay-channels .channel .ch-detail {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .82rem;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    .pay-channels .channel .ch-detail em {
+      font-family: inherit;
+      color: var(--muted);
+      font-style: normal;
+      font-size: .78rem;
+    }
+
+    /* ============================================================
+       NOTES
+       ============================================================ */
+    .notes {
+      margin-top: 2rem;
+      padding: 1.1rem 1.4rem;
+      background: var(--note-bg);
+      border-left: 4px solid var(--gold);
+      font-size: .78rem;
+      line-height: 1.6;
+      page-break-inside: avoid;
+    }
+    .notes h3 {
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 .5rem;
+      color: var(--ink);
+    }
+    .notes ol {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+    .notes ol li { margin-bottom: .35rem; }
+    .notes ol li:last-child { margin-bottom: 0; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      margin-top: 3rem;
+      font-size: .68rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+    }
+    footer .disclaimer {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    @media print {
+      body { padding: 0; font-size: 10.5pt; }
+      .sheet { border: none; padding: 0; max-width: 100%; }
+      tbody tr:nth-child(even) { background: transparent !important; }
+      .pay-schedule, .pay-channels, .notes { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+
+    <!-- ==========================================================
+         INSTITUTION HEADER
+         ========================================================== -->
+    <div class="inst-header">
+
+      <div class="inst-mark">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Institution crest">
+          <circle cx="60" cy="60" r="58" fill="#ffffff" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="60" cy="60" r="53" fill="none" stroke="#c9a227" stroke-width="1"/>
+          <path d="M60 20 L96 30 L96 68 Q96 92 60 106 Q24 92 24 68 L24 30 Z"
+                fill="#1e3a5f" stroke="#0f2338" stroke-width="1.4"/>
+          <path d="M60 20 L96 30 L96 42 L24 42 L24 30 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width="1"/>
+          <text x="42" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <text x="60" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <text x="78" y="37" text-anchor="middle"
+                font-family="Georgia, serif" font-size="9" fill="#0f2338">★</text>
+          <path d="M28 62 L60 50 L92 62 L92 68 L60 56 L28 68 Z" fill="#c9a227"/>
+          <path d="M40 74 Q60 68 80 74 L80 90 Q60 84 40 90 Z"
+                fill="#ffffff" stroke="#0f2338" stroke-width="1"/>
+          <line x1="60" y1="71" x2="60" y2="87" stroke="#0f2338" stroke-width="1"/>
+          <path d="M60 58 Q58 62 60 65 Q62 62 60 58 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width=".5"/>
+          <path d="M22 100 Q60 112 98 100 L98 104 Q60 116 22 104 Z"
+                fill="#c9a227" stroke="#0f2338" stroke-width="1"/>
+          <text x="60" y="109" text-anchor="middle"
+                font-family="Georgia, serif" font-size="5.2"
+                fill="#0f2338" font-style="italic" letter-spacing=".3">
+            SCIENTIA · LABOR · INTEGRITAS
+          </text>
+          <text x="60" y="118" text-anchor="middle"
+                font-family="Georgia, serif" font-size="5"
+                fill="#6b7280" letter-spacing=".5">
+            FOUNDED 1985
+          </text>
+        </svg>
+      </div>
+
+      <div class="inst-identity">
+        <h1 class="inst-name">Rift Valley Institute of Technology</h1>
+        <p class="inst-motto">Scientia et Labor — Knowledge Through Work</p>
+        <p class="inst-contact">
+          <span>P.O. Box 4756-30100, Eldoret, Kenya</span>
+          <span>+254 20 123 4567</span>
+          <span>finance@rvit.ac.ke</span>
+          <span>www.rvit.ac.ke</span>
+        </p>
+      </div>
+
+      <div class="inst-mark">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Accreditation badge">
+          <circle cx="60" cy="60" r="56" fill="none" stroke="#1e3a5f" stroke-width="2"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1e3a5f" stroke-width="1"/>
+          <circle cx="60" cy="60" r="42" fill="#1e3a5f"/>
+          <text x="60" y="42" text-anchor="middle"
+                font-family="Georgia, serif" font-size="11"
+                fill="#ffffff" letter-spacing="2">★ ★ ★</text>
+          <text x="60" y="64" text-anchor="middle"
+                font-family="Georgia, serif" font-size="17" font-weight="bold"
+                fill="#ffffff" letter-spacing="1">TVETA</text>
+          <text x="60" y="78" text-anchor="middle"
+                font-family="Georgia, serif" font-size="7.5"
+                fill="#cfd8e3" letter-spacing="1.5">ACCREDITED</text>
+          <text x="60" y="102" text-anchor="middle"
+                font-family="Georgia, serif" font-size="7"
+                fill="#1e3a5f" letter-spacing="1.5">TVETA/PRIV/00147</text>
+        </svg>
+      </div>
+
+    </div>
+
+    <div class="doc-title">Fee Structure</div>
+    <div class="doc-title-rule"></div>
+
+    <!-- ==========================================================
+         YEAR BANNER
+         ========================================================== -->
+    <div class="year-banner">
+      <span class="year-title">Year 2</span>
+      <span class="year-dates">Academic Year 2023/2024</span>
+    </div>
+
+    <!-- ==========================================================
+         CONTEXT STRIP
+         ========================================================== -->
+    <div class="context-strip">
+      <div class="ctx-item">
+        <span class="ctx-label">Programme</span>
+        <span class="ctx-value">BSc. Computer Science</span>
+      </div>
+      <div class="ctx-item">
+        <span class="ctx-label">Mode of Study</span>
+        <span class="ctx-value">Full-Time, Boarding</span>
+      </div>
+      <div class="ctx-item">
+        <span class="ctx-label">Fee Regime</span>
+        <span class="ctx-value">Government-Sponsored</span>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         FEE TABLE — semester columns for the year
+         ========================================================== -->
+    <table class="fees">
+      <thead>
+        <tr>
+          <th style="width:42%">Item</th>
+          <th style="width:22%">Category</th>
+          <th class="num" style="width:18%">
+            <span class="sem-tag">Semester 1</span>
+            <span class="sem-sub">Sept – Dec 2023</span>
+          </th>
+          <th class="num" style="width:18%">
+            <span class="sem-tag">Semester 2</span>
+            <span class="sem-sub">Jan – Apr 2024</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- ========= Statutory fees ========= -->
+        <tr class="group-head"><td colspan="4">Statutory Fees</td></tr>
+        <tr>
+          <td>Registration &amp; Examination</td>
+          <td>Regulatory — TVETA</td>
+          <td class="num">2,000.00</td>
+          <td class="num">2,000.00</td>
+        </tr>
+        <tr>
+          <td>Student Activity &amp; Union Dues</td>
+          <td>Regulatory — Ministry</td>
+          <td class="num">500.00</td>
+          <td class="num">500.00</td>
+        </tr>
+        <tr>
+          <td>Medical &amp; Insurance</td>
+          <td>Regulatory — SHA</td>
+          <td class="num">1,200.00</td>
+          <td class="num">1,200.00</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2" class="row-label">Statutory Subtotal</td>
+          <td class="num">3,700.00</td>
+          <td class="num">3,700.00</td>
+        </tr>
+
+        <!-- ========= Institutional fees ========= -->
+        <tr class="group-head"><td colspan="4">Institutional Fees</td></tr>
+        <tr>
+          <td>Tuition <sup class="fn">1</sup></td>
+          <td>Institutional</td>
+          <td class="num">42,500.00</td>
+          <td class="num">42,500.00</td>
+        </tr>
+        <tr>
+          <td>Library &amp; Information Services</td>
+          <td>Institutional</td>
+          <td class="num">2,000.00</td>
+          <td class="num">2,000.00</td>
+        </tr>
+        <tr>
+          <td>ICT &amp; Internet Access</td>
+          <td>Institutional</td>
+          <td class="num">1,500.00</td>
+          <td class="num">1,500.00</td>
+        </tr>
+        <tr>
+          <td>Laboratory &amp; Workshop</td>
+          <td>Institutional</td>
+          <td class="num">3,000.00</td>
+          <td class="num">3,000.00</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2" class="row-label">Institutional Subtotal</td>
+          <td class="num">49,000.00</td>
+          <td class="num">49,000.00</td>
+        </tr>
+
+        <!-- ========= Boarding ========= -->
+        <tr class="group-head"><td colspan="4">Boarding &amp; Accommodation <sup class="fn">2</sup></td></tr>
+        <tr>
+          <td>Room &amp; Board</td>
+          <td>Institutional — optional</td>
+          <td class="num">18,000.00</td>
+          <td class="num">18,000.00</td>
+        </tr>
+        <tr>
+          <td>Meals (Full board)</td>
+          <td>Institutional — optional</td>
+          <td class="num">12,000.00</td>
+          <td class="num">12,000.00</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2" class="row-label">Boarding Subtotal</td>
+          <td class="num">30,000.00</td>
+          <td class="num">30,000.00</td>
+        </tr>
+
+        <!-- ========= Gross ========= -->
+        <tr class="subtotal">
+          <td colspan="2" class="row-label">Gross Total (before deductions)</td>
+          <td class="num">82,700.00</td>
+          <td class="num">82,700.00</td>
+        </tr>
+
+        <!-- ========= Deductions ========= -->
+        <tr class="group-head"><td colspan="4">Government &amp; Sponsor Deductions</td></tr>
+        <tr>
+          <td>TVET Government Capitation</td>
+          <td>Paid direct to institution</td>
+          <td class="num credit">(25,000.00)</td>
+          <td class="num credit">(25,000.00)</td>
+        </tr>
+        <tr>
+          <td>HELB Loan / Bursary <sup class="fn">3</sup></td>
+          <td>Paid direct to institution</td>
+          <td class="num credit">(20,000.00)</td>
+          <td class="num credit">(20,000.00)</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2" class="row-label">Deductions Subtotal</td>
+          <td class="num credit">(45,000.00)</td>
+          <td class="num credit">(45,000.00)</td>
+        </tr>
+
+      </tbody>
+      <tfoot>
+        <tr class="total">
+          <td colspan="2" class="row-label">Net Payable by Student</td>
+          <td class="num">37,700.00</td>
+          <td class="num">37,700.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- ==========================================================
+         YEAR SUMMARY STRIP
+         ========================================================== -->
+    <div class="year-summary">
+      <div>
+        <div class="label">Year Total (Net)</div>
+        <div class="value">75,400.00</div>
+        <div class="sub">Across both semesters (KES)</div>
+      </div>
+      <div>
+        <div class="label">Year Total (Gross)</div>
+        <div class="value">165,400.00</div>
+        <div class="sub">Before capitation &amp; HELB</div>
+      </div>
+      <div>
+        <div class="label">Total Deductions</div>
+        <div class="value">90,000.00</div>
+        <div class="sub">Government + HELB this year</div>
+      </div>
+      <div>
+        <div class="label">Net per Semester</div>
+        <div class="value">37,700.00</div>
+        <div class="sub">Two equal instalments</div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         PAYMENT SCHEDULE — per semester, then per instalment
+         ========================================================== -->
+    <div class="pay-schedule">
+      <h3>Payment Schedule — 2023/2024</h3>
+      <table class="pay-table">
+        <thead>
+          <tr>
+            <th>Instalment</th>
+            <th>Semester</th>
+            <th>Due Date</th>
+            <th class="amount">Amount (KES)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1st Instalment</td>
+            <td class="sem-cell">Semester 1</td>
+            <td class="due">15 September 2023</td>
+            <td class="amount">22,620.00</td>
+          </tr>
+          <tr>
+            <td>2nd Instalment</td>
+            <td class="sem-cell">Semester 1</td>
+            <td class="due">15 November 2023</td>
+            <td class="amount">15,080.00</td>
+          </tr>
+          <tr>
+            <td>3rd Instalment</td>
+            <td class="sem-cell">Semester 2</td>
+            <td class="due">15 February 2024</td>
+            <td class="amount">22,620.00</td>
+          </tr>
+          <tr>
+            <td>4th Instalment</td>
+            <td class="sem-cell">Semester 2</td>
+            <td class="due">15 April 2024</td>
+            <td class="amount">15,080.00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right;font-weight:bold;
+                                   text-transform:uppercase;font-size:.72rem;
+                                   letter-spacing:.06em;
+                                   background:var(--total-bg);
+                                   border-top:2px solid var(--ink);">
+              Total Payable — Year 2, 2023/2024
+            </td>
+            <td class="amount" style="font-weight:bold;
+                                      background:var(--total-bg);
+                                      border-top:2px solid var(--ink);
+                                      font-size:.95rem;">
+              75,400.00
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem;font-style:italic;">
+        Each semester's net amount is split 60% / 40% across two instalments. Payment must be
+        received by the due date to avoid the late-payment surcharge described in the notes below.
+      </p>
+    </div>
+
+    <!-- ==========================================================
+         PAYMENT CHANNELS
+         ========================================================== -->
+    <div class="pay-channels">
+      <h3>How to Pay</h3>
+      <div class="channel-grid">
+
+        <div class="channel">
+          <span class="ch-name">M-PESA Paybill</span>
+          <span class="ch-detail">
+            Business No: <strong>522533</strong><br>
+            Account No: <strong>Student Registration Number</strong><br>
+            <em>Use your registration number exactly as shown on your admission letter.</em>
+          </span>
+        </div>
+
+        <div class="channel">
+          <span class="ch-name">Bank Transfer — KCB</span>
+          <span class="ch-detail">
+            Bank: <strong>Kenya Commercial Bank</strong><br>
+            Branch: <strong>Eldoret</strong><br>
+            A/C Name: <strong>RVIT Fees Collection</strong><br>
+            A/C No: <strong>1102 4567 8901</strong>
+          </span>
+        </div>
+
+        <div class="channel">
+          <span class="ch-name">Bank Transfer — Equity</span>
+          <span class="ch-detail">
+            Bank: <strong>Equity Bank</strong><br>
+            Branch: <strong>Eldoret</strong><br>
+            A/C Name: <strong>RVIT Fees Collection</strong><br>
+            A/C No: <strong>0170 2734 5678</strong>
+          </span>
+        </div>
+
+        <div class="channel">
+          <span class="ch-name">In-Person</span>
+          <span class="ch-detail">
+            Finance Office, Administration Block<br>
+            Mon – Fri, 8:00 AM – 4:00 PM<br>
+            <em>Card and cash accepted at the counter.</em>
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         NOTES
+         ========================================================== -->
+    <div class="notes">
+      <h3>Notes &amp; Conditions</h3>
+      <ol>
+        <li><strong>Tuition</strong> for Year 2, 2023/2024 is set at KES 85,000 per year, payable in two equal semester instalments of KES 42,500. This rate applies to the 2022 intake only and is reviewed annually.</li>
+        <li><strong>Boarding</strong> is optional. Day scholars are not charged Room &amp; Board or Meals — deduct KES 30,000 per semester from the gross total.</li>
+        <li><strong>HELB disbursement</strong> is subject to confirmation from the Higher Education Loans Board. If HELB funds are not received by the due date, the student is responsible for paying in full and claiming a refund once HELB remits.</li>
+        <li>Fees paid are <strong>non-refundable</strong> except where a student withdraws before the second week of the semester, in which case the refund policy in the Student Handbook applies.</li>
+        <li>Late payment beyond the due date attracts a <strong>2% monthly surcharge</strong> on the outstanding balance, and may result in the student being barred from end-of-semester examinations.</li>
+        <li>Amounts shown are in <strong>Kenya Shillings (KES)</strong>. This structure covers Year 2, 2023/2024 only, and supersedes any previously issued fee schedule for this year of study.</li>
+      </ol>
+    </div>
+
+    <!-- ==========================================================
+         FOOTER
+         ========================================================== -->
+    <footer>
+      <p class="disclaimer">
+        This fee structure applies to <strong>Year 2, 2023/2024</strong> only. Fees are reviewed
+        annually and may change for subsequent years of study. For queries, contact the Finance
+        Office at finance@rvit.ac.ke or +254 20 123 4567.
+      </p>
+      <p>Issued 15 August 2023 · Finance Office, Rift Valley Institute of Technology · Page 1 of 1</p>
+    </footer>
+
+  </div>
+</body>
+</html>

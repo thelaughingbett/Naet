@@ -92,6 +92,39 @@ class GradingScale(BaseModelMixin):
             )
         return band.grade_points
 
+    def _band_for(self, score):
+        """
+        Shared lookup for grade_points_for()/letter_for(): highest band
+        whose min_score <= score. Raises if no band covers this score —
+        a scale missing a min_score=0 floor band is a data-integrity
+        problem worth surfacing loudly, not silently defaulting.
+        """
+        band = self.bands.filter(
+            min_score__lte=score
+        ).order_by('-min_score').first()
+        if band is None:
+            raise ValidationError(
+                f"Grading scale '{self.name}' has no band covering a score of {score} "
+                f"— it needs a band with min_score=0 as a floor."
+            )
+        return band
+
+    def grade_points_for(self, score):
+        return self._band_for(score).grade_points
+
+    def letter_for(self, score):
+        """
+        Display letter/label for a score under this scale, e.g. 'A',
+        'B+'. Falls back to the band's grade_points as a string if the
+        band's label was left blank, so callers always get something
+        printable rather than an empty cell.
+        """
+        band = self._band_for(score)
+        return band.label or str(band.grade_points)
+
+    def __str__(self):
+        return self.name
+
     def __str__(self):
         return self.name
 

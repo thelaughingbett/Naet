@@ -23,6 +23,19 @@ class BaseConfig(AppConfig):
         registry.register(MpesaBackend())
         registry.register(EquityBankBackend())
 
+        from base.modules.pdf_engine.registry import registry
+        from base.modules.pdf_engine.examples.play_wright.playwright import (
+            PlaywrightPdfStrategy
+        )
+        for strategy_cls in (
+            PlaywrightPdfStrategy,
+        ):
+            registry.register(strategy_cls(), override=True)
+
+        # Do NOT call pdf_engine.init_browser() here.
+        # Registering the strategy class is cheap; launching the browser is not,
+        # and must wait until generate() is actually invoked.
+
         if settings.DEBUG:
 
             erp_registry.register(DefermentNotificationTask())

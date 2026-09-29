@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Year 2 Transcript — Jane Wanjiku Mwangi</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --pass: #047857;
+      --fail: #b91c1c;
+      --accent: #1e3a5f;
+      --bg: #ffffff;
+      --zebra: #f9fafb;
+      --subtotal-bg: #eef2f7;
+      --recommend-bg: #f0f7f2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Georgia", "Times New Roman", serif;
+      color: var(--ink);
+      background: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.45;
+    }
+
+    .sheet {
+      max-width: 920px;
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      padding: 2.25rem 2.75rem 2.75rem;
+    }
+
+    /* ============================================================
+       INSTITUTION HEADER
+       ============================================================ */
+    .inst-header {
+      display: grid;
+      grid-template-columns: 110px 1fr 110px;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 3px double var(--ink);
+    }
+    .inst-logo {
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inst-logo img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .inst-logo.placeholder {
+      border: 2px dashed var(--line);
+      border-radius: 50%;
+      color: var(--muted);
+      font-size: .65rem;
+      text-align: center;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+    .inst-identity { text-align: center; }
+    .inst-identity .inst-name {
+      font-size: 1.45rem;
+      font-weight: bold;
+      letter-spacing: .05em;
+      margin: 0 0 .15rem;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .inst-identity .inst-motto {
+      font-size: .78rem;
+      font-style: italic;
+      color: var(--muted);
+      margin: 0 0 .5rem;
+    }
+    .inst-identity .inst-contact {
+      font-size: .72rem;
+      color: var(--muted);
+      letter-spacing: .03em;
+      line-height: 1.5;
+    }
+    .inst-identity .inst-contact span + span::before {
+      content: " · ";
+      color: var(--line);
+    }
+
+    .doc-title {
+      text-align: center;
+      margin: 1.25rem 0 .25rem;
+      font-size: 1.05rem;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .doc-title-rule {
+      width: 180px;
+      height: 1px;
+      background: var(--ink);
+      margin: 0 auto 1.5rem;
+    }
+
+    /* ============================================================
+       YEAR BANNER — the focal point of a single-year doc
+       ============================================================ */
+    .year-banner {
+      margin: 0 0 1.75rem;
+      padding: 1rem 1.4rem;
+      background: var(--subtotal-bg);
+      border-left: 5px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .year-banner .year-title {
+      font-size: 1.35rem;
+      font-weight: bold;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .year-banner .year-dates {
+      font-size: .85rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
+
+    /* ============================================================
+       STUDENT BLOCK
+       ============================================================ */
+    .student-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .25rem 2rem;
+      margin: 0 0 2rem;
+      font-size: .92rem;
+    }
+    .student-block dt {
+      color: var(--muted);
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin: 0;
+    }
+    .student-block dd {
+      margin: 0 0 .6rem;
+      font-weight: bold;
+    }
+    .student-block > div { display: contents; }
+
+    /* ============================================================
+       COURSES TABLE
+       ============================================================ */
+    table.courses {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+    }
+    table.courses thead th {
+      text-align: left;
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding: .5rem .55rem;
+    }
+    table.courses tbody td {
+      padding: .5rem .55rem;
+      border-bottom: 1px solid var(--zebra);
+      vertical-align: top;
+    }
+    table.courses tbody tr:nth-child(even) { background: var(--zebra); }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    td.code {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+    td.sem {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    td.course-title em { color: var(--muted); font-style: italic; }
+
+    table.courses tfoot tr.subtotal td {
+      background: var(--subtotal-bg);
+      font-weight: bold;
+      border-top: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+      padding-top: .6rem;
+      padding-bottom: .6rem;
+    }
+    table.courses tfoot tr.subtotal td.label {
+      text-transform: uppercase;
+      font-size: .7rem;
+      letter-spacing: .08em;
+    }
+
+    /* ============================================================
+       STATUS COLOURS
+       ============================================================ */
+    .pass { color: var(--pass); font-weight: bold; }
+    .fail { color: var(--fail); font-weight: bold; }
+    .ungraded { color: var(--muted); font-style: italic; }
+
+    /* ============================================================
+       YEAR SUMMARY STRIP
+       ============================================================ */
+    .year-summary {
+      margin-top: 2rem;
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--line);
+      padding: 1.25rem 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+    .year-summary .label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .25rem;
+    }
+    .year-summary .value {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+    .year-summary .value.small {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    /* ============================================================
+       GRADING LEGEND
+       ============================================================ */
+    .legend {
+      margin-top: 2.5rem;
+      page-break-inside: avoid;
+    }
+    .legend h3 {
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 .6rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: .3rem;
+    }
+    table.legend-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    table.legend-table thead th {
+      text-align: left;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding: .35rem .5rem;
+    }
+    table.legend-table tbody td {
+      padding: .35rem .5rem;
+      border-bottom: 1px solid var(--zebra);
+    }
+    table.legend-table .band {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: .78rem;
+      white-space: nowrap;
+    }
+    table.legend-table .letter {
+      font-weight: bold;
+      text-align: center;
+      width: 60px;
+    }
+    .legend-note {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: .6rem;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       RECOMMENDATION
+       ============================================================ */
+    .recommendation {
+      margin-top: 2.5rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--recommend-bg);
+      border-left: 4px solid var(--pass);
+      page-break-inside: avoid;
+    }
+    .recommendation .rec-label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--muted);
+      margin-bottom: .35rem;
+    }
+    .recommendation .rec-statement {
+      font-size: 1rem;
+      font-weight: bold;
+      line-height: 1.5;
+      color: var(--ink);
+      margin: 0 0 .5rem;
+    }
+    .recommendation .rec-detail {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       SIGNATURES
+       ============================================================ */
+    .signatures {
+      margin-top: 3rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      page-break-inside: avoid;
+    }
+    .signatures .sig {
+      border-top: 1px solid var(--ink);
+      padding-top: .4rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: .72rem;
+    }
+    .signatures .sig .role {
+      display: block;
+      font-weight: bold;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: .82rem;
+      margin-bottom: .15rem;
+    }
+    .signatures .sig .line {
+      display: block;
+      font-size: .7rem;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      margin-top: 3rem;
+      font-size: .68rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+    }
+    footer .disclaimer {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    @media print {
+      body { padding: 0; font-size: 11pt; }
+      .sheet { border: none; padding: 0; max-width: 100%; }
+      tbody tr:nth-child(even) { background: transparent !important; }
+      .legend, .recommendation, .signatures { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+
+    <!-- ==========================================================
+         INSTITUTION HEADER
+         ========================================================== -->
+    <div class="inst-header">
+
+      <div class="inst-logo">
+        <!--
+          Replace with a real logo, e.g.:
+          <img src="/static/img/rvit-crest.png" alt="RVIT crest">
+        -->
+        <div class="inst-logo placeholder">
+          Institution<br>Logo
+        </div>
+      </div>
+
+      <div class="inst-identity">
+        <h1 class="inst-name">Rift Valley Institute of Technology</h1>
+        <p class="inst-motto">Scientia et Labor — Knowledge Through Work</p>
+        <p class="inst-contact">
+          <span>P.O. Box 4756-30100, Eldoret, Kenya</span>
+          <span>+254 20 123 4567</span>
+          <span>registrar@rvit.ac.ke</span>
+          <span>www.rvit.ac.ke</span>
+        </p>
+      </div>
+
+      <div class="inst-logo">
+        <!-- Optional second mark (accreditation badge, coat of arms) -->
+      </div>
+
+    </div>
+
+    <div class="doc-title">Academic Transcript — Year of Study</div>
+    <div class="doc-title-rule"></div>
+
+    <!-- ==========================================================
+         YEAR BANNER
+         ========================================================== -->
+    <div class="year-banner">
+      <span class="year-title">Year 2</span>
+      <span class="year-dates">Academic Year 2023/2024</span>
+    </div>
+
+    <!-- ==========================================================
+         STUDENT DETAILS
+         ========================================================== -->
+    <dl class="student-block">
+      <div>
+        <dt>Student</dt>
+        <dd>Jane Wanjiku Mwangi</dd>
+      </div>
+      <div>
+        <dt>Registration No.</dt>
+        <dd>RVIT/CS/2022/0147</dd>
+      </div>
+      <div>
+        <dt>Programme</dt>
+        <dd>BSc. Computer Science</dd>
+      </div>
+      <div>
+        <dt>Year of Study</dt>
+        <dd>Year 2 of 4</dd>
+      </div>
+      <div>
+        <dt>Date of Issue</dt>
+        <dd>26 September 2026</dd>
+      </div>
+      <div>
+        <dt>Transcript Reference</dt>
+        <dd>RVIT/TR/2026/00933</dd>
+      </div>
+    </dl>
+
+    <!-- ==========================================================
+         COURSES
+         ========================================================== -->
+    <table class="courses">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Course</th>
+          <th>Sem</th>
+          <th class="num">Credits</th>
+          <th class="num">Score</th>
+          <th>Grade</th>
+          <th class="num">Points</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="code">CS201</td>
+          <td class="course-title">Database Systems</td>
+          <td class="sem">S1</td>
+          <td class="num">4</td>
+          <td class="num">74.00</td>
+          <td>A</td>
+          <td class="num">4.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">CS202</td>
+          <td class="course-title">Operating Systems</td>
+          <td class="sem">S1</td>
+          <td class="num">4</td>
+          <td class="num">61.50</td>
+          <td>B</td>
+          <td class="num">3.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">CS203</td>
+          <td class="course-title">Computer Networks</td>
+          <td class="sem">S1</td>
+          <td class="num">3</td>
+          <td class="num">49.75</td>
+          <td>D</td>
+          <td class="num">1.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">MA201</td>
+          <td class="course-title">Linear Algebra</td>
+          <td class="sem">S1</td>
+          <td class="num">3</td>
+          <td class="num">33.00</td>
+          <td>E</td>
+          <td class="num">0.00</td>
+          <td><span class="fail">Fail</span></td>
+        </tr>
+        <tr>
+          <td class="code">CS204</td>
+          <td class="course-title">Web Application Development</td>
+          <td class="sem">S2</td>
+          <td class="num">4</td>
+          <td class="num">80.25</td>
+          <td>A</td>
+          <td class="num">4.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">CS205</td>
+          <td class="course-title">Systems Analysis &amp; Design</td>
+          <td class="sem">S2</td>
+          <td class="num">3</td>
+          <td class="num">67.00</td>
+          <td>B</td>
+          <td class="num">3.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">CS206</td>
+          <td class="course-title">Mobile Application Development</td>
+          <td class="sem">S2</td>
+          <td class="num">3</td>
+          <td class="num">72.50</td>
+          <td>A</td>
+          <td class="num">4.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">MA201R</td>
+          <td class="course-title">Linear Algebra <em>(resit)</em></td>
+          <td class="sem">S2</td>
+          <td class="num">3</td>
+          <td class="num">41.00</td>
+          <td>D</td>
+          <td class="num">1.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="code">CC201</td>
+          <td class="course-title">Entrepreneurship</td>
+          <td class="sem">S2</td>
+          <td class="num">2</td>
+          <td class="num">70.00</td>
+          <td>A</td>
+          <td class="num">4.00</td>
+          <td><span class="pass">Pass</span></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="subtotal">
+          <td colspan="3" class="label">Year 2 Totals</td>
+          <td class="num">29</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td>GPA 3.14</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- ==========================================================
+         YEAR SUMMARY
+         ========================================================== -->
+    <div class="year-summary">
+      <div>
+        <div class="label">Year GPA</div>
+        <div class="value">3.14</div>
+      </div>
+      <div>
+        <div class="label">Credits Registered</div>
+        <div class="value">29</div>
+      </div>
+      <div>
+        <div class="label">Credits Earned</div>
+        <div class="value">26</div>
+      </div>
+      <div>
+        <div class="label">Units Failed</div>
+        <div class="value">1</div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         GRADING LEGEND
+         ========================================================== -->
+    <div class="legend">
+      <h3>Grading System</h3>
+      <table class="legend-table">
+        <thead>
+          <tr>
+            <th>Score Band (%)</th>
+            <th>Letter</th>
+            <th class="num">Grade Points</th>
+            <th>Interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="band">70 – 100</td>
+            <td class="letter">A</td>
+            <td class="num">4.00</td>
+            <td>Excellent — first-class performance</td>
+          </tr>
+          <tr>
+            <td class="band">60 – 69</td>
+            <td class="letter">B</td>
+            <td class="num">3.00</td>
+            <td>Good — above-average mastery</td>
+          </tr>
+          <tr>
+            <td class="band">50 – 59</td>
+            <td class="letter">C</td>
+            <td class="num">2.00</td>
+            <td>Satisfactory — meets minimum expectations</td>
+          </tr>
+          <tr>
+            <td class="band">40 – 49</td>
+            <td class="letter">D</td>
+            <td class="num">1.00</td>
+            <td>Marginal pass — below average</td>
+          </tr>
+          <tr>
+            <td class="band">0 – 39</td>
+            <td class="letter">E</td>
+            <td class="num">0.00</td>
+            <td>Fail — does not meet passing standard</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="legend-note">
+        Pass mark for most courses is <strong>40%</strong>; regulated and professional units may
+        require a higher pass mark, applied per-course. A resit or supplementary attempt is
+        capped at the course pass mark for grading purposes — the achieved score is shown for
+        the record, but only pass-mark credit is applied. Grade points are weighted by course
+        credits to compute the year GPA shown above.
+      </p>
+    </div>
+
+    <!-- ==========================================================
+         RECOMMENDATION
+         ========================================================== -->
+    <div class="recommendation">
+      <div class="rec-label">Academic Recommendation</div>
+      <p class="rec-statement">
+        The student is <strong>qualified to proceed to Year 3</strong> of the programme.
+      </p>
+      <p class="rec-detail">
+        Having satisfied the requirements of Year 2 with a year GPA of <strong>3.14</strong> and
+        <strong>26</strong> credits earned, the student meets the progression threshold of
+        2.00 GPA and the minimum credit load for advancement to the next year of study.
+      </p>
+    </div>
+
+    <!-- ==========================================================
+         SIGNATURES
+         ========================================================== -->
+    <div class="signatures">
+      <div class="sig">
+        <span class="role">Registrar, Academic Affairs</span>
+        <span class="line">Sign: ____________________________</span>
+        <span class="line">Date: ____________________________</span>
+      </div>
+      <div class="sig">
+        <span class="role">Head of Department</span>
+        <span class="line">Sign: ____________________________</span>
+        <span class="line">Date: ____________________________</span>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         FOOTER
+         ========================================================== -->
+    <footer>
+      <p class="disclaimer">
+        This transcript covers <strong>Year 2 only</strong> and does not represent the student's
+        complete academic record. Grades reflect values frozen at the time of finalization;
+        subsequent edits to grading scales, pass marks, or weighting schemes do not alter the
+        values shown here. Any erasure or alteration renders this document invalid. For
+        verification, contact the Office of the Registrar at registrar@rvit.ac.ke quoting the
+        transcript reference above.
+      </p>
+      <p>Issued 2026-09-26 14:22 · Transcript Reference RVIT/TR/2026/00933 · Page 1 of 1</p>
+    </footer>
+
+  </div>
+</body>
+</html>

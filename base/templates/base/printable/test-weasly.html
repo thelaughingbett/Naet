@@ -1,0 +1,57 @@
+<!-- invoices/invoice_pdf.html -->
+<!doctype html>
+<html>
+  <head>
+    <style>
+      @page {
+        size: A4;
+        margin: 2cm;
+        @bottom-center {
+          content: "Page " counter(page) " of " counter(pages);
+        }
+      }
+      body {
+        font-family: "Helvetica", sans-serif;
+        font-size: 12px;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Invoice #{{ invoice.id }}</h1>
+    <p>Date: {{ invoice.date }}</p>
+
+    <table>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Price</th>
+      </tr>
+      {% for item in invoice.items.all %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ item.price }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <h3>Total: ${{ invoice.total }}</h3>
+  </body>
+</html>

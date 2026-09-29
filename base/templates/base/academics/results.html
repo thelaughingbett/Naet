@@ -1117,6 +1117,264 @@
     color: #c0d9f0;
   }
 
+  .year-modal-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    padding: 1rem;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+  }
+  .year-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .year-modal-card {
+    background: #ffffff;
+    border-radius: 28px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    padding: 1.8rem 1.8rem 2rem;
+    position: relative;
+    transform: scale(0.96);
+    transition: transform 0.2s ease;
+  }
+  .year-modal-overlay.active .year-modal-card {
+    transform: scale(1);
+  }
+  .year-modal-close {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: #6b7a8d;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+  }
+  .year-modal-close:hover {
+    background: #f0f4fa;
+    color: #0a2540;
+  }
+  .year-modal-header {
+    margin-bottom: 1.5rem;
+    padding-right: 2rem;
+  }
+  .year-modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0a2540;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .year-modal-header h2 i {
+    font-size: 1.4rem;
+    color: #1f6392;
+  }
+  .year-modal-header .year-modal-sub {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .year-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 1.8rem;
+    scrollbar-width: thin;
+  }
+  .year-list::-webkit-scrollbar {
+    width: 5px;
+  }
+  .year-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 6px;
+  }
+
+  .year-option {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.9rem 1.2rem;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.15s ease;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.98rem;
+  }
+  .year-option:hover {
+    background: #eef6ff;
+    border-color: #b6d0e8;
+  }
+  .year-option.selected {
+    background: #e3efff;
+    border-color: #1f6392;
+    box-shadow: 0 0 0 2px rgba(31, 99, 146, 0.15);
+  }
+  .year-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #cbd5e1;
+    border-radius: 50%;
+    margin: 0;
+    display: grid;
+    place-content: center;
+    transition: 0.1s;
+    flex-shrink: 0;
+  }
+  .year-option input[type="radio"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1f6392;
+    transform: scale(0);
+    transition: 0.1s;
+  }
+  .year-option input[type="radio"]:checked {
+    border-color: #1f6392;
+  }
+  .year-option input[type="radio"]:checked::before {
+    transform: scale(1);
+  }
+  .year-option-label {
+    flex: 1;
+  }
+  .year-option-label small {
+    display: block;
+    font-weight: 400;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .year-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .year-modal-btn {
+    padding: 0.9rem 1.2rem;
+    border-radius: 40px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    transition: 0.15s;
+  }
+
+  .year-modal-btn-primary {
+    background: #0a2540;
+    color: white;
+  }
+  .year-modal-btn-primary:hover {
+    background: #0f2f4a;
+  }
+  .year-modal-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #5a6e7e;
+  }
+  .year-modal-btn-secondary {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    color: #334155;
+  }
+  .year-modal-btn-secondary:hover {
+    background: #f1f5f9;
+  }
+
+  .year-modal-loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem 1rem;
+    text-align: center;
+  }
+  .year-modal-loading.active {
+    display: flex;
+  }
+  .year-modal-spinner {
+    width: 46px;
+    height: 46px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #1f6392;
+    border-radius: 50%;
+    animation: year-modal-spin 0.8s linear infinite;
+    margin-bottom: 1.1rem;
+  }
+  @keyframes year-modal-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .year-modal-loading-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0a2540;
+    margin-bottom: 0.3rem;
+  }
+  .year-modal-loading-sub {
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.5;
+    max-width: 280px;
+  }
+  .year-modal-loading-error {
+    display: none;
+    margin-top: 1.4rem;
+    width: 100%;
+  }
+  .year-modal-loading-error.active {
+    display: block;
+  }
+  .year-modal-error-box {
+    background: #fdecea;
+    color: #a32d2d;
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.9rem;
+    text-align: left;
+  }
+  /* content that gets hidden while loading */
+  .year-modal-main.hidden-while-loading {
+    display: none;
+  }
+
   /* ============================================
      RESPONSIVE MORPH
      ============================================ */
@@ -1151,6 +1409,24 @@
     }
     .sheet__handle {
       display: block;
+    }
+
+    .year-modal-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .year-modal-card {
+      max-width: 100%;
+      border-radius: 28px 28px 0 0;
+      padding: 1.5rem 1.5rem calc(1.8rem + env(safe-area-inset-bottom, 0px));
+      transform: translateY(10%);
+      transition: transform 0.25s ease;
+    }
+    .year-modal-overlay.active .year-modal-card {
+      transform: translateY(0);
+    }
+    .year-list {
+      max-height: 40vh;
     }
   }
 
@@ -1587,6 +1863,82 @@
   </div>
 </div>
 
+<!-- ============================================
+         TRANSCRIPT YEAR MODAL
+         ============================================ -->
+<div class="year-modal-overlay" id="yearModalOverlay">
+  <div
+    class="year-modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="yearModalTitle"
+  >
+    <button
+      class="year-modal-close"
+      id="yearModalClose"
+      aria-label="Close modal"
+    >
+      &times;
+    </button>
+
+    <div class="year-modal-main" id="yearModalMain">
+      <div class="year-modal-header">
+        <h2 id="yearModalTitle"><i>🗂️</i> Select academic year</h2>
+        <div class="year-modal-sub">
+          Choose the session to generate the transcript for. Only one year can
+          be selected.
+        </div>
+      </div>
+
+      <div class="year-list" id="yearListContainer"></div>
+
+      <div class="year-modal-actions">
+        <button
+          class="year-modal-btn year-modal-btn-primary"
+          id="generateTranscriptBtn"
+          disabled
+        >
+          📄 Generate transcript
+        </button>
+        <button
+          class="year-modal-btn year-modal-btn-secondary"
+          id="yearCancelBtn"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="year-modal-loading" id="yearModalLoading">
+      <div class="year-modal-spinner" id="yearModalSpinner"></div>
+      <div class="year-modal-loading-title" id="yearModalLoadingTitle">
+        Generating transcript…
+      </div>
+      <div class="year-modal-loading-sub" id="yearModalLoadingSub">
+        This usually takes a few seconds. Please don't close this window.
+      </div>
+
+      <div class="year-modal-loading-error" id="yearModalLoadingError">
+        <div class="year-modal-error-box" id="yearModalErrorMsg"></div>
+        <div class="year-modal-actions">
+          <button
+            class="year-modal-btn year-modal-btn-primary"
+            id="yearModalRetryBtn"
+          >
+            Try again
+          </button>
+          <button
+            class="year-modal-btn year-modal-btn-secondary"
+            id="yearModalBackBtn"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{ study_years|json_script:"studyYearsData" }}
 <script>
   const CHALLENGE_HISTORY_URL = "{% url 'result-challenge-history' %}";
   const CHALLENGE_SUBMIT_URL = "{% url 'submit-result-challenge' %}";
@@ -1594,6 +1946,7 @@
   const REQUISITION_SUBMIT_URL = "{% url 'submit-requisition' %}";
   const BULK_SUBMIT_URL = "{% url 'submit-bulk-request' %}";
   const CSRF_TOKEN = "{{ csrf_token }}";
+  const TRANSCRIPT_PDF_URL = "{% url 'transcript-pdf' %}";
 
   // ── button busy-state helpers ─────────────────────────────────────────────
   function setBusy(btn) {
@@ -2012,6 +2365,7 @@
   document
     .getElementById("resultModalClose")
     .addEventListener("click", closeResultModal);
+
   document
     .getElementById("resultModalOverlay")
     .addEventListener("click", (e) => {
@@ -2028,6 +2382,7 @@
     ".doc",
     ".docx",
   ];
+
   const MAX_FILE_SIZE_MB = 25;
 
   function extOf(filename) {
@@ -2113,6 +2468,7 @@
     .addEventListener("click", function () {
       flashBusy(this, () => showActionPanel("challenge"));
     });
+
   document
     .getElementById("requisitionBtn")
     .addEventListener("click", function () {
@@ -2193,9 +2549,11 @@
   function closeReqModal() {
     closeSheet("reqModalOverlay");
   }
+
   document
     .getElementById("reqModalClose")
     .addEventListener("click", closeReqModal);
+
   document.getElementById("reqModalOverlay").addEventListener("click", (e) => {
     if (e.target.id === "reqModalOverlay") closeReqModal();
   });
@@ -2211,6 +2569,7 @@
       .getElementById("requestsPanel")
       .classList.toggle("active", tabName === "requests");
   }
+
   document.querySelectorAll(".req-tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => setReqTab(btn.dataset.reqtab));
   });
@@ -2402,9 +2761,11 @@
       clearBusy(btn);
     }
   }
+
   document.getElementById("historyBtn").addEventListener("click", function () {
     handleHistoryClick(this);
   });
+
   document
     .getElementById("mobileHistoryBtn")
     .addEventListener("click", function () {
@@ -2473,9 +2834,11 @@
     const select = document.getElementById("semesterSelect");
     renderResults(select ? select.value : "all");
   }
+
   document
     .getElementById("bulkModeBtn")
     .addEventListener("click", toggleBulkMode);
+
   document
     .getElementById("mobileBulkBtn")
     .addEventListener("click", toggleBulkMode);
@@ -2486,6 +2849,7 @@
     const select = document.getElementById("semesterSelect");
     renderResults(select ? select.value : "all");
   });
+
   document
     .getElementById("bulkBarContinue")
     .addEventListener("click", openBulkModal);
@@ -2534,9 +2898,11 @@
     document.getElementById("bulkTypeGroup").style.display =
       kind === "requisition" ? "block" : "none";
   }
+
   document
     .getElementById("bulkKindChallenge")
     .addEventListener("click", () => setBulkKind("challenge"));
+
   document
     .getElementById("bulkKindRequisition")
     .addEventListener("click", () => setBulkKind("requisition"));
@@ -2677,9 +3043,11 @@
     bulkModalOpen = false;
     updateBulkBar();
   }
+
   document
     .getElementById("bulkModalClose")
     .addEventListener("click", closeBulkModal);
+
   document.getElementById("bulkModalOverlay").addEventListener("click", (e) => {
     if (e.target.id === "bulkModalOverlay") closeBulkModal();
   });
@@ -2776,14 +3144,7 @@
   }
 
   // ── print / refresh (shared desktop + mobile handlers) ─────────────────────
-  document.getElementById("printBtn")?.addEventListener("click", function () {
-    flashBusy(this, () => window.print());
-  });
-  document
-    .getElementById("mobilePrintBtn")
-    ?.addEventListener("click", function () {
-      flashBusy(this, () => window.print());
-    });
+
   document.getElementById("refreshBtn")?.addEventListener("click", function () {
     if (!setBusy(this)) return;
     // Results are server-rendered; a real refetch needs a page load.
@@ -2797,6 +3158,275 @@
   document
     .getElementById("mobileSemesterSelect")
     ?.addEventListener("change", (e) => selectSemester(e.target.value));
+
+  // -- Transcript ------------
+  const TRANSCRIPT_LOADING_STAGES = [
+    {
+      at: 0,
+      title: "Generating transcript…",
+      sub: "This usually takes a few seconds. Please don't close this window.",
+    },
+    {
+      at: 4000,
+      title: "Still working…",
+      sub: "Rendering your academic record — almost there.",
+    },
+    {
+      at: 9000,
+      title: "Taking a little longer…",
+      sub: "Large transcripts with many units can take up to 15–20 seconds.",
+    },
+    {
+      at: 18000,
+      title: "Almost done…",
+      sub: "Thanks for your patience — finalizing the document now.",
+    },
+  ];
+
+  let transcriptStageTimers = [];
+
+  function clearTranscriptStageTimers() {
+    transcriptStageTimers.forEach((id) => clearTimeout(id));
+    transcriptStageTimers = [];
+  }
+
+  function startTranscriptStageTimers() {
+    clearTranscriptStageTimers();
+    const titleEl = document.getElementById("yearModalLoadingTitle");
+    const subEl = document.getElementById("yearModalLoadingSub");
+
+    TRANSCRIPT_LOADING_STAGES.forEach((stage, idx) => {
+      if (idx === 0) {
+        titleEl.textContent = stage.title;
+        subEl.textContent = stage.sub;
+        return;
+      }
+      const id = setTimeout(() => {
+        titleEl.textContent = stage.title;
+        subEl.textContent = stage.sub;
+      }, stage.at);
+      transcriptStageTimers.push(id);
+    });
+  }
+
+  let transcriptAbortController = null;
+  function showYearModalLoading() {
+    document
+      .getElementById("yearModalMain")
+      .classList.add("hidden-while-loading");
+    document.getElementById("yearModalLoading").classList.add("active");
+    document.getElementById("yearModalLoadingError").classList.remove("active");
+    document.getElementById("yearModalSpinner").style.display = "block";
+    document.getElementById("yearModalLoadingSub").style.display = "block";
+    startTranscriptStageTimers();
+  }
+
+  function showYearModalError(message) {
+    clearTranscriptStageTimers();
+    document.getElementById("yearModalSpinner").style.display = "none";
+    document.getElementById("yearModalLoadingTitle").textContent =
+      "Couldn't generate transcript";
+    document.getElementById("yearModalLoadingSub").style.display = "none";
+    document.getElementById("yearModalErrorMsg").textContent = message;
+    document.getElementById("yearModalLoadingError").classList.add("active");
+  }
+
+  function backToYearSelection() {
+    clearTranscriptStageTimers();
+    if (transcriptAbortController) {
+      transcriptAbortController.abort();
+      transcriptAbortController = null;
+    }
+    document.getElementById("yearModalLoading").classList.remove("active");
+    document
+      .getElementById("yearModalMain")
+      .classList.remove("hidden-while-loading");
+  }
+
+  let yearModalSelected = null;
+  let studyYears = [];
+  try {
+    const el = document.getElementById("studyYearsData");
+    studyYears = el ? JSON.parse(el.textContent) : [];
+  } catch (e) {
+    studyYears = [];
+  }
+  function renderYearOptions() {
+    const container = document.getElementById("yearListContainer");
+    yearModalSelected = null;
+
+    if (!studyYears.length) {
+      container.innerHTML = `<div class="req-empty">No academic years available yet.</div>`;
+      document.getElementById("generateTranscriptBtn").disabled = true;
+      return;
+    }
+
+    const sorted = [...studyYears].sort((a, b) => b.year - a.year);
+    container.innerHTML = "";
+
+    sorted.forEach((sy) => {
+      const label = document.createElement("label");
+      label.className = "year-option" + (sy.is_current ? " selected" : "");
+
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "transcriptYear";
+      radio.value = sy.year;
+      if (sy.is_current) {
+        radio.checked = true;
+        yearModalSelected = sy.year;
+      }
+      radio.addEventListener("change", (e) => {
+        if (!e.target.checked) return;
+        yearModalSelected = Number(e.target.value);
+        document
+          .querySelectorAll(".year-option")
+          .forEach((o) => o.classList.remove("selected"));
+        label.classList.add("selected");
+        document.getElementById("generateTranscriptBtn").disabled = false;
+      });
+
+      const span = document.createElement("span");
+      span.className = "year-option-label";
+      span.textContent = sy.label;
+      const bits = [
+        sy.academic_year,
+        sy.is_current ? "Current session" : null,
+      ].filter(Boolean);
+      if (bits.length) {
+        const small = document.createElement("small");
+        small.textContent = bits.join(" · ");
+        span.appendChild(small);
+      }
+
+      label.appendChild(radio);
+      label.appendChild(span);
+      container.appendChild(label);
+    });
+
+    if (!yearModalSelected && sorted.length) {
+      yearModalSelected = sorted[0].year;
+      const firstRadio = container.querySelector(
+        'input[name="transcriptYear"]',
+      );
+      firstRadio.checked = true;
+      firstRadio.closest(".year-option").classList.add("selected");
+    }
+
+    document.getElementById("generateTranscriptBtn").disabled =
+      !yearModalSelected;
+  }
+
+  function openYearModal() {
+    renderYearOptions();
+    document.getElementById("yearModalLoading").classList.remove("active");
+    document
+      .getElementById("yearModalMain")
+      .classList.remove("hidden-while-loading");
+    document.getElementById("yearModalOverlay").classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeYearModal() {
+    clearTranscriptStageTimers();
+    if (transcriptAbortController) {
+      transcriptAbortController.abort();
+      transcriptAbortController = null;
+    }
+    document.getElementById("yearModalOverlay").classList.remove("active");
+    document.body.style.overflow = "";
+    document.getElementById("yearModalLoading").classList.remove("active");
+    document
+      .getElementById("yearModalMain")
+      .classList.remove("hidden-while-loading");
+  }
+  async function generateTranscript() {
+    if (!yearModalSelected) return;
+
+    showYearModalLoading();
+    transcriptAbortController = new AbortController();
+
+    try {
+      const res = await fetch(
+        `${TRANSCRIPT_PDF_URL}?year=${yearModalSelected}`,
+        {
+          signal: transcriptAbortController.signal,
+          headers: { Accept: "application/pdf" },
+        },
+      );
+
+      if (!res.ok) {
+        let message = `Server responded with an error (${res.status}).`;
+        try {
+          const text = await res.text();
+          if (text) message = text.slice(0, 200);
+        } catch (_) {}
+        showYearModalError(message);
+        return;
+      }
+
+      const blob = await res.blob();
+      if (blob.type && !blob.type.includes("pdf")) {
+        showYearModalError("The server did not return a valid PDF.");
+        return;
+      }
+
+      clearTranscriptStageTimers();
+
+      const blobUrl = URL.createObjectURL(blob);
+      const opened = window.open(blobUrl, "_blank");
+      if (!opened) window.location.href = blobUrl;
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+
+      closeYearModal();
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      showYearModalError(
+        "Network error — please check your connection and try again.",
+      );
+    } finally {
+      transcriptAbortController = null;
+    }
+  }
+
+  document.getElementById("yearModalRetryBtn").addEventListener("click", () => {
+    backToYearSelection();
+    generateTranscript();
+  });
+  document
+    .getElementById("yearModalBackBtn")
+    .addEventListener("click", backToYearSelection);
+
+  document
+    .getElementById("yearModalClose")
+    .addEventListener("click", closeYearModal);
+  document
+    .getElementById("yearCancelBtn")
+    .addEventListener("click", closeYearModal);
+  document
+    .getElementById("generateTranscriptBtn")
+    .addEventListener("click", generateTranscript);
+  document.getElementById("yearModalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "yearModalOverlay") closeYearModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.key === "Escape" &&
+      document.getElementById("yearModalOverlay").classList.contains("active")
+    ) {
+      closeYearModal();
+    }
+  });
+
+  // ── print buttons now open the year modal ────────────────────────────────
+  document.getElementById("printBtn")?.addEventListener("click", function () {
+    openYearModal();
+  });
+  document
+    .getElementById("mobilePrintBtn")
+    ?.addEventListener("click", function () {
+      openYearModal();
+    });
 
   // ── init ──────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {

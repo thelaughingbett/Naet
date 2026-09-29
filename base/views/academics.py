@@ -13,6 +13,16 @@
 # limitations under the License.
 
 
+from .transcript_utils import get_study_year
+from base.modules.pdf_engine.source import TemplateSource
+from base.modules.pdf_engine.registry import get_pdf_strategy
+from django.views.decorators.http import require_GET
+from django.core.exceptions import PermissionDenied
+from django.utils import timezone
+from django.http import HttpResponse, HttpResponseBadRequest, Http404
+from django.conf import settings
+from decimal import Decimal
+from .transcript_utils import get_study_years
 import json
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST
@@ -335,13 +345,10 @@ class ResultsView(
 
         enrollment_rows = []
         sessions = Session.objects.none()
+        study_years_context = []
 
         if student:
             target_class = student.class_entered
-
-            # `curricula__Tclass` doesn't exist — `curricula` is the
-            # related_name on Curriculum.session, and the class link is
-            # now via `classes` (through CurriculumClass).
             earliest_session = Session.objects.filter(
                 curricula__classes=target_class
             ).order_by('start_date').first()
@@ -358,7 +365,10 @@ class ResultsView(
             enrollments = Enrollment.objects.filter(
                 student=student,
             ).exclude(
-                status__in=['dropped', 'rejected']
+                status__in=[
+                    'dropped',
+                    'rejected'
+                ]
             ).select_related(
                 'curriculum__course',
                 'curriculum__session',
@@ -388,17 +398,26 @@ class ResultsView(
             scores_by_enrollment = {}
             for r in published:
                 bucket = scores_by_enrollment.setdefault(
-                    str(r.enrollment_id), {})
+                    str(r.enrollment_id),
+                    {}
+                )
                 # last published wins if more than one
                 bucket[r.type] = float(r.score)
+
+            study_years = get_study_years(student)
+            session_to_year = {
+                str(s): sy.year for sy in study_years for s in sy.sessions
+            }
 
             for enr in enrollments:
                 course = enr.curriculum.course
                 bucket = scores_by_enrollment.get(str(enr.record_id), {})
                 has_published = bool(bucket)
+                session_str = str(enr.curriculum.session)
 
                 enrollment_rows.append({
                     'session': str(enr.curriculum.session),
+                    'year_of_study': session_to_year.get(session_str),
                     'course_code': course.course_code,
                     'course_name': course.course_name,
                     'credits': course.credits,
@@ -407,12 +426,27 @@ class ResultsView(
                     'has_published': has_published,
                     'has_open_challenge': enr.record_id in open_challenge_enrollment_ids,
                 })
+        years_with_data = {
+            r['year_of_study'] for r in enrollment_rows if r['year_of_study']
+        }
+        current_year = session_to_year.get(
+            str(active_session)) if active_session else None
+
+        for sy in study_years:
+            if sy.year in years_with_data:
+                study_years_context.append({
+                    'year': sy.year,
+                    'label': sy.label,
+                    'academic_year': sy.academic_year_label,
+                    'is_current': sy.year == current_year,
+                })
 
         context = {
             'enrollment_rows': enrollment_rows,
             'student': student,
             'session': active_session,
             'sessions': sessions,
+            'study_years': study_years_context,
         }
         return render(request, 'base/academics/results.html', context)
 
@@ -867,3 +901,155 @@ def submit_bulk_request(request):
         "results": results,
         "summary": f"{succeeded} of {len(results)} request(s) filed successfully.",
     })
+
+
+@login_required
+@require_GET
+def transcript_pdf(request):
+    student = Student.objects.filter(user=request.user).first()
+    if not student:
+        raise PermissionDenied("Only students can generate a transcript.")
+
+    try:
+        year = int(request.GET.get('year', ''))
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest("A valid year is required.")
+
+    study_year = get_study_year(student, year)
+    if not study_year or not study_year.sessions:
+        raise Http404("No academic sessions found for that year.")
+
+    enrollments = Enrollment.objects.filter(
+        student=student,
+        curriculum__session__in=study_year.sessions,
+    ).exclude(
+        status__in=['dropped', 'rejected']
+    ).select_related(
+        'curriculum__course', 'curriculum__session',
+    ).order_by('curriculum__session__start_date', 'curriculum__course__course_code')
+
+    enrollment_ids = [e.record_id for e in enrollments]
+
+    # Published CAT/Exam results for these enrollments, same query shape
+    # ResultsView uses — so the transcript can never show LESS progress
+    # than the student already sees on the results page.
+    published = Result.objects.filter(
+        enrollment_id__in=enrollment_ids,
+        type__in=['C', 'E'],
+        state='published',
+    ).order_by('record_id')
+
+    scores_by_enrollment = {}
+    for r in published:
+        bucket = scores_by_enrollment.setdefault(str(r.enrollment_id), {})
+        bucket[r.type] = (r.score)
+
+    course_rows = []
+    total_credits_registered = 0
+    total_credits_earned = 0
+    total_weighted_points = Decimal('0')
+    total_gpa_credits = 0
+    units_failed = 0
+
+    for enr in enrollments:
+        course = enr.curriculum.course
+        total_credits_registered += course.credits
+        bucket = scores_by_enrollment.get(str(enr.record_id), {})
+        has_published = bool(bucket)
+
+        if enr.graded_at is not None:
+            # Finalized — use the values frozen at finalize_grade() time,
+            # never the live properties, so a later pass_mark/scale edit
+            # can't reinterpret this transcript.
+            passed = (
+                enr.pass_mark_applied is not None
+                and enr.graded_score >= enr.pass_mark_applied
+            )
+            if passed:
+                total_credits_earned += enr.credits_earned
+            else:
+                units_failed += 1
+
+            total_weighted_points += (enr.grade_points_earned or Decimal('0')
+                                      ) * course.credits
+            total_gpa_credits += course.credits
+
+            grade_letter = (
+                enr.graded_scale.letter_for(enr.graded_score)
+                if enr.graded_scale_id else None
+            )
+
+            course_rows.append({
+                'code': course.course_code, 'name': course.course_name,
+                'semester': enr.curriculum.session.semester,
+                'credits': course.credits,
+                'score': enr.graded_score, 'grade': grade_letter,
+                'points': enr.grade_points_earned,
+                'status': 'pass' if passed else 'fail',
+            })
+
+        elif has_published:
+            # Not yet finalized (e.g. CAT published, exam pending), but
+            # the student has real marks recorded — show them rather
+            # than hiding progress the ResultsView page already shows.
+            cat = bucket.get('C')
+            exam = bucket.get('E')
+            parts = [v for v in (cat, exam) if v is not None]
+            visible_total = sum(parts).quantize(
+                Decimal('0.01')) if parts else None
+
+            course_rows.append({
+                'code': course.course_code,
+                'name': course.course_name,
+                'semester': enr.curriculum.session.semester,
+                'credits': course.credits,
+                'score': visible_total,
+                'grade': None,
+                'points': None,
+                'status': 'in_progress',
+            })
+
+        else:
+            course_rows.append({
+                'code': course.course_code, 'name': course.course_name,
+                'semester': enr.curriculum.session.semester,
+                'credits': course.credits,
+                'score': None, 'grade': None, 'points': None, 'status': 'ungraded',
+            })
+
+    year_gpa = (
+        (total_weighted_points / total_gpa_credits).quantize(Decimal('0.01'))
+        if total_gpa_credits else Decimal('0.00')
+    )
+    can_progress = year_gpa >= Decimal('2.00') and units_failed == 0
+
+    context = {
+        'student': student,
+        'programme': student.class_entered.programme,
+        'study_year': study_year,
+        'course_rows': course_rows,
+        'total_credits_registered': total_credits_registered,
+        'total_credits_earned': total_credits_earned,
+        'units_failed': units_failed,
+        'year_gpa': year_gpa,
+        'can_progress': can_progress,
+        'issued_at': timezone.now(),
+        'transcript_reference': (
+            f"{getattr(settings, 'INSTITUTION_CODE', 'TR')}/"
+            f"{timezone.now().year}/{str(student.record_id)[:8].upper()}"
+        ),
+    }
+
+    result = get_pdf_strategy("transcript").generate(
+        TemplateSource("base/printable/Transcript_with_QR_code.html", context)
+    )
+    if not result.success:
+        return HttpResponse(
+            f"Could not generate transcript ({result.engine}): {result.message}",
+            status=500,
+        )
+
+    response = HttpResponse(result.pdf_bytes, content_type="application/pdf")
+    filename = f"transcript_year{year}_{student.registration_number}.pdf"
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response

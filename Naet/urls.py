@@ -15,6 +15,7 @@ urlpatterns = [
         ComingSoonView.as_view(),
         name='coming-soon'
     ),
+    # path("api", include("api.urls")),
     re_path(r'^(?P<resource>.*)/$', ErrorNotFound.as_view()),
 ]
 

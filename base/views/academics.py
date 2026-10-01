@@ -1055,8 +1055,19 @@ def transcript_pdf(request):
     logger.warning(f"TOTAL VIEW TIME: {t6-t0:.2f}s")
 
     if not result.success:
-        return HttpResponse(
-            f"Could not generate transcript ({result.engine}): {result.message}",
+        logger.error(
+            "Transcript generation failed for student=%s year=%s engine=%s: %s",
+            student.registration_number, year, result.engine, result.message,
+            exc_info=True,
+        )
+
+        return JsonResponse(
+            {
+                "error": "generation_failed",
+                "message": "We couldn't generate your transcript right now. "
+                           "Please try again in a moment, or contact the "
+                           "registrar's office if the problem continues.",
+            },
             status=500,
         )
 

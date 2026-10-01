@@ -3356,11 +3356,14 @@
       );
 
       if (!res.ok) {
-        let message = `Server responded with an error (${res.status}).`;
+        let message =
+          "We couldn't generate your transcript right now. Please try again shortly.";
         try {
-          const text = await res.text();
-          if (text) message = text.slice(0, 200);
-        } catch (_) {}
+          const data = await res.json();
+          if (data && data.message) message = data.message;
+        } catch (_) {
+          // response wasn't JSON (e.g. a gateway/proxy error page) — keep the generic fallback
+        }
         showYearModalError(message);
         return;
       }

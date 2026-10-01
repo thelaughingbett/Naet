@@ -56,6 +56,7 @@ class GradingScale(BaseModelMixin):
     standard" (A=70+, B=60-69, ...). Shared across whichever courses
     reference it via Course.grading_scale.
     """
+    # NOTE  change name to increment n when the band is updated or changed but keep the entire previous band as is
     name = models.CharField(max_length=100, unique=True)
 
     is_default = models.BooleanField(

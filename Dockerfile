@@ -1,30 +1,21 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.63.0-noble
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1
 
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  build-essential \
-  libpq-dev \
-  && rm -rf /var/lib/apt/lists/*
-
-# Install Python requirements
-COPY requirements.txt /usr/src/Naet/
-RUN pip install --no-cache-dir -r requirements.txt
-
-RUN mkdir -p /usr/src/Naet
 WORKDIR /usr/src/Naet
 
+# Install Python requirements first (better layer caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 # Copy the rest of the project
-COPY . /usr/src/Naet
+COPY . .
 
-RUN python manage.py collectstatic --noinput
+# Dummy values so collectstatic doesn't need real secrets at build time
+RUN SECRET_KEY=build-only-dummy python manage.py collectstatic --noinput
 
-# Inform Docker that the container listens on port 8000
-EXPOSE 8000
+EXPOSE 10000
 
-# Run Gunicorn to serve the Django WSGI application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "Naet.wsgi:application"]
+# Shell form so $PORT is expanded; Render sets PORT at runtime
+CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 2 --timeout 120 Naet.wsgi:application

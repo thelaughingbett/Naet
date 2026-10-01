@@ -99,7 +99,7 @@ class Enrollment(BaseModelMixin):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ("dropped", "Dropped"),
-        # write a signal or method to update this once moved to next academic year [most likely a celery job should suffice here else heavy workload] 👇🏿
+        # write a signal or method to update this once moved to next academic year [most likely a celery job should suffice here else heavy workload] 👇🏿 actually update when finalized grade
         ("completed", "Completed")
     ]
 
@@ -438,10 +438,17 @@ class Enrollment(BaseModelMixin):
         self.pass_mark_applied = pass_mark
         self.graded_at = timezone.now()
 
-        self.save(update_fields=[
-            'graded_score', 'grade_points_earned', 'credits_earned',
-            'graded_scale', 'weighting_scheme_used', 'pass_mark_applied', 'graded_at',
-        ])
+        self.save(
+            update_fields=[
+                'graded_score',
+                'grade_points_earned',
+                'credits_earned',
+                'graded_scale',
+                'weighting_scheme_used',
+                'pass_mark_applied',
+                'graded_at',
+            ]
+        )
         return True
 
     def regrade(self, by_user, reason):
@@ -471,7 +478,7 @@ class Enrollment(BaseModelMixin):
             pass
         return changed
 
-#  TODO add buttons to enter result view for submit reults for approval irregardless of the type this should send all results to hod for approval
+#  TODO add buttons to enter result view for submit results for approval irregardless of the type this should send all results to hod for approval
 # this should also be where auto computation of grade to be done
 
 

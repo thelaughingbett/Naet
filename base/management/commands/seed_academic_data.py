@@ -268,20 +268,26 @@ SESSION_DATA = [
     ("2026/2027", "1", datetime.date(2026, 9,  1), datetime.date(2027, 1, 31), True),
 ]
 
-FIRST_NAMES = ["James", "Mary", "Robert", "Patricia", "John", "Jennifer",
-               "Michael", "Linda", "David", "Barbara", "Amara", "Fatuma",
-               "Kevin", "Grace", "Brian", "Esther", "Felix", "Winnie",
-               "Samuel", "Carol", "Daniel", "Ruth", "Peter", "Mercy",
-               "Joseph", "Alice", "George", "Rose", "Charles", "Janet"]
+FIRST_NAMES = [
+    "James", "Mary", "Robert", "Patricia", "John", "Jennifer",
+    "Michael", "Linda", "David", "Barbara", "Amara", "Fatuma",
+    "Kevin", "Grace", "Brian", "Esther", "Felix", "Winnie",
+    "Samuel", "Carol", "Daniel", "Ruth", "Peter", "Mercy",
+    "Joseph", "Alice", "George", "Rose", "Charles", "Janet"
+]
 
-LAST_NAMES = ["Kamau", "Odhiambo", "Wanjiku", "Mwangi", "Omondi", "Njoroge",
-              "Otieno", "Kimani", "Mutua", "Achieng", "Wafula", "Gathoni",
-              "Korir", "Chebet", "Mugo", "Ndungu", "Onyango", "Waweru",
-              "Kiptoo", "Njeru", "Maina", "Auma", "Kirui", "Nyambura",
-              "Saitoti", "Cherop", "Barasa", "Mulwa", "Simiyu", "Nafula"]
+LAST_NAMES = [
+    "Kamau", "Odhiambo", "Wanjiku", "Mwangi", "Omondi", "Njoroge",
+    "Otieno", "Kimani", "Mutua", "Achieng", "Wafula", "Gathoni",
+    "Korir", "Chebet", "Mugo", "Ndungu", "Onyango", "Waweru",
+    "Kiptoo", "Njeru", "Maina", "Auma", "Kirui", "Nyambura",
+    "Saitoti", "Cherop", "Barasa", "Mulwa", "Simiyu", "Nafula"
+]
 
-LECTURER_TITLES = ["Lecturer", "Senior Lecturer", "Associate Professor",
-                   "Assistant Lecturer", "Tutorial Fellow"]
+LECTURER_TITLES = [
+    "Lecturer", "Senior Lecturer", "Associate Professor",
+    "Assistant Lecturer", "Tutorial Fellow"
+]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -340,8 +346,11 @@ class Command(BaseCommand):
             sess, _ = Session.objects.get_or_create(
                 academic_year=academic_year,
                 semester=semester,
-                defaults=dict(start_date=start, end_date=end,
-                              is_active=is_active),
+                defaults=dict(
+                    start_date=start,
+                    end_date=end,
+                    is_active=is_active
+                ),
             )
             # keep is_active correct on re-runs
             if sess.is_active != is_active:
@@ -359,7 +368,8 @@ class Command(BaseCommand):
 
         for school_data in SCHOOL_DATA:
             school, _ = School.objects.get_or_create(
-                school_name=school_data["name"])
+                school_name=school_data["name"]
+            )
             self.stdout.write(f"\nSchool: {school.school_name}")
 
             for dept_data in school_data["departments"]:
@@ -455,7 +465,8 @@ class Command(BaseCommand):
                                 Tclass=tclass,
                                 session=session,
                                 defaults={
-                                    "breakdown": fee_template[yos_clamped]},
+                                    "breakdown": fee_template[yos_clamped]
+                                },
                             )
 
                     self.stdout.write(
@@ -651,9 +662,11 @@ class Command(BaseCommand):
                             rng_c = random.Random(
                                 hash(f"{sidx}-{str(curr.record_id)}-C") % (2**31)
                             )
+
                             rng_e = random.Random(
                                 hash(f"{sidx}-{str(curr.record_id)}-E") % (2**31)
                             )
+
                             if (curr.record_id, student.record_id, "C") not in existing:
                                 to_create.append(Result(
                                     curricula=curr,
@@ -663,6 +676,7 @@ class Command(BaseCommand):
                                     score=decimal.Decimal(
                                         str(round(rng_c.uniform(15, 30), 2))),
                                 ))
+
                             if (curr.record_id, student.record_id, "E") not in existing:
                                 to_create.append(Result(
                                     curricula=curr,
@@ -675,7 +689,9 @@ class Command(BaseCommand):
 
                     if to_create:
                         Result.objects.bulk_create(
-                            to_create, ignore_conflicts=True)
+                            to_create,
+                            ignore_conflicts=True
+                        )
                         total_results += len(to_create)
 
         self.stdout.write("")   # newline after \r progress
@@ -699,10 +715,14 @@ class Command(BaseCommand):
             self.stdout.write("  (no new users created — all already exist)")
             return
 
-        lecturers = [(r, e, p)
-                     for r, e, p in self._credentials if r == "Lecturer"]
-        students = [(r, e, p)
-                    for r, e, p in self._credentials if r == "Student"]
+        lecturers = [
+            (r, e, p)
+            for r, e, p in self._credentials if r == "Lecturer"
+        ]
+        students = [
+            (r, e, p)
+            for r, e, p in self._credentials if r == "Student"
+        ]
 
         self.stdout.write(self.style.SUCCESS(
             f"\n  LECTURERS ({len(lecturers)}):"))

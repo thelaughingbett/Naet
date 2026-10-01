@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+from base.modules.academics.enrollment_outcome import get_enrollment_outcome
+import logging
+import time
 from .transcript_utils import get_study_year
 from base.modules.pdf_engine.source import TemplateSource
 from base.modules.pdf_engine.registry import get_pdf_strategy
@@ -411,24 +414,39 @@ class ResultsView(
 
             for enr in enrollments:
                 course = enr.curriculum.course
-                bucket = scores_by_enrollment.get(str(enr.record_id), {})
-                has_published = bool(bucket)
                 session_str = str(enr.curriculum.session)
 
+                # Same self-heal as transcript_pdf — catches this enrollment up to
+                # a frozen state if it's eligible but the finalize-on-publish
+                # signal never reached it (e.g. graded before the signal existed).
+                if enr.graded_at is None:
+                    try:
+                        enr.finalize_grade()
+                    except ValidationError:
+                        pass
+
+                bucket = scores_by_enrollment.get(str(enr.record_id), {})
+                outcome = get_enrollment_outcome(enr, bucket)
+
                 enrollment_rows.append({
-                    'session': str(enr.curriculum.session),
+                    'session': session_str,
                     'year_of_study': session_to_year.get(session_str),
                     'course_code': course.course_code,
                     'course_name': course.course_name,
                     'credits': course.credits,
-                    'cat': bucket.get('C', 0),
-                    'exam': bucket.get('E', 0),
-                    'has_published': has_published,
+                    'cat': bucket.get('C', Decimal('0')),
+                    'exam': bucket.get('E', Decimal('0')),
+                    'status': outcome.status,
+                    'score': outcome.score,
+                    'grade': outcome.grade_letter,
+                    'points': outcome.grade_points,
                     'has_open_challenge': enr.record_id in open_challenge_enrollment_ids,
                 })
+
         years_with_data = {
             r['year_of_study'] for r in enrollment_rows if r['year_of_study']
         }
+
         current_year = session_to_year.get(
             str(active_session)) if active_session else None
 
@@ -903,9 +921,14 @@ def submit_bulk_request(request):
     })
 
 
+logger = logging.getLogger(__name__)
+
+
 @login_required
 @require_GET
 def transcript_pdf(request):
+    t0 = time.perf_counter()
+
     student = Student.objects.filter(user=request.user).first()
     if not student:
         raise PermissionDenied("Only students can generate a transcript.")
@@ -916,6 +939,9 @@ def transcript_pdf(request):
         return HttpResponseBadRequest("A valid year is required.")
 
     study_year = get_study_year(student, year)
+    t1 = time.perf_counter()
+    logger.warning(f"get_study_year: {t1-t0:.2f}s")
+
     if not study_year or not study_year.sessions:
         raise Http404("No academic sessions found for that year.")
 
@@ -928,8 +954,13 @@ def transcript_pdf(request):
         'curriculum__course', 'curriculum__session',
     ).order_by('curriculum__session__start_date', 'curriculum__course__course_code')
 
-    enrollment_ids = [e.record_id for e in enrollments]
+    enrollments = list(enrollments)
+    t2 = time.perf_counter()
+    logger.warning(
+        f"enrollments query: {t2-t1:.2f}s ({len(enrollments)} rows)"
+    )
 
+    enrollment_ids = [e.record_id for e in enrollments]
     # Published CAT/Exam results for these enrollments, same query shape
     # ResultsView uses — so the transcript can never show LESS progress
     # than the student already sees on the results page.
@@ -939,7 +970,12 @@ def transcript_pdf(request):
         state='published',
     ).order_by('record_id')
 
+    t3 = time.perf_counter()
+    logger.warning(
+        f"published results query: {t3-t2:.2f}s ({len(published)} rows)"
+    )
     scores_by_enrollment = {}
+
     for r in published:
         bucket = scores_by_enrollment.setdefault(str(r.enrollment_id), {})
         bucket[r.type] = (r.score)
@@ -954,68 +990,34 @@ def transcript_pdf(request):
     for enr in enrollments:
         course = enr.curriculum.course
         total_credits_registered += course.credits
+
+        if enr.graded_at is None:
+            try:
+                enr.finalize_grade()
+            except ValidationError:
+                pass
+
         bucket = scores_by_enrollment.get(str(enr.record_id), {})
-        has_published = bool(bucket)
+        outcome = get_enrollment_outcome(enr, bucket)
 
-        if enr.graded_at is not None:
-            # Finalized — use the values frozen at finalize_grade() time,
-            # never the live properties, so a later pass_mark/scale edit
-            # can't reinterpret this transcript.
-            passed = (
-                enr.pass_mark_applied is not None
-                and enr.graded_score >= enr.pass_mark_applied
-            )
-            if passed:
-                total_credits_earned += enr.credits_earned
-            else:
-                units_failed += 1
-
-            total_weighted_points += (enr.grade_points_earned or Decimal('0')
+        if outcome.status == 'pass':
+            total_credits_earned += outcome.credits_earned
+            total_weighted_points += (outcome.grade_points or Decimal('0')
+                                      ) * course.credits
+            total_gpa_credits += course.credits
+        elif outcome.status == 'fail':
+            units_failed += 1
+            total_weighted_points += (outcome.grade_points or Decimal('0')
                                       ) * course.credits
             total_gpa_credits += course.credits
 
-            grade_letter = (
-                enr.graded_scale.letter_for(enr.graded_score)
-                if enr.graded_scale_id else None
-            )
-
-            course_rows.append({
-                'code': course.course_code, 'name': course.course_name,
-                'semester': enr.curriculum.session.semester,
-                'credits': course.credits,
-                'score': enr.graded_score, 'grade': grade_letter,
-                'points': enr.grade_points_earned,
-                'status': 'pass' if passed else 'fail',
-            })
-
-        elif has_published:
-            # Not yet finalized (e.g. CAT published, exam pending), but
-            # the student has real marks recorded — show them rather
-            # than hiding progress the ResultsView page already shows.
-            cat = bucket.get('C')
-            exam = bucket.get('E')
-            parts = [v for v in (cat, exam) if v is not None]
-            visible_total = sum(parts).quantize(
-                Decimal('0.01')) if parts else None
-
-            course_rows.append({
-                'code': course.course_code,
-                'name': course.course_name,
-                'semester': enr.curriculum.session.semester,
-                'credits': course.credits,
-                'score': visible_total,
-                'grade': None,
-                'points': None,
-                'status': 'in_progress',
-            })
-
-        else:
-            course_rows.append({
-                'code': course.course_code, 'name': course.course_name,
-                'semester': enr.curriculum.session.semester,
-                'credits': course.credits,
-                'score': None, 'grade': None, 'points': None, 'status': 'ungraded',
-            })
+        course_rows.append({
+            'code': course.course_code, 'name': course.course_name,
+            'semester': enr.curriculum.session.semester,
+            'credits': course.credits,
+            'score': outcome.score, 'grade': outcome.grade_letter,
+            'points': outcome.grade_points, 'status': outcome.status,
+        })
 
     year_gpa = (
         (total_weighted_points / total_gpa_credits).quantize(Decimal('0.01'))
@@ -1040,9 +1042,18 @@ def transcript_pdf(request):
         ),
     }
 
+    t5 = time.perf_counter()
     result = get_pdf_strategy("transcript").generate(
-        TemplateSource("base/printable/Transcript_with_QR_code.html", context)
+        TemplateSource(
+            "base/printable/Transcript_with_QR_code.html",
+            context
+        )
     )
+
+    t6 = time.perf_counter()
+    logger.warning(f"pdf generate() total: {t6-t5:.2f}s")
+    logger.warning(f"TOTAL VIEW TIME: {t6-t0:.2f}s")
+
     if not result.success:
         return HttpResponse(
             f"Could not generate transcript ({result.engine}): {result.message}",

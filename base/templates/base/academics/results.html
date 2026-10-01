@@ -1553,7 +1553,10 @@
           data-credits="{{ row.credits }}"
           data-cat="{{ row.cat }}"
           data-exam="{{ row.exam }}"
-          data-haspublished="{{ row.has_published|yesno:'true,false' }}"
+          data-status="{{ row.status }}"
+          data-score="{{ row.score|default:'' }}"
+          data-grade="{{ row.grade|default:'' }}"
+          data-points="{{ row.points|default:'' }}"
           data-hasopenchallenge="{{ row.has_open_challenge|yesno:'true,false' }}"
         >
           <td>{{ row.course_code }}</td>
@@ -1957,6 +1960,7 @@
     btn.disabled = true;
     return true;
   }
+
   function clearBusy(btn, { done = false } = {}) {
     if (!btn) return;
     btn.classList.remove("is-busy");
@@ -1966,6 +1970,7 @@
       setTimeout(() => btn.classList.remove("is-done"), 2000);
     }
   }
+
   function flashBusy(btn, fn, ms = 260) {
     if (!setBusy(btn)) return;
     setTimeout(() => {
@@ -1984,20 +1989,6 @@
   }
 
   // ── grade helpers ─────────────────────────────────────────────────────────
-  function letterGrade(total) {
-    if (total >= 70) return "A";
-    if (total >= 60) return "B";
-    if (total >= 50) return "C";
-    if (total >= 40) return "D";
-    return "F";
-  }
-  function gradePoint(total) {
-    if (total >= 70) return 4.0;
-    if (total >= 60) return 3.0;
-    if (total >= 50) return 2.0;
-    if (total >= 40) return 1.0;
-    return 0.0;
-  }
 
   // ── build data structure from rendered rows (single source of truth
   //    for both the desktop table and the mobile card list) ─────────────────
@@ -2013,7 +2004,10 @@
       const ses = row.dataset.session;
       const cat = parseFloat(row.dataset.cat) || 0;
       const exam = parseFloat(row.dataset.exam) || 0;
-      const hasPublished = row.dataset.haspublished === "true";
+      const status = row.dataset.status || "ungraded"; // 'pass' | 'fail' | 'in_progress' | 'ungraded'
+      const score = row.dataset.score ? parseFloat(row.dataset.score) : null;
+      const grade = row.dataset.grade || null;
+      const points = row.dataset.points ? parseFloat(row.dataset.points) : null;
       const hasOpenChallenge = row.dataset.hasopenchallenge === "true";
 
       if (!grouped[ses]) grouped[ses] = [];
@@ -2024,8 +2018,10 @@
         session: ses,
         cat,
         exam,
-        total: cat + exam,
-        hasPublished,
+        status,
+        score,
+        grade,
+        points,
         hasOpenChallenge,
       });
     });
@@ -2067,10 +2063,7 @@
     const coursesToShow = coursesForSemester(semKey);
     window.currentRowData = {};
     coursesToShow.forEach((c, i) => {
-      window.currentRowData[i] = {
-        ...c,
-        grade: c.hasPublished ? letterGrade(c.total) : "—",
-      };
+      window.currentRowData[i] = { ...c }; // no client-side grade override
     });
 
     renderDesktopTable(coursesToShow, semKey);
@@ -2087,10 +2080,10 @@
       tbody.insertAdjacentHTML(
         "beforeend",
         `<tr class="synthetic no-click">
-           <td colspan="8" style="text-align:center; padding:24px; opacity:0.5">
-             No results for this semester.
-           </td>
-         </tr>`,
+         <td colspan="8" style="text-align:center; padding:24px; opacity:0.5">
+           No results for this semester.
+         </td>
+       </tr>`,
       );
       return;
     }
@@ -2104,31 +2097,33 @@
         tbody.insertAdjacentHTML(
           "beforeend",
           `<tr class="synthetic no-click" style="background:#eef4fb;">
-             <td colspan="8" style="padding:0.6rem 1.2rem;font-weight:700;color:var(--navy);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;">
-               ${escapeHtml(c.session)}
-             </td>
-           </tr>`,
+           <td colspan="8" style="padding:0.6rem 1.2rem;font-weight:700;color:var(--navy);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;">
+             ${escapeHtml(c.session)}
+           </td>
+         </tr>`,
         );
       }
 
-      const row = window.currentRowData[i];
       const selectedClass = bulkSelected.has(i) ? " bulk-selected" : "";
+      const scoreDisplay = c.score !== null ? c.score.toFixed(1) : "—";
+      const gradeDisplay = c.grade || (c.status === "in_progress" ? "…" : "—");
+
       tbody.insertAdjacentHTML(
         "beforeend",
         `
-        <tr class="synthetic${selectedClass}" data-row-index="${i}">
-          <td class="bulk-col">
-            <input type="checkbox" class="bulk-checkbox" data-idx="${i}" ${bulkSelected.has(i) ? "checked" : ""}>
-          </td>
-          <td>${escapeHtml(c.code)}</td>
-          <td>${escapeHtml(c.name)}</td>
-          <td>${c.credits}</td>
-          <td>${c.cat.toFixed(1)}</td>
-          <td>${c.exam.toFixed(1)}</td>
-          <td>${c.hasPublished ? c.total.toFixed(1) : "—"}</td>
-          <td>${row.grade}</td>
-        </tr>
-      `,
+      <tr class="synthetic${selectedClass}" data-row-index="${i}">
+        <td class="bulk-col">
+          <input type="checkbox" class="bulk-checkbox" data-idx="${i}" ${bulkSelected.has(i) ? "checked" : ""}>
+        </td>
+        <td>${escapeHtml(c.code)}</td>
+        <td>${escapeHtml(c.name)}</td>
+        <td>${c.credits}</td>
+        <td>${c.cat.toFixed(1)}</td>
+        <td>${c.exam.toFixed(1)}</td>
+        <td>${scoreDisplay}</td>
+        <td>${gradeDisplay}</td>
+      </tr>
+    `,
       );
     });
 
@@ -2194,8 +2189,8 @@
   }
 
   function renderCourseCard(row, idx) {
-    const gradeClass = row.hasPublished ? row.grade : "none";
-    const gpaPts = row.hasPublished ? gradePoint(row.total).toFixed(1) : "—";
+    const gradeClass = row.grade || "none"; // CSS keys off letter: A/B/C/D/F/none
+    const gpaPts = row.points !== null ? row.points.toFixed(1) : "—";
     const selected = bulkSelected.has(idx);
     const classes =
       `course-card course-card--${gradeClass}` +
@@ -2203,56 +2198,62 @@
       (bulkMode ? " bulk-mode-active" : "");
 
     const badges = [];
-    badges.push(
-      row.hasPublished
-        ? `<span class="badge badge--published">Published</span>`
-        : `<span class="badge badge--pending">Pending</span>`,
-    );
+    if (row.status === "pass") {
+      badges.push(`<span class="badge badge--published">Pass</span>`);
+    } else if (row.status === "fail") {
+      badges.push(`<span class="badge badge--challenge">Fail</span>`);
+    } else if (row.status === "in_progress") {
+      badges.push(`<span class="badge badge--pending">In Progress</span>`);
+    } else {
+      badges.push(`<span class="badge badge--pending">Ungraded</span>`);
+    }
     if (row.hasOpenChallenge) {
       badges.push(
         `<span class="badge badge--challenge">⚠️ Challenge open</span>`,
       );
     }
 
+    const scoreDisplay = row.score !== null ? row.score.toFixed(1) : "—";
+    const gradeDisplay = row.grade || "—";
+
     return `
-      <div class="${classes}" data-row-index="${idx}">
-        <div class="course-card__check"><i class="fas fa-check"></i></div>
-        <div class="course-card__grade">
-          <div class="course-card__grade-letter">${row.grade}</div>
-          <div class="course-card__grade-pts">${gpaPts} GP</div>
+    <div class="${classes}" data-row-index="${idx}">
+      <div class="course-card__check"><i class="fas fa-check"></i></div>
+      <div class="course-card__grade">
+        <div class="course-card__grade-letter">${gradeDisplay}</div>
+        <div class="course-card__grade-pts">${gpaPts} GP</div>
+      </div>
+      <div class="course-card__body">
+        <div class="course-card__title">${escapeHtml(row.name)}</div>
+        <div class="course-card__meta">
+          <span class="course-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(row.code)}</span></span>
+          <span class="course-card__meta-item"><i class="fas fa-graduation-cap"></i><span>${row.credits} credits</span></span>
         </div>
-        <div class="course-card__body">
-          <div class="course-card__title">${escapeHtml(row.name)}</div>
-          <div class="course-card__meta">
-            <span class="course-card__meta-item"><i class="fas fa-hashtag"></i><span>${escapeHtml(row.code)}</span></span>
-            <span class="course-card__meta-item"><i class="fas fa-graduation-cap"></i><span>${row.credits} credits</span></span>
-          </div>
-          <div class="course-card__meta" style="margin-top:0.3rem;">
-            <span class="course-card__meta-item"><i class="fas fa-pen"></i><span>CAT ${row.cat.toFixed(1)}</span></span>
-            <span class="course-card__meta-item"><i class="fas fa-file-alt"></i><span>Exam ${row.exam.toFixed(1)}</span></span>
-            <span class="course-card__meta-item"><i class="fas fa-calculator"></i><span>Total ${row.hasPublished ? row.total.toFixed(1) : "—"}</span></span>
-          </div>
-          <div class="course-card__badges">${badges.join("")}</div>
+        <div class="course-card__meta" style="margin-top:0.3rem;">
+          <span class="course-card__meta-item"><i class="fas fa-pen"></i><span>CAT ${row.cat.toFixed(1)}</span></span>
+          <span class="course-card__meta-item"><i class="fas fa-file-alt"></i><span>Exam ${row.exam.toFixed(1)}</span></span>
+          <span class="course-card__meta-item"><i class="fas fa-calculator"></i><span>Total ${scoreDisplay}</span></span>
         </div>
-      </div>`;
+        <div class="course-card__badges">${badges.join("")}</div>
+      </div>
+    </div>`;
   }
 
   // ── GPA for the currently displayed set (updates BOTH views' stats) ───────
   function renderGPA(courses) {
-    const graded = courses.filter((c) => c.hasPublished);
-    const credits = graded.reduce((s, c) => s + c.credits, 0);
-    const points = graded.reduce(
-      (s, c) => s + gradePoint(c.total) * c.credits,
-      0,
+    const graded = courses.filter(
+      (c) => c.status === "pass" || c.status === "fail",
     );
+    const credits = graded.reduce((s, c) => s + c.credits, 0);
+    const points = graded.reduce((s, c) => s + (c.points || 0) * c.credits, 0);
     const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
 
     const box = document.getElementById("gpaSummary");
     if (box) {
       box.innerHTML = `
-        <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
-        <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
-      `;
+      <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
+      <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
+    `;
     }
 
     const mobileGpa = document.getElementById("mobileGpa");
@@ -2269,11 +2270,11 @@
 
     for (const { merged } of Object.values(semesterData)) {
       merged.forEach((c) => {
-        if (!c.hasPublished) return;
+        if (c.status !== "pass" && c.status !== "fail") return;
         if (!seen[c.code]) {
           seen[c.code] = true;
           totalCredits += c.credits;
-          totalPoints += gradePoint(c.total) * c.credits;
+          totalPoints += (c.points || 0) * c.credits;
         }
       });
     }
@@ -2326,10 +2327,9 @@
       `${course.code} · ${course.session}`;
     document.getElementById("modalCat").textContent = course.cat.toFixed(1);
     document.getElementById("modalExam").textContent = course.exam.toFixed(1);
-    document.getElementById("modalTotal").textContent = course.hasPublished
-      ? course.total.toFixed(1)
-      : "—";
-    document.getElementById("modalGrade").textContent = course.grade;
+    document.getElementById("modalTotal").textContent =
+      course.score !== null ? course.score.toFixed(1) : "—";
+    document.getElementById("modalGrade").textContent = course.grade || "—";
 
     const challengeBtn = document.getElementById("challengeBtn");
     const challengeLabel = challengeBtn.querySelector(".btn-label");

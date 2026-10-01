@@ -91,6 +91,134 @@
     .mobile-fee-view { display: block; }
     .mobile-fab { display: flex; }
   }
+
+  /* ============================================
+       DOWNLOAD PDF MODAL
+       ============================================ */
+    .year-modal-overlay {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .year-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .year-modal-card {
+      background: #ffffff;
+      border-radius: 28px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+      padding: 1.8rem 1.8rem 2rem;
+      position: relative;
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .year-modal-overlay.active .year-modal-card { transform: scale(1); }
+    .year-modal-close {
+      position: absolute; top: 1.2rem; right: 1.2rem;
+      background: none; border: none; font-size: 1.8rem; line-height: 1;
+      color: #6b7a8d; cursor: pointer; width: 32px; height: 32px;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; transition: 0.2s;
+    }
+    .year-modal-close:hover { background: #f0f4fa; color: var(--navy); }
+
+    .year-modal-header { margin-bottom: 1.5rem; padding-right: 2rem; }
+    .year-modal-header h2 {
+      font-size: 1.4rem; font-weight: 800; color: var(--navy);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .year-modal-header h2 i { font-size: 1.3rem; color: #1f6392; font-style: normal; }
+    .year-modal-header .year-modal-sub {
+      font-size: 0.85rem; color: #64748b; margin-top: 6px; line-height: 1.4;
+    }
+
+    .year-list {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      max-height: 320px; overflow-y: auto; padding-right: 4px;
+      margin-bottom: 1.8rem; scrollbar-width: thin;
+    }
+    .year-list::-webkit-scrollbar { width: 5px; }
+    .year-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+
+    .year-option {
+      display: flex; align-items: center; gap: 0.9rem;
+      padding: 0.9rem 1.2rem; background: #f8fafc;
+      border: 1.5px solid #e2e8f0; border-radius: 16px;
+      cursor: pointer; transition: 0.15s ease; font-weight: 600;
+      color: #1e293b; font-size: 0.98rem;
+    }
+    .year-option:hover { background: #eef6ff; border-color: #b6d0e8; }
+    .year-option.selected {
+      background: #e3efff; border-color: #1f6392;
+      box-shadow: 0 0 0 2px rgba(31, 99, 146, 0.15);
+    }
+    .year-option input[type="radio"] {
+      appearance: none; -webkit-appearance: none;
+      width: 20px; height: 20px; border: 2px solid #cbd5e1;
+      border-radius: 50%; margin: 0; display: grid;
+      place-content: center; transition: 0.1s; flex-shrink: 0;
+    }
+    .year-option input[type="radio"]::before {
+      content: ""; width: 10px; height: 10px;
+      border-radius: 50%; background: #1f6392;
+      transform: scale(0); transition: 0.1s;
+    }
+    .year-option input[type="radio"]:checked { border-color: #1f6392; }
+    .year-option input[type="radio"]:checked::before { transform: scale(1); }
+    .year-option-label { flex: 1; }
+    .year-option-label small {
+      display: block; font-weight: 400; font-size: 0.7rem;
+      color: #64748b; margin-top: 2px;
+    }
+
+    /* radio-style option for "All sessions" */
+    .year-option--all {
+      background: linear-gradient(135deg, #eef6ff, #e3efff);
+      border-color: #b6d0e8;
+    }
+
+    .year-modal-actions {
+      display: flex; flex-direction: column; gap: 0.6rem;
+    }
+    .year-modal-btn {
+      padding: 0.9rem 1.2rem; border-radius: 40px; font-weight: 700;
+      font-size: 0.95rem; font-family: inherit; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.6rem; transition: 0.15s;
+    }
+    .year-modal-btn-primary { background: var(--navy); color: white; }
+    .year-modal-btn-primary:hover { background: #0f2f4a; }
+    .year-modal-btn-primary:disabled {
+      opacity: 0.5; cursor: not-allowed; background: #5a6e7e;
+    }
+    .year-modal-btn-secondary {
+      background: white; border: 1.5px solid #e2e8f0; color: #334155;
+    }
+    .year-modal-btn-secondary:hover { background: #f1f5f9; }
+
+    @media (max-width: 768px) {
+      .year-modal-overlay { align-items: flex-end; padding: 0; }
+      .year-modal-card {
+        max-width: 100%; border-radius: 28px 28px 0 0;
+        padding: 1.5rem 1.5rem calc(1.8rem + env(safe-area-inset-bottom, 0px));
+        transform: translateY(10%);
+        transition: transform 0.25s ease;
+      }
+      .year-modal-overlay.active .year-modal-card { transform: translateY(0); }
+      .year-list { max-height: 40vh; }
+    }
 </style>
 {% endblock %}
 
@@ -450,12 +578,33 @@
 </dialog>
 {% endif %}
 
+ <!-- ============================================
+         DOWNLOAD PDF MODAL
+         ============================================ -->
+    <div class="year-modal-overlay" id="downloadModalOverlay">
+      <div class="year-modal-card" role="dialog" aria-modal="true" aria-labelledby="downloadModalTitle">
+        <button class="year-modal-close" id="downloadModalClose" aria-label="Close modal">&times;</button>
+
+        <div class="year-modal-header">
+          <h2 id="downloadModalTitle"><i>📄</i> Download fee statement</h2>
+          <div class="year-modal-sub">
+            Choose which session you want the PDF to cover. Select "All sessions" for a complete history.
+          </div>
+        </div>
+
+        <div class="year-list" id="sessionListContainer"></div>
+
+        <div class="year-modal-actions">
+          <button class="year-modal-btn year-modal-btn-primary" id="generatePdfBtn" disabled>
+            ⬇️ Download PDF
+          </button>
+          <button class="year-modal-btn year-modal-btn-secondary" id="downloadCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
 
 <script>
-  document.getElementById("downloadBtn")?.addEventListener("click", () =>
-    alert("📄 PDF download coming soon.")
-  );
-
+  
   const modal = document.getElementById('payment-modal');
   // Two trigger buttons now — desktop's inline button and mobile's FAB —
   // both open the same modal/flow, so wire them to the same handler
@@ -607,6 +756,151 @@
   document.getElementById('retry-btn')?.addEventListener('click', () => {
     hide('step-error'); show('step-method');
   });
+
+  // ── session data (mirrors what the server would provide) ───────────────
+      const ALL_SESSIONS = [
+        { value: "2024/2025", label: "2024/2025", current: true },
+        { value: "2023/2024", label: "2023/2024", current: false },
+        { value: "2022/2023", label: "2022/2023", current: false },
+      ];
+
+      // ── DOM refs ───────────────────────────────────────────────────────────
+      const downloadBtn = document.getElementById("downloadBtn");
+      const downloadModalOverlay = document.getElementById("downloadModalOverlay");
+      const downloadModalClose = document.getElementById("downloadModalClose");
+      const downloadCancelBtn = document.getElementById("downloadCancelBtn");
+      const generatePdfBtn = document.getElementById("generatePdfBtn");
+      const sessionListContainer = document.getElementById("sessionListContainer");
+
+      const paymentModal = document.getElementById("payment-modal");
+      const makePaymentBtn = document.getElementById("makePaymentBtn");
+      const mobileMakePaymentBtn = document.getElementById("mobileMakePaymentBtn");
+
+      // ── state ─────────────────────────────────────────────────────────────
+      let selectedSession = null;
+      let isReady = false;
+
+      // ── render session options ────────────────────────────────────────────
+      function renderSessionOptions() {
+        sessionListContainer.innerHTML = "";
+
+        // Add "All sessions" option first
+        const allLabel = document.createElement("label");
+        allLabel.className = "year-option year-option--all";
+        const allRadio = document.createElement("input");
+        allRadio.type = "radio";
+        allRadio.name = "downloadSession";
+        allRadio.value = "__all__";
+        allRadio.addEventListener("change", (e) => {
+          if (e.target.checked) {
+            selectedSession = "__all__";
+            updateSelectedClass(allLabel);
+            generatePdfBtn.disabled = false;
+          }
+        });
+        const allSpan = document.createElement("span");
+        allSpan.className = "year-option-label";
+        allSpan.textContent = "All sessions";
+        const allSmall = document.createElement("small");
+        allSmall.textContent = "Complete statement history";
+        allSpan.appendChild(allSmall);
+        allLabel.appendChild(allRadio);
+        allLabel.appendChild(allSpan);
+        sessionListContainer.appendChild(allLabel);
+
+        // Add individual sessions
+        ALL_SESSIONS.forEach((session) => {
+          const label = document.createElement("label");
+          label.className = "year-option";
+
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "downloadSession";
+          radio.value = session.value;
+
+          if (session.current) {
+            radio.checked = true;
+            selectedSession = session.value;
+            label.classList.add("selected");
+          }
+
+          radio.addEventListener("change", (e) => {
+            if (e.target.checked) {
+              selectedSession = e.target.value;
+              updateSelectedClass(label);
+              generatePdfBtn.disabled = false;
+            }
+          });
+
+          const span = document.createElement("span");
+          span.className = "year-option-label";
+          span.textContent = session.label;
+          if (session.current) {
+            const small = document.createElement("small");
+            small.textContent = "Current session";
+            span.appendChild(small);
+          }
+
+          label.appendChild(radio);
+          label.appendChild(span);
+          sessionListContainer.appendChild(label);
+        });
+
+        generatePdfBtn.disabled = !selectedSession;
+      }
+
+      function updateSelectedClass(activeLabel) {
+        document.querySelectorAll(".year-option").forEach((opt) =>
+          opt.classList.remove("selected")
+        );
+        activeLabel.classList.add("selected");
+      }
+
+      // ── open / close download modal ───────────────────────────────────────
+      function openDownloadModal() {
+        // reset selection to the current session each time the modal opens
+        selectedSession = null;
+        renderSessionOptions();
+        downloadModalOverlay.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeDownloadModal() {
+        downloadModalOverlay.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+
+      downloadBtn?.addEventListener("click", openDownloadModal);
+      downloadModalClose?.addEventListener("click", closeDownloadModal);
+      downloadCancelBtn?.addEventListener("click", closeDownloadModal);
+      downloadModalOverlay?.addEventListener("click", (e) => {
+        if (e.target === downloadModalOverlay) closeDownloadModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && downloadModalOverlay.classList.contains("active")) {
+          closeDownloadModal();
+        }
+      });
+
+      // ── generate PDF (mock) ───────────────────────────────────────────────
+      generatePdfBtn?.addEventListener("click", () => {
+        if (!selectedSession) return;
+        const label =
+          selectedSession === "__all__"
+            ? "all sessions"
+            : `session ${selectedSession}`;
+        // In real integration:
+        // window.location = `/financials/fees/statement/pdf/?session=${selectedSession}`;
+        alert(`📄 Downloading fee statement PDF coming extremely soon...`);
+        closeDownloadModal();
+      });
+
+      // ── payment modal (both triggers) ─────────────────────────────────────
+      [makePaymentBtn, mobileMakePaymentBtn].forEach((btn) => {
+        btn?.addEventListener("click", () => {
+          paymentModal.showModal();
+        });
+      });
 
   loadConfig();
 </script>

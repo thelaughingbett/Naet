@@ -1,0 +1,9 @@
+<div class="{{ cls|default:'form-field' }}">
+  <label for="{{ field.id_for_label }}">
+    {{ field.label }}{% if field.field.required %}
+    <span style="color: var(--red)">*</span>{% endif %}
+  </label>
+  {{ field }} {% if field.help_text %}
+  <div class="entry__hint">{{ field.help_text }}</div>
+  {% endif %} {{ field.errors }}
+</div>

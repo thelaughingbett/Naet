@@ -89,7 +89,9 @@ class Student(BaseModelMixin, hasUserMixin):
     national_id = models.CharField(
         max_length=34,
         default="xxxxxxx",
-        unique=True
+        unique=True,
+        blank=True,
+        null=True
     )
 
     religion = models.CharField(max_length=34, default='pagan')
@@ -168,6 +170,8 @@ class Student(BaseModelMixin, hasUserMixin):
         through='Enrollment',
         blank=True
     )
+
+    registration_completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.half_name} ({self.registration_number})"

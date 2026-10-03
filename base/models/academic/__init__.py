@@ -27,7 +27,7 @@ they'll need re-adding to whichever file needs them.
 """
 
 from .isced import UNESCO_ISCED_FIELDS  # noqa: F401
-from .organization import Institution, School, Department  # noqa: F401
+from .organization import Institution, School, Department, Office  # noqa: F401
 from .programme import Programme, Tclass  # noqa: F401
 from .session import Session  # noqa: F401
 from .course import Course  # noqa: F401
@@ -38,7 +38,7 @@ from .requisitions import RequisitionDocument, AcademicRequisition
 
 __all__ = [
     'UNESCO_ISCED_FIELDS',
-    'Institution', 'School', 'Department',
+    'Institution', 'School', 'Department', 'Office',
     'Programme', 'Tclass',
     'Session',
     'Course',

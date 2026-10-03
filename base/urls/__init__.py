@@ -14,6 +14,7 @@ urlpatterns = [
     path('ping/', ping, name='ping'),
     path('', include('base.urls.auth')),
     path('', include('base.urls.dashboard')),
+    path("register/", include('base.urls.register_urls')),
     path('socials/',  include('base.urls.socials')),
     path('academics/', include('base.urls.academics')),
     path('admissions/', include('base.urls.admissions')),

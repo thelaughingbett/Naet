@@ -1,0 +1,165 @@
+<!-- prettier-ignore -->
+{% extends "base/registration/base.html" %} 
+{% load static %} 
+{% block title %}
+Complete Registration
+{% endblock %}
+ {% block content %}
+<section class="reg-body show">
+  <div class="reg-header">
+    <div class="reg-header__avatar">{{ student.user.initials }}</div>
+    <div class="reg-header__info">
+      <div class="reg-header__name">{{ student.user.full_name }}</div>
+      <div class="reg-header__meta">
+        <span class="reg-no">{{ student.registration_number }}</span>
+        <span>{{ programme.programme_name }}</span>
+      </div>
+    </div>
+    <a href="{% url 'register:change' %}" class="reg-header__change">
+      <i class="fas fa-arrow-left"></i> Change
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="reg-form">
+    {% csrf_token %}
+    <div id="progress-container">
+      <div id="progress"></div>
+      <ul></ul>
+    </div>
+
+    <main>
+      {% if has_errors %}
+      <div class="entry__error" style="margin-bottom: 1rem">
+        <i class="fas fa-circle-exclamation"></i>
+        <span
+          >Some details need attention. Please check the highlighted
+          steps.</span
+        >
+      </div>
+      {% endif %}
+
+      <!-- 1. PERSONAL -->
+      <fieldset>
+        <legend>Personal Info</legend>
+        <div class="info-banner">
+          <i class="fas fa-circle-info"></i>
+          <span
+            >Your name and gender come from your placement record. Contact the
+            Registry if they are wrong. Please fill in the rest.</span
+          >
+        </div>
+
+        <div class="form-group names-row">
+          <!-- prettier-ignore -->
+          {% include "base/registration/_locked.html" with label="First name" value=student.user.first_name %} 
+          {% include "base/registration/_locked.html" with label="Last name" value=student.user.last_name %}
+          {% include "base/registration/_locked.html" with label="Surname"   value=student.user.surname %}
+        </div>
+        <!-- prettier-ignore -->
+        {% include "base/registration/_locked.html" with label="Gender" value=student.user.get_gender_display %} 
+        {{ personal_form.non_field_errors }} 
+        {% include "base/registration/_field.html" with field=personal_form.national_id %} 
+        {% include "base/registration/_field.html" with field=personal_form.date_of_birth %}
+        {% include "base/registration/_field.html" with field=personal_form.place_of_birth %}
+        {% include "base/registration/_field.html" with field=personal_form.marital_status %}
+        {% include "base/registration/_field.html" with field=personal_form.nationality %} 
+        {% include "base/registration/_field.html" with field=personal_form.ethnicity %}
+        {% include "base/registration/_field.html" with field=personal_form.religion %} 
+        {% include "base/registration/_field.html" with field=account_form.email %}
+        <div class="form-field file-field">
+          <label for="{{ account_form.profile_picture.id_for_label }}"
+            >Profile picture</label
+          >
+          <div class="file-wrapper">{{ account_form.profile_picture }}</div>
+          {{ account_form.profile_picture.errors }}
+        </div>
+      </fieldset>
+
+      <!-- 2. CONTACT -->
+      <fieldset>
+        <legend>Contact Info</legend>
+        <!-- prettier-ignore -->
+        {{ contact_form.non_field_errors }}
+        {% include "base/registration/_field.html" with field=contact_form.telephone_no %}
+        {% include "base/registration/_field.html" with field=contact_form.domicile %}
+        {% include "base/registration/_field.html" with field=contact_form.county %} 
+        {% include "base/registration/_field.html" with field=contact_form.home_address %}
+      </fieldset>
+
+      <!-- 3. EMERGENCY CONTACTS -->
+      <fieldset>
+        <legend>Emergency Contact Info</legend>
+        <div class="formset-header">
+          <p>
+            Please provide exactly two trusted individuals the school can reach
+            if needed.
+          </p>
+        </div>
+        <!-- prettier-ignore -->
+        {{ formset.management_form }} 
+        {{ formset.non_form_errors }}
+        {% for form   in formset %}
+        <h3>Emergency Contact #{{ forloop.counter }}</h3>
+        <div class="formset-row">
+          <!-- prettier-ignore -->
+          {% for hidden in form.hidden_fields %}
+          {{ hidden }}
+          {% endfor %}
+          {{ form.non_field_errors }}
+          <div class="form-grid">
+            <!-- prettier-ignore -->
+            {% include "base/registration/_field.html" with field=form.name  cls="form-group-emergency" %} 
+            {% include "base/registration/_field.html" with field=form.relationship cls="form-group-emergency" %}
+            {% include "base/registration/_field.html" with field=form.phone cls="form-group-emergency" %} 
+            {% include "base/registration/_field.html" with field=form.email cls="form-group-emergency" %} 
+            {% include "base/registration/_field.html" with field=form.address cls="form-group-emergency field-address" %}
+          </div>
+          <div class="primary-contact-selection">
+            <label>
+              <!-- prettier-ignore -->
+              <input
+                type="radio"
+                name="primary_contact_index"
+                value="{{ forloop.counter0 }}"
+                {% if forloop.counter0 == primary_index %}checked{% endif %}
+              />
+              Set as Primary Contact
+            </label>
+          </div>
+        </div>
+        {% endfor %}
+      </fieldset>
+
+      <!-- 4. EDUCATION -->
+      <fieldset>
+        <legend>Educational Info</legend>
+        <div class="info-banner">
+          <i class="fas fa-circle-info"></i>
+          <span
+            >Your programme details come from your placement and cannot be
+            edited here.</span
+          >
+        </div>
+        <!-- prettier-ignore -->
+        {% include "base/registration/_locked.html" with label="Programme" value=programme.programme_name %}
+        {% include "base/registration/_locked.html" with label="Department" value=department.department_name %} 
+        {% include "base/registration/_locked.html" with label="School" value=school.school_name %}
+        {% include "base/registration/_locked.html" with label="Class" value=student.class_entered.class_name %}
+        {% include "base/registration/_locked.html" with label="KCSE mean grade" value=student.kcse_mean_grade %} 
+        {{ education_form.non_field_errors }}
+        {% include "base/registration/_field.html" with field=education_form.name_of_secondary_school %}
+        {% include "base/registration/_field.html" with field=education_form.address_of_secondary_school %} 
+        {% include "base/registration/_field.html" with field=education_form.stay %}
+      </fieldset>
+    </main>
+
+    <div class="controls">
+      <button type="button" class="prev-btn" disabled>Prev</button>
+      <button type="button" class="next-btn">Next</button>
+      <button type="submit" class="submit-btn">Submit Registration</button>
+    </div>
+  </form>
+</section>
+{% endblock %} {% block scripts %}
+<script src="{% static 'base/scripts/register.js' %}"></script>
+{% endblock %}

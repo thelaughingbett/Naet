@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from base.models import EmergencyContact, Student
+from django.utils import timezone
+from django.shortcuts import redirect, render
+from django.db import transaction
 from http import HTTPStatus
 import types
 
@@ -46,7 +50,14 @@ from base.forms import (
     ContactInfoForm,
     EducationalInfoForm,
     UserDetailsForm,
+    AccountForm,
+    ContactInfoForm,
+    EducationDetailsForm,
+    EmergencyContactFormSet,
+    LookupForm,
+    RegisterForm,
 )
+
 
 from .base import logger
 
@@ -278,18 +289,156 @@ class RegistrationSucessView(View):
         student_id = request.session.pop('new_student_id')
         student = None
 
-        if student_id:
-            student = get_object_or_404(Student, record_id=student_id)
+        if not student_id:
+            return redirect("base-index")
 
-            context = {
-                'student': student
-            }
-
-            return render(request, 'base/registration-sucess.html', context=context)
-
-        else:
-            return redirect('base-index')
+        student = get_object_or_404(Student, record_id=student_id)
+        return render(request, "base/registration-sucess.html", {"student": student})
 
 
 class HostelBookingRegistrationView(View):
     pass
+
+
+SESSION_KEY = "registering_student_id"
+
+# Placement/seed values that shouldn't be pre-filled for the student to confirm
+BLANK_INITIAL = {
+    "national_id": "", "religion": "", "ethnicity": "",
+    "place_of_birth": "", "date_of_birth": None,
+}
+
+
+def _session_student(request):
+    pk = request.session.get(SESSION_KEY)
+    if not pk:
+        return None
+    return (
+        Student.objects
+        .select_related("user", "class_entered__programme__department__school")
+        .filter(pk=pk, registration_completed_at__isnull=True)
+        .first()
+    )
+
+
+def lookup(request):
+    form = LookupForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        request.session[SESSION_KEY] = str(form.student.pk)
+        request.session.set_expiry(60 * 30)
+        return redirect("register:details")
+    return render(request, "base/registration/lookup.html", {"form": form})
+
+
+def change(request):
+    request.session.pop(SESSION_KEY, None)
+    return redirect("register:lookup")
+
+
+def _notify_registered(student):
+
+    from base.modules.notifications.service import NotificationService
+    NotificationService.send(
+        user=types.SimpleNamespace(
+            email=student.user.email,
+            phone_number=student.telephone_no,
+        ),
+        template_key="registration_success",
+        channels=["sms", "email"],
+        context={
+            "student": student,
+            "hostel_booking_url": reverse("base-hostel-booking"),
+            "dashboard_url": reverse("base-index"),
+        },
+    )
+
+
+def details(request):
+    student = _session_student(request)
+    if student is None:
+        request.session.pop(SESSION_KEY, None)
+        return redirect("register:lookup")
+
+    posting = request.method == "POST"
+    data = request.POST if posting else None
+    files = request.FILES if posting else None
+
+    account_form = AccountForm(
+        data, files, instance=student.user, prefix="acct")
+    personal_form = RegisterForm(
+        data, instance=student, prefix="pers", initial=BLANK_INITIAL)
+    contact_form = ContactInfoForm(data, instance=student, prefix="cont")
+    education_form = EducationDetailsForm(data, instance=student, prefix="edu")
+    formset = EmergencyContactFormSet(
+        data, queryset=EmergencyContact.objects.none(), prefix="ec"
+    )
+
+    try:
+        primary_index = int(request.POST.get("primary_contact_index", 0))
+    except ValueError:
+        primary_index = 0
+    if primary_index not in (0, 1):
+        primary_index = 0
+
+    valid = False
+    if posting:
+        # list, not generator: every form must run so all errors are shown
+        valid = all([f.is_valid() for f in (
+            account_form, personal_form, contact_form, education_form, formset
+        )])
+
+    if valid:
+        with transaction.atomic():
+            account_form.save()
+            personal_form.save()
+            contact_form.save()
+            education_form.save()
+            for i, form in enumerate(formset.forms):
+                contact = form.save(commit=False)
+                contact.student = student
+                contact.is_primary = (i == primary_index)
+                contact.save()
+            student.registration_completed_at = timezone.now()
+            student.save(update_fields=["registration_completed_at"])
+
+            # Only send once the transaction has actually committed
+            transaction.on_commit(lambda: _notify_registered(student))
+
+        request.session.pop(SESSION_KEY, None)
+
+        if student.stay == "resident":
+            messages.success(
+                request,
+                f"Registration successful! Welcome, {student.user.first_name}. "
+                f"Your school email is {student.school_email}. "
+                f"Please complete your hostel booking below."
+            )
+            return redirect("base-registration-hostel-booking")
+
+        messages.success(
+            request,
+            f"Registration successful! Welcome, {student.user.first_name}. "
+            f"Your school email is {student.school_email}. "
+            f"A confirmation has been sent to {student.user.email}."
+        )
+        request.session["new_student_id"] = str(student.record_id)
+        return redirect("base-registration-sucess")
+
+    programme = student.class_entered.programme
+    return render(request, "base/registration/form.html", {
+        "student": student,
+        "programme": programme,
+        "department": programme.department,
+        "school": programme.department.school,
+        "account_form": account_form,
+        "personal_form": personal_form,
+        "contact_form": contact_form,
+        "education_form": education_form,
+        "formset": formset,
+        "primary_index": primary_index,
+        "has_errors": posting and not valid,
+    })
+
+
+def done(request):
+    return render(request, "register/done.html")

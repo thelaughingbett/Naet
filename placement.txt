@@ -1,0 +1,14 @@
+Students created: 10, 
+
+NAME                        ADMISSION SCHOOL EMAIL                                  REG NO
+--------------------------------------------------------------------------------------------------------------
+Wanjiku Mwangi Njeri        KUCCPS    wanjiku.njeri@students.naetuniversity.com     1101001/0001/26
+Brian Otieno Odhiambo       KUCCPS    brian.odhiambo@students.naetuniversity.com    1102002/0002/26
+Amina Hassan Abdi           KUCCPS    amina.abdi@students.naetuniversity.com        1103003/0003/26
+Kevin Kipchoge Rotich       KUCCPS    kevin.rotich@students.naetuniversity.com      1104004/0004/26
+Grace Atieno Achieng        KUCCPS    grace.achieng@students.naetuniversity.com     1105005/0005/26
+Peter Mutua Kioko           KUCCPS    peter.kioko@students.naetuniversity.com       1106006/0006/26
+Faith Naliaka Wekesa        KUCCPS    faith.wekesa@students.naetuniversity.com      1107007/0007/26
+Daniel Lekishon Sankale     KUCCPS    daniel.sankale@students.naetuniversity.com    1101001/0008/26
+Mercy Wairimu Kamau         KUCCPS    mercy.kamau@students.naetuniversity.com       1108008/0009/26
+Hassan Juma Mohamed         KUCCPS    hassan.mohamed@students.naetuniversity.com    1105005/0010/26

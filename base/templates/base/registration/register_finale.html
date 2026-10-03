@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Register</title>
+  </head>
+  <body>
+    <div class="reg-shell">
+      <div class="reg-card">
+        <!-- ============================================
+         ENTRY SCREEN
+         ============================================ -->
+        <section class="entry" id="entryScreen">
+          <div class="entry__brand">
+            <div class="entry__mark">🎓</div>
+            <h1 class="entry__title">Begin Registration</h1>
+            <p class="entry__sub">
+              Enter your registration number to pull your student record from
+              the database and continue with registration.
+            </p>
+          </div>
+
+          <!-- Lookup form -->
+          <div id="entryForm">
+            <form
+              class="entry__form"
+              id="lookupForm"
+              autocomplete="off"
+              novalidate
+            >
+              <label class="entry__label" for="regNoInput"
+                >Registration Number</label
+              >
+              <div class="entry__input-wrap">
+                <i class="fas fa-id-card"></i>
+                <input
+                  type="text"
+                  id="regNoInput"
+                  class="entry__input"
+                  placeholder="e.g. CS/1024/2023"
+                  autocomplete="off"
+                  spellcheck="false"
+                  inputmode="text"
+                />
+              </div>
+              <div class="entry__hint">
+                Format: <strong>DEPT/NNNN/YYYY</strong>. Ask the Registry if you
+                don't know your number.
+              </div>
+
+              <div id="entryError" class="entry__error" hidden>
+                <i class="fas fa-circle-exclamation"></i>
+                <span id="entryErrorText">Registration number not found.</span>
+              </div>
+
+              <button type="submit" class="entry__btn" id="lookupBtn">
+                <span>Continue</span>
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+
+          <!-- Loading state -->
+          <div class="entry__loading" id="entryLoading">
+            <div class="spinner"></div>
+            <div class="entry__loading-text">
+              Looking up your student record…
+            </div>
+          </div>
+
+          <div class="entry__foot">
+            Need help?
+            <a href="#">Contact Registry</a>
+          </div>
+        </section>
+
+        <!-- ============================================
+         REGISTRATION FORM (hidden until lookup succeeds)
+         ============================================ -->
+        <section class="reg-body" id="regBody">
+          <!-- Student summary strip -->
+          <div class="reg-header">
+            <div class="reg-header__avatar" id="headerAvatar">—</div>
+            <div class="reg-header__info">
+              <div class="reg-header__name" id="headerName">—</div>
+              <div class="reg-header__meta">
+                <span class="reg-no" id="headerReg">—</span>
+                <span id="headerProgramme">—</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="reg-header__change"
+              id="changeStudentBtn"
+            >
+              <i class="fas fa-arrow-left"></i> Change
+            </button>
+          </div>
+
+          <form
+            action="#"
+            method="post"
+            enctype="multipart/form-data"
+            id="reg-form"
+          >
+            <div id="progress-container">
+              <div id="progress"></div>
+              <ul></ul>
+            </div>
+
+            <main>
+              <!-- ===== 1. PERSONAL INFO (from DB, partly locked) ===== -->
+              <fieldset>
+                <legend>Personal Info</legend>
+
+                <div class="info-banner">
+                  <i class="fas fa-circle-info"></i>
+                  <span>
+                    The fields below were loaded from your student record.
+                    Names, date of birth, gender, and national ID cannot be
+                    changed here — contact the Registry if any detail is wrong.
+                  </span>
+                </div>
+
+                <div class="form-group names-row">
+                  <span class="locked-field">
+                    <label for="first_name">First name</label>
+                    <div class="locked-value">
+                      <span id="first_name">—</span>
+                      <span class="locked-value__lock"
+                        ><i class="fas fa-lock"></i> DB</span
+                      >
+                    </div>
+                  </span>
+                  <span class="locked-field">
+                    <label for="last_name">Last name</label>
+                    <div class="locked-value">
+                      <span id="last_name">—</span>
+                      <span class="locked-value__lock"
+                        ><i class="fas fa-lock"></i> DB</span
+                      >
+                    </div>
+                  </span>
+                  <span class="locked-field">
+                    <label for="surname">Surname</label>
+                    <div class="locked-value">
+                      <span id="surname">—</span>
+                      <span class="locked-value__lock"
+                        ><i class="fas fa-lock"></i> DB</span
+                      >
+                    </div>
+                  </span>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Date of birth</label>
+                  <div class="locked-value">
+                    <span id="dobValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Gender</label>
+                  <div class="locked-value">
+                    <span id="genderValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>National ID</label>
+                  <div class="locked-value">
+                    <span id="nationalIdValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Editable: email + profile picture only -->
+                <div class="form-field email-field">
+                  <label for="id_email"
+                    >Email <span style="color: var(--red)">*</span></label
+                  >
+                  <div class="input-icon-wrap">
+                    <span class="input-icon">✉</span>
+                    <input
+                      type="email"
+                      id="id_email"
+                      name="email"
+                      placeholder="you@example.com"
+                      autocomplete="email"
+                      required
+                    />
+                  </div>
+                  <div class="entry__hint">
+                    This is the address we'll use to contact you.
+                  </div>
+                </div>
+
+                <div class="form-field file-field">
+                  <label for="id_profile_picture">Profile picture</label>
+                  <div class="file-wrapper">
+                    <input
+                      type="file"
+                      id="id_profile_picture"
+                      name="profile_picture"
+                      accept="image/*"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- ===== 2. CONTACT INFO ===== -->
+              <fieldset>
+                <legend>Contact Info</legend>
+
+                <div class="form-field">
+                  <label for="id_phone"
+                    >Phone number
+                    <span style="color: var(--red)">*</span></label
+                  >
+                  <input
+                    type="tel"
+                    id="id_phone"
+                    name="phone"
+                    autocomplete="tel"
+                    required
+                  />
+                </div>
+
+                <div class="form-field">
+                  <label for="id_alt_phone">Alternative phone</label>
+                  <input type="tel" id="id_alt_phone" name="alt_phone" />
+                </div>
+
+                <div class="form-field">
+                  <label for="id_postal_address">Postal address</label>
+                  <input
+                    type="text"
+                    id="id_postal_address"
+                    name="postal_address"
+                    autocomplete="street-address"
+                  />
+                </div>
+
+                <div class="form-field">
+                  <label for="id_physical_address">Physical address</label>
+                  <input
+                    type="text"
+                    id="id_physical_address"
+                    name="physical_address"
+                  />
+                </div>
+
+                <div class="form-field">
+                  <label for="id_county">County / Region</label>
+                  <input type="text" id="id_county" name="county" />
+                </div>
+              </fieldset>
+
+              <!-- ===== 3. EMERGENCY CONTACTS ===== -->
+              <fieldset>
+                <legend>Emergency Contact Info</legend>
+
+                <div class="formset-header">
+                  <p>
+                    Please provide exactly two trusted individuals the school
+                    can reach out to if needed.
+                  </p>
+                </div>
+
+                <h3>Emergency Contact #1</h3>
+                <div class="formset-row">
+                  <div class="form-grid">
+                    <div class="form-group-emergency field-name">
+                      <label for="ec1_name">Full Name</label>
+                      <input
+                        type="text"
+                        id="ec1_name"
+                        name="ec1_name"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-relationship">
+                      <label for="ec1_relationship">Relationship</label>
+                      <input
+                        type="text"
+                        id="ec1_relationship"
+                        name="ec1_relationship"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-phone">
+                      <label for="ec1_phone">Phone Number</label>
+                      <input
+                        type="tel"
+                        id="ec1_phone"
+                        name="ec1_phone"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-email">
+                      <label for="ec1_email">Email Address</label>
+                      <input type="email" id="ec1_email" name="ec1_email" />
+                    </div>
+                    <div class="form-group-emergency field-address">
+                      <label for="ec1_address">Home Address</label>
+                      <input type="text" id="ec1_address" name="ec1_address" />
+                    </div>
+                  </div>
+                  <div class="primary-contact-selection">
+                    <label>
+                      <input
+                        type="radio"
+                        name="primary_contact_index"
+                        value="0"
+                        checked
+                      />
+                      Set as Primary Contact
+                    </label>
+                  </div>
+                </div>
+
+                <h3>Emergency Contact #2</h3>
+                <div class="formset-row">
+                  <div class="form-grid">
+                    <div class="form-group-emergency field-name">
+                      <label for="ec2_name">Full Name</label>
+                      <input
+                        type="text"
+                        id="ec2_name"
+                        name="ec2_name"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-relationship">
+                      <label for="ec2_relationship">Relationship</label>
+                      <input
+                        type="text"
+                        id="ec2_relationship"
+                        name="ec2_relationship"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-phone">
+                      <label for="ec2_phone">Phone Number</label>
+                      <input
+                        type="tel"
+                        id="ec2_phone"
+                        name="ec2_phone"
+                        required
+                      />
+                    </div>
+                    <div class="form-group-emergency field-email">
+                      <label for="ec2_email">Email Address</label>
+                      <input type="email" id="ec2_email" name="ec2_email" />
+                    </div>
+                    <div class="form-group-emergency field-address">
+                      <label for="ec2_address">Home Address</label>
+                      <input type="text" id="ec2_address" name="ec2_address" />
+                    </div>
+                  </div>
+                  <div class="primary-contact-selection">
+                    <label>
+                      <input
+                        type="radio"
+                        name="primary_contact_index"
+                        value="1"
+                      />
+                      Set as Primary Contact
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- ===== 4. EDUCATIONAL INFO (from DB, all locked) ===== -->
+              <fieldset>
+                <legend>Educational Info</legend>
+
+                <div class="info-banner">
+                  <i class="fas fa-circle-info"></i>
+                  <span>
+                    Your programme, department, final grade, and year completed
+                    are pulled from your admission record and cannot be edited
+                    here.
+                  </span>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Programme</label>
+                  <div class="locked-value">
+                    <span id="programmeValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Department</label>
+                  <div class="locked-value">
+                    <span id="departmentValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Year completed</label>
+                  <div class="locked-value">
+                    <span id="yearCompletedValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-field locked-field">
+                  <label>Final grade</label>
+                  <div class="locked-value">
+                    <span id="finalGradeValue">—</span>
+                    <span class="locked-value__lock"
+                      ><i class="fas fa-lock"></i> DB</span
+                    >
+                  </div>
+                </div>
+              </fieldset>
+            </main>
+
+            <div class="controls">
+              <button type="button" class="prev-btn" disabled>Prev</button>
+              <button type="button" class="next-btn">Next</button>
+              <button type="submit" class="submit-btn">
+                Submit Registration
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      "use strict";
+
+      /* =========================================================================
+   MOCK BACKEND
+   -------------------------------------------------------------------------
+   Replace MockAPI.lookupRegistration() with a fetch() to your real endpoint.
+   Expected response shape (same as the mock):
+     {
+       registration_no: "CS/1024/2023",
+       first_name:  "Amina",
+       last_name:   "Achieng",
+       surname:     "",
+       date_of_birth: "2003-05-14",     // ISO
+       gender:      "F",                 // "M" | "F" | "O" | "N"
+       national_id: "34567890",
+       programme:   "BSc Computer Science",
+       department:  "Computer Science",
+       year_completed: 2023,
+       final_grade: "A-"
+     }
+   Return `null` (or HTTP 404) for "not found".
+   ========================================================================= */
+      const MockAPI = (() => {
+        const DB = {
+          "CS/1024/2023": {
+            registration_no: "CS/1024/2023",
+            first_name: "Amina",
+            last_name: "Achieng",
+            surname: "",
+            date_of_birth: "2003-05-14",
+            gender: "F",
+            national_id: "34567890",
+            programme: "BSc Computer Science",
+            department: "Computer Science",
+            year_completed: 2023,
+            final_grade: "A-",
+          },
+          "CS/1025/2023": {
+            registration_no: "CS/1025/2023",
+            first_name: "Brian",
+            last_name: "Barasa",
+            surname: "",
+            date_of_birth: "2002-11-02",
+            gender: "M",
+            national_id: "34567891",
+            programme: "BSc Information Technology",
+            department: "Information Technology",
+            year_completed: 2023,
+            final_grade: "B+",
+          },
+          "CS/1026/2023": {
+            registration_no: "CS/1026/2023",
+            first_name: "Cynthia",
+            last_name: "Chebet",
+            surname: "Wanjiku",
+            date_of_birth: "2003-01-19",
+            gender: "F",
+            national_id: "34567892",
+            programme: "BEng Software Engineering",
+            department: "Engineering",
+            year_completed: 2023,
+            final_grade: "A",
+          },
+        };
+
+        return {
+          async lookupRegistration(regNo) {
+            await new Promise((r) => setTimeout(r, 650)); // simulate network
+            const key = String(regNo || "")
+              .trim()
+              .toUpperCase();
+            return DB[key] ? { ...DB[key] } : null;
+          },
+        };
+      })();
+
+      /* =========================================================================
+   PAGE WIRING
+   ========================================================================= */
+      document.addEventListener("DOMContentLoaded", () => {
+        const entryScreen = document.getElementById("entryScreen");
+        const entryForm = document.getElementById("entryForm");
+        const entryLoading = document.getElementById("entryLoading");
+        const entryError = document.getElementById("entryError");
+        const entryErrorText = document.getElementById("entryErrorText");
+        const regNoInput = document.getElementById("regNoInput");
+        const lookupBtn = document.getElementById("lookupBtn");
+        const regBody = document.getElementById("regBody");
+        const changeStudentBtn = document.getElementById("changeStudentBtn");
+
+        /* ---------- entry form ---------- */
+        document
+          .getElementById("lookupForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            entryError.hidden = true;
+            regNoInput.classList.remove("error");
+
+            const value = regNoInput.value.trim();
+            if (!value) {
+              showEntryError("Please enter your registration number.");
+              regNoInput.classList.add("error");
+              regNoInput.focus();
+              return;
+            }
+
+            // Show loading, hide form
+            entryForm.hidden = true;
+            entryLoading.classList.add("show");
+            lookupBtn.disabled = true;
+
+            let record = null;
+            try {
+              record = await MockAPI.lookupRegistration(value);
+            } catch (err) {
+              record = null;
+            }
+
+            entryLoading.classList.remove("show");
+            lookupBtn.disabled = false;
+
+            if (!record) {
+              entryForm.hidden = false;
+              showEntryError(
+                `No student record found for "${value}". Check the number and try again.`,
+              );
+              regNoInput.classList.add("error");
+              regNoInput.focus();
+              return;
+            }
+
+            // Success — populate and show the form
+            populateFromRecord(record);
+            entryScreen.style.display = "none";
+            regBody.classList.add("show");
+            document
+              .getElementById("reg-form")
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+
+        function showEntryError(msg) {
+          entryErrorText.textContent = msg;
+          entryError.hidden = false;
+        }
+
+        /* ---------- back to entry ---------- */
+        changeStudentBtn.addEventListener("click", () => {
+          regBody.classList.remove("show");
+          entryScreen.style.display = "";
+          entryForm.hidden = false;
+          entryError.hidden = true;
+          regNoInput.classList.remove("error");
+          regNoInput.value = "";
+          regNoInput.focus();
+        });
+
+        /* ---------- populate from DB record ---------- */
+        function populateFromRecord(r) {
+          // Header strip
+          const initials =
+            (
+              (r.first_name?.[0] || "") + (r.last_name?.[0] || "")
+            ).toUpperCase() || "??";
+          document.getElementById("headerAvatar").textContent = initials;
+          document.getElementById("headerName").textContent = [
+            r.first_name,
+            r.last_name,
+            r.surname,
+          ]
+            .filter(Boolean)
+            .join(" ");
+          document.getElementById("headerReg").textContent = r.registration_no;
+          document.getElementById("headerProgramme").textContent =
+            r.programme || "";
+
+          // Personal info (locked)
+          document.getElementById("first_name").textContent =
+            r.first_name || "—";
+          document.getElementById("last_name").textContent = r.last_name || "—";
+          document.getElementById("surname").textContent = r.surname || "—";
+          document.getElementById("dobValue").textContent = formatDate(
+            r.date_of_birth,
+          );
+          document.getElementById("genderValue").textContent = genderLabel(
+            r.gender,
+          );
+          document.getElementById("nationalIdValue").textContent =
+            r.national_id || "—";
+
+          // Educational info (locked)
+          document.getElementById("programmeValue").textContent =
+            r.programme || "—";
+          document.getElementById("departmentValue").textContent =
+            r.department || "—";
+          document.getElementById("yearCompletedValue").textContent =
+            r.year_completed || "—";
+          document.getElementById("finalGradeValue").textContent =
+            r.final_grade || "—";
+
+          // Stash the registration number so a real submit can send it
+          document.getElementById("reg-form").dataset.registrationNo =
+            r.registration_no;
+
+          // Email is intentionally left blank so the student fills it in.
+          document.getElementById("id_email").value = "";
+        }
+
+        function formatDate(iso) {
+          if (!iso) return "—";
+          const d = new Date(iso);
+          if (Number.isNaN(d.getTime())) return iso;
+          return d.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          });
+        }
+        function genderLabel(g) {
+          return (
+            { M: "Male", F: "Female", O: "Other", N: "Prefer not to say" }[g] ||
+            "—"
+          );
+        }
+
+        /* =========================================================
+     MULTI-STEP FORM (only runs once the form is visible)
+     ========================================================= */
+        const form = document.getElementById("reg-form");
+        const fieldsets = [...form.querySelectorAll("main fieldset")];
+        const progress = document.getElementById("progress");
+        const stepsUl = form.querySelector("#progress-container ul");
+        const prevBtn = form.querySelector(".prev-btn");
+        const nextBtn = form.querySelector(".next-btn");
+        const submitBtn = form.querySelector(".submit-btn");
+        const controls = form.querySelector(".controls");
+
+        const TOTAL = fieldsets.length;
+        let current = 0;
+        const visited = new Set([0]);
+
+        // Build step pills from legends
+        stepsUl.innerHTML = "";
+        fieldsets.forEach((fs, i) => {
+          const li = document.createElement("li");
+          li.dataset.step = String(i);
+          li.textContent =
+            fs.querySelector("legend")?.textContent.trim() || `Step ${i + 1}`;
+          if (i === 0) li.classList.add("active");
+          stepsUl.appendChild(li);
+        });
+        const pills = [...stepsUl.querySelectorAll("li")];
+
+        function goTo(index) {
+          if (index < 0 || index >= TOTAL) return;
+          current = index;
+          visited.add(index);
+
+          fieldsets.forEach((fs, i) =>
+            fs.classList.toggle("active", i === current),
+          );
+
+          const pct = ((current + 1) / TOTAL) * 100;
+          progress.style.setProperty("--p", pct + "%");
+
+          pills.forEach((li, i) => {
+            li.classList.toggle("active", i === current);
+            li.classList.toggle("done", visited.has(i) && i !== current);
+          });
+          pills[current]?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
+
+          const isLast = current === TOTAL - 1;
+          prevBtn.disabled = current === 0;
+          nextBtn.style.display = isLast ? "none" : "";
+          submitBtn.classList.toggle("show", isLast);
+          controls.classList.toggle("has-submit", isLast);
+
+          form.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function isValidStep() {
+          const active = fieldsets[current];
+          // Only validate editable inputs — locked fields are divs, not form elements.
+          const fields = active.querySelectorAll("input, select, textarea");
+          for (const f of fields) {
+            if (!f.checkValidity()) {
+              f.reportValidity();
+              return false;
+            }
+          }
+          return true;
+        }
+
+        nextBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (!isValidStep()) return;
+          if (current < TOTAL - 1) goTo(current + 1);
+        });
+        prevBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (current > 0) goTo(current - 1);
+        });
+        pills.forEach((li) =>
+          li.addEventListener("click", () => goTo(Number(li.dataset.step))),
+        );
+
+        form.addEventListener("submit", (e) => {
+          for (let i = 0; i < TOTAL; i++) {
+            const fields = fieldsets[i].querySelectorAll(
+              "input, select, textarea",
+            );
+            for (const f of fields) {
+              if (!f.checkValidity()) {
+                e.preventDefault();
+                goTo(i);
+                requestAnimationFrame(() => f.reportValidity());
+                return;
+              }
+            }
+          }
+          // Valid — POST normally in production.
+          e.preventDefault();
+          alert(
+            "Registration form is valid. Registration No: " +
+              (form.dataset.registrationNo || "(unknown)") +
+              " — wire this up to your POST endpoint to submit.",
+          );
+        });
+
+        goTo(0);
+      });
+    </script>
+  </body>
+</html>

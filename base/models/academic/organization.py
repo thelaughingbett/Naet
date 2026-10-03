@@ -24,7 +24,10 @@ class ContactInfoMixin(models.Model):
     Institution, School, Department, etc.
     """
 
-    email = models.EmailField(blank=True, null=True)
+    email = models.EmailField(
+        blank=True,
+        null=True
+    )
 
     phone_number = models.CharField(
         max_length=20,
@@ -61,7 +64,9 @@ class ContactInfoMixin(models.Model):
 class Institution(ContactInfoMixin, BaseModelMixin):
     active_session = models.ForeignKey(
         'Session',
-        on_delete=models.DO_NOTHING
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True
     )
 
     institution_name = models.CharField(max_length=123)
@@ -76,6 +81,18 @@ class Institution(ContactInfoMixin, BaseModelMixin):
     # class Meta:
     #     abstract = True
 
+    @property
+    def name(self):
+        return self.department_name
+
+    @name.setter
+    def set_name(self, value):
+        name = value.strip()
+        self.institution_name = name
+
+    def __str__(self):
+        return f"{self.institution_name}"
+
 
 class School(ContactInfoMixin, BaseModelMixin):
     school_name = models.CharField(max_length=78)
@@ -87,6 +104,15 @@ class School(ContactInfoMixin, BaseModelMixin):
         on_delete=models.PROTECT
     )
 
+    @property
+    def name(self):
+        return self.department_name
+
+    @name.setter
+    def set_name(self, value):
+        name = value.strip()
+        self.school_name = name
+
     def __str__(self):
         return f"school of {self.school_name}"
 
@@ -94,6 +120,15 @@ class School(ContactInfoMixin, BaseModelMixin):
 # TODO : reconsider the with school mixin
 class Department(ContactInfoMixin, WithSchoolMixin, BaseModelMixin):
     department_name = models.CharField(max_length=123)
+
+    @property
+    def name(self):
+        return self.department_name
+
+    @name.setter
+    def set_name(self, value):
+        name = value.strip()
+        self.department_name = name
 
     def __str__(self):
         return f"Department of {self.department_name}"
@@ -115,6 +150,7 @@ class Office(ContactInfoMixin, BaseModelMixin):
         FINANCE = 'finance', "Finance Office"
         LIBRARY = 'library', 'Library'
         HR = 'hr', 'Human Resources'
+        EXAM = "exam", "Exam office"
         OTHER = 'other', 'Other'
 
     office_name = models.CharField(max_length=123)
@@ -130,6 +166,31 @@ class Office(ContactInfoMixin, BaseModelMixin):
         on_delete=models.CASCADE,
         related_name='offices',
     )
+
+    @property
+    def name(self):
+        return self.office_name
+
+    @name.setter
+    def set_name(self, value):
+        name = value.strip()
+        self.office_name = name
+
+    @property
+    def type(self):
+        return self.office_type
+
+    @type.setter
+    def set_type(self, value):
+        office_type = value.strip()
+
+        if office_type not in self.OfficeType.values:
+            raise ValueError(
+                f"Invalid office type '{office_type}'. "
+                f"Choose from: {', '.join(self.OfficeType.values)}"
+            )
+
+        self.office_type = office_type
 
     def __str__(self):
         return self.office_name

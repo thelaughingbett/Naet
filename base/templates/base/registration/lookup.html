@@ -1,0 +1,59 @@
+<!-- prettier-ignore -->
+{% extends "base/registration/base.html" %} 
+{% block title %}
+Begin Registration
+{%endblock %} 
+{% block content %}
+<section class="entry">
+  <div class="entry__brand">
+    <div class="entry__mark">🎓</div>
+    <h1 class="entry__title">Begin Registration</h1>
+    <p class="entry__sub">
+      Enter your admission number and the phone number you used during placement
+      to find your student record.
+    </p>
+  </div>
+
+  <form class="entry__form" method="post" autocomplete="off" novalidate>
+    {% csrf_token %} {% if form.non_field_errors or form.errors %}
+    <div class="entry__error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span>
+        <!-- prettier-ignore -->
+        {% for e in form.non_field_errors %}
+        {{ e }} {% endfor %} 
+        {% for field in form %}{% for e in field.errors %}
+        {{ field.label }}: {{ e }} {% endfor %}{% endfor %}
+      </span>
+    </div>
+    {% endif %}
+
+    <label
+      class="entry__label"
+      for="{{ form.registration_number.id_for_label }}"
+      >Admission Number</label
+    >
+    <div class="entry__input-wrap">
+      <i class="fas fa-id-card"></i>
+      {{ form.registration_number }}
+    </div>
+    <div class="entry__hint">
+      Format: <strong>PROGRAMMECODE/NNNN/YY</strong>, e.g. 1101001/0001/26.
+    </div>
+
+    <label class="entry__label" for="{{ form.phone_number.id_for_label }}"
+      >Placement phone number</label
+    >
+    <div class="entry__input-wrap">
+      <i class="fas fa-phone"></i>
+      {{ form.phone_number }}
+    </div>
+
+    <button type="submit" class="entry__btn">
+      <span>Continue</span><i class="fas fa-arrow-right"></i>
+    </button>
+  </form>
+
+  <div class="entry__foot">Need help? <a href="#">Contact Registry</a></div>
+</section>
+{% endblock %}

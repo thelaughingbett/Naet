@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from django.core.exceptions import ValidationError
+import re
 from django.forms import modelformset_factory
 import json
 from django.contrib import admin
@@ -114,3 +116,67 @@ class EducationalInfoForm(forms.ModelForm):
         labels = {
             'registration_number': 'University Admission Number'
         }
+
+
+def _digits(value):
+    return re.sub(r"\D", "", value or "")
+
+
+class LookupForm(forms.Form):
+    registration_number = forms.CharField(
+        max_length=78,
+        widget=forms.TextInput(attrs={
+            "class": "entry__input", "placeholder": "e.g. 1101001/0001/26",
+            "autocomplete": "off", "spellcheck": "false",
+        }),
+    )
+    phone_number = forms.CharField(
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            "class": "entry__input", "placeholder": "07XXXXXXXX",
+            "autocomplete": "off", "inputmode": "tel",
+        }),
+    )
+
+    student = None
+
+    def clean(self):
+        data = super().clean()
+        reg = (data.get("registration_number") or "").strip()
+        phone = _digits(data.get("phone_number"))
+        if not reg or not phone:
+            return data
+
+        student = (
+            Student.objects.select_related("user")
+            .filter(registration_number__iexact=reg)
+            .first()
+        )
+        stored = _digits(student.telephone_no) if student else ""
+        # generic message: don't reveal whether the number exists
+        if (not student or len(phone) < 9 or len(stored) < 9
+                or phone[-9:] != stored[-9:]):
+            raise ValidationError("No placement record matches those details.")
+        if student.registration_completed_at:
+            raise ValidationError(
+                "Registration is already complete for this student. "
+                "Contact the Registry if something is wrong."
+            )
+        self.student = student
+        return data
+
+
+class AccountForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("email", "profile_picture")
+
+
+class EducationDetailsForm(forms.ModelForm):
+    class Meta:
+        model = Student
+        fields = (
+            "name_of_secondary_school",
+            "address_of_secondary_school",
+            "stay",
+        )

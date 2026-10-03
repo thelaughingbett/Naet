@@ -39,6 +39,11 @@ class Session(BaseModelMixin):
         blank=True
     )
 
+    results_deadline = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
     # TODO figure out how to wire up hostel registrartion session'san other miscellenous for a given session  -> already wired up in compliance/registration window
 
     # is this redundant given that active session is set in school ? 👇🏿 -> yes but nice guard

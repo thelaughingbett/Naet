@@ -17,25 +17,60 @@ from staffConsole.views.lecturer import (
     LecturerProfileDetailView,
     LecturerProfileUpdateAjaxView,
     SendBulkEmailView,
-    SendStudentEmailView
+    SendStudentEmailView,
+    LockTransmitAjaxView,
+    SchemeImpactAjaxView,
+    ApplySchemeAjaxView,
+    ClassListDataAjaxView,
+    ClassListRecipientsAjaxView,
+    ClassListExportView,
+    ImportScoresAjaxView
 )
 
 urlpatterns = [
-    path('dashboard/', LecturerDashboardView.as_view(), name='lecturer-dashboard'),
+    path(
+        'dashboard/',
+        LecturerDashboardView.as_view(), name='lecturer-dashboard'
+    ),
     path(
         'class-list/',
         ClassListView.as_view(),
         name='lecturer-class-list'
     ),
     path(
-        'courses/',
-        MyCourseView.as_view(),
-        name='lecturer-courses'
-    ),
-    path(
         'class-list/student/<uuid:enrollment_id>/',
         StudentDetailAjaxView.as_view(),
         name='lecturer-student-detail'
+    ),
+    path(
+        'class-list/send-email/',
+        SendStudentEmailView.as_view(),
+        name='lecturer-send-student-email'
+    ),
+    path(
+        'class-list/data/',
+        ClassListDataAjaxView.as_view(),
+        name='lecturer-class-list-data'
+    ),
+    path(
+        'class-list/recipients/',
+        ClassListRecipientsAjaxView.as_view(),
+        name='lecturer-class-list-recipients'
+    ),
+    path(
+        'class-list/export/',
+        ClassListExportView.as_view(),
+        name='lecturer-class-list-export'
+    ),
+    path(
+        'class-list/send-bulk-email/',
+        SendBulkEmailView.as_view(),
+        name='lecturer-send-bulk-email'
+    ),
+    path(
+        'courses/',
+        MyCourseView.as_view(),
+        name='lecturer-courses'
     ),
     path(
         'timetable/',
@@ -80,6 +115,11 @@ urlpatterns = [
         name='lecturer-export-template'
     ),
     path(
+        'results/import-scores/',
+        ImportScoresAjaxView.as_view(),
+        name="lecturer-import-scores"
+    ),
+    path(
         'invigilation/',
         InvigilationDutiesView.as_view(),
         name='lecturer-invigilation'
@@ -94,14 +134,20 @@ urlpatterns = [
         LecturerProfileUpdateAjaxView.as_view(),
         name='lecturer-profile-update'
     ),
+
     path(
-        'class-list/send-email/',
-        SendStudentEmailView.as_view(),
-        name='lecturer-send-student-email'
+        'results/lock-transmit/',
+        LockTransmitAjaxView.as_view(),
+        name='lecturer-lock-results'
     ),
     path(
-        'class-list/send-bulk-email/',
-        SendBulkEmailView.as_view(),
-        name='lecturer-send-bulk-email'
+        'results/scheme-impact/',
+        SchemeImpactAjaxView.as_view(),
+        name='lecturer-results-scheme-impact'
+    ),
+    path(
+        'results/apply-scheme/',
+        ApplySchemeAjaxView.as_view(),
+        name='lecturer-results-apply-scheme'
     ),
 ]

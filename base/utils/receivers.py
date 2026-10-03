@@ -24,9 +24,10 @@ from base.models import (
 )
 from base.utils.signals import send_notification
 from base.utils.notifications.handlers import NotificationEngine
+from django.utils import timezone
 
 
-# TODO :  rmove this from this file
+# TODO :  remove this from this file
 class ScopedUser:
     @staticmethod
     def getProfile(instance):
@@ -84,7 +85,8 @@ def auto_enroll_core_courses(sender, instance, created, **kwargs):
                 Enrollment(
                     student=instance,
                     curriculum=curriculum,
-                    status='approved',  # core courses auto-approved
+                    status='approved',  # core courses auto-approved,
+                    approved_at=timezone.now()
                 )
                 for curriculum in core_subjects
             ],
@@ -498,7 +500,8 @@ def auto_enroll_curriculum_course(
                     Enrollment(
                         student=student,
                         curriculum=instance,
-                        status='approved'
+                        status='approved',
+                        approved_at=timezone.now()
                     )
                     for student in students
                 ],
@@ -586,5 +589,6 @@ def finalize_enrollment_grade_on_result_publish(sender, instance, **kwargs):
     if enrollment.finalize_grade():
         from base.models import DegreeAudit
         audit, _ = DegreeAudit.objects.get_or_create(
-            student=enrollment.student)
+            student=enrollment.student
+        )
         audit.recompute()

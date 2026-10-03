@@ -569,17 +569,13 @@
               data-coursecode="{{ unit.course.course_code|upper }}"
             >
               <td class="checkbox-col">
+                <!-- prettier-ignore -->
                 <input
                   type="checkbox"
                   name="curriculum_ids"
                   value="{{ unit.record_id }}"
                   data-id="{{ unit.record_id }}"
-                  {%
-                  if
-                  already_full
-                  %}disabled{%
-                  endif
-                  %}
+                  {% if already_full %}disabled{% endif %}
                 />
               </td>
               <td class="unit-code">{{ unit.course.course_code|upper }}</td>
@@ -729,8 +725,8 @@
             data-credits="{{ unit.curriculum.course.credits }}"
             data-coursetype="{{ unit.curriculum.course.course_type }}"
             data-status="{{ unit.status }}"
-            data-gradedscore="{{ unit.graded_score|default_if_none:'' }}"
-            data-ispassed="{% if unit.graded_at %}{{ unit.is_passed|yesno:'true,false' }}{% else %}{% endif %}"
+            data-gradedscore="{{ unit.published_outcome.score|default_if_none:'' }}"
+            data-ispassed="{% if unit.published_outcome.complete %}{{ unit.published_outcome.passed|yesno:'true,false' }}{% endif %}"
           >
             <td class="unit-code">
               {{ unit.curriculum.course.course_code|upper }}

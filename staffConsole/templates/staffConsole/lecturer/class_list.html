@@ -594,6 +594,13 @@
     overflow-x: auto;
   }
 
+  /* dims the list while a page/filter request is in flight */
+  .is-loading {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
   .student-table {
     width: 100%;
     border-collapse: collapse;
@@ -764,6 +771,61 @@
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 600;
+  }
+
+  /* Pagination (server-side, max 10 students per page) */
+  .pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .pager__btns {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pager__page {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pager__btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--navy);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: 0.2s;
+  }
+
+  .pager__btn:hover:not(:disabled) {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+
+  .pager__btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .pager--mobile {
+    padding: 0 1rem 6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
   }
 
   .empty-state {
@@ -989,7 +1051,7 @@
   }
 
   .student-list {
-    padding: 0.7rem 1rem 6rem;
+    padding: 0.7rem 1rem 0.7rem;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
@@ -1049,7 +1111,7 @@
 
   .student-card__scores {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.4rem;
     padding-top: 0.4rem;
     border-top: 1px dashed var(--border);
@@ -1608,7 +1670,7 @@
         <span>
           <i class="fas fa-users"></i>
           <!-- prettier-ignore -->
-          {% for cls in selected.classes.all %}{{ cls.class_name }}{% if not  forloop.last %}, {% endif %}{% endfor %}
+          {% for cls in selected.classes.all %}{{ cls.class_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
         </span>
         <span>
           <i class="fas fa-user-graduate"></i>
@@ -1698,131 +1760,16 @@
             <th data-sort="class">Class <i class="fas fa-sort"></i></th>
             <th data-sort="email">Email <i class="fas fa-sort"></i></th>
             <th data-sort="status">Status <i class="fas fa-sort"></i></th>
-            <th data-sort="cat" data-type="number">
-              CAT <i class="fas fa-sort"></i>
-            </th>
-            <th data-sort="exam" data-type="number">
-              Exam <i class="fas fa-sort"></i>
-            </th>
-            <th data-sort="total" data-type="number">
-              Total <i class="fas fa-sort"></i>
-            </th>
+            <th data-sort="total">Total <i class="fas fa-sort"></i></th>
             <th data-sort="grade">Grade <i class="fas fa-sort"></i></th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="tableBody">
-          {% for row in student_rows %}
-          <tr
-            class="student-row"
-            data-enrollment="{{ row.enrollment_id }}"
-            data-name="{{ row.full_name|lower }}"
-            data-fullname="{{ row.full_name }}"
-            data-reg="{{ row.registration_no|lower }}"
-            data-class="{{ row.class_name|lower }}"
-            data-email="{{ row.school_email|lower }}"
-            data-status="{{ row.status }}"
-            data-cat="{{ row.cat|default_if_none:'' }}"
-            data-exam="{{ row.exam|default_if_none:'' }}"
-            data-total="{{ row.total|default_if_none:'' }}"
-            data-grade="{{ row.grade }}"
-            data-results="{% if row.cat is not None or row.exam is not None %}entered{% else %}not_entered{% endif %}"
-          >
-            <td class="row-index"></td>
-            <td>
-              <div class="student-info">
-                <span class="avatar">{{ row.initials }}</span>
-                <span class="student-name">{{ row.full_name }}</span>
-              </div>
-            </td>
-            <td>
-              <code class="reg-code">{{ row.registration_no|upper }}</code>
-            </td>
-            <td><span class="cell-class">{{ row.class_name }}</span></td>
-            <td><span class="cell-email">{{ row.school_email }}</span></td>
-            <td>
-              <span class="status-badge {{ row.status }}"
-                >{{ row.status|title }}</span
-              >
-            </td>
-            <td>
-              {% if row.cat is not None %}{{ row.cat }}{% else %}<span
-                class="dash"
-                >—</span
-              >{% endif %}
-            </td>
-            <td>
-              {% if row.exam is not None %}{{ row.exam }}{% else %}<span
-                class="dash"
-                >—</span
-              >{% endif %}
-            </td>
-            <td>
-              {% if row.total is not None %}{{ row.total }}{% else %}<span
-                class="dash"
-                >—</span
-              >{% endif %}
-            </td>
-            <td>
-              <span class="grade-pill {{ row.grade }}">{{ row.grade }}</span>
-            </td>
-            <td>
-              <div class="actions-cell">
-                <button
-                  class="btn-sm"
-                  type="button"
-                  title="View"
-                  aria-label="View {{ row.full_name }}"
-                  data-action="view"
-                  data-enrollment="{{ row.enrollment_id }}"
-                >
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button
-                  class="btn-sm"
-                  type="button"
-                  title="Email student"
-                  aria-label="Email {{ row.full_name }}"
-                  data-action="email"
-                  data-email="{{ row.school_email }}"
-                  data-name="{{ row.full_name }}"
-                >
-                  <i class="fas fa-envelope"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="11">
-              <div class="empty-state">
-                <div class="empty-state__icon">📭</div>
-                <div class="empty-state__title">No students enrolled</div>
-                <div class="empty-state__text">
-                  Nobody is enrolled in this course yet.
-                </div>
-              </div>
-            </td>
-          </tr>
-          {% endfor %} {% if student_rows %}
-          <tr id="noResultsRow" hidden>
-            <td colspan="11">
-              <div class="empty-state">
-                <div class="empty-state__icon">📭</div>
-                <div class="empty-state__title">No students found</div>
-                <div class="empty-state__text">Try adjusting your filters.</div>
-              </div>
-            </td>
-          </tr>
-          {% endif %}
-        </tbody>
+        <!-- rows are rendered by the script from the paginated payload -->
+        <tbody id="tableBody"></tbody>
       </table>
     </div>
-    <div class="table-footer">
-      <span id="rowCount">
-        {{ student_rows|length }} student{{ student_rows|length|pluralize }}
-      </span>
-    </div>
+    <div class="table-footer pager" id="pagerBar"></div>
   </div>
   {% endif %}
 </div>
@@ -1897,83 +1844,9 @@
     </button>
   </div>
 
-  <div class="student-list" id="mobileStudentList">
-    {% for row in student_rows %}
-    <div class="student-card" data-enrollment="{{ row.enrollment_id }}">
-      <div class="student-card__top">
-        <div class="student-card__avatar">{{ row.initials }}</div>
-        <div class="student-card__info">
-          <div class="student-card__name">{{ row.full_name }}</div>
-          <div class="student-card__reg">{{ row.registration_no|upper }}</div>
-        </div>
-        <span class="status-badge {{ row.status }}"
-          >{{ row.status|title }}</span
-        >
-      </div>
-      <div class="student-card__scores">
-        <div class="student-card__score-cell">
-          <div class="student-card__score-label">CAT</div>
-          <div
-            class="student-card__score-value{% if row.cat is None %} empty{% endif %}"
-          >
-            {% if row.cat is not None %}{{ row.cat }}{% else %}—{% endif %}
-          </div>
-        </div>
-        <div class="student-card__score-cell">
-          <div class="student-card__score-label">Exam</div>
-          <div
-            class="student-card__score-value{% if row.exam is None %} empty{% endif %}"
-          >
-            {% if row.exam is not None %}{{ row.exam }}{% else %}—{% endif %}
-          </div>
-        </div>
-        <div class="student-card__score-cell">
-          <div class="student-card__score-label">Grade</div>
-          <div
-            class="student-card__score-value grade-{{ row.grade }}{% if row.grade == '—' %} empty{% endif %}"
-          >
-            {{ row.grade }}
-          </div>
-        </div>
-      </div>
-      <div class="student-card__actions">
-        <button
-          class="student-card__action primary"
-          type="button"
-          data-action="view"
-          data-enrollment="{{ row.enrollment_id }}"
-        >
-          <i class="fas fa-eye"></i> View
-        </button>
-        <button
-          class="student-card__action"
-          type="button"
-          data-action="email"
-          data-email="{{ row.school_email }}"
-          data-name="{{ row.full_name }}"
-        >
-          <i class="fas fa-envelope"></i> Email
-        </button>
-      </div>
-    </div>
-    {% empty %}
-    <div class="mobile-empty">
-      <div class="mobile-empty__icon">📭</div>
-      <div class="mobile-empty__title">No students enrolled</div>
-      <div class="mobile-empty__text">
-        Nobody is enrolled in this course yet.
-      </div>
-    </div>
-    {% endfor %} {% if student_rows %}
-    <div class="mobile-empty" id="mobileNoResults" hidden>
-      <div class="mobile-empty__icon">🔍</div>
-      <div class="mobile-empty__title">No students found</div>
-      <div class="mobile-empty__text">
-        Try adjusting your search or filters.
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  <!-- cards are rendered by the script from the paginated payload -->
+  <div class="student-list" id="mobileStudentList"></div>
+  <div class="pager pager--mobile" id="mobilePager"></div>
 </div>
 {% endif %}
 
@@ -2190,7 +2063,8 @@
     </button>
   </div>
 </div>
-{% endif %}
+
+{{ initial_payload|json_script:"initialPayload" }} {% endif %}
 
 <div class="toast" id="toast"></div>
 
@@ -2205,7 +2079,11 @@
   data-lecturer="{{ lecturer.name|default:'' }}"
   data-send-email-url="{% url 'lecturer-send-student-email' %}"
   data-send-bulk-url="{% url 'lecturer-send-bulk-email' %}"
+  data-page-url="{% url 'lecturer-class-list-data' %}"
+  data-recipients-url="{% url 'lecturer-class-list-recipients' %}"
+  data-export-url="{% url 'lecturer-class-list-export' %}"
 ></div>
+
 <script>
   (function () {
     "use strict";
@@ -2217,7 +2095,7 @@
     function escapeHtml(s) {
       const d = document.createElement("div");
       d.textContent = s ?? "";
-      return d.innerHTML;
+      return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
     const orDash = (v) => (v === null || v === undefined || v === "" ? "—" : v);
@@ -2318,13 +2196,13 @@
     // Everything below needs a selected course
     if (!$("tableBody")) return;
 
-    // ─── Filtering (one state, shared by table rows and mobile cards) ────────
-    const rows = [...document.querySelectorAll("#tableBody .student-row")];
-    const cards = [
-      ...document.querySelectorAll("#mobileStudentList .student-card"),
-    ];
-    const noResultsRow = $("noResultsRow");
-    const mobileNoResults = $("mobileNoResults");
+    // ─── State ───────────────────────────────────────────────────────────────
+    // The browser only ever holds ONE page (≤10 students). Search, filters,
+    // sorting and paging all run on the server over the whole class.
+    const INITIAL = JSON.parse($("initialPayload").textContent);
+    let pageRows = INITIAL.rows;
+    let pagination = INITIAL.pagination;
+    let classes = INITIAL.classes;
 
     const DEFAULT_FILTERS = {
       q: "",
@@ -2334,6 +2212,11 @@
       results: "",
     };
     const filters = { ...DEFAULT_FILTERS };
+    let sortKey = "";
+    let sortDir = "asc";
+
+    let reqSeq = 0;
+    let searchTimer;
 
     // filter key → [desktop control id, mobile control id]
     const CONTROLS = {
@@ -2344,19 +2227,202 @@
       results: ["resultsFilter", "mResultsFilter"],
     };
 
+    const hasFilters = () => Object.values(filters).some(Boolean);
+
+    let gradeOptions = INITIAL.grade_options || [];
+
+    // ─── Query building ──────────────────────────────────────────────────────
+    function buildParams(extra = {}) {
+      const p = new URLSearchParams();
+      p.set("curriculum", cfg.curriculumId);
+      if (filters.q.trim()) p.set("q", filters.q.trim());
+      if (filters.klass) p.set("class", filters.klass);
+      if (filters.status) p.set("status", filters.status);
+      if (filters.grade) p.set("grade", filters.grade);
+      if (filters.results) p.set("results", filters.results);
+      if (sortKey) {
+        p.set("sort", sortKey);
+        p.set("dir", sortDir);
+      }
+      Object.entries(extra).forEach(([k, v]) => p.set(k, v));
+      return p;
+    }
+
+    // ─── Rendering ───────────────────────────────────────────────────────────
+    const GRADES = ["A", "B", "C", "D", "F"];
+    const gradeClass = (g) => {
+      const k = String(g || "")
+        .charAt(0)
+        .toUpperCase();
+      return GRADES.includes(k) ? k : "";
+    };
+
+    function populateGradeFilters() {
+      ["gradeFilter", "mGradeFilter"].forEach((id) => {
+        const s = $(id);
+        if (!s) return;
+        s.innerHTML =
+          '<option value="">All Grades</option>' +
+          gradeOptions
+            .map(
+              (g) =>
+                `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`,
+            )
+            .join("") +
+          '<option value="—">Not graded</option>';
+        s.value = filters.grade;
+      });
+    }
+
+    const titleCase = (s) =>
+      String(s || "")
+        .charAt(0)
+        .toUpperCase() + String(s || "").slice(1);
+
+    function emptyMessage() {
+      return hasFilters()
+        ? {
+            icon: "🔍",
+            title: "No students found",
+            text: "Try adjusting your search or filters.",
+          }
+        : {
+            icon: "📭",
+            title: "No students enrolled",
+            text: "Nobody is enrolled in this course yet.",
+          };
+    }
+
+    function renderTable() {
+      const tbody = $("tableBody");
+      if (!pageRows.length) {
+        const m = emptyMessage();
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+          <div class="empty-state__icon">${m.icon}</div>
+          <div class="empty-state__title">${m.title}</div>
+          <div class="empty-state__text">${m.text}</div></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pageRows
+        .map(
+          (r, i) => `
+        <tr class="student-row" data-enrollment="${escapeHtml(r.enrollment_id)}">
+          <td>${pagination.start + i}</td>
+          <td><div class="student-info">
+            <span class="avatar">${escapeHtml(r.initials)}</span>
+            <span class="student-name">${escapeHtml(r.full_name)}</span></div></td>
+          <td><code class="reg-code">${escapeHtml(String(r.registration_no).toUpperCase())}</code></td>
+          <td><span class="cell-class">${escapeHtml(r.class_name)}</span></td>
+          <td><span class="cell-email">${escapeHtml(r.school_email)}</span></td>
+          <td><span class="status-badge ${escapeHtml(r.status)}">${escapeHtml(titleCase(r.status))}</span></td>
+          <td>${r.total !== null ? escapeHtml(r.total) : '<span class="dash">—</span>'}</td>
+          <td><span class="grade-pill ${gradeClass(r.grade)}">${escapeHtml(r.grade)}</span></td>
+          <td><div class="actions-cell">
+            <button class="btn-sm" type="button" title="View" aria-label="View ${escapeHtml(r.full_name)}"
+                    data-action="view" data-enrollment="${escapeHtml(r.enrollment_id)}"><i class="fas fa-eye"></i></button>
+            <button class="btn-sm" type="button" title="Email student" aria-label="Email ${escapeHtml(r.full_name)}"
+                    data-action="email" data-email="${escapeHtml(r.school_email)}" data-name="${escapeHtml(r.full_name)}"><i class="fas fa-envelope"></i></button>
+          </div></td>
+        </tr>`,
+        )
+        .join("");
+    }
+
+    function renderCards() {
+      const list = $("mobileStudentList");
+      if (!list) return;
+      if (!pageRows.length) {
+        const m = emptyMessage();
+        list.innerHTML = `<div class="mobile-empty">
+          <div class="mobile-empty__icon">${m.icon}</div>
+          <div class="mobile-empty__title">${m.title}</div>
+          <div class="mobile-empty__text">${m.text}</div></div>`;
+        return;
+      }
+
+      const scoreCell = (label, v) => `
+        <div class="student-card__score-cell">
+          <div class="student-card__score-label">${label}</div>
+          <div class="student-card__score-value${v === null ? " empty" : ""}">${v !== null ? escapeHtml(v) : "—"}</div>
+        </div>`;
+
+      list.innerHTML = pageRows
+        .map(
+          (r) => `
+        <div class="student-card" data-enrollment="${escapeHtml(r.enrollment_id)}">
+          <div class="student-card__top">
+            <div class="student-card__avatar">${escapeHtml(r.initials)}</div>
+            <div class="student-card__info">
+              <div class="student-card__name">${escapeHtml(r.full_name)}</div>
+              <div class="student-card__reg">${escapeHtml(String(r.registration_no).toUpperCase())}</div>
+            </div>
+            <span class="status-badge ${escapeHtml(r.status)}">${escapeHtml(titleCase(r.status))}</span>
+          </div>
+          <div class="student-card__scores">
+            ${scoreCell("Total", r.total)}
+            <div class="student-card__score-cell">
+              <div class="student-card__score-label">Grade</div>
+              <div class="student-card__score-value${r.grade === "—" ? " empty" : " grade-" + gradeClass(r.grade)}">${escapeHtml(r.grade)}</div>
+            </div>
+          </div>
+          <div class="student-card__actions">
+            <button class="student-card__action primary" type="button" data-action="view"
+                    data-enrollment="${escapeHtml(r.enrollment_id)}"><i class="fas fa-eye"></i> View</button>
+            <button class="student-card__action" type="button" data-action="email"
+                    data-email="${escapeHtml(r.school_email)}" data-name="${escapeHtml(r.full_name)}"><i class="fas fa-envelope"></i> Email</button>
+          </div>
+        </div>`,
+        )
+        .join("");
+    }
+
+    function renderPager() {
+      const p = pagination;
+      const info = p.total
+        ? `Showing ${p.start}–${p.end} of ${p.total} student${p.total !== 1 ? "s" : ""}`
+        : "0 students";
+      const html = `
+        <span>${info}</span>
+        <div class="pager__btns">
+          <button type="button" class="pager__btn" data-action="page" data-page="${p.page - 1}" ${p.page <= 1 ? "disabled" : ""} aria-label="Previous page"><i class="fas fa-chevron-left"></i></button>
+          <span class="pager__page">Page ${p.page} / ${p.pages}</span>
+          <button type="button" class="pager__btn" data-action="page" data-page="${p.page + 1}" ${p.page >= p.pages ? "disabled" : ""} aria-label="Next page"><i class="fas fa-chevron-right"></i></button>
+        </div>`;
+      ["pagerBar", "mobilePager"].forEach((id) => {
+        const el = $(id);
+        if (el) el.innerHTML = html;
+      });
+    }
+
+    function renderSortHeaders() {
+      document.querySelectorAll("#studentTable th[data-sort]").forEach((th) => {
+        const active = th.dataset.sort === sortKey;
+        th.classList.toggle("sorted", active);
+        th.querySelector("i").className =
+          "fas " +
+          (active
+            ? sortDir === "asc"
+              ? "fa-sort-up"
+              : "fa-sort-down"
+            : "fa-sort");
+      });
+    }
+
     function populateClassFilters() {
-      const classes = [
-        ...new Set(rows.map((r) => r.dataset.class).filter(Boolean)),
-      ].sort();
       ["classFilter", "mClassFilter"].forEach((id) => {
         const select = $(id);
         if (!select) return;
-        classes.forEach((c) => {
-          const opt = document.createElement("option");
-          opt.value = c;
-          opt.textContent = c.toUpperCase();
-          select.appendChild(opt);
-        });
+        const current = filters.klass;
+        select.innerHTML =
+          '<option value="">All Classes</option>' +
+          classes
+            .map(
+              (c) =>
+                `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`,
+            )
+            .join("");
+        select.value = classes.includes(current) ? current : "";
       });
     }
 
@@ -2367,113 +2433,103 @@
           if (el && el.value !== filters[key]) el.value = filters[key];
         });
       });
-    }
-
-    function applyFilters() {
-      const q = filters.q.trim().toLowerCase();
-      const visibleIds = new Set();
-      let idx = 0;
-
-      rows.forEach((row) => {
-        const d = row.dataset;
-        const show =
-          (!q ||
-            d.name.includes(q) ||
-            d.reg.includes(q) ||
-            d.email.includes(q)) &&
-          (!filters.status || d.status === filters.status) &&
-          (!filters.grade || d.grade === filters.grade) &&
-          (!filters.klass || d.class === filters.klass) &&
-          (!filters.results || d.results === filters.results);
-
-        row.hidden = !show;
-        if (show) {
-          row.querySelector(".row-index").textContent = ++idx;
-          visibleIds.add(d.enrollment);
-        }
-      });
-
-      cards.forEach((card) => {
-        card.hidden = !visibleIds.has(card.dataset.enrollment);
-      });
-
-      if (noResultsRow) noResultsRow.hidden = idx > 0;
-      if (mobileNoResults) mobileNoResults.hidden = idx > 0;
-      $("rowCount").textContent = `${idx} student${idx !== 1 ? "s" : ""}`;
-
       $("mobileFilterBtn")?.classList.toggle(
         "has-filters",
         !!(filters.klass || filters.status || filters.grade || filters.results),
       );
     }
 
+    function renderAll() {
+      populateGradeFilters();
+      renderTable();
+      renderCards();
+      renderPager();
+      renderSortHeaders();
+      populateClassFilters();
+      syncControls();
+    }
+
+    // ─── Data loading (server-side search / filter / sort / page) ────────────
+    function setLoading(on) {
+      document
+        .querySelectorAll(".table-wrapper, #mobileStudentList")
+        .forEach((el) => el.classList.toggle("is-loading", on));
+    }
+
+    async function loadPage(page = 1) {
+      const seq = ++reqSeq;
+      setLoading(true);
+      try {
+        const res = await fetch(`${cfg.pageUrl}?${buildParams({ page })}`);
+        const d = await res.json();
+        if (seq !== reqSeq) return; // a newer request superseded this one
+        if (d.error) throw new Error(d.error);
+        pageRows = d.rows;
+        pagination = d.pagination;
+        classes = d.classes;
+        gradeOptions = d.grade_options;
+        renderAll();
+      } catch (err) {
+        if (seq === reqSeq) showToast("Failed to load students.", "warning");
+      } finally {
+        if (seq === reqSeq) setLoading(false);
+      }
+    }
+
+    function goToPage(n) {
+      if (n < 1 || n > pagination.pages) return;
+      loadPage(n);
+      const anchor = window.matchMedia("(max-width: 768px)").matches
+        ? $("mobileStudentList")
+        : $("studentTable");
+      anchor?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     function setFilters(next) {
       Object.assign(filters, next);
       syncControls();
-      applyFilters();
+      loadPage(1);
     }
 
-    // Desktop controls + mobile search filter live
+    // Selects filter immediately; search is debounced so each keystroke
+    // doesn't fire a request.
     [
-      ["studentSearch", "q", "input"],
-      ["mobileSearch", "q", "input"],
-      ["classFilter", "klass", "change"],
-      ["statusFilter", "status", "change"],
-      ["gradeFilter", "grade", "change"],
-      ["resultsFilter", "results", "change"],
-    ].forEach(([id, key, evt]) => {
-      $(id)?.addEventListener(evt, (e) =>
+      ["classFilter", "klass"],
+      ["statusFilter", "status"],
+      ["gradeFilter", "grade"],
+      ["resultsFilter", "results"],
+    ].forEach(([id, key]) => {
+      $(id)?.addEventListener("change", (e) =>
         setFilters({ [key]: e.target.value }),
       );
     });
 
-    // ─── Sorting (desktop table) ─────────────────────────────────────────────
-    const tbody = $("tableBody");
-    let sortKey = null;
-    let sortAsc = true;
+    ["studentSearch", "mobileSearch"].forEach((id) => {
+      $(id)?.addEventListener("input", (e) => {
+        filters.q = e.target.value;
+        syncControls(); // mirror into the other search box
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadPage(1), 300);
+      });
+    });
 
+    // ─── Sorting (server-side, across every page) ────────────────────────────
     document.querySelectorAll("#studentTable th[data-sort]").forEach((th) => {
       th.addEventListener("click", () => {
         const key = th.dataset.sort;
-        const numeric = th.dataset.type === "number";
-        sortAsc = sortKey === key ? !sortAsc : true;
+        sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
         sortKey = key;
-
-        const collator = new Intl.Collator(undefined, { sensitivity: "base" });
-        [...rows]
-          .sort((a, b) => {
-            const av = a.dataset[key] ?? "";
-            const bv = b.dataset[key] ?? "";
-            if (numeric) {
-              const an = parseFloat(av);
-              const bn = parseFloat(bv);
-              if (isNaN(an) && isNaN(bn)) return 0;
-              if (isNaN(an)) return 1; // blanks always last
-              if (isNaN(bn)) return -1;
-              return sortAsc ? an - bn : bn - an;
-            }
-            return sortAsc
-              ? collator.compare(av, bv)
-              : collator.compare(bv, av);
-          })
-          .forEach((r) => tbody.appendChild(r));
-        if (noResultsRow) tbody.appendChild(noResultsRow);
-
-        document
-          .querySelectorAll("#studentTable th[data-sort]")
-          .forEach((h) => {
-            const active = h === th;
-            h.classList.toggle("sorted", active);
-            h.querySelector("i").className =
-              "fas " +
-              (active ? (sortAsc ? "fa-sort-up" : "fa-sort-down") : "fa-sort");
-          });
-        applyFilters(); // renumber
+        loadPage(1);
       });
     });
 
     // ─── Student sheet ───────────────────────────────────────────────────────
     async function openStudentSheet(enrollmentId) {
+      const OUTCOME = {
+        pass: "Passed",
+        fail: "Failed",
+        in_progress: "In progress",
+      };
       $("sheetStudentName").textContent = "Student";
       $("sheetStudentMeta").textContent = "";
       $("sheetEmailBtn").hidden = true;
@@ -2489,9 +2545,7 @@
         if (d.error) throw new Error(d.error);
 
         const status = String(d.status || "");
-        const gradeClass = ["A", "B", "C", "D", "F"].includes(d.grade)
-          ? d.grade
-          : "";
+        const gClass = gradeClass(d.grade);
 
         $("sheetStudentName").textContent = d.full_name;
         $("sheetStudentMeta").textContent =
@@ -2499,19 +2553,11 @@
         $("sheetStudentBody").innerHTML = `
           <div class="detail-row">
             <span class="detail-row__label">Status</span>
-            <span class="detail-row__value"><span class="status-badge ${escapeHtml(status)}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span></span>
+            <span class="detail-row__value"><span class="status-badge ${escapeHtml(status)}">${escapeHtml(titleCase(status))}</span></span>
           </div>
           <div class="detail-row">
             <span class="detail-row__label">Email</span>
             <span class="detail-row__value"><a href="mailto:${escapeHtml(d.school_email)}">${escapeHtml(d.school_email)}</a></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-row__label">CAT</span>
-            <span class="detail-row__value">${escapeHtml(orDash(d.cat))}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-row__label">Exam</span>
-            <span class="detail-row__value">${escapeHtml(orDash(d.exam))}</span>
           </div>
           <div class="detail-row">
             <span class="detail-row__label">Total</span>
@@ -2519,8 +2565,21 @@
           </div>
           <div class="detail-row">
             <span class="detail-row__label">Grade</span>
-            <span class="detail-row__value"><span class="grade-pill ${gradeClass}">${escapeHtml(d.grade)}</span></span>
+            <span class="detail-row__value"><span class="grade-pill ${gClass}">${escapeHtml(d.grade)}</span></span>
           </div>
+          <div class="detail-row">
+            <span class="detail-row__label">Outcome</span>
+            <span class="detail-row__value">${OUTCOME[d.outcome] || ""}${d.frozen ? " · final" : ""}</span>
+          </div>
+          ${d.breakdown
+            .map(
+              (b) => `
+                <div class="detail-row">
+                  <span class="detail-row__label">${escapeHtml(b.label)} (${escapeHtml(b.weight)}%)</span>
+                  <span class="detail-row__value">${escapeHtml(orDash(b.score))}</span>
+                </div>`,
+            )
+            .join("")}
           <div class="detail-row">
             <span class="detail-row__label">Course</span>
             <span class="detail-row__value"><strong>${escapeHtml(d.course_code)}</strong> — ${escapeHtml(d.course_name)}</span>
@@ -2592,23 +2651,33 @@
     }
 
     // ─── Email all ───────────────────────────────────────────────────────────
-    function getVisibleRecipients() {
-      return rows
-        .filter((r) => !r.hidden)
-        .map((r) => ({ email: r.dataset.email, name: r.dataset.fullname }))
-        .filter((r) => r.email);
-    }
+    // Recipients are fetched from the server for the CURRENT filters — the
+    // browser only has one page, but "Email All" must reach everyone matched.
+    let bulkRecipients = [];
 
-    function openEmailAllSheet() {
-      const recipients = getVisibleRecipients();
-      if (recipients.length === 0) {
+    async function openEmailAllSheet() {
+      let data;
+      try {
+        const res = await fetch(`${cfg.recipientsUrl}?${buildParams()}`);
+        data = await res.json();
+        if (data.error) throw new Error(data.error);
+      } catch (err) {
+        showToast("Could not load recipients.", "warning");
+        return;
+      }
+
+      bulkRecipients = data.recipients;
+      if (!bulkRecipients.length) {
         showToast("No students match the current filters.", "warning");
         return;
       }
 
+      const skipped = data.matched - bulkRecipients.length;
       $("emailAllRecipientCount").textContent =
-        `${recipients.length} recipient${recipients.length !== 1 ? "s" : ""} (based on current filters)`;
-      $("emailAllRecipientList").innerHTML = recipients
+        `${bulkRecipients.length} recipient${bulkRecipients.length !== 1 ? "s" : ""}` +
+        (hasFilters() ? " (based on current filters)" : "") +
+        (skipped > 0 ? ` · ${skipped} without an email skipped` : "");
+      $("emailAllRecipientList").innerHTML = bulkRecipients
         .map((r) => `${escapeHtml(r.name)} &lt;${escapeHtml(r.email)}&gt;`)
         .join("<br>");
       $("emailAllSubject").value = `[${cfg.courseCode}] `;
@@ -2619,7 +2688,6 @@
     }
 
     async function sendBulkEmail() {
-      const recipients = getVisibleRecipients();
       const subject = $("emailAllSubject").value.trim();
       const message = $("emailAllMessage").value.trim();
       const errorBox = $("emailAllError");
@@ -2640,7 +2708,7 @@
       try {
         const data = await postJson(cfg.sendBulkUrl, {
           curriculum_id: cfg.curriculumId,
-          recipients,
+          recipients: bulkRecipients,
           subject,
           message,
         });
@@ -2666,56 +2734,10 @@
       }
     }
 
-    // ─── CSV export (visible rows only) ──────────────────────────────────────
+    // ─── CSV export (server-built: every row matching the filters) ───────────
     function exportCSV() {
-      const header = [
-        "#",
-        "Name",
-        "Reg No",
-        "Class",
-        "Email",
-        "Status",
-        "CAT",
-        "Exam",
-        "Total",
-        "Grade",
-      ];
-      const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
-      const clean = (v) => (v === "—" ? "" : v);
-
-      const lines = [header.map(q).join(",")];
-      rows
-        .filter((r) => !r.hidden)
-        .forEach((r, i) => {
-          const t = (n) => clean(r.cells[n].textContent.trim());
-          lines.push(
-            [
-              i + 1,
-              r.dataset.fullname,
-              t(2),
-              t(3),
-              t(4),
-              t(5),
-              t(6),
-              t(7),
-              t(8),
-              t(9),
-            ]
-              .map(q)
-              .join(","),
-          );
-        });
-
-      const blob = new Blob(["\uFEFF" + lines.join("\n")], {
-        type: "text/csv;charset=utf-8",
-      });
-      const a = Object.assign(document.createElement("a"), {
-        href: URL.createObjectURL(blob),
-        download: `${cfg.courseCode || "classlist"}_classlist.csv`,
-      });
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast("📊 CSV downloaded", "success");
+      window.location.href = `${cfg.exportUrl}?${buildParams()}`;
+      showToast("📊 Preparing CSV…", "info");
     }
 
     // ─── One delegated click handler for every [data-action] ─────────────────
@@ -2735,6 +2757,8 @@
           return openEmailAllSheet();
         case "export":
           return exportCSV();
+        case "page":
+          return goToPage(Number(el.dataset.page));
         case "reset-filters":
           return setFilters(DEFAULT_FILTERS);
         case "open-filters":
@@ -2759,9 +2783,8 @@
     $("sendEmailBtn").addEventListener("click", sendEmail);
     $("emailAllSendBtn").addEventListener("click", sendBulkEmail);
 
-    // ─── Init ────────────────────────────────────────────────────────────────
-    populateClassFilters();
-    applyFilters();
+    // ─── Init (first page is already in the payload — no extra request) ──────
+    renderAll();
   })();
 </script>
 {% endblock content %}

@@ -8,6 +8,7 @@ instead of letting each caller recompute independently.
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional, Dict
+from .grading_service import get_enrollment_outcome, EnrollmentOutcome  # noqa: F401
 
 
 @dataclass

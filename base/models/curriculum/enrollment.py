@@ -173,12 +173,6 @@ class Enrollment(BaseModelMixin):
         "grading scale later never changes this."
     )
 
-    is_passed = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="Null until graded. Frozen at finalize_grade() time."
-    )
-
     grade_points_earned = models.DecimalField(
         max_digits=3,
         decimal_places=2,
@@ -255,35 +249,18 @@ class Enrollment(BaseModelMixin):
 
     @property
     def is_passed(self):
-        """Reads pass_mark from the course itself instead of a global constant."""
-        pass_mark = self.curriculum.course.pass_mark
-
-        final = self.final_result
-        if final is not None:
-            return final.score >= pass_mark
-
-        published = self.results.filter(state='published')
-        if not published.exists():
-            return False
-        avg = published.aggregate(avg=models.Avg('score'))['avg']
-        return avg is not None and avg >= pass_mark
+        from base.modules.academics.grading_service import GradingService, PUBLISHED
+        return GradingService().outcome(self, states=PUBLISHED).passed
 
     @property
     def credit_value(self):
-        return self.curriculum.course.credits if self.is_passed else 0
+        from base.modules.academics.grading_service import GradingService, PUBLISHED
+        return GradingService().outcome(self, states=PUBLISHED).credits_earned
 
     @property
     def grade_points(self):
-        """Reads the grading scale from the course itself."""
-        scale = self.curriculum.course.get_grading_scale()
-
-        final = self.final_result
-        if final is not None:
-            return scale.grade_points_for(final.score)
-
-        published = self.results.filter(state='published')
-        avg = published.aggregate(avg=models.Avg('score'))['avg']
-        return scale.grade_points_for(avg) if avg is not None else Decimal('0.00')
+        from base.modules.academics.grading_service import GradingService, PUBLISHED
+        return GradingService().outcome(self, states=PUBLISHED).grade_points
 
     @property
     def results(self):
@@ -392,64 +369,12 @@ class Enrollment(BaseModelMixin):
         self.approved_at = None
         self.save()
 
-    def _current_score(self):
-        scheme = self.curriculum.get_weighting_scheme()
-        components = list(scheme.components.all())
-        if not components:
-            raise ValidationError(
-                f"Weighting scheme '{scheme.name}' has no components configured."
-            )
-
-        weighted_total = Decimal('0')
-        for component in components:
-            results_qs = self.results.filter(
-                type=component.result_type, state='published'
-            )
-            component_score = component.compute(results_qs)
-            if component_score is None:
-                return None
-
-            weighted_total += Decimal(str(component_score)) * (
-                component.weight_percent / Decimal('100')
-            )
-
-        return weighted_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
-    def finalize_grade(self, force=False):
-        if self.graded_at is not None and not force:
-            return False
-
-        score = self._current_score()
-        if score is None:
-            return False
-
-        course = self.curriculum.course
-        grading_scale = course.get_grading_scale()
-        weighting_scheme = self.curriculum.get_weighting_scheme()
-        pass_mark = course.pass_mark
-        # local — sidesteps the is_passed field/property collision entirely
-        passed = score >= pass_mark
-
-        self.graded_score = score
-        self.grade_points_earned = grading_scale.grade_points_for(score)
-        self.credits_earned = course.credits if passed else 0
-        self.graded_scale = grading_scale
-        self.weighting_scheme_used = weighting_scheme
-        self.pass_mark_applied = pass_mark
-        self.graded_at = timezone.now()
-
-        self.save(
-            update_fields=[
-                'graded_score',
-                'grade_points_earned',
-                'credits_earned',
-                'graded_scale',
-                'weighting_scheme_used',
-                'pass_mark_applied',
-                'graded_at',
-            ]
+    def finalize_grade(self, force=False, states=None):
+        from base.modules.academics.grading_service import GradingService, FINALIZE
+        return GradingService().finalize(
+            self, force=force,
+            states=states or FINALIZE
         )
-        return True
 
     def regrade(self, by_user, reason):
         """
@@ -575,4 +500,14 @@ class Result(BaseModelMixin):
     def __str__(self):
         return f"{self.enrollment.student} - {self.title}"
 
-# TODO : add requisition result here to tie to an enrollment fail for resit or supplementary records , check re-evaluation request exams/academic records -> ✅ moved to the academic requistion model to handle that
+
+class ResultSubmission(BaseModelMixin):
+    curriculum = models.OneToOneField(
+        'Curriculum',
+        on_delete=models.PROTECT,
+        related_name='result_submission'
+    )
+    locked_by = models.ForeignKey('User', on_delete=models.PROTECT)
+    locked_at = models.DateTimeField(default=timezone.now)
+    certified = models.BooleanField(default=False)
+    history = HistoricalRecords()

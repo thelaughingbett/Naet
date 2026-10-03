@@ -1551,8 +1551,8 @@
           data-coursecode="{{ row.course_code }}"
           data-coursename="{{ row.course_name }}"
           data-credits="{{ row.credits }}"
-          data-cat="{{ row.cat }}"
-          data-exam="{{ row.exam }}"
+          data-cat="{{ row.cat|default_if_none:'' }}"
+          data-exam="{{ row.exam |default_if_none:'' }}"
           data-status="{{ row.status }}"
           data-score="{{ row.score|default:'' }}"
           data-grade="{{ row.grade|default:'' }}"
@@ -1941,7 +1941,9 @@
     </div>
   </div>
 </div>
+<!-- prettier-ignore -->
 {{ study_years|json_script:"studyYearsData" }}
+{{ grade_summaries|json_script:"gradeSummaries" }}
 <script>
   const CHALLENGE_HISTORY_URL = "{% url 'result-challenge-history' %}";
   const CHALLENGE_SUBMIT_URL = "{% url 'submit-result-challenge' %}";
@@ -2068,7 +2070,7 @@
 
     renderDesktopTable(coursesToShow, semKey);
     renderMobileCourseList(coursesToShow, semKey);
-    renderGPA(coursesToShow);
+    renderGPA(semKey);
   }
 
   function renderDesktopTable(coursesToShow, semKey) {
@@ -2240,72 +2242,40 @@
   }
 
   // ── GPA for the currently displayed set (updates BOTH views' stats) ───────
-  function renderGPA(courses) {
-    const graded = courses.filter(
-      (c) => c.status === "pass" || c.status === "fail",
-    );
-    const credits = graded.reduce((s, c) => s + c.credits, 0);
-    const points = graded.reduce((s, c) => s + (c.points || 0) * c.credits, 0);
-    const gpa = credits > 0 ? (points / credits).toFixed(2) : "0.00";
+  const GRADE_SUMMARIES = JSON.parse(
+    document.getElementById("gradeSummaries")?.textContent || "{}",
+  );
 
+  function renderGPA(semKey) {
+    const s = GRADE_SUMMARIES[semKey] || { gpa: "0.00", credits: 0 };
     const box = document.getElementById("gpaSummary");
     if (box) {
       box.innerHTML = `
-      <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${gpa}</div></div>
-      <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${credits}</div></div>
-    `;
+      <div class="gpa-item"><div class="gpa-label">GPA</div><div class="gpa-value">${s.gpa}</div></div>
+      <div class="gpa-item"><div class="gpa-label">Credits</div><div class="gpa-value">${s.credits}</div></div>`;
     }
-
-    const mobileGpa = document.getElementById("mobileGpa");
-    const mobileSummaryGpa = document.getElementById("mobileSummaryGpa");
-    if (mobileGpa) mobileGpa.textContent = gpa;
-    if (mobileSummaryGpa) mobileSummaryGpa.textContent = gpa;
-  }
-
-  // ── cumulative across ALL semesters (both views) ──────────────────────────
-  function calculateCumulative() {
-    const seen = {};
-    let totalCredits = 0,
-      totalPoints = 0;
-
-    for (const { merged } of Object.values(semesterData)) {
-      merged.forEach((c) => {
-        if (c.status !== "pass" && c.status !== "fail") return;
-        if (!seen[c.code]) {
-          seen[c.code] = true;
-          totalCredits += c.credits;
-          totalPoints += (c.points || 0) * c.credits;
-        }
-      });
-    }
-
-    const cgpa =
-      totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-    const n = parseFloat(cgpa);
-    const cls =
-      n >= 3.6
-        ? "First Class Honours"
-        : n >= 3.0
-          ? "Second Class Honours (Upper)"
-          : n >= 2.5
-            ? "Second Class Honours (Lower)"
-            : n >= 2.0
-              ? "Pass"
-              : "Probation";
-
-    const setText = (id, val) => {
+    const set = (id, v) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = val;
+      if (el) el.textContent = v;
     };
-    setText("totalCredits", totalCredits);
-    setText("totalPoints", totalPoints.toFixed(2));
-    setText("cgpa", cgpa);
-    setText("classification", cls);
-    setText("mobileCgpa", cgpa);
-    setText("mobileCredits", totalCredits);
-    setText("mobileSummaryClass", cls);
+    set("mobileGpa", s.gpa);
+    set("mobileSummaryGpa", s.gpa);
   }
 
+  function calculateCumulative() {
+    const a = GRADE_SUMMARIES.all || {};
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = v;
+    };
+    set("totalCredits", a.credits ?? 0);
+    set("totalPoints", Number(a.points || 0).toFixed(2));
+    set("cgpa", a.cgpa ?? "0.00");
+    set("classification", a.classification ?? "—");
+    set("mobileCgpa", a.cgpa ?? "0.00");
+    set("mobileCredits", a.credits ?? 0);
+    set("mobileSummaryClass", a.classification ?? "—");
+  }
   // ── semester select: keep desktop + mobile selects in sync ─────────────────
   function selectSemester(value) {
     const desktopSelect = document.getElementById("semesterSelect");
